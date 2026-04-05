@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: contribution-atelier-frontend
+    env: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://api.example.com # Replace this with your actual Render backend URL later
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
