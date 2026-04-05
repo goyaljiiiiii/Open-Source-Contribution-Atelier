@@ -2,10 +2,10 @@ type AuthPageShellProps = {
   title: string;
   subtitle: string;
   mode: "login" | "signup";
+  children: React.ReactNode;
 };
 
-
-export function AuthPageShell({ title, subtitle, mode }: AuthPageShellProps) {
+export function AuthPageShell({ title, subtitle, mode, children }: AuthPageShellProps) {
   return (
     <div className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[1.1fr_0.9fr]">
       <div className="rounded-[28px] border border-outline bg-surface-high/80 p-8 shadow-card backdrop-blur-xl">
@@ -24,26 +24,7 @@ export function AuthPageShell({ title, subtitle, mode }: AuthPageShellProps) {
         </div>
       </div>
       <div className="rounded-[28px] border border-outline bg-surface-low/85 p-8 shadow-card backdrop-blur-xl">
-        <form className="space-y-4">
-          {mode === "signup" ? (
-            <input
-              className="w-full rounded-2xl border border-outline bg-surface-lowest px-4 py-3 text-text outline-none placeholder:text-muted focus:border-primary/40"
-              placeholder="Username"
-            />
-          ) : null}
-          <input
-            className="w-full rounded-2xl border border-outline bg-surface-lowest px-4 py-3 text-text outline-none placeholder:text-muted focus:border-primary/40"
-            placeholder="Email or username"
-          />
-          <input
-            className="w-full rounded-2xl border border-outline bg-surface-lowest px-4 py-3 text-text outline-none placeholder:text-muted focus:border-primary/40"
-            type="password"
-            placeholder="Password"
-          />
-          <button className="w-full rounded-xl bg-[linear-gradient(135deg,#4f46e5,#7c72ff)] px-4 py-3 font-semibold text-white shadow-card">
-          {mode === "login" ? "Sign In" : "Create Account"}
-          </button>
-        </form>
+        {children}
       </div>
     </div>
   );
