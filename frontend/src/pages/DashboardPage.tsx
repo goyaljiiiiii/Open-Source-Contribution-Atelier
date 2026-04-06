@@ -1,65 +1,118 @@
-import { SectionCard } from "../components/ui/SectionCard";
-import { challengeCards, dashboardStats, learningQueue } from "../lib/data";
-
+import { useUserProgress } from "../hooks/useUserProgress";
+import { useQuery } from "@tanstack/react-query";
+import { fetchApi } from "../lib/api";
+import { lessons, Lesson } from "../lib/lessons";
+import { Link } from "react-router-dom";
 
 export function DashboardPage() {
+  const { progress, totalXP, isLoading: isProgressLoading } = useUserProgress();
+  
+  const { data: challenges = [], isLoading: isChallengesLoading } = useQuery({
+    queryKey: ["challenges"],
+    queryFn: () => fetchApi("/challenges/"),
+  });
+
+  if (isProgressLoading || isChallengesLoading) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  const completedCount = progress.filter(p => p.completed).length;
+  const streakDays = completedCount; // Simplified logic
+  
+  // Find next lessons (not completed yet)
+  const availableLessons = lessons.filter(l => 
+    !progress.some(p => p.lesson_slug === l.slug && p.completed)
+  ).slice(0, 3);
+
   return (
-    <div className="space-y-6">
-      <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <SectionCard eyebrow="7 day streak maintained" title="Welcome back, maintainer.">
-          <p className="max-w-2xl text-base leading-7 text-muted">
-            Your cohorts are moving steadily through contribution pathways. Next milestone is reducing
-            average first-PR review time while keeping learning quality high.
-          </p>
-        </SectionCard>
-        <SectionCard eyebrow="Program status" title="Operations overview">
-          <div className="space-y-3 text-sm text-muted">
-            <p>Admin view configured for contributor onboarding, Git practice, and challenge operations.</p>
-            <p className="font-mono text-primary">sandbox mode: safe-verification-only</p>
+    <div className="space-y-10 pt-4">
+      {/* Header */}
+      <section className="grid gap-6 xl:grid-cols-[1fr_0.8fr]">
+        <div className="rounded-[2rem] border-4 border-black bg-tertiary p-8 sm:p-10 shadow-card relative overflow-hidden">
+          <div className="relative z-10">
+            <span className="font-black text-sm bg-white text-black px-4 py-2 rounded-full border-2 border-black rotate-[-2deg] inline-block shadow-sm mb-4">
+              LEVEL {completedCount + 1} CONTRIBUTOR 🚀
+            </span>
+            <h1 className="text-4xl sm:text-5xl font-black text-white drop-shadow-[3px_3px_0_#000] mb-4">
+              Welcome back to the Command Line.
+            </h1>
+            <p className="text-xl font-bold text-black bg-white/90 p-4 rounded-xl border-4 border-black shadow-card-sm inline-block max-w-lg leading-relaxed">
+              You've earned {totalXP} XP so far. Keep pushing code!
+            </p>
           </div>
-        </SectionCard>
+          <div className="absolute -right-10 -bottom-10 text-[10rem] opacity-20 rotate-12 pointer-events-none">
+            💻
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="rounded-[2rem] border-4 border-black bg-white p-6 shadow-card flex flex-col justify-center items-center hover:-translate-y-1 transition-transform">
+            <span className="text-5xl mb-2">🔥</span>
+            <span className="text-4xl font-black text-primary drop-shadow-[2px_2px_0_#000]">{streakDays}</span>
+            <span className="font-bold text-black uppercase tracking-widest text-xs mt-1">Commit Streak</span>
+          </div>
+          <div className="rounded-[2rem] border-4 border-black bg-white p-6 shadow-card flex flex-col justify-center items-center hover:-translate-y-1 transition-transform">
+            <span className="text-5xl mb-2">🎯</span>
+            <span className="text-4xl font-black text-accent drop-shadow-[2px_2px_0_#000]">{totalXP}</span>
+            <span className="font-bold text-black uppercase tracking-widest text-xs mt-1">XP Bounties</span>
+          </div>
+        </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-3">
-        {dashboardStats.map((stat) => (
-          <SectionCard key={stat.label} eyebrow={stat.meta} title={stat.value}>
-            <p className="text-sm text-muted">{stat.label}</p>
-          </SectionCard>
-        ))}
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <SectionCard eyebrow="Resume learning" title="Cohorts in motion">
+      {/* Main Track */}
+      <section className="grid gap-6 xl:grid-cols-[1fr_0.7fr]">
+        <div className="rounded-3xl border-4 border-black bg-white p-6 shadow-card">
+          <h2 className="text-3xl font-black mb-6 flex items-center gap-3">
+            <span className="bg-primary text-white w-10 h-10 rounded-full border-2 border-black flex items-center justify-center text-lg">
+              📝
+            </span>
+            Contribution Queue
+          </h2>
           <div className="space-y-4">
-            {learningQueue.map((item) => (
-              <div key={item.title} className="rounded-2xl bg-surface-low p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-text">{item.title}</h3>
-                    <p className="mt-1 text-sm text-muted">{item.subtitle}</p>
+            {availableLessons.length > 0 ? (
+              availableLessons.map((lesson, i) => (
+                <Link key={lesson.slug} to={`/lessons/${lesson.slug}`} className="flex flex-col gap-2 p-5 rounded-2xl border-4 border-black bg-surface-lowest shadow-card-sm hover:shadow-card hover:-translate-y-1 transition-all">
+                  <div className="flex justify-between items-end">
+                    <h3 className="font-black text-xl">{lesson.title}</h3>
+                    <span className="font-bold text-sm text-muted italic">{lesson.description}</span>
                   </div>
-                  <button className="rounded-xl bg-primary-container px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white">
-                    {item.cta}
-                  </button>
-                </div>
-                <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.24em] text-primary">{item.meta}</p>
+                  <div className="h-6 w-full rounded-full border-4 border-black bg-surface-low overflow-hidden">
+                    <div className="h-full bg-primary border-black border-r-4" style={{ width: `0%` }}></div>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <div className="p-8 text-center bg-surface-low rounded-2xl border-4 border-dashed border-black">
+                <p className="font-bold text-muted">All current track modules completed! 🎉</p>
               </div>
-            ))}
+            )}
           </div>
-        </SectionCard>
+        </div>
 
-        <SectionCard eyebrow="Upcoming challenges" title="Recommended admin pushes">
+        {/* Challenges */}
+        <div className="rounded-3xl border-4 border-black bg-accent p-6 shadow-card">
+          <h2 className="text-3xl font-black mb-6 text-black">High Priority Issues 🚨</h2>
           <div className="space-y-4">
-            {challengeCards.map((item) => (
-              <div key={item.title} className="rounded-2xl bg-surface-low p-4">
-                <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-tertiary">{item.badge}</p>
-                <h3 className="mt-2 text-lg font-semibold text-text">{item.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-muted">{item.summary}</p>
+            {challenges.map((challenge: any) => (
+              <div key={challenge.id} className="rounded-2xl border-4 border-black bg-white p-5 shadow-card-sm">
+                <span className="font-black text-[10px] bg-black text-white px-3 py-1 rounded-full">{challenge.difficulty.toUpperCase()}</span>
+                <h3 className="font-black text-lg mt-3">{challenge.title}</h3>
+                <p className="text-sm text-muted mt-1">{challenge.summary}</p>
+                <div className="mt-3 flex justify-between items-center">
+                  <span className="text-sm font-bold text-muted">Reward:</span>
+                  <span className="font-black text-primary">{challenge.points} XP</span>
+                </div>
               </div>
             ))}
           </div>
-        </SectionCard>
+        </div>
       </section>
     </div>
   );
 }
+

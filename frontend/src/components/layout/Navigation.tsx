@@ -1,16 +1,40 @@
-import { Bell, BookOpen, BriefcaseBusiness, LayoutGrid, Search, Shield, TerminalSquare, Trophy } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Bell, BookOpen, BriefcaseBusiness, LayoutGrid, Search, Shield, TerminalSquare, Trophy, X } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
-
+import { fetchApi } from "../../lib/api";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
-  { to: "/lessons/open-source-basics", label: "Lessons", icon: BookOpen },
+  { to: "/lessons/intro", label: "Lessons", icon: BookOpen },
   { to: "/challenges", label: "Challenges", icon: Trophy },
   { to: "/community", label: "Community", icon: BriefcaseBusiness },
 ];
 
-
 export function Navigation() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<{ lessons: any[], challenges: any[] } | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (searchQuery.length > 1) {
+        setIsSearching(true);
+        try {
+          const results = await fetchApi(`/content/search/?q=${searchQuery}`);
+          setSearchResults(results);
+        } catch (error) {
+          console.error("Search failed:", error);
+        } finally {
+          setIsSearching(false);
+        }
+      } else {
+        setSearchResults(null);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+
   return (
     <>
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-[280px] border-r border-outline bg-surface-lowest/90 backdrop-blur-xl lg:flex lg:flex-col">
@@ -51,7 +75,7 @@ export function Navigation() {
               <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-tertiary">Safe sandbox</p>
               <p className="mt-2 text-sm text-muted">Run guided Git practice without exposing the real shell.</p>
               <Link
-                to="/lessons/open-source-basics"
+                to="/lessons/intro"
                 className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-primary-container px-4 py-3 text-sm font-semibold text-white shadow-card"
               >
                 <TerminalSquare size={15} />
@@ -70,11 +94,73 @@ export function Navigation() {
 
       <header className="fixed inset-x-0 top-0 z-10 border-b border-outline bg-surface/70 backdrop-blur-xl lg:left-[280px]">
         <div className="flex items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="hidden items-center gap-2 rounded-xl bg-surface-low px-3 py-2 text-muted sm:flex">
+          <div className="flex min-w-0 items-center gap-3 relative grow max-w-md">
+            <div className="flex items-center gap-2 rounded-xl bg-surface-low px-3 py-2 text-muted w-full border-2 border-transparent focus-within:border-primary/50 focus-within:bg-white transition-all shadow-sm">
               <Search size={15} />
-              <span className="text-sm">Search lessons, cohorts, issues...</span>
+              <input 
+                type="text"
+                placeholder="Search lessons, issues..."
+                className="bg-transparent border-none outline-none text-sm w-full text-text placeholder:text-muted/50"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")} className="hover:text-text">
+                  <X size={14} />
+                </button>
+              )}
             </div>
+
+            {/* Search Results Dropdown */}
+            {searchResults && (searchQuery.length > 1) && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white border-4 border-black rounded-2xl shadow-card p-4 z-50 max-h-[70vh] overflow-y-auto">
+                {isSearching ? (
+                  <p className="text-sm text-muted animate-pulse">Searching the Atelier...</p>
+                ) : (
+                  <div className="space-y-6">
+                    {searchResults.lessons.length > 0 && (
+                      <div>
+                        <h4 className="font-mono text-[10px] uppercase tracking-widest text-primary mb-2">Lessons</h4>
+                        <div className="space-y-2">
+                          {searchResults.lessons.map(lesson => (
+                            <Link 
+                              key={lesson.slug} 
+                              to={`/lessons/${lesson.slug}`}
+                              onClick={() => setSearchQuery("")}
+                              className="block p-2 rounded-lg hover:bg-surface-low transition group"
+                            >
+                              <p className="font-bold text-sm group-hover:text-primary">{lesson.title}</p>
+                              <p className="text-xs text-muted truncate">{lesson.summary}</p>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {searchResults.challenges.length > 0 && (
+                      <div>
+                        <h4 className="font-mono text-[10px] uppercase tracking-widest text-accent mb-2">Issues & Challenges</h4>
+                        <div className="space-y-2">
+                          {searchResults.challenges.map(challenge => (
+                            <Link 
+                              key={challenge.slug}
+                              to="/challenges"
+                              onClick={() => setSearchQuery("")}
+                              className="block p-2 rounded-lg hover:bg-surface-low transition group"
+                            >
+                              <p className="font-bold text-sm group-hover:text-accent">{challenge.title}</p>
+                              <p className="text-xs text-muted truncate">{challenge.summary}</p>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {searchResults.lessons.length === 0 && searchResults.challenges.length === 0 && (
+                      <p className="text-sm text-muted italic">No matching records found in the Atelier.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <Link to="/dashboard" className="hidden rounded-xl px-3 py-2 text-sm font-medium text-primary md:inline-flex">

@@ -10,7 +10,9 @@ class BadgeSerializer(serializers.ModelSerializer):
 
 
 class LessonProgressSerializer(serializers.ModelSerializer):
+    lesson_slug = serializers.ReadOnlyField(source="lesson.slug")
+
     class Meta:
         model = LessonProgress
-        fields = "__all__"
+        fields = ["id", "user", "lesson", "lesson_slug", "completed", "score", "updated_at"]
 
