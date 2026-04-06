@@ -3,24 +3,20 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
-  font-family: "Inter", sans-serif;
-  background:
-    radial-gradient(circle at top right, rgba(79, 70, 229, 0.2), transparent 25%),
-    radial-gradient(circle at left center, rgba(255, 182, 149, 0.12), transparent 20%),
-    #0b1326;
+  color-scheme: light;
+  font-family: "Outfit", "Inter", sans-serif;
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  font-family: "Inter", sans-serif;
-  color: #f5f7ff;
-  background:
-    radial-gradient(circle at top right, rgba(79, 70, 229, 0.2), transparent 25%),
-    radial-gradient(circle at left center, rgba(255, 182, 149, 0.12), transparent 20%),
-    #0b1326;
+  font-family: "Outfit", "Inter", sans-serif;
+  color: #000000;
+  background-color: #fdfbf7;
+  /* Fun dot grid background */
+  background-image: radial-gradient(#dcd3c4 2px, transparent 2px);
+  background-size: 30px 30px;
 }
 
 * {
@@ -41,11 +37,17 @@ button {
   font: inherit;
 }
 
+button:active {
+  transform: translate(2px, 2px) !important;
+  box-shadow: 2px 2px 0px 0px rgba(0,0,0,1) !important;
+}
+
 button,
 input {
   transition:
     background-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
     border-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.15s ease-out,
     color 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }

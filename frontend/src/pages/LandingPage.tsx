@@ -1,66 +1,132 @@
-import { Link } from "react-router-dom";
-import { SectionCard } from "../components/ui/SectionCard";
-
+import { useState } from "react";
+import { useGoogleLogin } from "@react-oauth/google";
+import { fetchApi } from "../lib/api";
+import { useAuth } from "../features/auth/AuthContext";
 
 export function LandingPage() {
-  return (
-    <div className="space-y-6">
-      <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="overflow-hidden rounded-[28px] border border-outline bg-surface-high/80 shadow-card backdrop-blur-xl">
-          <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="p-8 sm:p-10">
-              <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-tertiary">
-                Open Source Program Admin
-              </p>
-              <h1 className="mt-4 max-w-2xl font-display text-4xl font-bold leading-tight tracking-[-0.03em] sm:text-5xl">
-                Run contributor education like a premium open source operations desk.
-              </h1>
-              <p className="mt-6 max-w-xl text-base leading-7 text-muted">
-                A modern admin platform for curriculum delivery, interactive Git practice, challenge scoring,
-                and healthy community workflows that feel closer to a crafted IDE than a generic dashboard.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-4">
-                <Link
-                  to="/dashboard"
-                  className="rounded-xl bg-[linear-gradient(135deg,#4f46e5,#7c72ff)] px-5 py-3 font-semibold text-white shadow-card"
-                >
-                  Open Dashboard
-                </Link>
-                <Link
-                  to="/signup"
-                  className="rounded-xl border border-outline bg-surface-low px-5 py-3 font-semibold text-muted"
-                >
-                  Create Admin Account
-                </Link>
-              </div>
-            </div>
-            <div className="relative min-h-[260px] overflow-hidden bg-[radial-gradient(circle_at_top,rgba(195,192,255,0.2),transparent_30%),linear-gradient(180deg,#141b30_0%,#0b1326_100%)]">
-              <div className="absolute inset-0 bg-[linear-gradient(135deg,transparent_40%,rgba(79,70,229,0.16)_40%,transparent_65%)]" />
-              <div className="absolute inset-y-0 right-8 flex items-center">
-                <div className="h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(79,70,229,0.55),rgba(79,70,229,0.02)_65%)] blur-2xl" />
-              </div>
-            </div>
-          </div>
-        </div>
-        <SectionCard eyebrow="Operational readiness" title="Built for high-trust public collaboration">
-          <div className="space-y-4 text-sm leading-6 text-muted">
-            <p>Contribution-safe repository docs, admin-friendly scaffolding, and clear room for mentors, organizers, and participants.</p>
-            <p>Lessons, community visibility, challenge ops, and sandbox practice all sit in one cohesive control surface.</p>
-          </div>
-        </SectionCard>
-      </section>
+  const { login } = useAuth();
+  const [authRole, setAuthRole] = useState<"student" | "admin">("student");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-      <section className="grid gap-6 md:grid-cols-3">
-        <SectionCard eyebrow="Curriculum" title="Structured tracks">
-          <p className="text-sm leading-6 text-muted">Guide learners from first issue discovery to advanced Git recovery and review etiquette.</p>
-        </SectionCard>
-        <SectionCard eyebrow="Sandbox" title="Safe command practice">
-          <p className="text-sm leading-6 text-muted">Verify Git commands against lesson goals without exposing a real shell or project filesystem.</p>
-        </SectionCard>
-        <SectionCard eyebrow="Community" title="Admin oversight">
-          <p className="text-sm leading-6 text-muted">Monitor engagement, challenge throughput, and support load across your cohorts.</p>
-        </SectionCard>
-      </section>
+  const handleStandardLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    try {
+      const tokens = await fetchApi("/auth/login/", {
+        method: "POST",
+        requireAuth: false,
+        body: JSON.stringify({ username: email, password }), // Using email field as username logic for backend ease
+      });
+      login(tokens);
+      window.location.href = "/dashboard";
+    } catch (err: any) {
+      setError(err.message || "Failed to login");
+    }
+  };
+
+  const googleLoginHandler = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        const tokens = await fetchApi("/auth/google/", {
+          method: "POST",
+          requireAuth: false,
+          body: JSON.stringify({ access_token: tokenResponse.access_token }),
+        });
+        login(tokens);
+        window.location.href = "/dashboard";
+      } catch (err: any) {
+        setError(err.message || "Google Auth Failed. Check Backend.");
+      }
+    },
+    onError: () => {
+      setError("Google Login Failed / Cancelled.");
+    }
+  });
+
+  return (
+    <div className="min-h-[85vh] flex items-center justify-center p-4">
+      <div className="w-full max-w-lg mx-auto">
+        <div className="text-center mb-8">
+            <span className="font-black text-sm bg-accent text-black px-4 py-2 rounded-full border-2 border-black rotate-[-2deg] inline-block shadow-sm">
+              AUTHORIZED ACCESS ONLY 🔒
+            </span>
+        </div>
+        
+        <div className="bg-white rounded-[2rem] border-4 border-black shadow-card-lg p-6 sm:p-10 relative">
+          
+          <div className="flex gap-2 p-1 bg-surface-low rounded-xl border-2 border-black mb-6">
+            <button 
+              onClick={() => setAuthRole("student")}
+              className={`flex-1 py-2 font-bold rounded-lg transition-colors border-2 ${authRole === "student" ? "bg-white border-black shadow-sm" : "border-transparent text-muted"}`}
+            >
+              Contributor
+            </button>
+            <button 
+              onClick={() => setAuthRole("admin")}
+              className={`flex-1 py-2 font-bold rounded-lg transition-colors border-2 ${authRole === "admin" ? "bg-white border-black shadow-sm" : "border-transparent text-muted"}`}
+            >
+              Maintainer
+            </button>
+          </div>
+
+          <h2 className="text-3xl font-black mb-6 text-center">
+            {authRole === "student" ? "Enter the Sandbox." : "Maintainer Login."}
+          </h2>
+          
+          {error && <div className="text-black font-bold text-sm bg-primary p-3 rounded-xl border-4 border-black shadow-card-sm mb-4">{error}</div>}
+
+          <form onSubmit={handleStandardLogin} className="space-y-4">
+            <button 
+              type="button" 
+              onClick={() => googleLoginHandler()}
+              className="w-full bg-white border-4 border-black rounded-2xl p-4 flex items-center justify-center gap-3 font-bold hover:bg-surface-low transition-colors shadow-card-sm active:translate-y-1 active:shadow-none"
+            >
+              <svg className="w-6 h-6" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+              </svg>
+              Sign in with Google
+            </button>
+            
+            <div className="flex items-center gap-4 my-6">
+              <div className="flex-1 h-1 bg-black"></div>
+              <span className="font-black text-muted text-sm uppercase">OR</span>
+              <div className="flex-1 h-1 bg-black"></div>
+            </div>
+
+            <div>
+              <input
+                className="w-full rounded-xl border-4 border-black bg-surface-lowest px-4 py-4 text-text font-bold outline-none placeholder:text-muted/60 focus:bg-surface-low focus:ring-0 transition-colors shadow-sm"
+                placeholder="Username or Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <input
+                className="w-full rounded-xl border-4 border-black bg-surface-lowest px-4 py-4 text-text font-bold outline-none placeholder:text-muted/60 focus:bg-surface-low focus:ring-0 transition-colors shadow-sm"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            
+            <button 
+              type="submit"
+              className="w-full rounded-2xl border-4 border-black bg-primary px-5 py-4 font-black text-white text-xl shadow-gel hover:bg-[#E62814] active:translate-y-2 transition-all uppercase tracking-wide mt-4 cursor-pointer"
+            >
+              Assemble & Run!
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

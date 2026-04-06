@@ -1,25 +1,47 @@
-import { Route, Routes } from "react-router-dom";
+import React from "react";
+import { Route, Routes, Navigate } from "react-router-dom";
 import { AppLayout } from "../components/layout/AppLayout";
 import { ChallengePage } from "../pages/ChallengePage";
 import { CommunityPage } from "../pages/CommunityPage";
 import { DashboardPage } from "../pages/DashboardPage";
 import { LandingPage } from "../pages/LandingPage";
 import { LessonPage } from "../pages/LessonPage";
-import { LoginPage } from "../pages/LoginPage";
-import { SignupPage } from "../pages/SignupPage";
+import { useAuth } from "../features/auth/AuthContext";
 
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuth();
+  
+  if (isLoading) return <div className="h-screen w-full flex items-center justify-center font-black text-2xl">Loading...</div>;
+  if (!isAuthenticated) return <Navigate to="/" replace />;
+  
+  return <>{children}</>;
+}
+
+function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuth();
+  
+  if (isLoading) return <div className="h-screen w-full flex items-center justify-center font-black text-2xl">Loading...</div>;
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  
+  return <>{children}</>;
+}
 
 export function AppRouter() {
   return (
     <Routes>
+      {/* Standalone Route without AppLayout (No Navbar) */}
+      <Route path="/" element={
+        <PublicOnlyRoute>
+          <LandingPage />
+        </PublicOnlyRoute>
+      } />
+
+      {/* Authenticated Routes with Navbar Layout */}
       <Route element={<AppLayout />}>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/lessons/:slug" element={<LessonPage />} />
-        <Route path="/challenges" element={<ChallengePage />} />
-        <Route path="/community" element={<CommunityPage />} />
+        <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+        <Route path="/lessons/:slug" element={<ProtectedRoute><LessonPage /></ProtectedRoute>} />
+        <Route path="/challenges" element={<ProtectedRoute><ChallengePage /></ProtectedRoute>} />
+        <Route path="/community" element={<ProtectedRoute><CommunityPage /></ProtectedRoute>} />
       </Route>
     </Routes>
   );
