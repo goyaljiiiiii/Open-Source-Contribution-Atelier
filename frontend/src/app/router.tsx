@@ -6,6 +6,7 @@ import { CommunityPage } from "../pages/CommunityPage";
 import { DashboardPage } from "../pages/DashboardPage";
 import { LandingPage } from "../pages/LandingPage";
 import { LessonPage } from "../pages/LessonPage";
+import { NotFoundPage } from "../pages/NotFoundPage";
 import { useAuth } from "../features/auth/AuthContext";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -43,6 +44,8 @@ export function AppRouter() {
         <Route path="/challenges" element={<ProtectedRoute><ChallengePage /></ProtectedRoute>} />
         <Route path="/community" element={<ProtectedRoute><CommunityPage /></ProtectedRoute>} />
       </Route>
+
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }
