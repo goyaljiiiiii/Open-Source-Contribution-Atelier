@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { lessons, Lesson } from "../lib/lessons";
 import { useUserProgress } from "../hooks/useUserProgress";
+import { fetchApi } from "../lib/api";
 
 export function LessonPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -12,6 +14,30 @@ export function LessonPage() {
   const [input, setInput] = useState("");
   const [feedback, setFeedback] = useState<string>("");
   const [showHint, setShowHint] = useState(false);
+  const [isHelpPanelOpen, setIsHelpPanelOpen] = useState(false);
+  const [helpMessage, setHelpMessage] = useState("");
+  const [helpSuccessMessage, setHelpSuccessMessage] = useState("");
+  const queryClient = useQueryClient();
+
+  const helpRequestMutation = useMutation({
+    mutationFn: (message: string) => {
+      if (!lesson) {
+        throw new Error("No lesson context available");
+      }
+      return fetchApi("/progress/help-requests/", {
+        method: "POST",
+        body: JSON.stringify({
+          lesson_slug: lesson.slug,
+          message,
+        }),
+      });
+    },
+    onSuccess: () => {
+      setHelpSuccessMessage("Help request sent. A mentor will review it soon.");
+      setHelpMessage("");
+      queryClient.invalidateQueries({ queryKey: ["communityStats"] });
+    },
+  });
 
   // Load lesson based on slug
   useEffect(() => {
@@ -69,6 +95,12 @@ export function LessonPage() {
       setFeedback("error");
       setShowHint(true);
     }
+  };
+
+  const handleHelpRequestSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!lesson || !helpMessage.trim()) return;
+    helpRequestMutation.mutate(helpMessage.trim());
   };
 
   if (isLoading) {
@@ -155,6 +187,81 @@ export function LessonPage() {
           </div>
         )}
       </form>
+
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={() => {
+            setIsHelpPanelOpen(true);
+            setHelpSuccessMessage("");
+          }}
+          className="px-4 py-2 bg-white text-text font-bold rounded-xl border-4 border-black shadow-card hover:bg-surface-low"
+        >
+          Request help
+        </button>
+      </div>
+
+      {isHelpPanelOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/40">
+          <button
+            type="button"
+            aria-label="Close help request panel"
+            className="flex-1 cursor-default"
+            onClick={() => setIsHelpPanelOpen(false)}
+          />
+          <aside className="h-full w-full max-w-md bg-surface-lowest border-l-4 border-black p-6 shadow-card space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black">Need help on this lesson?</h2>
+                <p className="text-sm text-muted mt-1">
+                  Send context to mentors and we&apos;ll add it to the community support queue.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsHelpPanelOpen(false)}
+                className="text-sm font-bold underline"
+              >
+                Close
+              </button>
+            </div>
+
+            <form className="space-y-3" onSubmit={handleHelpRequestSubmit}>
+              <label htmlFor="help-message" className="block text-sm font-bold">
+                What are you stuck on?
+              </label>
+              <textarea
+                id="help-message"
+                className="w-full rounded-xl border-4 border-black bg-white px-3 py-2 text-sm outline-none min-h-36"
+                placeholder="Example: I keep getting a pathspec error when I run git checkout."
+                value={helpMessage}
+                onChange={(e) => setHelpMessage(e.target.value)}
+                disabled={helpRequestMutation.isPending}
+              />
+
+              {helpRequestMutation.isError && (
+                <div className="text-red-700 text-sm font-bold bg-red-50 p-2 rounded-lg border-2 border-red-700">
+                  Couldn&apos;t submit your request. Please try again.
+                </div>
+              )}
+
+              {helpSuccessMessage && (
+                <div className="text-green-700 text-sm font-bold bg-green-50 p-2 rounded-lg border-2 border-green-700">
+                  {helpSuccessMessage}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="w-full px-4 py-2 bg-primary text-white font-bold rounded-xl border-4 border-black shadow-gel hover:bg-[#E62814] disabled:opacity-60"
+                disabled={!helpMessage.trim() || helpRequestMutation.isPending}
+              >
+                {helpRequestMutation.isPending ? "Submitting..." : "Submit help request"}
+              </button>
+            </form>
+          </aside>
+        </div>
+      )}
     </div>
   );
 }
