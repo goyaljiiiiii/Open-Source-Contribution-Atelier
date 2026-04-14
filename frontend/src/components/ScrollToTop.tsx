@@ -5,7 +5,12 @@ export default function ScrollToTop() {
   const [isVisible, setIsVisible] = useState(false);
   const location = useLocation();
 
+  const shouldHide =
+    location.pathname === "/login" || location.pathname === "/signup";
+
   useEffect(() => {
+    if (shouldHide) return;
+
     const handleScroll = () => {
       setIsVisible(window.scrollY > 300);
     };
@@ -16,14 +21,9 @@ export default function ScrollToTop() {
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
-  }, []);
+  }, [shouldHide]);
 
-  
-  if (location.pathname === "/login" || location.pathname === "/signup") {
-    return null;
-  }
-
-  
+  if (shouldHide) return null;
   if (!isVisible) return null;
 
   const handleClick = () => {
