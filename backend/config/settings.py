@@ -115,3 +115,24 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(os.getenv("ACCESS_TOKEN_LIFETIME_MINUTES", "30"))),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.getenv("REFRESH_TOKEN_LIFETIME_DAYS", "7"))),
 }
+
+# ──────────────────────────────────────────
+# Django Channels + Notifications
+# ──────────────────────────────────────────
+INSTALLED_APPS += [
+    "channels",
+    "apps.notifications",
+]
+
+ASGI_APPLICATION = "config.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+            "capacity":  1500,
+            "expiry":    10,
+        },
+    },
+}
