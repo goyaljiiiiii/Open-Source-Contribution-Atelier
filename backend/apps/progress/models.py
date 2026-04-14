@@ -37,6 +37,6 @@ class HelpRequest(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="help_requests")
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="help_requests")
     message = models.TextField()
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.OPEN)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.OPEN, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
