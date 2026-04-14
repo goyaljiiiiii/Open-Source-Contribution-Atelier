@@ -80,4 +80,4 @@ class NotificationConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def mark_notification_read(self, notif_id):
         from .models import Notification
-        Notification.objects.filter(id=notif_id).update(is_read=True)
+        Notification.objects.filter(id=notif_id, recipient=self.scope["user"]).update(is_read=True)
