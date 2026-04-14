@@ -59,7 +59,7 @@ class GoogleLoginView(APIView):
             idinfo = user_info_resp.json()
             email = idinfo.get('email')
             if not email:
-                return Response({'error': 'Google account has no email'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'detail': 'Google account has no email'}, status=status.HTTP_400_BAD_REQUEST)
 
             username = email.split('@')[0]
             
@@ -79,5 +79,5 @@ class GoogleLoginView(APIView):
             })
             
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

@@ -35,7 +35,6 @@ def auth_client(user):
     return client
 
 
-# --- List endpoint ---
 def test_list_shows_only_own_notifications(user_a, user_b, notif_for_a, notif_for_b):
     client = auth_client(user_a)
     response = client.get("/api/notifications/")
@@ -51,7 +50,6 @@ def test_list_requires_auth(db):
     assert response.status_code == 401
 
 
-# --- Mark one read ---
 def test_mark_one_read(user_a, notif_for_a):
     client = auth_client(user_a)
     response = client.post(f"/api/notifications/{notif_for_a.id}/read/")
@@ -63,10 +61,9 @@ def test_mark_one_read(user_a, notif_for_a):
 def test_mark_one_read_cannot_touch_other_users_notif(user_a, notif_for_b):
     client = auth_client(user_a)
     response = client.post(f"/api/notifications/{notif_for_b.id}/read/")
-    assert response.status_code == 404  # scoped to recipient
+    assert response.status_code == 404
 
 
-# --- Mark all read ---
 def test_mark_all_read(user_a, notif_for_a):
     client = auth_client(user_a)
     response = client.post("/api/notifications/mark-all-read/")
