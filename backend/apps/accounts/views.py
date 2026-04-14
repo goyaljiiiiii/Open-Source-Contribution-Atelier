@@ -45,7 +45,7 @@ class GoogleLoginView(APIView):
     def post(self, request):
         token = request.data.get('access_token')
         if not token:
-            return Response({'error': 'No access token provided'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'No access token provided'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             # Verify the access_token with Google
@@ -54,7 +54,7 @@ class GoogleLoginView(APIView):
             )
             
             if not user_info_resp.ok:
-                return Response({'error': 'Failed to verify Google Token'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'detail': 'Failed to verify Google Token'}, status=status.HTTP_400_BAD_REQUEST)
                 
             idinfo = user_info_resp.json()
             email = idinfo.get('email')

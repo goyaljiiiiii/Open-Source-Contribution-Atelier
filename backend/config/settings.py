@@ -121,10 +121,9 @@ SIMPLE_JWT = {
 # ──────────────────────────────────────────
 INSTALLED_APPS += [
     "channels",
-    "apps.notifications",
+    "apps.notifications.apps.NotificationsConfig",
 ]
 
-ASGI_APPLICATION = "config.asgi.application"
 
 CHANNEL_LAYERS = {
     "default": {
