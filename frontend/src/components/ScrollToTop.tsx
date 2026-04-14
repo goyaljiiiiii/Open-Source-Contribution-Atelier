@@ -11,6 +11,7 @@ export default function ScrollToTop() {
     };
 
     window.addEventListener("scroll", handleScroll);
+    handleScroll(); // ✅ Fix: sync initial visibility
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
