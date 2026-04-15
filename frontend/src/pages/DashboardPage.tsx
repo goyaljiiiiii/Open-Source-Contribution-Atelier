@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchApi } from "../lib/api";
 import { lessons, Lesson } from "../lib/lessons";
 import { Link } from "react-router-dom";
+import SkeletonCard from "../components/ui/skeletons/SkeletonCard";
 
 export function DashboardPage() {
   const { progress, totalXP, isLoading: isProgressLoading } = useUserProgress();
@@ -14,8 +15,13 @@ export function DashboardPage() {
 
   if (isProgressLoading || isChallengesLoading) {
     return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      <div
+        className="grid gap-6 xl:grid-cols-[1fr_0.8fr]"
+        aria-busy="true"
+      >
+        <SkeletonCard />
+        <SkeletonCard />
+        <SkeletonCard />
       </div>
     );
   }
