@@ -23,7 +23,7 @@ services:
     env: python
     rootDir: backend
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn config.wsgi:application
+    startCommand: daphne config.asgi:application --port $PORT --bind 0.0.0.0
     envVars:
       - key: DATABASE_URL
         fromDatabase:
