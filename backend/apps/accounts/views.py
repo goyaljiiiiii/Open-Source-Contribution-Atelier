@@ -1,4 +1,6 @@
 from django.contrib.auth.models import User
+from rest_framework import generics, filters
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -8,7 +10,7 @@ from google.oauth2 import id_token
 from google.auth.transport import requests
 import os
 
-from .serializers import SignupSerializer
+from .serializers import SignupSerializer, UserListSerializer
 
 
 class SignupView(generics.CreateAPIView):
@@ -81,3 +83,13 @@ class GoogleLoginView(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+class UserListView(generics.ListAPIView):
+    queryset = User.objects.all()
+    permission_classes = [permissions.IsAuthenticated]
+
+    serializer_class = UserListSerializer
+
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+
+    search_fields = ["username"]
+    ordering_fields = ["id", "username"]
