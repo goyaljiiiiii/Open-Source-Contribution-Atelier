@@ -6,7 +6,7 @@ import { lessons, Lesson } from "../lib/lessons";
 
 import { useUserProgress } from "../hooks/useUserProgress";
 
-
+import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
 
 export function LessonPage() {
 
@@ -145,18 +145,12 @@ export function LessonPage() {
 
 
   if (isLoading) {
-
-    return (
-
-      <div className="flex h-[60vh] items-center justify-center">
-
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-
-      </div>
-
-    );
-
-  }
+  return (
+    <div aria-busy="true" role="status">
+      <SkeletonLesson />
+    </div>
+  );
+}
 
 
 
