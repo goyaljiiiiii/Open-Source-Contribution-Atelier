@@ -40,9 +40,9 @@ class GoogleLoginView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        token = request.data.get('access_token')
+        token = request.data.get("access_token")
         if not token:
-            return Response({'detail': 'No access token provided'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "No access token provided"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             user_info_resp = http_requests.get(
@@ -50,34 +50,35 @@ class GoogleLoginView(APIView):
             )
 
             if not user_info_resp.ok:
-                return Response({'detail': 'Failed to verify Google Token'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"detail": "Failed to verify Google Token"}, status=status.HTTP_400_BAD_REQUEST)
 
             idinfo = user_info_resp.json()
-            email = idinfo.get('email')
+            email = idinfo.get("email")
             if not email:
-                return Response({'detail': 'Google account has no email'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"detail": "Google account has no email"}, status=status.HTTP_400_BAD_REQUEST)
 
-            username = email.split('@')[0]
-            user, created = User.objects.get_or_create(email=email, defaults={'username': username})
+            username = email.split("@")[0]
+            user, created = User.objects.get_or_create(email=email, defaults={"username": username})
 
             refresh = RefreshToken.for_user(user)
-            return Response({
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-                'user': {
-                    'username': user.username,
-                    'email': user.email,
-                    'is_staff': user.is_staff
+            return Response(
+                {
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                    "user": {
+                        "username": user.username,
+                        "email": user.email,
+                        "is_staff": user.is_staff,
+                    },
                 }
-            })
+            )
 
         except Exception as e:
-            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserListView(generics.ListAPIView):
-    queryset = User.objects.all()
+    queryset = User.objects.all().order_by("id")
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = UserListSerializer
 
