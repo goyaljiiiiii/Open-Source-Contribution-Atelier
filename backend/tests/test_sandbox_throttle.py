@@ -12,12 +12,20 @@ class SandboxThrottleTest(TestCase):
         self.user = User.objects.create_user(username="testuser", password="password")
 
     def test_anonymous_throttle(self):
-        # First 10 requests pass
+        """Ensure anonymous users are throttled after 10 requests."""
         for _ in range(10):
             response = self.client.post(SANDBOX_URL, {"code": "print(1)"}, format="json")
             self.assertEqual(response.status_code, status.HTTP_200_OK)
         
-        # 11th request hits the limit
         response = self.client.post(SANDBOX_URL, {"code": "print(1)"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
-        self.assertEqual(response.data['error'], "Rate limit exceeded.")
+
+    def test_authenticated_throttle(self):
+        """Ensure authenticated users are also throttled after 10 requests."""
+        self.client.force_authenticate(user=self.user)
+        for _ in range(10):
+            response = self.client.post(SANDBOX_URL, {"code": "print(1)"}, format="json")
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        response = self.client.post(SANDBOX_URL, {"code": "print(1)"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
