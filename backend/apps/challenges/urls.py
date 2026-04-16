@@ -7,5 +7,5 @@ router.register("", ChallengeViewSet, basename="challenge")
 
 urlpatterns = router.urls
 urlpatterns += [
-    path('sandbox/execute/', SandboxExecutionView.as_view(), name='sandbox-execute'),
+    path("sandbox/execute/", SandboxExecutionView.as_view(), name="sandbox-execute"),
 ]
