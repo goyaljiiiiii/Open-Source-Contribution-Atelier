@@ -39,7 +39,7 @@ class SandboxExecutionView(APIView):
 
         if not code:
             return Response(
-                {"error": "No code provided."},
+                {"detail": "No code provided."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
