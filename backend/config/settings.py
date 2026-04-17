@@ -103,6 +103,13 @@ STATIC_URL = "/static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
+    # ── Sandbox Rate Limiting (10 requests/minute) ──────────────────────────
+    # Scoped throttling: ONLY affects sandbox endpoints, not global API routes.
+    "DEFAULT_THROTTLE_RATES": {
+        "sandbox_anon": "10/minute",   # Anonymous users — throttled by IP
+        "sandbox_user": "10/minute",   # Authenticated users — throttled by user ID
+    },
+
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
