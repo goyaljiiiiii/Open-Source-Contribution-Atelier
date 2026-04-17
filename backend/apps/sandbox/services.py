@@ -18,6 +18,9 @@ ALLOWED_PREFIXES = (
 )
 
 
+from .linter import lint_command
+
+
 @dataclass
 class VerificationResult:
     accepted: bool
@@ -28,6 +31,15 @@ class VerificationResult:
 def verify_git_command(command: str, expected_command: str) -> VerificationResult:
     normalized = command.strip()
     expected = expected_command.strip()
+
+    # Perform syntax checking / linting before validation
+    lint_result = lint_command(normalized)
+    if not lint_result.is_valid:
+        return VerificationResult(
+            accepted=False,
+            feedback=lint_result.message,
+            score_delta=0,
+        )
 
     if not any(normalized.startswith(prefix) for prefix in ALLOWED_PREFIXES):
         return VerificationResult(
@@ -45,7 +57,6 @@ def verify_git_command(command: str, expected_command: str) -> VerificationResul
 
     return VerificationResult(
         accepted=False,
-        feedback="Valid Git syntax, but not the expected command for this exercise.",
+        feedback=f"Valid Git syntax, but not the expected command for this exercise. Hint: Try '{expected}'.",
         score_delta=0,
     )
-
