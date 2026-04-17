@@ -1,11 +1,61 @@
+from django.db.models import Count, Sum
 from rest_framework import permissions, status
 from rest_framework.generics import ListAPIView
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.content.models import Lesson
 from .models import Badge, HelpRequest, LessonProgress
-from .serializers import BadgeSerializer, HelpRequestSerializer, LessonProgressSerializer
+from .serializers import (
+    BadgeSerializer,
+    HelpRequestSerializer,
+    LeaderboardEntrySerializer,
+    LessonProgressSerializer,
+)
+
+
+class LeaderboardPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
+class LeaderboardView(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    pagination_class = LeaderboardPagination
+
+    def get(self, request):
+        qs = (
+            LessonProgress.objects.filter(completed=True)
+            .values("user__id", "user__username")
+            .annotate(
+                total_score=Sum("score"),
+                completed_lessons=Count("id"),
+            )
+            .order_by("-total_score", "user__username")
+        )
+
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(qs, request, view=self)
+
+        page_number = paginator.page.number
+        page_size = paginator.get_page_size(request)
+        start_rank = (page_number - 1) * page_size + 1
+
+        entries = [
+            {
+                "rank": start_rank + idx,
+                "user_id": row["user__id"],
+                "username": row["user__username"],
+                "total_score": row["total_score"],
+                "completed_lessons": row["completed_lessons"],
+            }
+            for idx, row in enumerate(page)
+        ]
+
+        serializer = LeaderboardEntrySerializer(entries, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
 class BadgeListView(ListAPIView):

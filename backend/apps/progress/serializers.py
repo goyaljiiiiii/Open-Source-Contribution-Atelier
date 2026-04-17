@@ -3,6 +3,14 @@ from rest_framework import serializers
 from .models import Badge, HelpRequest, LessonProgress
 
 
+class LeaderboardEntrySerializer(serializers.Serializer):
+    rank = serializers.IntegerField()
+    user_id = serializers.IntegerField()
+    username = serializers.CharField()
+    total_score = serializers.IntegerField()
+    completed_lessons = serializers.IntegerField()
+
+
 class BadgeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Badge
