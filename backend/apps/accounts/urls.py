@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import LoginView, MeView, RefreshView, SignupView, GoogleLoginView
+from .views import LoginView, MeView, RefreshView, SignupView, GoogleLoginView, UserListView
 
 
 urlpatterns = [
@@ -9,5 +9,5 @@ urlpatterns = [
     path("google/", GoogleLoginView.as_view(), name="google-login"),
     path("refresh/", RefreshView.as_view(), name="refresh"),
     path("me/", MeView.as_view(), name="me"),
+    path("users/", UserListView.as_view(), name="user-list"),
 ]
-

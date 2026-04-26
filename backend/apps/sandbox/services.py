@@ -60,4 +60,3 @@ def verify_git_command(command: str, expected_command: str) -> VerificationResul
         feedback=f"Valid Git syntax, but not the expected command for this exercise. Hint: Try '{expected}'.",
         score_delta=0,
     )
-
