@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    'django_filters',
     "corsheaders",
     "rest_framework",
     "rest_framework_simplejwt",
@@ -103,6 +104,13 @@ STATIC_URL = "/static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
+    # ── Sandbox Rate Limiting (10 requests/minute) ──────────────────────────
+    # Scoped throttling: ONLY affects sandbox endpoints, not global API routes.
+    "DEFAULT_THROTTLE_RATES": {
+        "sandbox_anon": "10/minute",   # Anonymous users — throttled by IP
+        "sandbox_user": "10/minute",   # Authenticated users — throttled by user ID
+    },
+
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
@@ -114,4 +122,24 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(os.getenv("ACCESS_TOKEN_LIFETIME_MINUTES", "30"))),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.getenv("REFRESH_TOKEN_LIFETIME_DAYS", "7"))),
+}
+
+# ──────────────────────────────────────────
+# Django Channels + Notifications
+# ──────────────────────────────────────────
+INSTALLED_APPS += [
+    "channels",
+    "apps.notifications.apps.NotificationsConfig",
+]
+
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [os.getenv("REDIS_URL", "redis://127.0.0.1:6379")],
+            "capacity":  1500,
+            "expiry":    10,
+        },
+    },
 }

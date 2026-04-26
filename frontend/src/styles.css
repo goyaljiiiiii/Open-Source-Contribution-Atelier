@@ -19,6 +19,13 @@ body {
   background-size: 30px 30px;
 }
 
+html.dark body {
+  color-scheme: dark;
+  color: #f0ebe2;
+  background-color: #0f0e0c;
+  background-image: radial-gradient(#2e2924 2px, transparent 2px);
+}
+
 * {
   box-sizing: border-box;
 }

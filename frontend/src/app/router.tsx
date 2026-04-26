@@ -8,11 +8,25 @@ import { LandingPage } from "../pages/LandingPage";
 import { LessonPage } from "../pages/LessonPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { useAuth } from "../features/auth/AuthContext";
+import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   
-  if (isLoading) return <div className="h-screen w-full flex items-center justify-center font-black text-2xl">Loading...</div>;
+  if (isLoading) {
+    return (
+      <div
+        className="h-screen w-full flex items-center justify-center"
+        aria-busy="true"
+        role="status"
+      >
+        <div className="w-full max-w-3xl">
+          <SkeletonLesson />
+        </div>
+      </div>
+    );
+  }
+
   if (!isAuthenticated) return <Navigate to="/" replace />;
   
   return <>{children}</>;
@@ -21,7 +35,20 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   
-  if (isLoading) return <div className="h-screen w-full flex items-center justify-center font-black text-2xl">Loading...</div>;
+  if (isLoading) {
+    return (
+      <div
+        className="h-screen w-full flex items-center justify-center"
+        aria-busy="true"
+        role="status"
+      >
+        <div className="w-full max-w-3xl">
+          <SkeletonLesson />
+        </div>
+      </div>
+    );
+  }
+
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
   
   return <>{children}</>;
@@ -49,4 +76,3 @@ export function AppRouter() {
     </Routes>
   );
 }
-

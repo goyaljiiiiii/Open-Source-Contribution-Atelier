@@ -1,6 +1,7 @@
 import { SectionCard } from "../components/ui/SectionCard";
 import { useQuery } from "@tanstack/react-query";
 import { fetchApi } from "../lib/api";
+import SkeletonStatGrid from "../components/ui/skeletons/SkeletonStatGrid";
 
 export function CommunityPage() {
   const { data: stats, isLoading } = useQuery({
@@ -24,8 +25,8 @@ export function CommunityPage() {
       </SectionCard>
       
       {isLoading ? (
-        <div className="flex h-32 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        <div aria-busy="true">
+          <SkeletonStatGrid />
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
