@@ -63,7 +63,16 @@ cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
 ```
 
-2. Backend:
+2. Configure Google OAuth client (required for Google sign in):
+
+```bash
+# frontend/.env
+VITE_GOOGLE_CLIENT_ID=your-google-oauth-client-id.apps.googleusercontent.com
+```
+
+In Google Cloud Console, add `http://localhost:5173` under **Authorized JavaScript origins**.
+
+3. Backend:
 
 ```bash
 cd backend
@@ -75,7 +84,7 @@ python manage.py seed_lessons
 python manage.py runserver
 ```
 
-3. Frontend:
+4. Frontend:
 
 ```bash
 cd frontend
@@ -89,6 +98,16 @@ npm run dev
 cd backend && pytest
 cd frontend && npm test
 ```
+
+## CI/CD
+
+This repository ships with a GitHub Actions workflow that runs:
+
+- Backend tests (`pytest`)
+- Frontend tests (`npm test`)
+- Frontend production build (`npm run build`)
+
+Every push and pull request to `main` is validated automatically.
 
 ## Contribution Workflow
 
