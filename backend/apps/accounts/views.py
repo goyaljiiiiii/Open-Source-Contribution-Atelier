@@ -6,8 +6,10 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 import requests as http_requests
+from django.utils.text import slugify
+import secrets
 
-from .serializers import SignupSerializer, UserListSerializer
+from .serializers import SignupSerializer, UserListSerializer, EmailOrUsernameTokenObtainPairSerializer
 
 
 class SignupView(generics.CreateAPIView):
@@ -30,6 +32,7 @@ class MeView(APIView):
 
 class LoginView(TokenObtainPairView):
     permission_classes = [permissions.AllowAny]
+    serializer_class = EmailOrUsernameTokenObtainPairSerializer
 
 
 class RefreshView(TokenRefreshView):
@@ -39,26 +42,47 @@ class RefreshView(TokenRefreshView):
 class GoogleLoginView(APIView):
     permission_classes = [permissions.AllowAny]
 
+    @staticmethod
+    def _unique_username_from_email(email: str) -> str:
+        base = slugify(email.split("@")[0]) or "user"
+        candidate = base
+        suffix = 1
+
+        while User.objects.filter(username=candidate).exists():
+            candidate = f"{base}{suffix}"
+            suffix += 1
+
+        return candidate
+
     def post(self, request):
         token = request.data.get("access_token")
         if not token:
             return Response({"detail": "No access token provided"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
+            # Use OAuth2 userinfo endpoint with Bearer auth for better compatibility.
             user_info_resp = http_requests.get(
-                f"https://www.googleapis.com/oauth2/v1/userinfo?access_token={token}"
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=10,
             )
 
             if not user_info_resp.ok:
-                return Response({"detail": "Failed to verify Google Token"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"detail": "Failed to verify Google token"}, status=status.HTTP_401_UNAUTHORIZED)
 
             idinfo = user_info_resp.json()
             email = idinfo.get("email")
             if not email:
                 return Response({"detail": "Google account has no email"}, status=status.HTTP_400_BAD_REQUEST)
 
-            username = email.split("@")[0]
-            user, created = User.objects.get_or_create(email=email, defaults={"username": username})
+            user = User.objects.filter(email__iexact=email).first()
+            if not user:
+                username = self._unique_username_from_email(email)
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=secrets.token_urlsafe(24),
+                )
 
             refresh = RefreshToken.for_user(user)
             return Response(
