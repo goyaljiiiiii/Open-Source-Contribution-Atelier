@@ -5,7 +5,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
 import { useUserProgress } from "../hooks/useUserProgress";
 import { fetchApi } from "../lib/api";
-import { Lesson, lessons } from "../lib/lessons";
+import { Lesson, fetchLessonsApi } from "../lib/lessons";
+
+function normalizeCommand(value: string) {
+  return value.trim().replace(/\s+/g, " ").toLowerCase();
+}
 
 export function LessonPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -13,6 +17,7 @@ export function LessonPage() {
   const { syncProgress, isLessonCompleted, isLoading } = useUserProgress();
 
   const [lesson, setLesson] = useState<Lesson | undefined>(undefined);
+  const [lessonsList, setLessonsList] = useState<Lesson[]>([]);
   const [input, setInput] = useState("");
   const [feedback, setFeedback] = useState<string>("");
   const [showHint, setShowHint] = useState(false);
@@ -43,17 +48,31 @@ export function LessonPage() {
   });
 
   useEffect(() => {
-    const found = lessons.find((l) => l.slug === slug);
+    let mounted = true;
 
-    if (!found) {
-      navigate("/dashboard", { replace: true });
-      return;
-    }
+    fetchLessonsApi()
+      .then((data) => {
+        if (!mounted) return;
+        setLessonsList(data);
+        const found = data.find((l) => l.slug === slug);
+        if (!found) {
+          navigate("/dashboard", { replace: true });
+          return;
+        }
 
-    setLesson(found);
-    setFeedback("");
-    setInput("");
-    setShowHint(false);
+        setLesson(found);
+        setFeedback("");
+        setInput("");
+        setShowHint(false);
+      })
+      .catch(() => {
+        // fallback: no lessons loaded
+        navigate("/dashboard", { replace: true });
+      });
+
+    return () => {
+      mounted = false;
+    };
   }, [slug, navigate]);
 
   useEffect(() => {
@@ -61,16 +80,15 @@ export function LessonPage() {
       return;
     }
 
-    const lessonIdx = lessons.findIndex((l) => l.slug === lesson.slug);
+    const lessonIdx = lessonsList.findIndex((l) => l.slug === lesson.slug);
     if (lessonIdx === 0) {
       return;
     }
-
-    const previousLesson = lessons[lessonIdx - 1];
+    const previousLesson = lessonsList[lessonIdx - 1];
     if (previousLesson && !isLessonCompleted(previousLesson.slug)) {
       navigate(`/lessons/${previousLesson.slug}`, { replace: true });
     }
-  }, [lesson, isLoading, isLessonCompleted, navigate]);
+  }, [lesson, lessonsList, isLoading, isLessonCompleted, navigate]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,7 +96,18 @@ export function LessonPage() {
       return;
     }
 
-    const isCorrect = lesson.expected.test(input.trim());
+    const expected = lesson.expected;
+    let isCorrect = false;
+
+    if (typeof expected === "string") {
+      isCorrect = normalizeCommand(input) === normalizeCommand(expected);
+    } else {
+      try {
+        isCorrect = expected.test(input.trim());
+      } catch (e) {
+        isCorrect = input.trim() === String(expected);
+      }
+    }
     if (isCorrect) {
       setFeedback("correct");
 
@@ -89,8 +118,8 @@ export function LessonPage() {
       });
 
       setTimeout(() => {
-        const currentIdx = lessons.findIndex((l) => l.slug === lesson.slug);
-        const nextLesson = lessons[currentIdx + 1];
+        const currentIdx = lessonsList.findIndex((l) => l.slug === lesson.slug);
+        const nextLesson = lessonsList[currentIdx + 1];
 
         if (nextLesson) {
           navigate(`/lessons/${nextLesson.slug}`);
@@ -137,9 +166,27 @@ export function LessonPage() {
 
       <p className="text-xl text-muted">{lesson.description}</p>
 
+      <div className="flex items-center gap-3 text-sm font-black uppercase">
+        <span className="px-3 py-1 rounded-full border-2 border-black bg-white">{lesson.difficulty || "beginner"}</span>
+        <span className="px-3 py-1 rounded-full border-2 border-black bg-surface-low">{lesson.estimatedMinutes || 10} min</span>
+      </div>
+
       <div className="p-4 bg-surface-low rounded-2xl border-4 border-black shadow-card">
         <p className="text-text">{lesson.explanation}</p>
       </div>
+
+      {lesson.learningObjectives && lesson.learningObjectives.length > 0 && (
+        <div className="p-4 bg-white rounded-2xl border-4 border-black shadow-card">
+          <h2 className="font-bold text-lg mb-2">Learning Objectives</h2>
+          <ul className="list-disc list-inside space-y-1">
+            {lesson.learningObjectives.map((objective, i) => (
+              <li key={i} className="text-sm text-muted">
+                {objective}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {lesson.tips && lesson.tips.length > 0 && (
         <div className="p-4 bg-white rounded-2xl border-4 border-black shadow-card">
@@ -151,6 +198,24 @@ export function LessonPage() {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {lesson.exercises && lesson.exercises.length > 0 && (
+        <div className="rounded-3xl border-4 border-black bg-surface-low p-6 shadow-card">
+          <h2 className="text-2xl font-black mb-4">Lesson Exercises</h2>
+          <div className="space-y-3">
+            {lesson.exercises.map((exercise, i) => (
+              <div key={`${lesson.slug}-${exercise.title}-${i}`} className="rounded-xl border-2 border-black bg-white p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <h3 className="font-black text-base">{exercise.title}</h3>
+                  <span className="text-xs font-black px-2 py-1 border-2 border-black rounded-full">{exercise.points || 10} XP</span>
+                </div>
+                <p className="text-sm text-muted mt-2">{exercise.prompt}</p>
+                {exercise.explanation && <p className="text-xs mt-2 italic">{exercise.explanation}</p>}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -276,47 +341,14 @@ export function LessonPage() {
         </div>
       )}
 
-      <div className="mt-12 space-y-6">
-        <div className="rounded-3xl border-4 border-black bg-surface-low p-6 shadow-card">
-          <h2 className="text-2xl font-black mb-4">Extended Learning Materials 📖</h2>
-          <div className="space-y-4">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="rounded-2xl border-4 border-black bg-white p-4 shadow-card-sm">
-                <h3 className="font-black text-lg mb-2">Section {i + 1}: Advanced Concepts</h3>
-                <p className="text-muted">
-                  This is additional content to make the lesson page longer for proper scroll testing. The scroll-to-top
-                  button should appear when you scroll down more than 300px from the top.
-                </p>
-                <div className="mt-3 p-3 bg-surface-lowest rounded-xl border-2 border-black">
-                  <p className="font-mono text-sm">Example command {i + 1}: git --example-{i + 1} --verbose</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-3xl border-4 border-black bg-tertiary p-6 shadow-card">
-          <h2 className="text-2xl font-black mb-4 text-white">Practice Exercises 💪</h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="rounded-2xl border-4 border-black bg-white p-4 shadow-card-sm">
-                <h3 className="font-black text-lg mb-2">Exercise {i + 1}</h3>
-                <p className="text-muted">
-                  Practice your Git skills with these exercises designed to reinforce the concepts learned in this lesson.
-                </p>
-                <div className="mt-3">
-                  <span className="inline-block bg-primary text-white px-3 py-1 rounded-full text-xs font-black border-2 border-black">
-                    Difficulty: {i % 3 === 0 ? "Easy" : i % 3 === 1 ? "Medium" : "Hard"}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="h-64 rounded-3xl border-4 border-dashed border-black bg-surface-low flex items-center justify-center">
-          <p className="font-black text-muted text-xl">Keep scrolling! 📜</p>
-        </div>
+      <div className="mt-8 rounded-3xl border-4 border-black bg-white p-6 shadow-card">
+        <h2 className="text-2xl font-black mb-3">Contribution Checklist</h2>
+        <ul className="list-disc list-inside text-sm space-y-1">
+          <li>Read the issue carefully and confirm scope before coding.</li>
+          <li>Create a focused branch and keep commits atomic.</li>
+          <li>Run tests and mention results in your pull request.</li>
+          <li>Respond to review feedback with clear updates.</li>
+        </ul>
       </div>
     </div>
   );

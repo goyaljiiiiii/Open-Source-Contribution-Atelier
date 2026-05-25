@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 from .views import LessonViewSet, SearchView
 
 router = DefaultRouter()
+router.include_format_suffixes = False
 router.register("lessons", LessonViewSet, basename="lesson")
 
 urlpatterns = router.urls + [

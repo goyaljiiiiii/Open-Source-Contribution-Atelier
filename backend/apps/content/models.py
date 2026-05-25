@@ -7,6 +7,8 @@ class Lesson(models.Model):
     slug = models.SlugField(unique=True)
     summary = models.TextField()
     content = models.TextField()
+    learning_objectives = models.JSONField(default=list, blank=True)
+    tips = models.JSONField(default=list, blank=True)
     estimated_minutes = models.PositiveIntegerField(default=15)
     order = models.PositiveIntegerField(default=0)
 

@@ -71,7 +71,7 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 python manage.py migrate
-python manage.py seed_data
+python manage.py seed_lessons
 python manage.py runserver
 ```
 
@@ -109,6 +109,15 @@ git push -u origin feature/short-description
 
 Open a pull request from that branch into `main`.
 
+## Issue Triage Workflow
+
+To keep the project healthy for new contributors, maintainers should triage issues weekly:
+
+1. Tag new issues with `needs-triage` and classify (`bug`, `enhancement`, `curriculum`).
+2. Close duplicates and stale reports; link them to the canonical active issue.
+3. Add acceptance criteria before assigning any issue.
+4. Mark newcomer-friendly tasks with `good first issue`.
+
 ## Repository Safety
 
 - Secrets are excluded from version control
@@ -119,3 +128,18 @@ Open a pull request from that branch into `main`.
 ## Next Build Steps
 
 This scaffold includes the initial application structure, baseline models, API routes, and UI shell. The next iteration should add full CRUD flows, richer admin moderation tools, stateful sandbox progression, OAuth wiring, and production deployment settings.
+
+## Seeding Sample Lessons
+
+For local development you can populate example lessons and exercises with the management command:
+
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py seed_lessons
+```
+
+This creates the basic lesson track used by the frontend; re-running is safe and idempotent.

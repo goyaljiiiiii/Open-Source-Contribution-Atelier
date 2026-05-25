@@ -11,7 +11,7 @@ Thanks for contributing to Open Source Contribution Atelier.
 
 ## Setup
 
-Use the instructions in [README.md](/home/nandini/Documents/projevt/README.md) to run the project locally.
+Use the instructions in [README.md](README.md) to run the project locally.
 
 ## Branching
 
@@ -48,3 +48,19 @@ git switch -c feature/short-description
 - Do not add code that executes untrusted shell input
 - Route exercise validation through the sandbox verifier service
 - Do not commit generated artifacts such as `node_modules/`, `dist/`, or local virtual environments
+
+## Lesson Contributions & Issues
+
+- To propose a new lesson or exercise, open an issue titled `lesson: <short title>` and include:
+	- a short summary, learning objectives, and the expected exercise command(s)
+	- suggested order/placement in the track
+	- any files or assets required
+- If you want to work on the lesson yourself, comment on the issue and open a branch prefixed with `lesson/`.
+- Use `python manage.py seed_lessons` to load the example lessons locally; maintainers will review and promote community-submitted lessons.
+
+## Issue Hygiene For Maintainers
+
+- Keep issue labels consistent: `bug`, `enhancement`, `curriculum`, `good first issue`, `needs-triage`, `blocked`.
+- Close duplicate/outdated issues with a short reason and a pointer to the active issue.
+- Convert vague issues into actionable tasks by adding scope and acceptance criteria.
+- If an issue is stale for >30 days with no owner, either re-scope or close it with a reopen note.

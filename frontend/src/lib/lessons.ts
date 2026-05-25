@@ -1,86 +1,96 @@
+import { fetchApi } from "./api";
+
+export interface Exercise {
+  id?: number;
+  title: string;
+  prompt: string;
+  expected_command?: string;
+  explanation?: string;
+  points?: number;
+}
+
 export interface Lesson {
   slug: string; // used for URL
   title: string;
-  description: string;
-  explanation: string; // markdown or plain text
-  expected: RegExp; // validation pattern
+  description: string; // summary
+  explanation: string; // content or long text
+  expected: string | RegExp; // validation pattern or exact string
   hint: string;
+  difficulty?: string;
+  estimatedMinutes?: number;
+  learningObjectives?: string[];
   tips?: string[]; // optional tips/mistakes guidance
+  exercises?: Exercise[];
+  order?: number;
 }
 
+// Small built-in fallback lessons (used if API unreachable)
 export const lessons: Lesson[] = [
-  // Intro lesson – why learn Git & GitHub
   {
     slug: "intro",
-    title: "Why Git & GitHub?",
-    description: "Understand the importance of version control and collaboration.",
-    explanation: "Git lets you track changes, revert mistakes, and work on multiple features safely. GitHub adds a social layer: sharing, reviewing, and contributing to open‑source projects.",
-    expected: /.+/, // any answer accepted – just press Enter
-    hint: "Press Enter to continue.",
-    tips: [
-      "Version control prevents loss of work.",
-      "Collaboration is easier with pull requests.",
-      "Open‑source contributions boost your portfolio.",
+    title: "Open Source Mindset",
+    description: "Understand how open source collaboration actually works.",
+    explanation:
+      "Open source is not only about code. It includes communication, issue triage, reviews, and consistency.",
+    expected: "open-source means collaboration",
+    hint: "Type exactly: open-source means collaboration",
+    difficulty: "beginner",
+    estimatedMinutes: 8,
+    learningObjectives: [
+      "Understand contributor and maintainer roles",
+      "Know where to start in a new repository",
     ],
-  },
-  {
-    slug: "git-init",
-    title: "Initialize a Repository",
-    description: "Create a new Git repository.",
-    explanation: "The `git init` command creates a .git folder and starts tracking.",
-    expected: /^git\s+init$/i,
-    hint: "Make sure you type `git` followed by a space and `init`.",
     tips: [
-      "Common mistake: forgetting the space (`gitinit`).",
-      "Tip: Run `git status` after init to see the repo state.",
+      "Small pull requests are reviewed faster.",
+      "Always read README and CONTRIBUTING first.",
     ],
-  },
-  {
-    slug: "git-add",
-    title: "Stage Files",
-    description: "Add files to the staging area.",
-    explanation: "`git add <file>` tells Git to include changes in the next commit.",
-    expected: /^git\s+add\s+.+$/i,
-    hint: "You need to specify a file name after `git add`.",
-    tips: [
-      "Mistake: using `git add .` without checking what’s added.",
-      "Tip: Use `git status` to review staged files before committing.",
-    ],
-  },
-  {
-    slug: "git-commit",
-    title: "Create a Commit",
-    description: "Record your changes.",
-    explanation: "`git commit -m \"msg\"` creates a new commit with a message.",
-    expected: /^git\s+commit\s+-m\s+\".+\"$/i,
-    hint: "Remember the `-m` flag and wrap the message in quotes.",
-    tips: [
-      "Bad practice: vague commit messages like `update`.",
-      "Tip: Write concise, imperative messages (e.g., `Add login component`).",
-    ],
-  },
-  {
-    slug: "git-push",
-    title: "Push to Remote",
-    description: "Send commits to a remote repository.",
-    explanation: "`git push origin main` pushes your local main branch.",
-    expected: /^git\s+push\s+origin\s+main$/i,
-    hint: "Specify both the remote name (`origin`) and the branch (`main`).",
-    tips: [
-      "Mistake: pushing to the wrong branch and causing conflicts.",
-      "Tip: Pull (`git pull`) before pushing to avoid rejected pushes.",
-    ],
-  },
-  {
-    slug: "github-pr",
-    title: "Open a Pull Request",
-    description: "Create a PR on GitHub.",
-    explanation: "After pushing a branch, open a PR via the GitHub UI or CLI.",
-    expected: /.+/, // any non‑empty answer accepted for demo
-    hint: "Describe the steps: push a branch, then click ‘New Pull Request’ on GitHub.",
-    tips: [
-      "Common error: forgetting to sync your fork before creating a PR.",
-      "Tip: Keep your PR focused on a single change for easier review.",
-    ],
+    order: 0,
   },
 ];
+
+// Fetch lessons from backend API and map fields to frontend shape.
+export async function fetchLessonsApi(): Promise<Lesson[]> {
+  try {
+    const data = await fetchApi("/content/lessons/");
+
+    if (!Array.isArray(data)) return lessons;
+
+    const mapped: Lesson[] = data.map((l: any) => {
+      const firstExercise: Exercise | undefined = (l.exercises && l.exercises[0]) || undefined;
+      let expected: string | RegExp = ".+";
+
+      if (firstExercise) {
+        if (firstExercise.expected_command && firstExercise.expected_command.trim().length > 0) {
+          // use exact match for expected_command when available
+          expected = firstExercise.expected_command;
+        } else {
+          // fallback for reflection-style lessons
+          expected = /.+/;
+        }
+      }
+
+      return {
+        slug: l.slug,
+        title: l.title,
+        description: l.summary || l.description || "",
+        explanation: l.content || l.explanation || "",
+        expected,
+        hint: firstExercise?.prompt || "Read the lesson and run the expected command.",
+        difficulty: l.difficulty || "beginner",
+        estimatedMinutes: l.estimated_minutes || 10,
+        learningObjectives: Array.isArray(l.learning_objectives) ? l.learning_objectives : [],
+        tips: Array.isArray(l.tips) ? l.tips : [],
+        exercises: l.exercises || [],
+        order: l.order ?? 0,
+      };
+    });
+
+    // sort by order
+    mapped.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+    return mapped;
+  } catch (err) {
+    // fall back to built-in lessons
+    return lessons;
+  }
+}

@@ -1,20 +1,35 @@
 ---
 name: Feature request
-about: Suggest an idea for this project
-title: ''
-labels: ''
+about: Suggest a product or curriculum improvement
+title: "feat: "
+labels: ["enhancement", "needs-triage"]
 assignees: ''
 
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+## Problem
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+What learner or maintainer problem does this solve?
 
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
+## Proposed Solution
 
-**Additional context**
-Add any other context or screenshots about the feature request here.
+Describe your proposed change.
+
+## Learning Impact
+
+- [ ] Beginner contributor onboarding
+- [ ] Intermediate contributor workflow
+- [ ] Advanced maintainer workflow
+- [ ] Community/operations improvements
+
+## Acceptance Criteria
+
+List what must be true for this feature to be complete.
+
+## Alternatives Considered
+
+What options did you reject and why?
+
+## Additional Context
+
+Links, mockups, examples, or references.

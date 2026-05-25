@@ -1,7 +1,8 @@
+import { useMemo } from "react";
 import { useUserProgress } from "../hooks/useUserProgress";
 import { useQuery } from "@tanstack/react-query";
 import { fetchApi } from "../lib/api";
-import { lessons, Lesson } from "../lib/lessons";
+import { fetchLessonsApi } from "../lib/lessons";
 import { Link } from "react-router-dom";
 import SkeletonCard from "../components/ui/skeletons/SkeletonCard";
 
@@ -13,7 +14,12 @@ export function DashboardPage() {
     queryFn: () => fetchApi("/challenges/"),
   });
 
-  if (isProgressLoading || isChallengesLoading) {
+  const { data: lessons = [], isLoading: isLessonsLoading } = useQuery({
+    queryKey: ["lessons"],
+    queryFn: fetchLessonsApi,
+  });
+
+  if (isProgressLoading || isChallengesLoading || isLessonsLoading) {
     return (
       <div
         className="grid gap-6 xl:grid-cols-[1fr_0.8fr]"
@@ -27,12 +33,18 @@ export function DashboardPage() {
   }
 
   const completedCount = progress.filter(p => p.completed).length;
+  const totalLessons = lessons.length;
+  const completionRate = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
   const streakDays = completedCount; // Simplified logic
   
   // Find next lessons (not completed yet)
-  const availableLessons = lessons.filter(l => 
-    !progress.some(p => p.lesson_slug === l.slug && p.completed)
-  ).slice(0, 3);
+  const availableLessons = useMemo(
+    () =>
+      lessons
+        .filter((l) => !progress.some((p) => p.lesson_slug === l.slug && p.completed))
+        .slice(0, 4),
+    [lessons, progress],
+  );
 
   return (
     <div className="space-y-10 pt-4">
@@ -67,6 +79,11 @@ export function DashboardPage() {
             <span className="text-4xl font-black text-accent drop-shadow-[2px_2px_0_#000] dark:drop-shadow-none">{totalXP}</span>
             <span className="font-bold text-black uppercase tracking-widest text-xs mt-1 dark:text-[#c4bbae]">XP Bounties</span>
           </div>
+          <div className="rounded-[2rem] border-4 border-black bg-white p-6 shadow-card flex flex-col justify-center items-center hover:-translate-y-1 transition-transform dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none col-span-2">
+            <span className="text-5xl mb-2">📚</span>
+            <span className="text-4xl font-black text-tertiary drop-shadow-[2px_2px_0_#000] dark:drop-shadow-none">{completionRate}%</span>
+            <span className="font-bold text-black uppercase tracking-widest text-xs mt-1 dark:text-[#c4bbae]">Track Completion</span>
+          </div>
         </div>
       </section>
 
@@ -85,10 +102,15 @@ export function DashboardPage() {
                 <Link key={lesson.slug} to={`/lessons/${lesson.slug}`} className="flex flex-col gap-2 p-5 rounded-2xl border-4 border-black bg-surface-lowest shadow-card-sm hover:shadow-card hover:-translate-y-1 transition-all dark:bg-[#151411] dark:border-[#2e2924] dark:shadow-none dark:hover:bg-[#1f1c18]">
                   <div className="flex justify-between items-end">
                     <h3 className="font-black text-xl dark:text-[#f0ebe2]">{lesson.title}</h3>
-                    <span className="font-bold text-sm text-muted italic dark:text-[#c4bbae]">{lesson.description}</span>
+                    <span className="font-bold text-xs text-muted uppercase dark:text-[#c4bbae]">{lesson.difficulty || "beginner"}</span>
                   </div>
+                  <p className="font-bold text-sm text-muted dark:text-[#c4bbae]">{lesson.description}</p>
                   <div className="h-6 w-full rounded-full border-4 border-black bg-surface-low overflow-hidden dark:bg-[#0f0e0c] dark:border-[#2e2924]">
-                    <div className="h-full bg-primary border-black border-r-4 dark:border-[#2e2924]" style={{ width: `0%` }}></div>
+                    <div className="h-full bg-primary border-black border-r-4 dark:border-[#2e2924]" style={{ width: "0%" }}></div>
+                  </div>
+                  <div className="flex justify-between text-xs font-bold text-muted dark:text-[#c4bbae]">
+                    <span>{lesson.estimatedMinutes || 10} min</span>
+                    <span>Start mission</span>
                   </div>
                 </Link>
               ))
