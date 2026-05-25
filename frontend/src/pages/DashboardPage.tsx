@@ -18,6 +18,13 @@ export function DashboardPage() {
     queryKey: ["lessons"],
     queryFn: fetchLessonsApi,
   });
+  const availableLessons = useMemo(
+    () =>
+      lessons
+        .filter((l) => !progress.some((p) => p.lesson_slug === l.slug && p.completed))
+        .slice(0, 4),
+    [lessons, progress],
+  );
 
   if (isProgressLoading || isChallengesLoading || isLessonsLoading) {
     return (
@@ -31,20 +38,11 @@ export function DashboardPage() {
       </div>
     );
   }
-
   const completedCount = progress.filter(p => p.completed).length;
   const totalLessons = lessons.length;
   const completionRate = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
   const streakDays = completedCount; // Simplified logic
   
-  // Find next lessons (not completed yet)
-  const availableLessons = useMemo(
-    () =>
-      lessons
-        .filter((l) => !progress.some((p) => p.lesson_slug === l.slug && p.completed))
-        .slice(0, 4),
-    [lessons, progress],
-  );
 
   return (
     <div className="space-y-10 pt-4">
