@@ -21,7 +21,7 @@ Examples of unacceptable behavior include:
 *   The use of sexualized language or imagery, and unwelcome sexual attention or advances
 *   Trolling, insulting or derogatory comments, and personal or political attacks
 *   Public or private harassment
-*   Publishing others' private information, such as a physical or email address, without their explicit permission
+*   Publishing others' private information, such as a physical or electronic address, without their explicit permission
 *   Other conduct which could reasonably be considered inappropriate in a professional setting
 
 ## Enforcement Responsibilities
@@ -36,7 +36,7 @@ This Code of Conduct applies within all community spaces, and also applies when 
 
 ## Reporting
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting the project maintainers at **nidhivekhande808@gmail.com**. All complaints will be reviewed and investigated promptly and fairly.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting the project maintainers at **conduct@open-source-contribution-atelier.org**. All complaints will be reviewed and investigated promptly and fairly.
 
 All project maintainers are obligated to respect the privacy and security of the reporter of any incident.
 
@@ -59,3 +59,12 @@ Project leaders will follow these Community Impact Guidelines in determining the
 ### 4. Permanent Ban
 **Community Impact**: Demonstrating a pattern of violation of community standards, including sustained harassing behavior, harassment of an individual, or aggression toward or disparagement of classes of individuals.
 **Consequence**: A permanent ban from any sort of public interaction within the community.
+
+---
+
+## Attribution
+
+This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org), version 2.1, available at [https://www.contributor-covenant.org/version/2/1/code_of_conduct.html](https://www.contributor-covenant.org/version/2/1/code_of_conduct.html).
+
+Community Impact Guidelines were inspired by [Mozilla's code of conduct enforcement ladder](https://github.com/mozilla/diversity).
+
