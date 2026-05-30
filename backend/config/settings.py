@@ -117,6 +117,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 SIMPLE_JWT = {
@@ -130,6 +131,7 @@ SIMPLE_JWT = {
 INSTALLED_APPS += [
     "channels",
     "apps.notifications.apps.NotificationsConfig",
+    "drf_spectacular",
 ]
 
 
