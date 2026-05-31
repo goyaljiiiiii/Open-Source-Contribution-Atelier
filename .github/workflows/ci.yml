@@ -1,12 +1,59 @@
 name: Community Automation
 
 on:
-  pull_request:
-    types: [opened, reopened]
   issues:
     types: [opened]
+  pull_request:
+    types: [opened, reopened]
 
 jobs:
+  issue-etiquette:
+    name: Auto Comment on Issues
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "🙏 Thanks for opening an issue!\nPlease provide:\n- Clear description\n- Steps to reproduce\n- Expected vs actual behavior\n- Screenshots/logs if possible\n\n⏳ Please wait up to 24 hours for a PA to assign you the issue."
+            });
+
+  issue-labels:
+    name: Auto Label Issues
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            let labels = ["ssoc26"];
+
+            const title = issue.title.toLowerCase();
+            const body = issue.body.toLowerCase();
+
+            // Basic tags
+            if (title.includes("doc") || body.includes("doc")) labels.push("docs");
+            if (title.includes("first") || body.includes("first")) labels.push("good first issue");
+
+            // Difficulty inference (simple heuristic)
+            if (title.includes("auth") || body.includes("auth") || body.includes("jwt") || body.includes("complex")) {
+              labels.push("hard");
+            } else if (title.includes("test") || body.includes("test") || body.includes("medium")) {
+              labels.push("medium");
+            } else {
+              labels.push("easy");
+            }
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: labels
+            });
+
   pr-review:
     name: Auto Review PR
     runs-on: ubuntu-latest
@@ -14,12 +61,12 @@ jobs:
       - uses: actions/github-script@v7
         with:
           script: |
-            github.rest.issues.createComment({
+            await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: "👋 Thanks for your PR! Please:\n- Link the related issue\n- Ensure tests pass\n- Follow commit message guidelines\n- Add documentation if needed\nLabels will be synced with the related issue."
-            })
+              body: "👋 Thanks for your PR!\nPlease:\n- Link the related issue (e.g. `Fixes #52`)\n- Ensure tests pass\n- Follow commit message guidelines\n- Add documentation if needed\n\nLabels will be synced with the related issue."
+            });
 
   pr-label-sync:
     name: Sync Labels from Issue
@@ -54,45 +101,8 @@ jobs:
               }
             }
 
-  issue-etiquette:
-    name: Auto Comment on Issues
+  dependabot-reminder:
+    name: Dependabot Reminder
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: "🙏 Thanks for opening an issue!\nPlease include:\n- Clear description\n- Steps to reproduce\n- Expected vs actual behavior\n- Screenshots/logs if possible\n\nLabels will be added automatically."
-            })
-
-  issue-labels:
-    name: Auto Label Issues
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/github-script@v7
-        with:
-          script: |
-            const issue = context.payload.issue;
-            let labels = ["ssoc26"];
-            const title = issue.title.toLowerCase();
-            if (title.includes("doc")) labels.push("docs");
-            if (title.includes("easy")) labels.push("easy");
-            else if (title.includes("medium")) labels.push("medium");
-            else if (title.includes("hard")) labels.push("hard");
-            if (title.includes("first")) labels.push("good first issue");
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              labels: labels
-            });
-
-  dependabot:
-    name: Dependabot Updates
-    runs-on: ubuntu-latest
-    steps:
-      - name: Dependabot config reminder
-        run: echo "Ensure .github/dependabot.yml is configured for npm and pip updates."
+      - run: echo "Ensure .github/dependabot.yml is configured for npm and pip updates."
