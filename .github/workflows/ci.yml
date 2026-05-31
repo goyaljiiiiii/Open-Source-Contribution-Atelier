@@ -18,7 +18,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: "🙏 Thanks for opening an issue!\nPlease provide:\n- Clear description\n- Steps to reproduce\n- Expected vs actual behavior\n- Screenshots/logs if possible\n\n⏳ Please wait up to 24 hours for a PA to assign you the issue."
+              body: "🙏 Thanks for opening this issue!\nPlease provide:\n- Clear description\n- Steps to reproduce\n- Expected vs actual behavior\n- Screenshots/logs if possible\n\n⏳ Please wait up to 24 hours for a PA to assign you the issue."
             });
 
   issue-labels:
@@ -38,10 +38,10 @@ jobs:
             if (title.includes("doc") || body.includes("doc")) labels.push("docs");
             if (title.includes("first") || body.includes("first")) labels.push("good first issue");
 
-            // Difficulty inference (simple heuristic)
-            if (title.includes("auth") || body.includes("auth") || body.includes("jwt") || body.includes("complex")) {
+            // Difficulty inference (heuristic)
+            if (title.includes("auth") || body.includes("auth") || body.includes("jwt") || body.includes("dashboard") || body.includes("complex")) {
               labels.push("hard");
-            } else if (title.includes("test") || body.includes("test") || body.includes("medium")) {
+            } else if (title.includes("test") || body.includes("test") || body.includes("refactor") || body.includes("medium")) {
               labels.push("medium");
             } else {
               labels.push("easy");
@@ -100,6 +100,20 @@ jobs:
                 });
               }
             }
+
+  stale:
+    name: Close Stale Issues/PRs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          stale-issue-message: "⚠️ This issue has been marked stale due to inactivity. Please update or it will be closed."
+          stale-pr-message: "⚠️ This PR has been marked stale due to inactivity. Please update or it will be closed."
+          days-before-stale: 30
+          days-before-close: 7
+          stale-issue-label: "stale"
+          stale-pr-label: "stale"
 
   dependabot-reminder:
     name: Dependabot Reminder
