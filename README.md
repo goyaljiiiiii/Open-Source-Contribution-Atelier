@@ -128,6 +128,10 @@ git push -u origin feature/short-description
 
 Open a pull request from that branch into `main`.
 
+### Code of Conduct
+
+We are committed to fostering a welcoming and inclusive community. Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md) to understand the expectations for behavior and reporting guidelines.
+
 ## Issue Triage Workflow
 
 To keep the project healthy for new contributors, maintainers should triage issues weekly:
