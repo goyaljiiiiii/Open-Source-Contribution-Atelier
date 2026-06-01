@@ -13,6 +13,56 @@ Thanks for contributing to Open Source Contribution Atelier.
 
 Use the instructions in [README.md](README.md) to run the project locally.
 
+## Getting Started for SSOC
+
+Welcome to Open Source Contribution Atelier! If you're participating through SSOC, follow these steps to get started.
+
+### Contribution Path
+
+1. Fork the repository.
+2. Clone your fork locally.
+3. Follow the setup instructions in the README.
+4. Explore open issues and choose one that matches your interests.
+5. Comment on the issue to request assignment.
+6. Create a new branch from `main`.
+7. Make your changes and test them locally.
+8. Open a Pull Request with a clear description.
+
+### Suggested First Tasks
+
+New contributors can start with:
+
+- Documentation improvements
+- README enhancements
+- Fixing typos and broken links
+- Improving setup instructions
+- Small frontend UI improvements
+- Adding tests for existing features
+
+### Beginner-Friendly Issues
+
+Look for issues labeled:
+
+- `good first issue`
+- `documentation`
+- `enhancement`
+
+### Mentorship Expectations
+
+- Read the issue carefully before starting.
+- Ask questions if requirements are unclear.
+- Keep pull requests focused on a single issue.
+- Respond to review feedback constructively.
+- Follow project coding and documentation standards.
+
+### Communication
+
+Use GitHub Issues and Pull Request discussions for questions, updates, and reviews.
+
+### Contribution Timeline
+
+Issue Selection → Assignment → Development → Pull Request → Review → Merge
+
 ## Branching
 
 - Never commit directly to `main`
