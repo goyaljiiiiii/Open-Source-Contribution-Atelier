@@ -166,3 +166,41 @@ python manage.py seed_lessons
 ```
 
 This creates the basic lesson track used by the frontend; re-running is safe and idempotent.
+
+## Role-Based Dashboard & Analytics
+
+A complete dual-role dashboard integrating both frontend and backend is now available:
+
+### ⚙️ Backend (Django Dashboard App)
+- **REST Endpoints**:
+  - `GET /api/dashboard/admin/`: Enforced with role restrictions via `IsAdminUser`. Returns global repository stats, contributor XP ranking list, and pending PR queues.
+  - `GET /api/dashboard/contributor/`: Enforced with authentication check. Returns user-specific stats, streak, rank, list of assigned issues, and personal PR activity.
+- **Caching**: Performance optimized with dynamic key manual caching (`dashboard_admin_stats` and `dashboard_contributor_stats_<user_id>`). Built-in `post_save` and `post_delete` signals on models instantly clear caches to guarantee fresh dashboard data.
+- **Database Seeding**: Populate rich dashboard graphs immediately with:
+  ```bash
+  python manage.py seed_dashboard
+  ```
+  This creates:
+  - **Admin Credential**: Username `admin`, Password `password123` (Admin console access)
+  - **Contributor Credentials**: Username `alice` or `bob`, Password `password123` (Contributor workspace access)
+  - Pre-filled mock data: Git lessons, lesson progress completion, repository issues, and practice pull request logs.
+
+### 💻 Frontend (React Dashboard UI)
+- **Role-Based Dynamic Render**: Detects `user.is_staff` role flag to toggle completely different layouts:
+  - **Admin Control Panel**: Displays grid blocks for issues/PRs/contributors; features a responsive Bar Chart of contributor standing (using Recharts); shows an actionable PR review and merge queue.
+  - **Contributor Workspace**: Renders personalized metrics cards (Streaks, XP, Rank, PR counts); incorporates an interactive Track Completion circular gauge; lists in-progress assigned issues and recent PR states.
+- **Protected Routes**: Router automatically redirects unauthenticated users away from the dashboard and back to landing gates.
+- **Visuals**: Charts are styled natively with custom neo-brutalist theme colors matching the core look-and-feel.
+
+### 🧪 Running Tests
+- **Backend tests**:
+  ```bash
+  cd backend
+  pytest tests/test_dashboard_analytics.py
+  ```
+- **Frontend tests**:
+  ```bash
+  cd frontend
+  npm test src/test/Dashboard.test.tsx
+  ```
+
