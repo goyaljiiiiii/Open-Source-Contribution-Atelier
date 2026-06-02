@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.content.models import Lesson
-from .models import Badge, HelpRequest, LessonProgress
+from .models import Badge, HelpRequest, LessonProgress, ExerciseAttempt
 from .serializers import BadgeSerializer, HelpRequestSerializer, LessonProgressSerializer
 
 
@@ -93,3 +93,28 @@ class HelpRequestListCreateView(APIView):
         )
         serializer = HelpRequestSerializer(help_request)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+class ContributorTimelineView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        completed_lessons = LessonProgress.objects.filter(
+            user=request.user,
+            completed=True
+        ).count()
+
+        exercise_attempts = ExerciseAttempt.objects.filter(
+            user=request.user
+        ).count()
+
+        help_requests = HelpRequest.objects.filter(
+            user=request.user
+        ).count()
+
+        return Response({
+            "first_contribution_date": request.user.date_joined.date(),
+            "completed_lessons": completed_lessons,
+            "exercise_attempts": exercise_attempts,
+            "help_requests": help_requests,
+            "contribution_streak": completed_lessons,
+        })
