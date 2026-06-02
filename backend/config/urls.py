@@ -11,6 +11,7 @@ urlpatterns = [
     path("api/challenges/", include("apps.challenges.urls")),
     path("api/sandbox/", include("apps.sandbox.urls")),
     path("api/notifications/", include("apps.notifications.urls")),
+    path("api/dashboard/", include("apps.dashboard.urls")),
     
     # Add these two paths below:
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

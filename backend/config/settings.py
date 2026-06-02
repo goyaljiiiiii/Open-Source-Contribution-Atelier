@@ -132,6 +132,7 @@ INSTALLED_APPS += [
     "channels",
     "apps.notifications.apps.NotificationsConfig",
     "drf_spectacular",
+    "apps.dashboard.apps.DashboardConfig",
 ]
 
 
@@ -145,3 +146,50 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+# ──────────────────────────────────────────
+# Django Cache Framework (Redis or LocMem)
+# ──────────────────────────────────────────
+import socket
+
+def is_redis_available(url):
+    try:
+        if not url:
+            return False
+        clean_url = url.replace("redis://", "")
+        host_port = clean_url.split("/")[0]
+        if "@" in host_port:
+            host_port = host_port.split("@")[1]
+        if ":" in host_port:
+            host, port = host_port.split(":")
+            port = int(port)
+        else:
+            host = host_port
+            port = 6379
+        
+        # Test connection with a very short timeout
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(0.5)
+        s.connect((host, port))
+        s.close()
+        return True
+    except Exception:
+        return False
+
+REDIS_URL = os.getenv("REDIS_URL", "")
+if REDIS_URL and is_redis_available(REDIS_URL):
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": REDIS_URL,
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "atelier-unique-cache",
+        }
+    }
+
+
