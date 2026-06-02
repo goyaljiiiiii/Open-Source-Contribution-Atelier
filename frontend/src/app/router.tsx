@@ -4,6 +4,7 @@ import { AppLayout } from "../components/layout/AppLayout";
 import { ChallengePage } from "../pages/ChallengePage";
 import { CommunityPage } from "../pages/CommunityPage";
 import { DashboardPage } from "../pages/DashboardPage";
+import { GitHubAuthCallbackPage } from "../pages/GitHubAuthCallbackPage";
 import { LandingPage } from "../pages/LandingPage";
 import { LessonPage } from "../pages/LessonPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
@@ -63,6 +64,7 @@ export function AppRouter() {
           <LandingPage />
         </PublicOnlyRoute>
       } />
+      <Route path="/auth/github/callback" element={<GitHubAuthCallbackPage />} />
 
       {/* Authenticated Routes with Navbar Layout */}
       <Route element={<AppLayout />}>
