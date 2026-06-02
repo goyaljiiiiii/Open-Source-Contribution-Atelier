@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated
 import requests as http_requests
 from django.utils.text import slugify
 import secrets
@@ -109,3 +110,41 @@ class UserListView(generics.ListAPIView):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["username"]
     ordering_fields = ["id", "username"]
+
+class RepositoryRecommendationView(APIView):
+      # permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        skill = request.GET.get("skill", "").lower()
+
+        repositories = {
+            "python": [
+                {
+                    "name": "awesome-python",
+                    "language": "Python",
+                    "difficulty": "Intermediate",
+                    "url": "https://github.com/vinta/awesome-python",
+                }
+            ],
+            "javascript": [
+                {
+                    "name": "freeCodeCamp",
+                    "language": "JavaScript",
+                    "difficulty": "Beginner",
+                    "url": "https://github.com/freeCodeCamp/freeCodeCamp",
+                }
+            ],
+            "react": [
+                {
+                    "name": "first-contributions",
+                    "language": "JavaScript",
+                    "difficulty": "Beginner",
+                    "url": "https://github.com/firstcontributions/first-contributions",
+                }
+            ],
+        }
+
+        recommendations = repositories.get(skill, [])
+
+        return Response(recommendations)
