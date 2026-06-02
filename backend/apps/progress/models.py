@@ -10,6 +10,15 @@ class Badge(models.Model):
     description = models.TextField()
 
 
+class UserBadge(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="earned_badges")
+    badge = models.ForeignKey(Badge, on_delete=models.CASCADE, related_name="earned_by")
+    earned_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "badge")
+
+
 class LessonProgress(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)

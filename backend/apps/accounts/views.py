@@ -13,6 +13,9 @@ import secrets
 import os
 from urllib.parse import urlencode
 
+from django.db.models import Sum
+from apps.progress.models import LessonProgress, UserBadge
+from apps.progress.serializers import UserBadgeSerializer
 from .serializers import SignupSerializer, UserListSerializer, EmailOrUsernameTokenObtainPairSerializer
 
 
@@ -50,6 +53,28 @@ class MeView(APIView):
                 "username": request.user.username,
                 "email": request.user.email,
                 "is_staff": request.user.is_staff,
+            }
+        )
+
+
+class MyBadgesView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        earned_badges = (
+            UserBadge.objects.filter(user=request.user)
+            .select_related("badge")
+            .order_by("-earned_at", "badge__name")
+        )
+        progress_points = (
+            LessonProgress.objects.filter(user=request.user).aggregate(total=Sum("score"))["total"] or 0
+        )
+        serializer = UserBadgeSerializer(earned_badges, many=True)
+
+        return Response(
+            {
+                "progress_points": progress_points,
+                "badges": serializer.data,
             }
         )
 
