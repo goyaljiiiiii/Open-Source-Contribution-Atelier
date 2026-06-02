@@ -1,18 +1,19 @@
 import React, { useState } from "react";
 import { AuthPageShell } from "../features/auth/AuthPageShell";
 import { fetchApi } from "../lib/api";
-import { useAuth } from "../features/auth/AuthContext";
 
 export function SignupPage() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { login } = useAuth();
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
+    
     try {
       // 1. Create the account
       await fetchApi("/auth/signup/", {
@@ -20,16 +21,15 @@ export function SignupPage() {
         requireAuth: false,
         body: JSON.stringify({ username, email, password }),
       });
-      // 2. Fetch token to login
-      const tokens = await fetchApi("/auth/login/", {
-        method: "POST",
-        requireAuth: false,
-        body: JSON.stringify({ username, password }),
-      });
-      login(tokens);
-      window.location.href = "/dashboard";
+      
+      // 2. Redirect to a notice page instead of logging in immediately
+      // This matches the flow where the user must click the email link first
+      window.location.href = "/verify-notice";
+      
     } catch (err: any) {
-      setError(err.message || "Failed to create account");
+      setError(err.message || "Failed to create account. Please check your details.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -49,6 +49,7 @@ export function SignupPage() {
             placeholder="study_master_99"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            disabled={loading}
             required
           />
         </div>
@@ -61,6 +62,7 @@ export function SignupPage() {
             placeholder="nerd@homework.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            disabled={loading}
             required
           />
         </div>
@@ -73,12 +75,16 @@ export function SignupPage() {
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            disabled={loading}
             required
           />
         </div>
 
-        <button className="w-full rounded-2xl border-4 border-black bg-accent px-5 py-5 font-black text-black text-xl shadow-card hover:bg-tertiary transition-colors cursor-pointer mt-4 uppercase">
-          Sign Me Up!
+        <button 
+          className="w-full rounded-2xl border-4 border-black bg-accent px-5 py-5 font-black text-black text-xl shadow-card hover:bg-tertiary transition-colors cursor-pointer mt-4 uppercase disabled:opacity-50"
+          disabled={loading}
+        >
+          {loading ? "Creating..." : "Sign Me Up!"}
         </button>
         
         <p className="text-center text-sm font-bold text-black mt-6">

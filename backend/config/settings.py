@@ -143,3 +143,10 @@ CHANNEL_LAYERS = {
         },
     },
 }
+AUTH_USER_MODEL = 'accounts.CustomUser'
+# Email Configuration
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'noreply@yourdomain.com'
+
+# This must match where your React frontend is running
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")

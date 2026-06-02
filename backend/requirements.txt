@@ -12,3 +12,4 @@ channels==4.0.0
 channels-redis==4.1.0
 daphne==4.1.2
 redis==7.4.0
+django-filter==24.3
