@@ -1,4 +1,4 @@
-﻿name: CI - Run Tests
+name: CI - Run Tests
 
 on:
   pull_request:
@@ -9,6 +9,10 @@ jobs:
   backend-tests:
     name: Run Django Tests (Pytest)
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
 
     steps:
       - name: Checkout code
