@@ -1,14 +1,69 @@
 from django.contrib.auth.models import User
 from django.core.cache import cache
-from django.db.models import Sum, Count
+from django.db.models import Count, F, IntegerField, OuterRef, Subquery, Sum, Value
+from django.db.models.functions import Coalesce
 from django.utils import timezone
-from rest_framework import permissions, status
+from rest_framework import permissions, serializers
+from rest_framework.generics import ListAPIView
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.dashboard.models import Issue, PullRequest
 from apps.progress.models import LessonProgress, ExerciseAttempt
 from apps.content.models import Lesson
+
+
+class LeaderboardPagination(PageNumberPagination):
+    page_size = 20
+
+
+class LeaderboardSerializer(serializers.ModelSerializer):
+    prs_merged = serializers.IntegerField(read_only=True)
+    issues_solved = serializers.IntegerField(read_only=True)
+    xp = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = ("id", "username", "prs_merged", "issues_solved", "xp")
+
+
+class LeaderboardView(ListAPIView):
+    """
+    Paginated contributor leaderboard ordered by total XP.
+    """
+    serializer_class = LeaderboardSerializer
+    pagination_class = LeaderboardPagination
+
+    def get_queryset(self):
+        lesson_xp = LessonProgress.objects.filter(
+            user=OuterRef("pk"),
+            completed=True,
+        ).values("user").annotate(total=Sum("score")).values("total")
+
+        issues_xp = Issue.objects.filter(
+            assigned_to=OuterRef("pk"),
+            status=Issue.Status.SOLVED,
+        ).values("assigned_to").annotate(total=Sum("points")).values("total")
+
+        prs_merged = PullRequest.objects.filter(
+            user=OuterRef("pk"),
+            status=PullRequest.Status.MERGED,
+        ).values("user").annotate(total=Count("id")).values("total")
+
+        issues_solved = Issue.objects.filter(
+            assigned_to=OuterRef("pk"),
+            status=Issue.Status.SOLVED,
+        ).values("assigned_to").annotate(total=Count("id")).values("total")
+
+        return User.objects.filter(is_staff=False).annotate(
+            prs_merged=Coalesce(Subquery(prs_merged, output_field=IntegerField()), Value(0)),
+            issues_solved=Coalesce(Subquery(issues_solved, output_field=IntegerField()), Value(0)),
+            lesson_xp=Coalesce(Subquery(lesson_xp, output_field=IntegerField()), Value(0)),
+            issues_xp=Coalesce(Subquery(issues_xp, output_field=IntegerField()), Value(0)),
+        ).annotate(
+            xp=F("lesson_xp") + F("issues_xp"),
+        ).order_by("-xp", "username", "id")
 
 
 class AdminDashboardView(APIView):
