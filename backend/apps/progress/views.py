@@ -30,7 +30,13 @@ class MyProgressView(APIView):
         try:
             lesson = Lesson.objects.get(slug=lesson_slug)
         except Lesson.DoesNotExist:
-            return Response({"error": "Lesson not found"}, status=status.HTTP_404_NOT_FOUND)
+            lesson = Lesson.objects.create(
+                slug=lesson_slug,
+                title=lesson_slug.replace("-", " ").title(),
+                summary="Dynamic learning module",
+                content="Dynamic content loaded from local file storage.",
+                difficulty="beginner"
+            )
 
         progress, created = LessonProgress.objects.update_or_create(
             user=request.user,

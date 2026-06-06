@@ -4,10 +4,11 @@ import { Link, NavLink } from "react-router-dom";
 import { fetchApi } from "../../lib/api";
 import { useTheme } from "../../hooks/useTheme";
 import { useAuth } from "../../features/auth/AuthContext";
+import { fetchLessonsApi } from "../../lib/lessons";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
-  { to: "/lessons/intro", label: "Lessons", icon: BookOpen },
+  { to: "/lessons/what-is-open-source", label: "Lessons", icon: BookOpen },
   { to: "/challenges", label: "Challenges", icon: Trophy },
   { to: "/community", label: "Community", icon: BriefcaseBusiness },
 ];
@@ -18,26 +19,45 @@ export function Navigation() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<{ lessons: any[], challenges: any[] } | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [lessonsCatalog, setLessonsCatalog] = useState<any[]>([]);
 
   useEffect(() => {
-    const delayDebounceFn = setTimeout(async () => {
-      if (searchQuery.length > 1) {
+    fetchLessonsApi().then(data => setLessonsCatalog(data));
+  }, []);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchQuery.trim().length > 1) {
         setIsSearching(true);
-        try {
-          const results = await fetchApi(`/content/search/?q=${searchQuery}`);
-          setSearchResults(results);
-        } catch (error) {
-          console.error("Search failed:", error);
-        } finally {
-          setIsSearching(false);
-        }
+        const query = searchQuery.toLowerCase();
+        
+        const filteredLessons = lessonsCatalog.filter(lesson => 
+          lesson.title.toLowerCase().includes(query) || 
+          lesson.description.toLowerCase().includes(query)
+        );
+
+        const mockChallenges = [
+          { title: "Hacktoberfest Warmup", summary: "Guide contributors through issue triage, branch naming, and clean commits.", slug: "hacktoberfest-warmup" },
+          { title: "Git Recovery Lab", summary: "Practice safe undo flows, rebases, and fixing a messy working tree.", slug: "git-recovery-lab" }
+        ];
+        const filteredChallenges = mockChallenges.filter(ch => 
+          ch.title.toLowerCase().includes(query) || 
+          ch.summary.toLowerCase().includes(query)
+        );
+
+        setSearchResults({
+          lessons: filteredLessons,
+          challenges: filteredChallenges
+        });
+        setIsSearching(false);
       } else {
         setSearchResults(null);
       }
-    }, 300);
+    }, 200);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery]);
+  }, [searchQuery, lessonsCatalog]);
+
 
   return (
     <>
@@ -79,7 +99,7 @@ export function Navigation() {
               <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-tertiary">Safe sandbox</p>
               <p className="mt-2 text-sm text-muted dark:text-[#c4bbae]">Run guided Git practice without exposing the real shell.</p>
               <Link
-                to="/lessons/intro"
+                to="/lessons/what-is-open-source"
                 className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-primary-container px-4 py-3 text-sm font-semibold text-white shadow-card"
               >
                 <TerminalSquare size={15} />
