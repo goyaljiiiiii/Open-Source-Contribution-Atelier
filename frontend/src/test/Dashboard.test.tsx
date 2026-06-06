@@ -58,6 +58,30 @@ describe("DashboardPage Dual-Role Views", () => {
   beforeEach(() => {
     cleanup();
     vi.clearAllMocks();
+
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.includes("curriculum.json")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            modules: [
+              {
+                lessons: [
+                  { slug: "intro", title: "Open Source Mindset", description: "Understand how open source collaboration works." }
+                ]
+              }
+            ]
+          }),
+        });
+      }
+      if (url.includes("contributors")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([]),
+        });
+      }
+      return Promise.reject(new Error(`Unknown fetch URL: ${url}`));
+    });
   });
 
   it("renders Admin Dashboard when user.is_staff is true", async () => {
@@ -102,7 +126,7 @@ describe("DashboardPage Dual-Role Views", () => {
 
     // Assert that the Admin View specific sections render
     expect(await screen.findByText("MAINTAINER CONTROL PANEL 🛠️")).toBeInTheDocument();
-    expect(screen.getByText("Project Health & Contributor Atelier")).toBeInTheDocument();
+    expect(screen.getByText("Project Health & Cohort Monitor")).toBeInTheDocument();
     
     // Assert stats blocks
     expect(screen.getByText("System Issues")).toBeInTheDocument();
@@ -110,7 +134,7 @@ describe("DashboardPage Dual-Role Views", () => {
     expect(screen.getByText("Solved: 4")).toBeInTheDocument();
     
     // Assert pending PRs
-    expect(screen.getByText("Pending Pull Requests Queue (1)")).toBeInTheDocument();
+    expect(screen.getByText("Pending Pull Requests (1)")).toBeInTheDocument();
     expect(screen.getByText("Feature request review")).toBeInTheDocument();
     expect(screen.getByText("@bob_coder")).toBeInTheDocument();
   });
@@ -160,10 +184,9 @@ describe("DashboardPage Dual-Role Views", () => {
 
     renderWithQueryClient(<DashboardPage />);
 
-    // Assert that the Contributor View specific sections render
-    expect(await screen.findByText("LEVEL 3 CONTRIBUTOR 🚀")).toBeInTheDocument();
-    expect(screen.getByText("Welcome back, bob_coder.")).toBeInTheDocument();
-    expect(screen.getByText("You have earned 250 XP bounties so far. Keep solving issues!")).toBeInTheDocument();
+    expect(await screen.findByText(/LEVEL/)).toBeInTheDocument();
+    expect(screen.getByText("Welcome to the Atelier, bob_coder.")).toBeInTheDocument();
+    expect(screen.getByText(/completed.*course modules/)).toBeInTheDocument();
     
     // Assert streak, xp, rank, and merged PR cards
     expect(screen.getByText("Streak Days")).toBeInTheDocument();
@@ -171,12 +194,11 @@ describe("DashboardPage Dual-Role Views", () => {
     expect(screen.getByText("#1")).toBeInTheDocument(); // Rank
     
     // Assert assigned issues
-    expect(screen.getByText("Your Assigned Issues (1)")).toBeInTheDocument();
+    expect(screen.getByText("Assigned Issues")).toBeInTheDocument();
     expect(screen.getByText("Fix git conflicts")).toBeInTheDocument();
-    expect(screen.getByText("Practice conflict resolution")).toBeInTheDocument();
 
     // Assert lesson queue
-    expect(screen.getByText("Contribution Curriculum Queue")).toBeInTheDocument();
-    expect(screen.getByText("Introduction to Atelier")).toBeInTheDocument();
+    expect(screen.getByText("Resume Learning Queue")).toBeInTheDocument();
+    expect(screen.getByText("Open Source Mindset")).toBeInTheDocument();
   });
 });

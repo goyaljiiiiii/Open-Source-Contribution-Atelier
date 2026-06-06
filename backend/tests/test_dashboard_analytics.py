@@ -122,6 +122,47 @@ def test_admin_dashboard_statistics():
 
 
 @pytest.mark.django_db
+def test_leaderboard_is_paginated_to_twenty_contributors_per_page():
+    lesson = Lesson.objects.create(
+        title="Git Basics",
+        slug="git-basics",
+        summary="basics",
+        content="content",
+        order=1,
+    )
+
+    for index in range(25):
+        contributor = User.objects.create_user(
+            username=f"contrib{index:02d}",
+            is_staff=False,
+        )
+        LessonProgress.objects.create(
+            user=contributor,
+            lesson=lesson,
+            completed=True,
+            score=index,
+        )
+
+    client = APIClient()
+
+    first_page = client.get("/api/leaderboard/")
+    assert first_page.status_code == 200
+    assert first_page.data["count"] == 25
+    assert len(first_page.data["results"]) == 20
+    assert first_page.data["next"] is not None
+    assert first_page.data["previous"] is None
+    assert first_page.data["results"][0]["username"] == "contrib24"
+    assert first_page.data["results"][0]["xp"] == 24
+
+    second_page = client.get("/api/leaderboard/?page=2")
+    assert second_page.status_code == 200
+    assert len(second_page.data["results"]) == 5
+    assert second_page.data["next"] is None
+    assert second_page.data["previous"] is not None
+    assert second_page.data["results"][0]["username"] == "contrib04"
+
+
+@pytest.mark.django_db
 def test_contributor_dashboard_statistics():
     contrib = User.objects.create_user(username="contrib", is_staff=False)
     
