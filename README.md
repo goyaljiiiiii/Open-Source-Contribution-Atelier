@@ -69,6 +69,8 @@ docker compose up --build
 
 ### Manual Development Setup
 
+Follow these steps to run the client and server locally on your system.
+
 #### 1. Setup Environment Files
 ```bash
 cp backend/.env.example backend/.env
@@ -76,33 +78,47 @@ cp frontend/.env.example frontend/.env
 ```
 
 #### 2. Initialize Backend
+The Django backend supports **Python 3.9+** and defaults to a local SQLite database for effortless onboarding without needing PostgreSQL or Redis.
 ```bash
 cd backend
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
+pip install --upgrade pip
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py seed_lessons
+python manage.py seed_dashboard
 python manage.py runserver
 ```
+- Backend REST API: `http://localhost:8000/api/`
+- Interactive API Docs: `http://localhost:8000/api/docs/`
 
 #### 3. Run Frontend
+The frontend uses Vite and React. Ensure you are using **Node 20+**. We recommend using **NVM** to manage Node versions.
 ```bash
 cd frontend
+# If using NVM, load it and switch to Node 20
+source ~/.nvm/nvm.sh && nvm use 20
 npm install
 npm run dev
 ```
+- Frontend SPA: `http://localhost:5173/`
 
 ---
 
-## Testing
+## 🧪 Testing
 
-Run tests locally to ensure no regressions occurred:
+Run tests locally to prevent regressions:
 - **Backend tests**: `cd backend && pytest`
 - **Frontend tests**: `cd frontend && npm run test`
 
 ---
 
-## Contributing Content
+## 🧑‍💻 Contributing & Community Guides
 
-We encourage educational contributions! To add a lesson, list a quiz, or write a summary module, check our detailed **[Content Guide](CONTENT_GUIDE.md)**.
+We welcome contributions of all levels suitable for **SSOC 2026** and long-term participation! Please review our guides:
+- **[CONTRIBUTING.md](CONTRIBUTING.md)**: Forking, branching guidelines, commit conventions, and review cycles.
+- **[SUPPORT.md](SUPPORT.md)**: How to get help, community channels, and asking questions.
+- **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)**: Community participation guidelines.
+- **[SECURITY.md](SECURITY.md)**: Responsible vulnerability disclosure rules.
+- **[CONTENT_GUIDE.md](CONTENT_GUIDE.md)**: Write new modules, markdown lessons, or interactive quizzes without modifying code.

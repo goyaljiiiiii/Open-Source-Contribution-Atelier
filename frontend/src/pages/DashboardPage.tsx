@@ -22,7 +22,8 @@ import {
   Printer,
   ChevronRight,
   HelpCircle,
-  Code
+  Code,
+  X
 } from "lucide-react";
 import {
   BarChart,

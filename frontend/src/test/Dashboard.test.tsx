@@ -59,7 +59,7 @@ describe("DashboardPage Dual-Role Views", () => {
     cleanup();
     vi.clearAllMocks();
 
-    global.fetch = vi.fn().mockImplementation((url: string) => {
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
       if (url.includes("curriculum.json")) {
         return Promise.resolve({
           ok: true,

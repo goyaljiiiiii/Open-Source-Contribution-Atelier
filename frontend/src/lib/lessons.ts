@@ -17,6 +17,7 @@ export interface Lesson {
   expected: string | RegExp; // validation pattern or exact string
   hint: string;
   difficulty?: string;
+  points?: number;
   estimatedMinutes?: number;
   learningObjectives?: string[];
   tips?: string[]; // optional tips/mistakes guidance
@@ -79,6 +80,7 @@ export async function fetchLessonsApi(): Promise<Lesson[]> {
           expected: les.expected || "",
           hint: les.hint || "Read the lesson contents and solve the check.",
           difficulty: les.difficulty || "beginner",
+          points: les.points || 15,
           estimatedMinutes: les.estimatedMinutes || 10,
           learningObjectives: les.learningObjectives || [],
           tips: les.tips || [],

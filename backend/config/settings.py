@@ -136,19 +136,8 @@ INSTALLED_APPS += [
 ]
 
 
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [os.getenv("REDIS_URL", "redis://127.0.0.1:6379")],
-            "capacity":  1500,
-            "expiry":    10,
-        },
-    },
-}
-
 # ──────────────────────────────────────────
-# Django Cache Framework (Redis or LocMem)
+# Redis Availability and Configuration (Dynamic Fallbacks)
 # ──────────────────────────────────────────
 import socket
 
@@ -176,8 +165,22 @@ def is_redis_available(url):
     except Exception:
         return False
 
-REDIS_URL = os.getenv("REDIS_URL", "")
-if REDIS_URL and is_redis_available(REDIS_URL):
+# Candidates check: use REDIS_URL if set, or default to standard local redis host for check
+ENV_REDIS_URL = os.getenv("REDIS_URL", "")
+CHECK_REDIS_URL = ENV_REDIS_URL or "redis://127.0.0.1:6379"
+
+if is_redis_available(CHECK_REDIS_URL):
+    REDIS_URL = CHECK_REDIS_URL
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [REDIS_URL],
+                "capacity": 1500,
+                "expiry": 10,
+            },
+        },
+    }
     CACHES = {
         "default": {
             "BACKEND": "django.core.cache.backends.redis.RedisCache",
@@ -185,6 +188,11 @@ if REDIS_URL and is_redis_available(REDIS_URL):
         }
     }
 else:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        },
+    }
     CACHES = {
         "default": {
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
