@@ -12,6 +12,7 @@ import requests as http_requests
 from django.utils.text import slugify
 import secrets
 import os
+from typing import Optional
 from urllib.parse import urlencode
 
 from django.db.models import Sum
@@ -32,7 +33,7 @@ def unique_username_from_value(value: str) -> str:
     return candidate
 
 
-def frontend_url(path: str, query: dict[str, str] | None = None) -> str:
+def frontend_url(path: str, query: Optional[dict[str, str]] = None) -> str:
     base_url = os.getenv("FRONTEND_URL") or (settings.CORS_ALLOWED_ORIGINS[0] if settings.CORS_ALLOWED_ORIGINS else "http://localhost:5173")
     url = f"{base_url.rstrip('/')}{path}"
     if query:
