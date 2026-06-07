@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-
+import CopyButton from "./CopyButton";
 
 type TerminalPanelProps = {
   expectedCommand?: string;
@@ -32,10 +32,18 @@ export function TerminalPanel({ expectedCommand = "git status" }: TerminalPanelP
           <span className="h-2.5 w-2.5 rounded-full bg-primary/80" />
         </div>
       </div>
-      <div className="rounded-2xl border-t border-primary/30 bg-surface px-4 py-4 font-mono text-sm text-muted">
-        <p className="text-primary">atelier-admin:~$ initialize training shell</p>
-        <p className="mt-2">Sandbox ready. Type the expected Git command for this lesson.</p>
-      </div>
+     <div className="rounded-2xl border-t border-primary/30 bg-surface px-4 py-4 font-mono text-sm text-muted">
+       <div className="flex items-center justify-between">
+         <p className="text-primary">
+           atelier-admin:~$ {expectedCommand}
+         </p>
+         <CopyButton text={expectedCommand} />
+       </div>
+       
+       <p className="mt-2">
+         Sandbox ready. Type the expected Git command for this lesson.
+       </p>
+     </div>
       <form onSubmit={handleSubmit}>
         <label className="mt-4 flex items-center gap-3 rounded-2xl border border-primary/20 bg-surface px-4 py-3 shadow-inner">
           <span className="font-mono text-tertiary">$</span>
