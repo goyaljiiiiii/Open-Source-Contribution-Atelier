@@ -1,3 +1,5 @@
+from django.contrib.auth.models import User
+from django.db.models import Sum
 from rest_framework import permissions, status
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
@@ -117,4 +119,25 @@ class ContributorTimelineView(APIView):
             "exercise_attempts": exercise_attempts,
             "help_requests": help_requests,
             "contribution_streak": completed_lessons,
-        })
+        }
+        )
+
+
+class LeaderboardView(APIView):
+    def get(self, request):
+        try:
+            users = User.objects.all()
+
+            leaderboard = []
+
+            for user in users:
+                leaderboard.append({
+                    "name": user.username,
+                    "points": 0,
+                    "contribution_type": "Mentor" if user.is_staff else "Learner"
+                })
+
+            return Response(leaderboard)
+
+        except Exception as e:
+            return Response({"error": str(e)})
