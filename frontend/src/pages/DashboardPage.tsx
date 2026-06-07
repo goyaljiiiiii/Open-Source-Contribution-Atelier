@@ -84,14 +84,21 @@ export function DashboardPage() {
     enabled: !!user?.is_staff,
   });
 
-  // 3. Fetch Contributor Dashboard stats (only queries if user is NOT staff)
+  // 3. Fetch paginated leaderboard for admin chart (only queries if user is staff)
+  const { data: leaderboardData, isLoading: isLeaderboardLoading } = useQuery({
+    queryKey: ["leaderboard", 1],
+    queryFn: () => fetchApi("/leaderboard/"),
+    enabled: !!user?.is_staff,
+  });
+
+  // 4. Fetch Contributor Dashboard stats (only queries if user is NOT staff)
   const { data: contributorData, isLoading: isContributorLoading, error: contributorError } = useQuery({
     queryKey: ["contributorDashboardStats"],
     queryFn: () => fetchApi("/dashboard/contributor/"),
     enabled: !!user && !user.is_staff,
   });
 
-  // 4. Fetch standard list of lessons via cache
+  // 5. Fetch standard list of lessons via cache
   const { data: lessons = [], isLoading: isLessonsLoading } = useQuery<Lesson[]>({
     queryKey: ["lessons"],
     queryFn: fetchLessonsApi,
@@ -209,7 +216,8 @@ export function DashboardPage() {
       );
     }
 
-    const { system_stats, contributor_activity, pending_prs } = adminData;
+    const { system_stats, pending_prs } = adminData;
+    const leaderboardResults = leaderboardData?.results || [];
     const issueStatusData = [
       { name: "Open", value: system_stats.open_issues },
       { name: "In Progress", value: system_stats.in_progress_issues },
@@ -288,9 +296,13 @@ export function DashboardPage() {
               <span>📊</span> Active Contributor Activity
             </h2>
             <div className="h-[300px] w-full">
-              {contributor_activity.length > 0 ? (
+              {isLeaderboardLoading ? (
+                <div className="h-full flex items-center justify-center border-4 border-dashed border-black rounded-2xl p-8 dark:border-[#2e2924]">
+                  <p className="font-bold text-muted dark:text-[#c4bbae]">Loading contributors...</p>
+                </div>
+              ) : leaderboardResults.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={contributor_activity}>
+                  <BarChart data={leaderboardResults}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                     <XAxis dataKey="username" tick={{ fontStyle: "bold", fill: "#6b5a49" }} />
                     <YAxis tick={{ fontStyle: "bold", fill: "#6b5a49" }} />

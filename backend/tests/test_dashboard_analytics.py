@@ -104,15 +104,6 @@ def test_admin_dashboard_statistics():
     assert stats["pending_prs"] == 1
     assert stats["active_contributors"] == 1
 
-    # Verify contributor activity
-    activity = response.data["contributor_activity"]
-    assert len(activity) == 1
-    assert activity[0]["username"] == "contrib"
-    assert activity[0]["prs_merged"] == 1
-    assert activity[0]["issues_solved"] == 1
-    # XP should be lesson_xp (200) + issues_xp (100) = 300
-    assert activity[0]["xp"] == 300
-
     # Verify pending PRs list
     pending = response.data["pending_prs"]
     assert len(pending) == 1

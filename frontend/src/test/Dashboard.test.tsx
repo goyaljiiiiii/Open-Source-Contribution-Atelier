@@ -95,7 +95,7 @@ describe("DashboardPage Dual-Role Views", () => {
       },
     });
 
-    // Mock API response for admin analytics
+    // Mock API response for admin analytics and leaderboard
     mockFetchApi.mockImplementation((endpoint: string) => {
       if (endpoint === "/dashboard/admin/") {
         return Promise.resolve({
@@ -110,12 +110,19 @@ describe("DashboardPage Dual-Role Views", () => {
             closed_prs: 1,
             active_contributors: 2,
           },
-          contributor_activity: [
-            { id: 2, username: "bob_coder", prs_merged: 2, issues_solved: 3, xp: 250 },
-            { id: 3, username: "alice_dev", prs_merged: 1, issues_solved: 1, xp: 100 },
-          ],
           pending_prs: [
             { id: 9, title: "Feature request review", contributor: "bob_coder", issue_title: "Add dark mode toggle", created_at: "2026-06-01T12:00:00Z" }
+          ],
+        });
+      }
+      if (endpoint === "/leaderboard/") {
+        return Promise.resolve({
+          count: 2,
+          next: null,
+          previous: null,
+          results: [
+            { id: 2, username: "bob_coder", prs_merged: 2, issues_solved: 3, xp: 250 },
+            { id: 3, username: "alice_dev", prs_merged: 1, issues_solved: 1, xp: 100 },
           ],
         });
       }

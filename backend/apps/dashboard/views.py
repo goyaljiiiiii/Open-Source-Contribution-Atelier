@@ -74,7 +74,7 @@ class AdminDashboardView(APIView):
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 
     def get(self, request):
-        cache_key = "dashboard_admin_stats"
+        cache_key = "dashboard_admin_stats_v2"
         data = cache.get(cache_key)
         
         if data is None:
@@ -107,33 +107,7 @@ class AdminDashboardView(APIView):
                 "active_contributors": active_contributors,
             }
 
-            # 2. Contributor activity list
-            contributor_activity = []
-            contributors = User.objects.filter(is_staff=False).order_by("username")
-            for contributor in contributors:
-                prs_merged = PullRequest.objects.filter(user=contributor, status=PullRequest.Status.MERGED).count()
-                issues_solved = Issue.objects.filter(assigned_to=contributor, status=Issue.Status.SOLVED).count()
-                
-                # Calculate XP
-                lesson_xp = LessonProgress.objects.filter(user=contributor, completed=True).aggregate(
-                    total=Sum("score")
-                )["total"] or 0
-                issues_xp = Issue.objects.filter(assigned_to=contributor, status=Issue.Status.SOLVED).aggregate(
-                    total=Sum("points")
-                )["total"] or 0
-                
-                contributor_activity.append({
-                    "id": contributor.id,
-                    "username": contributor.username,
-                    "prs_merged": prs_merged,
-                    "issues_solved": issues_solved,
-                    "xp": lesson_xp + issues_xp,
-                })
-
-            # Sort contributors by XP descending
-            contributor_activity.sort(key=lambda x: x["xp"], reverse=True)
-
-            # 3. Pending PRs queue
+            # 2. Pending PRs queue
             pending_prs_qs = PullRequest.objects.filter(
                 status=PullRequest.Status.OPEN
             ).select_related("user", "issue").order_by("-created_at")
@@ -150,7 +124,6 @@ class AdminDashboardView(APIView):
 
             data = {
                 "system_stats": system_stats,
-                "contributor_activity": contributor_activity,
                 "pending_prs": pending_prs,
             }
             
