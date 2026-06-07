@@ -27,7 +27,16 @@ class LessonProgress(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ("user", "lesson")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "lesson"],
+                name="unique_user_lesson_progress",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["user", "completed"], name="idx_progress_user_completed"),
+            models.Index(fields=["user", "score"], name="idx_progress_user_score"),
+        ]
 
 
 class ExerciseAttempt(models.Model):
