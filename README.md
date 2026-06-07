@@ -37,7 +37,7 @@ The platform preserves a playful, neobrutalist developer console aesthetic while
 - **Module 4: Open Source Etiquette**: Respectful communication, Reading README & CONTRIBUTING files first, and Review processes.
 - **Module 5: First Contribution**: Interactive step-by-step mock PR setup drill.
 - **Module 6: Real Contribution Workflow**: Tracing Issue -> Assignment -> Develop -> PR -> Review -> Merge cycles.
-- **Module 7: Advanced Open Source**: Rebasing, Squashing, conflict resolution, and CI/CD checks.
+- **Module 7: Advanced Open Source**: Rebasing, Squashing, Conflict resolution, and CI/CD checks.
 - **Module 8: Finding Projects**: Discovering issues using filters, Hacktoberfest, and good first issues.
 
 ---
