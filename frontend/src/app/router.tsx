@@ -4,7 +4,10 @@ import { AppLayout } from "../components/layout/AppLayout";
 import { ChallengePage } from "../pages/ChallengePage";
 import { CommunityPage } from "../pages/CommunityPage";
 import { DashboardPage } from "../pages/DashboardPage";
+import { GitHubAuthCallbackPage } from "../pages/GitHubAuthCallbackPage";
 import { LandingPage } from "../pages/LandingPage";
+import { LoginPage } from "../pages/LoginPage";
+import { SignupPage } from "../pages/SignupPage";
 import { LessonPage } from "../pages/LessonPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { useAuth } from "../features/auth/AuthContext";
@@ -63,6 +66,7 @@ export function AppRouter() {
           <LandingPage />
         </PublicOnlyRoute>
       } />
+      <Route path="/auth/github/callback" element={<GitHubAuthCallbackPage />} />
 
       {/* Authenticated Routes with Navbar Layout */}
       <Route element={<AppLayout />}>
@@ -71,6 +75,11 @@ export function AppRouter() {
         <Route path="/challenges" element={<ProtectedRoute><ChallengePage /></ProtectedRoute>} />
         <Route path="/community" element={<ProtectedRoute><CommunityPage /></ProtectedRoute>} />
       </Route>
+
+      {/* Public auth routes */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
+
 
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
