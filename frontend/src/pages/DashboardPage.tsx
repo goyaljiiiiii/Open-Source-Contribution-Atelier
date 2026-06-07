@@ -8,10 +8,15 @@ import SkeletonCard from "../components/ui/skeletons/SkeletonCard";
 
 export function DashboardPage() {
   const { progress, totalXP, isLoading: isProgressLoading } = useUserProgress();
-  
+
   const { data: challenges = [], isLoading: isChallengesLoading } = useQuery({
     queryKey: ["challenges"],
     queryFn: () => fetchApi("/challenges/"),
+  });
+
+  const { data: achievements } = useQuery({
+    queryKey: ["achievements"],
+    queryFn: () => fetchApi("/progress/achievements/"),
   });
 
   const { data: lessons = [], isLoading: isLessonsLoading } = useQuery({
@@ -21,28 +26,27 @@ export function DashboardPage() {
   const availableLessons = useMemo(
     () =>
       lessons
-        .filter((l) => !progress.some((p) => p.lesson_slug === l.slug && p.completed))
+        .filter(
+          (l) => !progress.some((p) => p.lesson_slug === l.slug && p.completed),
+        )
         .slice(0, 4),
     [lessons, progress],
   );
 
   if (isProgressLoading || isChallengesLoading || isLessonsLoading) {
     return (
-      <div
-        className="grid gap-6 xl:grid-cols-[1fr_0.8fr]"
-        aria-busy="true"
-      >
+      <div className="grid gap-6 xl:grid-cols-[1fr_0.8fr]" aria-busy="true">
         <SkeletonCard />
         <SkeletonCard />
         <SkeletonCard />
       </div>
     );
   }
-  const completedCount = progress.filter(p => p.completed).length;
+  const completedCount = progress.filter((p) => p.completed).length;
   const totalLessons = lessons.length;
-  const completionRate = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+  const completionRate =
+    totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
   const streakDays = completedCount; // Simplified logic
-  
 
   return (
     <div className="space-y-10 pt-4">
@@ -69,19 +73,64 @@ export function DashboardPage() {
         <div className="grid grid-cols-2 gap-4">
           <div className="rounded-[2rem] border-4 border-black bg-white p-6 shadow-card flex flex-col justify-center items-center hover:-translate-y-1 transition-transform dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none">
             <span className="text-5xl mb-2">🔥</span>
-            <span className="text-4xl font-black text-primary drop-shadow-[2px_2px_0_#000] dark:drop-shadow-none">{streakDays}</span>
-            <span className="font-bold text-black uppercase tracking-widest text-xs mt-1 dark:text-[#c4bbae]">Commit Streak</span>
+            <span className="text-4xl font-black text-primary drop-shadow-[2px_2px_0_#000] dark:drop-shadow-none">
+              {streakDays}
+            </span>
+            <span className="font-bold text-black uppercase tracking-widest text-xs mt-1 dark:text-[#c4bbae]">
+              Commit Streak
+            </span>
           </div>
           <div className="rounded-[2rem] border-4 border-black bg-white p-6 shadow-card flex flex-col justify-center items-center hover:-translate-y-1 transition-transform dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none">
             <span className="text-5xl mb-2">🎯</span>
-            <span className="text-4xl font-black text-accent drop-shadow-[2px_2px_0_#000] dark:drop-shadow-none">{totalXP}</span>
-            <span className="font-bold text-black uppercase tracking-widest text-xs mt-1 dark:text-[#c4bbae]">XP Bounties</span>
+            <span className="text-4xl font-black text-accent drop-shadow-[2px_2px_0_#000] dark:drop-shadow-none">
+              {totalXP}
+            </span>
+            <span className="font-bold text-black uppercase tracking-widest text-xs mt-1 dark:text-[#c4bbae]">
+              XP Bounties
+            </span>
           </div>
           <div className="rounded-[2rem] border-4 border-black bg-white p-6 shadow-card flex flex-col justify-center items-center hover:-translate-y-1 transition-transform dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none col-span-2">
             <span className="text-5xl mb-2">📚</span>
-            <span className="text-4xl font-black text-tertiary drop-shadow-[2px_2px_0_#000] dark:drop-shadow-none">{completionRate}%</span>
-            <span className="font-bold text-black uppercase tracking-widest text-xs mt-1 dark:text-[#c4bbae]">Track Completion</span>
+            <span className="text-4xl font-black text-tertiary drop-shadow-[2px_2px_0_#000] dark:drop-shadow-none">
+              {completionRate}%
+            </span>
+            <span className="font-bold text-black uppercase tracking-widest text-xs mt-1 dark:text-[#c4bbae]">
+              Track Completion
+            </span>
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-3xl border-4 border-black bg-white p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none">
+        <h2 className="text-3xl font-black mb-6 flex items-center gap-3">
+          🏆 Achievements & Badges
+        </h2>
+
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {achievements?.earned_badges?.length ? (
+            achievements.earned_badges.map((badge: any) => (
+              <div
+                key={badge.name}
+                className="rounded-2xl border-4 border-black bg-surface-lowest p-5 shadow-card-sm dark:bg-[#151411] dark:border-[#2e2924]"
+              >
+                <div className="text-4xl mb-2">🏅</div>
+
+                <h3 className="font-black text-lg dark:text-[#f0ebe2]">
+                  {badge.name}
+                </h3>
+
+                <p className="text-sm text-muted dark:text-[#c4bbae]">
+                  {badge.description}
+                </p>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-full text-center p-8">
+              <p className="font-bold text-muted dark:text-[#c4bbae]">
+                No badges earned yet. Start contributing!
+              </p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -97,14 +146,27 @@ export function DashboardPage() {
           <div className="space-y-4">
             {availableLessons.length > 0 ? (
               availableLessons.map((lesson, i) => (
-                <Link key={lesson.slug} to={`/lessons/${lesson.slug}`} className="flex flex-col gap-2 p-5 rounded-2xl border-4 border-black bg-surface-lowest shadow-card-sm hover:shadow-card hover:-translate-y-1 transition-all dark:bg-[#151411] dark:border-[#2e2924] dark:shadow-none dark:hover:bg-[#1f1c18]">
+                <Link
+                  key={lesson.slug}
+                  to={`/lessons/${lesson.slug}`}
+                  className="flex flex-col gap-2 p-5 rounded-2xl border-4 border-black bg-surface-lowest shadow-card-sm hover:shadow-card hover:-translate-y-1 transition-all dark:bg-[#151411] dark:border-[#2e2924] dark:shadow-none dark:hover:bg-[#1f1c18]"
+                >
                   <div className="flex justify-between items-end">
-                    <h3 className="font-black text-xl dark:text-[#f0ebe2]">{lesson.title}</h3>
-                    <span className="font-bold text-xs text-muted uppercase dark:text-[#c4bbae]">{lesson.difficulty || "beginner"}</span>
+                    <h3 className="font-black text-xl dark:text-[#f0ebe2]">
+                      {lesson.title}
+                    </h3>
+                    <span className="font-bold text-xs text-muted uppercase dark:text-[#c4bbae]">
+                      {lesson.difficulty || "beginner"}
+                    </span>
                   </div>
-                  <p className="font-bold text-sm text-muted dark:text-[#c4bbae]">{lesson.description}</p>
+                  <p className="font-bold text-sm text-muted dark:text-[#c4bbae]">
+                    {lesson.description}
+                  </p>
                   <div className="h-6 w-full rounded-full border-4 border-black bg-surface-low overflow-hidden dark:bg-[#0f0e0c] dark:border-[#2e2924]">
-                    <div className="h-full bg-primary border-black border-r-4 dark:border-[#2e2924]" style={{ width: "0%" }}></div>
+                    <div
+                      className="h-full bg-primary border-black border-r-4 dark:border-[#2e2924]"
+                      style={{ width: "0%" }}
+                    ></div>
                   </div>
                   <div className="flex justify-between text-xs font-bold text-muted dark:text-[#c4bbae]">
                     <span>{lesson.estimatedMinutes || 10} min</span>
@@ -114,7 +176,9 @@ export function DashboardPage() {
               ))
             ) : (
               <div className="p-8 text-center bg-surface-low rounded-2xl border-4 border-dashed border-black dark:bg-[#0f0e0c] dark:border-[#2e2924]">
-                <p className="font-bold text-muted dark:text-[#c4bbae]">All current track modules completed! 🎉</p>
+                <p className="font-bold text-muted dark:text-[#c4bbae]">
+                  All current track modules completed! 🎉
+                </p>
               </div>
             )}
           </div>
@@ -122,16 +186,31 @@ export function DashboardPage() {
 
         {/* Challenges */}
         <div className="rounded-3xl border-4 border-black bg-accent p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none">
-          <h2 className="text-3xl font-black mb-6 text-black dark:text-[#f0ebe2]">High Priority Issues 🚨</h2>
+          <h2 className="text-3xl font-black mb-6 text-black dark:text-[#f0ebe2]">
+            High Priority Issues 🚨
+          </h2>
           <div className="space-y-4">
             {challenges.map((challenge: any) => (
-              <div key={challenge.id} className="rounded-2xl border-4 border-black bg-white p-5 shadow-card-sm dark:bg-[#151411] dark:border-[#2e2924] dark:shadow-none">
-                <span className="font-black text-[10px] bg-black text-white px-3 py-1 rounded-full dark:bg-[#2e2924] dark:text-[#f0ebe2]">{challenge.difficulty.toUpperCase()}</span>
-                <h3 className="font-black text-lg mt-3 dark:text-[#f0ebe2]">{challenge.title}</h3>
-                <p className="text-sm text-muted mt-1 dark:text-[#c4bbae]">{challenge.summary}</p>
+              <div
+                key={challenge.id}
+                className="rounded-2xl border-4 border-black bg-white p-5 shadow-card-sm dark:bg-[#151411] dark:border-[#2e2924] dark:shadow-none"
+              >
+                <span className="font-black text-[10px] bg-black text-white px-3 py-1 rounded-full dark:bg-[#2e2924] dark:text-[#f0ebe2]">
+                  {challenge.difficulty.toUpperCase()}
+                </span>
+                <h3 className="font-black text-lg mt-3 dark:text-[#f0ebe2]">
+                  {challenge.title}
+                </h3>
+                <p className="text-sm text-muted mt-1 dark:text-[#c4bbae]">
+                  {challenge.summary}
+                </p>
                 <div className="mt-3 flex justify-between items-center">
-                  <span className="text-sm font-bold text-muted dark:text-[#c4bbae]">Reward:</span>
-                  <span className="font-black text-primary">{challenge.points} XP</span>
+                  <span className="text-sm font-bold text-muted dark:text-[#c4bbae]">
+                    Reward:
+                  </span>
+                  <span className="font-black text-primary">
+                    {challenge.points} XP
+                  </span>
                 </div>
               </div>
             ))}
@@ -141,4 +220,3 @@ export function DashboardPage() {
     </div>
   );
 }
-
