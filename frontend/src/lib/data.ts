@@ -25,16 +25,51 @@ export const learningQueue = [
   },
 ];
 
-export const challengeCards = [
+export type Difficulty = "beginner" | "intermediate" | "advanced";
+
+export type ChallengeCard = {
+  title: string;
+  summary: string;
+  badge: string;
+  difficulty: Difficulty;
+};
+
+export const challengeCards: ChallengeCard[] = [
   {
     title: "Hacktoberfest Warmup",
     summary: "Guide contributors through issue triage, branch naming, and clean commits.",
     badge: "Featured sprint",
+    difficulty: "beginner",
   },
   {
     title: "Git Recovery Lab",
     summary: "Practice safe undo flows, rebases, and fixing a messy working tree.",
     badge: "Advanced",
+    difficulty: "advanced",
+  },
+  {
+    title: "PR Etiquette Essentials",
+    summary: "Learn how to write descriptive PR titles, link issues, and respond to reviews.",
+    badge: "Beginner",
+    difficulty: "beginner",
+  },
+  {
+    title: "Rebase & Merge Strategies",
+    summary: "Compare merge commits, squash merges, and rebase workflows on real scenarios.",
+    badge: "Intermediate",
+    difficulty: "intermediate",
+  },
+  {
+    title: "Conflict Resolution Drills",
+    summary: "Simulate merge conflicts and practice resolving them step by step.",
+    badge: "Intermediate",
+    difficulty: "intermediate",
+  },
+  {
+    title: "CI/CD Pipeline Setup",
+    summary: "Configure GitHub Actions to lint, test, and deploy on every push.",
+    badge: "Advanced",
+    difficulty: "advanced",
   },
 ];
 
