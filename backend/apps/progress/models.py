@@ -49,3 +49,18 @@ class HelpRequest(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.OPEN, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+class QuizAttempt(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="quiz_attempts")
+    question_id = models.CharField(max_length=255)
+    question_text = models.TextField()
+    selected_answer = models.CharField(max_length=255)
+    correct_answer = models.CharField(max_length=255)
+    is_correct = models.BooleanField(default=False)
+    time_taken_seconds = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.question_id} - {'✓' if self.is_correct else '✗'}"
