@@ -1,3 +1,9 @@
+from .models import (
+    Badge,
+    HelpRequest,
+    LessonProgress,
+    ExerciseAttempt,
+)
 from rest_framework import permissions, status
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
@@ -68,7 +74,60 @@ class CommunityStatsView(APIView):
             "response_sla": "3.5h",
             "open_requests": open_help_requests
         })
+    
+class UserAchievementsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
+    def get(self, request):
+        completed_lessons = LessonProgress.objects.filter(
+            user=request.user,
+            completed=True
+        ).count()
+
+        exercises_completed = ExerciseAttempt.objects.filter(
+            user=request.user,
+            is_correct=True
+        ).count()
+
+        help_requests = HelpRequest.objects.filter(
+            user=request.user
+        ).count()
+
+        badges = []
+
+        if completed_lessons >= 1:
+            badges.append({
+                "name": "First Contribution",
+                "description": "Completed your first lesson"
+            })
+
+        if completed_lessons >= 5:
+            badges.append({
+                "name": "Consistent Learner",
+                "description": "Completed 5 lessons"
+            })
+
+        if completed_lessons >= 10:
+            badges.append({
+                "name": "Knowledge Explorer",
+                "description": "Completed 10 lessons"
+            })
+
+        if exercises_completed >= 5:
+            badges.append({
+                "name": "Challenge Solver",
+                "description": "Solved 5 exercises"
+            })
+
+        if help_requests >= 3:
+            badges.append({
+                "name": "Community Helper",
+                "description": "Created 3 help requests"
+            })
+
+        return Response({
+            "earned_badges": badges
+        })
 
 class HelpRequestListCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]

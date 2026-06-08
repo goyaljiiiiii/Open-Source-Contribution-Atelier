@@ -100,7 +100,7 @@ class GoogleLoginView(APIView):
         return unique_username_from_value(email)
 
     def post(self, request):
-        token = request.data.get("access_token")
+        token = request.data.get("access_token") or request.data.get("access")
         if not token:
             return Response({"detail": "No access token provided"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -193,7 +193,7 @@ class GitHubOAuthCallbackView(APIView):
                 timeout=10,
             )
             token_response.raise_for_status()
-            access_token = token_response.json().get("access_token")
+            access_token = token_response.json().get("access_token") or token_response.json().get("access")
             if not access_token:
                 return redirect(frontend_url("/", {"auth_error": "GitHub did not return an access token."}))
 
