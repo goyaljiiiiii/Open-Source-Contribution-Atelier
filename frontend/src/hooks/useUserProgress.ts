@@ -22,7 +22,11 @@ export function useUserProgress() {
 
   // 2. Mutation to sync completion
   const syncMutation = useMutation({
-    mutationFn: (vars: { lesson_slug: string; score?: number; completed?: boolean }) =>
+    mutationFn: (vars: {
+      lesson_slug: string;
+      score?: number;
+      completed?: boolean;
+    }) =>
       fetchApi("/progress/me/", {
         method: "POST",
         body: JSON.stringify(vars),

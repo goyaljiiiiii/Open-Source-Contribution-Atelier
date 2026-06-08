@@ -15,4 +15,3 @@ export function App() {
     </QueryClientProvider>
   );
 }
-

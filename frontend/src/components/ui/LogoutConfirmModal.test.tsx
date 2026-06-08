@@ -11,7 +11,13 @@ describe("LogoutConfirmModal", () => {
   });
 
   it("does not render when open is false", () => {
-    render(<LogoutConfirmModal open={false} onConfirm={() => {}} onCancel={() => {}} />);
+    render(
+      <LogoutConfirmModal
+        open={false}
+        onConfirm={() => {}}
+        onCancel={() => {}}
+      />,
+    );
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
@@ -20,7 +26,13 @@ describe("LogoutConfirmModal", () => {
     const onConfirm = vi.fn();
     const onCancel = vi.fn();
 
-    render(<LogoutConfirmModal open={true} onConfirm={onConfirm} onCancel={onCancel} />);
+    render(
+      <LogoutConfirmModal
+        open={true}
+        onConfirm={onConfirm}
+        onCancel={onCancel}
+      />,
+    );
 
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     await user.click(screen.getByTestId("cancel-button"));

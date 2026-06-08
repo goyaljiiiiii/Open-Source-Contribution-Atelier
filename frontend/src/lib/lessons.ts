@@ -109,4 +109,3 @@ export async function fetchLessonContent(filePath: string): Promise<string> {
     return "# Content not found\nCould not retrieve the detailed documentation for this lesson.";
   }
 }
-

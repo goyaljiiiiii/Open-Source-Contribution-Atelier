@@ -35,10 +35,18 @@ export function SignupPage() {
   const barColors = ["bg-red-500", "bg-yellow-400", "bg-green-500"] as const;
 
   // Human-readable label shown below the bars.
-  const strengthLabels = ["Weak password", "Medium password", "Strong password 💪"] as const;
+  const strengthLabels = [
+    "Weak password",
+    "Medium password",
+    "Strong password 💪",
+  ] as const;
 
   // Text color for the label — keeps it consistent with the bar color.
-  const labelColors = ["text-red-500", "text-yellow-600", "text-green-600"] as const;
+  const labelColors = [
+    "text-red-500",
+    "text-yellow-600",
+    "text-green-600",
+  ] as const;
   // ── END HELPER BLOCK ───────────────────────────────────────────────────────
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -124,43 +132,43 @@ export function SignupPage() {
               Only rendered once the user starts typing (password is non-empty).
               Three segmented bars + a text label give instant visual feedback.
           ──────────────────────────────────────────────────────────────────── */}
-          {password && (() => {
-            // Compute score and tier index once; reuse in bars + label below.
-            const score = getPasswordScore(password);
-            const tierIndex = getStrengthIndex(score);
+          {password &&
+            (() => {
+              // Compute score and tier index once; reuse in bars + label below.
+              const score = getPasswordScore(password);
+              const tierIndex = getStrengthIndex(score);
 
-            return (
-              <div className="ml-1 mt-2">
-
-                {/* Three segmented bars — one per tier (Weak / Medium / Strong).
+              return (
+                <div className="ml-1 mt-2">
+                  {/* Three segmented bars — one per tier (Weak / Medium / Strong).
                     A bar is "filled" (colored) when its index ≤ the current tier.
                     All bars share the same active color so the whole group reads
                     as a single progress indicator, not three separate lights.     */}
-                <div className="flex gap-1.5 mb-1">
-                  {(["Weak", "Medium", "Strong"] as const).map((_, i) => (
-                    <div
-                      key={i}
-                      className={[
-                        "h-2 flex-1 rounded-full border-2 border-black",
-                        "transition-all duration-300",
-                        // Fill bars up to and including the current tier index;
-                        // leave bars beyond the tier a neutral gray.
-                        i <= tierIndex ? barColors[tierIndex] : "bg-gray-200",
-                      ].join(" ")}
-                    />
-                  ))}
+                  <div className="flex gap-1.5 mb-1">
+                    {(["Weak", "Medium", "Strong"] as const).map((_, i) => (
+                      <div
+                        key={i}
+                        className={[
+                          "h-2 flex-1 rounded-full border-2 border-black",
+                          "transition-all duration-300",
+                          // Fill bars up to and including the current tier index;
+                          // leave bars beyond the tier a neutral gray.
+                          i <= tierIndex ? barColors[tierIndex] : "bg-gray-200",
+                        ].join(" ")}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Text label — matches the bar color so they feel connected. */}
+                  <p
+                    className={`text-xs font-bold ml-0.5 ${labelColors[tierIndex]}`}
+                  >
+                    {strengthLabels[tierIndex]}
+                  </p>
                 </div>
-
-                {/* Text label — matches the bar color so they feel connected. */}
-                <p className={`text-xs font-bold ml-0.5 ${labelColors[tierIndex]}`}>
-                  {strengthLabels[tierIndex]}
-                </p>
-
-              </div>
-            );
-          })()}
+              );
+            })()}
           {/* ── END PASSWORD STRENGTH INDICATOR ────────────────────────────── */}
-
         </div>
 
         <button className="w-full rounded-2xl border-4 border-black bg-accent px-5 py-5 font-black text-black text-xl shadow-card hover:bg-tertiary transition-colors cursor-pointer mt-4 uppercase">
@@ -169,7 +177,10 @@ export function SignupPage() {
 
         <p className="text-center text-sm font-bold text-black mt-6">
           Already stuck with us?{" "}
-          <a href="/login" className="text-primary underline decoration-2 hover:text-black">
+          <a
+            href="/login"
+            className="text-primary underline decoration-2 hover:text-black"
+          >
             Log in here
           </a>
         </p>
@@ -177,5 +188,3 @@ export function SignupPage() {
     </AuthPageShell>
   );
 }
-
-
