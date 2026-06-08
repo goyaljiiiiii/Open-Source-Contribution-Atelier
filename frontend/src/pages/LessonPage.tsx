@@ -8,6 +8,8 @@ import { useUserProgress } from "../hooks/useUserProgress";
 import { fetchApi } from "../lib/api";
 import { Lesson, fetchLessonsApi, fetchLessonContent } from "../lib/lessons";
 import { MarkdownRenderer } from "../components/ui/MarkdownRenderer";
+import { GitGraph } from "../components/ui/GitGraph";
+import { createInitialRepo, parseGitCommand, RepoState } from "../lib/gitSimulator";
 
 function normalizeCommand(value: string) {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
@@ -48,6 +50,8 @@ export function LessonPage() {
   const [input, setInput] = useState("");
   const [feedback, setFeedback] = useState<string>("");
   const [showHint, setShowHint] = useState(false);
+  const [terminalOutput, setTerminalOutput] = useState("");
+  const [repoState, setRepoState] = useState<RepoState>(createInitialRepo());
 
   // Quiz-based exercises
   const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
@@ -116,6 +120,8 @@ export function LessonPage() {
     setFeedback("");
     setInput("");
     setShowHint(false);
+    setTerminalOutput("");
+    setRepoState(createInitialRepo());
     
     // Reset Quiz state
     setCurrentQuizIndex(0);
@@ -161,6 +167,17 @@ export function LessonPage() {
     e.preventDefault();
     if (!lesson) return;
 
+    const result = parseGitCommand(input, repoState);
+    if (result.error) {
+       setTerminalOutput(result.error);
+       setFeedback("error");
+       setShowHint(true);
+       return; // Stop processing further for invalid commands
+    } else {
+       setTerminalOutput(result.output || "");
+       setRepoState(result.newState);
+    }
+
     const expected = lesson.expected;
     let isCorrect = false;
 
@@ -185,6 +202,8 @@ export function LessonPage() {
       setFeedback("error");
       setShowHint(true);
     }
+    
+    setInput(""); // Clear input after running
   };
 
   // Quiz submission handler
@@ -448,9 +467,12 @@ export function LessonPage() {
               ) : (
                 // TERMINAL INTERACTIVE COMMAND MODE
                 <div className="rounded-3xl border-4 border-black bg-surface-low p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924]">
-                  <h3 className="text-xl font-black mb-2 flex items-center gap-2">
+                  <h3 className="text-xl font-black mb-4 flex items-center gap-2 text-text dark:text-[#f0ebe2]">
                     <span>💻</span> Sandbox terminal check
                   </h3>
+                  
+                  <GitGraph state={repoState} />
+
                   <p className="text-xs text-muted mb-4 dark:text-[#c4bbae]">
                     Solve the drill by executing the appropriate git command below:
                   </p>
@@ -474,6 +496,12 @@ export function LessonPage() {
                         Run
                       </button>
                     </div>
+
+                    {terminalOutput && (
+                       <pre className="p-4 bg-[#151411] text-[#f0ebe2] font-mono text-xs rounded-xl border-4 border-black whitespace-pre-wrap overflow-x-auto shadow-inner">
+                         {terminalOutput}
+                       </pre>
+                    )}
 
                     {feedback === "correct" && (
                       <div className="text-green-700 font-bold bg-green-50 p-4 rounded-xl border-4 border-green-600 animate-bounce">
