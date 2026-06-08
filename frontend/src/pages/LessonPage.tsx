@@ -237,6 +237,9 @@ export function LessonPage() {
 
   const hasQuiz = lesson.quizzes && lesson.quizzes.length > 0;
   const isCompleted = isLessonCompleted(lesson.slug);
+  const activeModuleId = modules.find((mod) =>
+  mod.lessons.some((les) => les.slug === lesson.slug)
+)?.id;
 
   return (
     <div className="min-h-screen pt-20 flex flex-col lg:flex-row relative">
@@ -288,8 +291,14 @@ export function LessonPage() {
         <div className="space-y-6">
           {modules.map((mod, modIdx) => (
             <div key={mod.id} className="space-y-2">
-              <h3 className="font-mono text-[10px] uppercase tracking-wider text-muted dark:text-[#c4bbae] font-bold">
-                Module {modIdx + 1}: {mod.title}
+            
+              <h3
+                    className={`font-mono text-[10px] uppercase tracking-wider font-bold px-2 py-1.5 rounded-lg border-2 transition-all
+                         ${mod.id === activeModuleId
+                      ? "bg-yellow-300 text-black border-black shadow-[2px_2px_0px_#000]"
+                          : "text-muted dark:text-[#c4bbae] border-transparent"
+                        }`}>
+                     Module {modIdx + 1}: {mod.title}
               </h3>
               <div className="space-y-1">
                 {mod.lessons.map((les: { slug: string; title: string; difficulty?: string }) => {
