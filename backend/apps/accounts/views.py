@@ -48,6 +48,8 @@ class SignupView(generics.CreateAPIView):
 
 
 class MeView(APIView):
+    permission_classes = [IsAuthenticated] # check jwt authentication
+    
     def get(self, request):
         return Response(
             {
