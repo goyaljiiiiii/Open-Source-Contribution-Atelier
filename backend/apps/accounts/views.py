@@ -19,7 +19,7 @@ from django.db.models import Sum
 from apps.progress.models import LessonProgress, UserBadge
 from apps.progress.serializers import UserBadgeSerializer
 from .serializers import SignupSerializer, UserListSerializer, EmailOrUsernameTokenObtainPairSerializer
-
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse
 
 def unique_username_from_value(value: str) -> str:
     base = slugify(value.split("@")[0]) or "user"
@@ -40,7 +40,7 @@ def frontend_url(path: str, query: Optional[dict[str, str]] = None) -> str:
         url = f"{url}?{urlencode(query)}"
     return url
 
-
+@extend_schema(request=SignupSerializer, responses=SignupSerializer)
 class SignupView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = SignupSerializer
@@ -49,7 +49,8 @@ class SignupView(generics.CreateAPIView):
 
 class MeView(APIView):
     permission_classes = [IsAuthenticated] # check jwt authentication
-    
+
+    @extend_schema(responses=UserListSerializer)
     def get(self, request):
         return Response(
             {
@@ -64,6 +65,12 @@ class MeView(APIView):
 class MyBadgesView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        responses=OpenApiResponse(
+            response=UserBadgeSerializer(many=True),
+            description="Returns object {progress_points: number, badges: [UserBadgeSerializer]}",
+        )
+    )
     def get(self, request):
         earned_badges = (
             UserBadge.objects.filter(user=request.user)
@@ -82,7 +89,10 @@ class MyBadgesView(APIView):
             }
         )
 
-
+@extend_schema(
+    request=EmailOrUsernameTokenObtainPairSerializer,
+    responses=OpenApiResponse(description="Returns JWT refresh & access tokens and basic user info.")
+)
 class LoginView(TokenObtainPairView):
     permission_classes = [permissions.AllowAny]
     serializer_class = EmailOrUsernameTokenObtainPairSerializer
@@ -235,7 +245,7 @@ class GitHubOAuthCallbackView(APIView):
         except Exception:
             return redirect(frontend_url("/", {"auth_error": "GitHub authentication failed."}))
 
-
+@extend_schema(responses=UserListSerializer(many=True))
 class UserListView(generics.ListAPIView):
     queryset = User.objects.all().order_by("id")
     permission_classes = [permissions.IsAuthenticated]
