@@ -35,15 +35,15 @@ export default function LogoutConfirmModal({
         <p className="mb-4">{description}</p>
 
         <div className="flex gap-3 justify-end">
-          <button
+          <button type="button"
             className="px-3 py-1 border-2 border-black text-sm bg-white hover:bg-gray-100"
-            onClick={onCancel}
-            data-testid="cancel-button"
-          >
+            onClick={onCancel} 
+            data-testid="cancel-button">
+
             Cancel
           </button>
 
-          <button
+          <button type="button"
             className="px-3 py-1 border-2 border-black text-sm bg-black text-white font-bold"
             onClick={onConfirm}
             data-testid="confirm-button"
