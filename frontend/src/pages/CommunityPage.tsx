@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { SectionCard } from "../components/ui/SectionCard";
 import { useQuery } from "@tanstack/react-query";
 import { fetchApi } from "../lib/api";
@@ -9,6 +9,15 @@ import { useAuth } from "../features/auth/AuthContext";
 export function CommunityPage() {
   const { user } = useAuth();
 
+  const timezoneAbbreviation =
+    new Intl.DateTimeFormat("en-US", {
+      timeZoneName: "short",
+  })
+      .formatToParts(new Date())
+      .find((part) => part.type === "timeZoneName")
+      ?.value || "UTC";
+      console.log("Timezone:", timezoneAbbreviation);
+
   // 1. Fetch backend community stats
   const { data: stats, isLoading } = useQuery({
     queryKey: ["communityStats"],
@@ -18,6 +27,22 @@ export function CommunityPage() {
   // 2. Fetch GitHub contributors for the leaderboard
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
+  const [search, setSearch] = useState("");
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+
+  const filteredLeaderboard = useMemo(() => {
+    return [...leaderboard]
+      .filter((item) =>
+        item.username.toLowerCase().includes(search.toLowerCase())
+      )
+      .sort((a, b) => {
+        if (sortOrder === "desc") {
+          return b.xp - a.xp;
+        } else {
+          return a.xp - b.xp;
+        }
+      });
+  }, [leaderboard, search, sortOrder]);
 
   useEffect(() => {
     fetch("https://api.github.com/repos/goyaljiiiiii/Open-Source-Contribution-Atelier/contributors")
@@ -55,7 +80,10 @@ export function CommunityPage() {
   const displayStats = [
     { label: "Weekly active contributors", value: stats?.active_contributors || "128" },
     { label: "Merged learning PRs", value: stats?.merged_prs || "342" },
-    { label: "Mentor response SLA", value: stats?.response_sla || "3.2h" },
+    {
+      label: "Mentor response SLA",
+      value: `${stats?.response_sla || "3.2h"} ${timezoneAbbreviation}`,
+    },
     { label: "Open help requests", value: stats?.open_requests || "0" },
   ];
 
@@ -90,6 +118,24 @@ export function CommunityPage() {
             <Trophy className="text-accent w-6 h-6 animate-bounce" /> Contributor Leaderboard
           </h3>
 
+          <div className="flex flex-wrap gap-4 mb-6">
+            <input
+              type="text"
+              placeholder="Search contributor..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="border-4 border-black px-4 py-2 rounded-xl text-sm font-black bg-white text-black shadow-card-sm focus:outline-none focus:translate-x-0.5 focus:translate-y-0.5 focus:shadow-none transition-all dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2] placeholder-muted"
+            />
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as "desc" | "asc")}
+              className="border-4 border-black px-4 py-2 rounded-xl text-sm font-black bg-[#ffb5e8] text-black shadow-card-sm focus:outline-none cursor-pointer dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2]"
+            >
+              <option value="desc">Highest XP</option>
+              <option value="asc">Lowest XP</option>
+            </select>
+          </div>
+
           {loadingLeaderboard ? (
             <p className="text-sm text-muted animate-pulse font-bold">Assembling standings...</p>
           ) : (
@@ -104,7 +150,7 @@ export function CommunityPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {leaderboard.map((item) => (
+                  {filteredLeaderboard.map((item, idx) => (
                     <tr
                       key={item.username}
                       className={`border-b-2 border-black last:border-b-0 hover:bg-surface-lowest transition dark:border-[#2e2924] dark:hover:bg-black/10 ${
@@ -112,10 +158,10 @@ export function CommunityPage() {
                       }`}
                     >
                       <td className="px-4 py-3 border-r-2 border-black dark:border-[#2e2924] text-center font-black">
-                        {item.rank === 1 && "🥇"}
-                        {item.rank === 2 && "🥈"}
-                        {item.rank === 3 && "🥉"}
-                        {item.rank > 3 && `#${item.rank}`}
+                        {idx + 1 === 1 && "🥇"}
+                        {idx + 1 === 2 && "🥈"}
+                        {idx + 1 === 3 && "🥉"}
+                        {idx + 1 > 3 && `#${idx + 1}`}
                       </td>
                       <td className="px-4 py-3 border-r-2 border-black dark:border-[#2e2924] flex items-center gap-2">
                         <img src={item.avatar_url} alt={item.username} className="w-6 h-6 rounded-full border border-black" />
@@ -130,6 +176,13 @@ export function CommunityPage() {
                       <td className="px-4 py-3 text-primary font-black">{item.xp} XP</td>
                     </tr>
                   ))}
+                  {filteredLeaderboard.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-8 text-center text-muted font-bold">
+                        No matching contributors found.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
