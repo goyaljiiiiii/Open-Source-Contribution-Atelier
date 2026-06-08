@@ -9,6 +9,15 @@ import { useAuth } from "../features/auth/AuthContext";
 export function CommunityPage() {
   const { user } = useAuth();
 
+  const timezoneAbbreviation =
+    new Intl.DateTimeFormat("en-US", {
+      timeZoneName: "short",
+  })
+      .formatToParts(new Date())
+      .find((part) => part.type === "timeZoneName")
+      ?.value || "UTC";
+      console.log("Timezone:", timezoneAbbreviation);
+
   // 1. Fetch backend community stats
   const { data: stats, isLoading } = useQuery({
     queryKey: ["communityStats"],
@@ -55,7 +64,10 @@ export function CommunityPage() {
   const displayStats = [
     { label: "Weekly active contributors", value: stats?.active_contributors || "128" },
     { label: "Merged learning PRs", value: stats?.merged_prs || "342" },
-    { label: "Mentor response SLA", value: stats?.response_sla || "3.2h" },
+    {
+      label: "Mentor response SLA",
+      value: `${stats?.response_sla || "3.2h"} ${timezoneAbbreviation}`,
+    },
     { label: "Open help requests", value: stats?.open_requests || "0" },
   ];
 

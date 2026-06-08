@@ -49,10 +49,18 @@ git switch -c feat/add-git-rebase-lesson
 
 ### 5. Develop & Run Local Tests
 Follow the setup in [README.md](README.md) to run the client and server.
-Run testing commands locally before pushing:
+Run testing and formatting commands locally before pushing:
+
+**Testing:**
 - Frontend: `cd frontend && npm run test`
 - Backend: `cd backend && pytest`
-- Lint: `cd frontend && npm run lint`
+
+**Lint & Format Checklist:**
+- `cd frontend && npm run lint` — Check for ESLint errors
+- `cd frontend && npm run format` — Auto-format code with Prettier
+- `cd backend && black --check .` — Verify Python Pep8 compliance
+
+Run all checks above before opening a pull request to avoid CI failures.
 
 ### 6. Submit a Pull Request
 Push your branch to your fork on GitHub and click **New Pull Request**.
