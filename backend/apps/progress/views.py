@@ -182,11 +182,7 @@ class IsMentor(BasePermission):
     message = "You must be a designated mentor to access this resource."
 
     def has_permission(self, request, view) -> bool:
-        return (
-            request.user
-            and request.user.is_authenticated
-            and hasattr(request.user, "mentor_profile")
-        )
+        return bool(request.user and hasattr(request.user, "mentor_profile"))
 
 
 class MentorHelpRequestListView(ListAPIView):
