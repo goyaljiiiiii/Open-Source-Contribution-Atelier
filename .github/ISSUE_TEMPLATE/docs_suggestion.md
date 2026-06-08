@@ -3,7 +3,7 @@ name: Documentation suggestion
 about: Report a typo, formatting issue, or outdated content in the docs
 title: "docs: "
 labels: ["documentation", "needs-triage"]
-assignees: ''
+assignees: []
 
 ---
 
