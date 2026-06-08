@@ -73,3 +73,17 @@ class QuizAttempt(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.question_id} - {'✓' if self.is_correct else '✗'}"
+
+import uuid
+
+class Certificate(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="certificates")
+    course_name = models.CharField(max_length=255, default="Open Source Contribution Course")
+    verification_hash = models.CharField(max_length=64, unique=True, default=uuid.uuid4, db_index=True)
+    issued_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-issued_at"]
+
+    def __str__(self):
+        return f"Certificate for {self.user.username} - {self.verification_hash}"
