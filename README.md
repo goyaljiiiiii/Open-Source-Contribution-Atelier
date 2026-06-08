@@ -18,13 +18,13 @@ The platform preserves a playful, neobrutalist developer console aesthetic while
 
 ## Key Features
 
-1. **Structured Learning Curriculum**: 8 core modules going from mindset basics to advanced conflict resolutions.
+1. **Structured Learning Curriculum**: 8 core modules going from mindset basics to advanced conflict resolution.
 2. **Markdown-Driven Content**: Lessons and metadata are parsed dynamically. Adding content requires no code changes. See the [Content Guide](CONTENT_GUIDE.md).
-3. **Interactive Quizzes**: Theoretical modules feature multi-choice checking dashboards.
-4. **Sandbox Terminal**: Practical Git lessons incorporate a mockup sandbox terminal that validates inputs.
+3. **Interactive Quizzes**: Theoretical modules feature multiple-choice checking dashboards.
+4. **Sandbox Terminal**: Practical Git lessons incorporate a mock-up sandbox terminal that validates inputs.
 5. **Gamification & Badges Cabinet**: Locked and unlocked milestone rewards mapping directly to module progress.
 6. **Printable Completion Certificates**: Generates a gorgeous A4 neobrutalist certificate with verification hashes once the curriculum hits 100%.
-7. **Hall of Fame & Leaderboard**: Cohort stats, active streaking calendars, and GitHub contributor APIs recognition boards.
+7. **Hall of Fame & Leaderboard**: Cohort stats, active streak calendars, and GitHub contributor APIs recognition boards.
 8. **Onboarding Guide Tour**: Walkthrough sliders introduce the sandbox console to newcomers.
 
 ---
@@ -33,11 +33,11 @@ The platform preserves a playful, neobrutalist developer console aesthetic while
 
 - **Module 1: Introduction to Open Source**: Mindset, Why it matters, History, and Misconceptions.
 - **Module 2: Git Fundamentals**: Repos, Commits, Branching, Merging, and Remotes.
-- **Module 3: GitHub Fundamentals**: Forks, Pull Requests, Issues, discussions, and Organizations.
+- **Module 3: GitHub Fundamentals**: Forks, Pull Requests, Issues, Discussions, and Organizations.
 - **Module 4: Open Source Etiquette**: Respectful communication, Reading README & CONTRIBUTING files first, and Review processes.
 - **Module 5: First Contribution**: Interactive step-by-step mock PR setup drill.
-- **Module 6: Real Contribution Workflow**: Tacing Issue -> Assignment -> Develop -> PR -> Review -> Merge cycles.
-- **Module 7: Advanced Open Source**: Rebasing, Squashing, Conflict resolutions, and CI/CD checks.
+- **Module 6: Real Contribution Workflow**: Tracing Issue -> Assignment -> Develop -> PR -> Review -> Merge cycles.
+- **Module 7: Advanced Open Source**: Rebasing, Squashing, Conflict resolution, and CI/CD checks.
 - **Module 8: Finding Projects**: Discovering issues using filters, Hacktoberfest, and good first issues.
 
 ---
