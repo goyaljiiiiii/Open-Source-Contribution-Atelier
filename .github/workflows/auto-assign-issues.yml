@@ -1,8 +1,7 @@
 name: Auto-assign issues
 
 on:
-  issue_comment:
-    types: [created]
+  workflow_dispatch:
 
 jobs:
   auto-assign:
