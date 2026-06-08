@@ -3,39 +3,61 @@ import { Bell, BookOpen, BriefcaseBusiness, LayoutGrid, Search, Shield, Terminal
 import { Link, NavLink } from "react-router-dom";
 import { fetchApi } from "../../lib/api";
 import { useTheme } from "../../hooks/useTheme";
+import { useAuth } from "../../features/auth/AuthContext";
+import { fetchLessonsApi } from "../../lib/lessons";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
-  { to: "/lessons/intro", label: "Lessons", icon: BookOpen },
+  { to: "/lessons/what-is-open-source", label: "Lessons", icon: BookOpen },
   { to: "/challenges", label: "Challenges", icon: Trophy },
   { to: "/community", label: "Community", icon: BriefcaseBusiness },
 ];
 
 export function Navigation() {
   const { theme, toggleTheme } = useTheme();
+  const { user, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<{ lessons: any[], challenges: any[] } | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [lessonsCatalog, setLessonsCatalog] = useState<any[]>([]);
 
   useEffect(() => {
-    const delayDebounceFn = setTimeout(async () => {
-      if (searchQuery.length > 1) {
+    fetchLessonsApi().then(data => setLessonsCatalog(data));
+  }, []);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchQuery.trim().length > 1) {
         setIsSearching(true);
-        try {
-          const results = await fetchApi(`/content/search/?q=${searchQuery}`);
-          setSearchResults(results);
-        } catch (error) {
-          console.error("Search failed:", error);
-        } finally {
-          setIsSearching(false);
-        }
+        const query = searchQuery.toLowerCase();
+        
+        const filteredLessons = lessonsCatalog.filter(lesson => 
+          lesson.title.toLowerCase().includes(query) || 
+          lesson.description.toLowerCase().includes(query)
+        );
+
+        const mockChallenges = [
+          { title: "Hacktoberfest Warmup", summary: "Guide contributors through issue triage, branch naming, and clean commits.", slug: "hacktoberfest-warmup" },
+          { title: "Git Recovery Lab", summary: "Practice safe undo flows, rebases, and fixing a messy working tree.", slug: "git-recovery-lab" }
+        ];
+        const filteredChallenges = mockChallenges.filter(ch => 
+          ch.title.toLowerCase().includes(query) || 
+          ch.summary.toLowerCase().includes(query)
+        );
+
+        setSearchResults({
+          lessons: filteredLessons,
+          challenges: filteredChallenges
+        });
+        setIsSearching(false);
       } else {
         setSearchResults(null);
       }
-    }, 300);
+    }, 200);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery]);
+  }, [searchQuery, lessonsCatalog]);
+
 
   return (
     <>
@@ -77,7 +99,7 @@ export function Navigation() {
               <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-tertiary">Safe sandbox</p>
               <p className="mt-2 text-sm text-muted dark:text-[#c4bbae]">Run guided Git practice without exposing the real shell.</p>
               <Link
-                to="/lessons/intro"
+                to="/lessons/what-is-open-source"
                 className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-primary-container px-4 py-3 text-sm font-semibold text-white shadow-card"
               >
                 <TerminalSquare size={15} />
@@ -177,12 +199,31 @@ export function Navigation() {
             <button className="rounded-xl bg-surface-low p-2 text-muted hover:text-text dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2]">
               <Bell size={16} />
             </button>
-            <Link
-              to="/login"
-              className="rounded-xl bg-[linear-gradient(135deg,#4f46e5,#7c72ff)] px-4 py-2 text-sm font-semibold text-white shadow-card"
-            >
-              Admin Login
-            </Link>
+            {user ? (
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-sm text-text bg-white px-3 py-2 rounded-xl border-2 border-black dark:bg-[#151411] dark:text-[#f0ebe2] dark:border-[#2e2924] flex items-center gap-1.5 shadow-card-sm">
+                  👤 <span className="max-w-[80px] truncate">{user.username}</span>
+                  {user.is_staff && (
+                    <span className="font-black text-[9px] bg-primary text-white px-1.5 py-0.5 rounded border border-black dark:border-none">
+                      ADMIN
+                    </span>
+                  )}
+                </span>
+                <button
+                  onClick={logout}
+                  className="rounded-xl bg-[#ffb5e8] px-3 py-2 text-xs font-black text-black border-2 border-black shadow-card-sm hover:-translate-y-0.5 hover:shadow-card active:translate-y-0.5 active:shadow-card-sm transition-all cursor-pointer uppercase"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className="rounded-xl bg-[linear-gradient(135deg,#4f46e5,#7c72ff)] px-4 py-2 text-sm font-semibold text-white shadow-card"
+              >
+                Admin Login
+              </Link>
+            )}
           </div>
         </div>
       </header>

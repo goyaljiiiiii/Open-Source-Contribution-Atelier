@@ -8,9 +8,10 @@ from rest_framework import permissions, status
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from .models import Badge, HelpRequest, LessonProgress, ExerciseAttempt, QuizAttempt
 
 from apps.content.models import Lesson
-from .models import Badge, HelpRequest, LessonProgress
+from .models import Badge, HelpRequest, LessonProgress, ExerciseAttempt
 from .serializers import BadgeSerializer, HelpRequestSerializer, LessonProgressSerializer
 
 
@@ -36,7 +37,13 @@ class MyProgressView(APIView):
         try:
             lesson = Lesson.objects.get(slug=lesson_slug)
         except Lesson.DoesNotExist:
-            return Response({"error": "Lesson not found"}, status=status.HTTP_404_NOT_FOUND)
+            lesson = Lesson.objects.create(
+                slug=lesson_slug,
+                title=lesson_slug.replace("-", " ").title(),
+                summary="Dynamic learning module",
+                content="Dynamic content loaded from local file storage.",
+                difficulty="beginner"
+            )
 
         progress, created = LessonProgress.objects.update_or_create(
             user=request.user,
@@ -152,3 +159,94 @@ class HelpRequestListCreateView(APIView):
         )
         serializer = HelpRequestSerializer(help_request)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+class ContributorTimelineView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        completed_lessons = LessonProgress.objects.filter(
+            user=request.user,
+            completed=True
+        ).count()
+
+        exercise_attempts = ExerciseAttempt.objects.filter(
+            user=request.user
+        ).count()
+
+        help_requests = HelpRequest.objects.filter(
+            user=request.user
+        ).count()
+
+        return Response({
+            "first_contribution_date": request.user.date_joined.date(),
+            "completed_lessons": completed_lessons,
+            "exercise_attempts": exercise_attempts,
+            "help_requests": help_requests,
+            "contribution_streak": completed_lessons,
+        })
+class QuizAttemptView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        question_id = request.data.get("question_id")
+        question_text = request.data.get("question_text", "")
+        selected_answer = request.data.get("selected_answer")
+        correct_answer = request.data.get("correct_answer")
+        is_correct = request.data.get("is_correct", False)
+        time_taken_seconds = request.data.get("time_taken_seconds", 0)
+
+        if not question_id:
+            return Response(
+                {"error": "question_id is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if selected_answer is None:
+            return Response(
+                {"error": "selected_answer is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if correct_answer is None:
+            return Response(
+                {"error": "correct_answer is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        attempt = QuizAttempt.objects.create(
+            user=request.user,
+            question_id=question_id,
+            question_text=question_text,
+            selected_answer=selected_answer,
+            correct_answer=correct_answer,
+            is_correct=is_correct,
+            time_taken_seconds=time_taken_seconds,
+        )
+
+        return Response({
+            "id": attempt.id,
+            "question_id": attempt.question_id,
+            "is_correct": attempt.is_correct,
+            "created_at": attempt.created_at,
+        }, status=status.HTTP_201_CREATED)
+
+    def get(self, request):
+        attempts = QuizAttempt.objects.filter(user=request.user)
+
+        question_id = request.query_params.get("question_id")
+        if question_id:
+            attempts = attempts.filter(question_id=question_id)
+
+        total = attempts.count()
+        correct = attempts.filter(is_correct=True).count()
+        incorrect = total - correct
+
+        return Response({
+            "total_attempts": total,
+            "correct": correct,
+            "incorrect": incorrect,
+            "accuracy_percent": round((correct / total) * 100, 1) if total > 0 else 0,
+            "attempts": list(attempts.values(
+                "id", "question_id", "question_text",
+                "selected_answer", "correct_answer",
+                "is_correct", "time_taken_seconds", "created_at"
+            ))
+        })
