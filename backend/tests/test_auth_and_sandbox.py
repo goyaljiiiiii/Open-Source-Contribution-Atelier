@@ -94,10 +94,10 @@ def test_github_oauth_callback_creates_user_and_redirects_withs(
     monkeypatch.setenv("GITHUB_CLIENT_SECRET", "github-client-secret")
     monkeypatch.setenv("FRONTEND_URL", "http://localhost:5173")
 
-_resp = Mock()
-_resp.json.return_value = {"access": "github"}
-_resp.raise_for_status.return_value = None
-    mock_post.return_value =_resp
+    _resp = Mock()
+    _resp.json.return_value = {"access": "github"}
+    _resp.raise_for_status.return_value = None
+    mock_post.return_value = _resp
 
     user_resp = Mock()
     user_resp.json.return_value = {"login": "octo-dev", "email": "octo@example.com"}
