@@ -12,15 +12,19 @@ from .models import (
     QuizAttempt,
 )
 from apps.content.models import Lesson
-from .serializers import BadgeSerializer, HelpRequestSerializer, LessonProgressSerializer
+from .serializers import BadgeSerializer, HelpRequestSerializer, LessonProgressSerializer, LessonProgressCreateSerializer
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse
 
-
+@extend_schema(responses=BadgeSerializer(many=True))
 class BadgeListView(ListAPIView):
     queryset = Badge.objects.all()
     serializer_class = BadgeSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-
+@extend_schema_view(
+    get=extend_schema(responses=LessonProgressSerializer(many=True)),
+    post=extend_schema(request=LessonProgressCreateSerializer, responses=LessonProgressSerializer),
+)
 class MyProgressView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -58,6 +62,7 @@ class MyProgressView(APIView):
         )
 
 
+@extend_schema(responses=OpenApiResponse(description="Community stats summary JSON: active_contributors, merged_prs, response_sla, open_requests"))
 class CommunityStatsView(APIView):
     def get(self, request):
         from django.contrib.auth.models import User
@@ -129,6 +134,10 @@ class UserAchievementsView(APIView):
             "earned_badges": badges
         })
 
+@extend_schema_view(
+    get=extend_schema(responses=HelpRequestSerializer(many=True)),
+    post=extend_schema(request=HelpRequestSerializer, responses=HelpRequestSerializer),
+)
 class HelpRequestListCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -159,7 +168,8 @@ class HelpRequestListCreateView(APIView):
         )
         serializer = HelpRequestSerializer(help_request)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
+
+@extend_schema(responses=OpenApiResponse(description="Contributor timeline: first_contribution_date, completed_lessons, exercise_attempts, help_requests, contribution_streak"))   
 class ContributorTimelineView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -184,6 +194,17 @@ class ContributorTimelineView(APIView):
             "help_requests": help_requests,
             "contribution_streak": completed_lessons,
         })
+    
+@extend_schema_view(
+    post=extend_schema(
+        description="Create a quiz attempt. Expected JSON fields: question_id, question_text (optional), selected_answer, correct_answer, is_correct, time_taken_seconds.",
+        responses=OpenApiResponse(description="Created attempt summary: {id, question_id, is_correct, created_at}"),
+    ),
+    get=extend_schema(
+        description="List quiz attempts and stats. Optional query param: question_id. Returns total_attempts, correct, incorrect, accuracy_percent, attempts array.",
+        responses=OpenApiResponse(description="Quiz attempts summary and attempts array."),
+    ),
+)
 class QuizAttemptView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
