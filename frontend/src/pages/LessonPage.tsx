@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Menu, X, BookOpen, CheckCircle2, Lock } from "lucide-react";
@@ -24,8 +24,25 @@ export function LessonPage() {
   const [markdownContent, setMarkdownContent] = useState("");
   
   // Curriculum modules list for sidebar
-  const [modules, setModules] = useState<any[]>([]);
+  const [modules, setModules] = useState<{ id: string; title: string; lessons: { slug: string; title: string; difficulty?: string }[] }[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const sidebarRef = useRef<HTMLElement>(null);
+
+  const closeSidebar = useCallback(() => setIsSidebarOpen(false), []);
+
+  // Close sidebar on click-outside (mobile drawer)
+  useEffect(() => {
+    if (!isSidebarOpen) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(e.target as Node)) {
+        closeSidebar();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isSidebarOpen, closeSidebar]);
 
   // Command-based exercises
   const [input, setInput] = useState("");
@@ -36,7 +53,6 @@ export function LessonPage() {
   const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [quizFeedback, setQuizFeedback] = useState<"correct" | "incorrect" | null>(null);
-  const [quizCompleted, setQuizCompleted] = useState(false);
 
   // Help Request panel
   const [isHelpPanelOpen, setIsHelpPanelOpen] = useState(false);
@@ -105,7 +121,6 @@ export function LessonPage() {
     setCurrentQuizIndex(0);
     setSelectedOption(null);
     setQuizFeedback(null);
-    setQuizCompleted(false);
 
     if (lesson.filePath) {
       fetchLessonContent(lesson.filePath).then((content) => {
@@ -154,7 +169,7 @@ export function LessonPage() {
     } else {
       try {
         isCorrect = expected.test(input.trim());
-      } catch (e) {
+      } catch {
         isCorrect = input.trim() === String(expected);
       }
     }
@@ -180,7 +195,6 @@ export function LessonPage() {
     if (selectedOption === currentQuiz.answer) {
       setQuizFeedback("correct");
       if (currentQuizIndex === lesson.quizzes.length - 1) {
-        setQuizCompleted(true);
         setFeedback("correct");
         syncProgress({
           lesson_slug: lesson.slug,
@@ -229,10 +243,12 @@ export function LessonPage() {
       {/* 1. Mobile Sidebar Toggle */}
       <div className="lg:hidden bg-white border-b-4 border-black dark:bg-[#151411] dark:border-[#2e2924] p-4 flex items-center justify-between z-10">
         <button
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="flex items-center gap-2 font-black text-sm uppercase px-3 py-2 bg-surface-low border-2 border-black rounded-xl"
+          onClick={() => setIsSidebarOpen((prev) => !prev)}
+          aria-expanded={isSidebarOpen}
+          aria-controls="course-sidebar"
+          className="flex items-center gap-2 font-black text-sm uppercase px-3 py-2 bg-surface-low border-2 border-black rounded-xl text-black"
         >
-          <Menu size={16} />
+          {isSidebarOpen ? <X size={16} /> : <Menu size={16} />}
           {isSidebarOpen ? "Close Outline" : "Course Directory"}
         </button>
         <span className="font-mono text-xs font-black bg-black text-white px-3 py-1 rounded-full dark:bg-[#2e2924]">
@@ -240,11 +256,22 @@ export function LessonPage() {
         </span>
       </div>
 
+      {/* Backdrop overlay — closes drawer on click-outside on mobile */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 z-10 bg-black/40 lg:hidden"
+          aria-hidden="true"
+          onClick={closeSidebar}
+        />
+      )}
+
       {/* 2. Side Course Directory Menu */}
       <aside
-        className={`w-full lg:w-[320px] lg:flex-shrink-0 border-r-4 border-black bg-white dark:bg-[#151411] dark:border-[#2e2924] overflow-y-auto max-h-[calc(100vh-80px)] p-6 transition-all z-20 ${
-          isSidebarOpen ? "fixed inset-0 top-36 lg:relative lg:top-0" : "hidden lg:block"
-        }`}
+        id="course-sidebar"
+        ref={sidebarRef}
+        className={`fixed top-0 left-0 h-full w-[300px] border-r-4 border-black bg-white dark:bg-[#151411] dark:border-[#2e2924] overflow-y-auto p-6 transition-transform duration-300 ease-in-out z-20 pt-20
+          ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+          lg:relative lg:top-auto lg:left-auto lg:h-auto lg:w-[320px] lg:flex-shrink-0 lg:translate-x-0 lg:block lg:max-h-[calc(100vh-80px)]`}
       >
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-black uppercase flex items-center gap-2">
@@ -252,7 +279,7 @@ export function LessonPage() {
             Curriculum
           </h2>
           {isSidebarOpen && (
-            <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden border-2 border-black p-1 rounded-lg">
+            <button onClick={closeSidebar} aria-label="Close course outline" className="lg:hidden border-2 border-black p-1 rounded-lg">
               <X size={16} />
             </button>
           )}
@@ -265,14 +292,14 @@ export function LessonPage() {
                 Module {modIdx + 1}: {mod.title}
               </h3>
               <div className="space-y-1">
-                {mod.lessons.map((les: any) => {
+                {mod.lessons.map((les: { slug: string; title: string; difficulty?: string }) => {
                   const active = les.slug === lesson.slug;
                   const completed = isLessonCompleted(les.slug);
                   return (
                     <Link
                       key={les.slug}
                       to={`/lessons/${les.slug}`}
-                      onClick={() => setIsSidebarOpen(false)}
+                      onClick={closeSidebar}
                       className={`w-full flex items-center justify-between p-2.5 rounded-xl border-2 transition-all text-xs font-bold ${
                         active
                           ? "bg-surface-low border-black shadow-card-sm text-text"

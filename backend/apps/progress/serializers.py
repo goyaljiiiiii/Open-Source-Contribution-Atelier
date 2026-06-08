@@ -48,3 +48,8 @@ class HelpRequestSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["user", "status", "created_at", "updated_at"]
+
+class LessonProgressCreateSerializer(serializers.Serializer):
+    lesson_slug = serializers.SlugField(help_text="Slug of the lesson")
+    score = serializers.IntegerField(default=100, help_text="Numeric score")
+    completed = serializers.BooleanField(default=True, help_text="Whether the lesson is completed")
