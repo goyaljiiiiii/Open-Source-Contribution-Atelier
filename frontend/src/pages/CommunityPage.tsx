@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { SectionCard } from "../components/ui/SectionCard";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { fetchApi } from "../lib/api";
 import SkeletonStatGrid from "../components/ui/skeletons/SkeletonStatGrid";
 import { Trophy, Award, Users, Star } from "lucide-react";

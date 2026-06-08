@@ -1,17 +1,17 @@
+from django.contrib.auth.models import User
+from django.db.models import Sum
+from rest_framework import permissions, status
+from rest_framework.generics import ListAPIView
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from .models import (
     Badge,
     HelpRequest,
     LessonProgress,
     ExerciseAttempt,
+    QuizAttempt,
 )
-from rest_framework import permissions, status
-from rest_framework.generics import ListAPIView
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from .models import Badge, HelpRequest, LessonProgress, ExerciseAttempt, QuizAttempt
-
 from apps.content.models import Lesson
-from .models import Badge, HelpRequest, LessonProgress, ExerciseAttempt
 from .serializers import BadgeSerializer, HelpRequestSerializer, LessonProgressSerializer
 
 
