@@ -1,11 +1,11 @@
 from rest_framework import permissions, status
 from rest_framework.generics import ListAPIView
+from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Badge, HelpRequest, LessonProgress, ExerciseAttempt, QuizAttempt
 
 from apps.content.models import Lesson
-from .models import Badge, HelpRequest, LessonProgress, ExerciseAttempt
+from .models import Badge, HelpRequest, LessonProgress, ExerciseAttempt, QuizAttempt
 from .serializers import BadgeSerializer, HelpRequestSerializer, LessonProgressSerializer
 
 
@@ -100,7 +100,52 @@ class HelpRequestListCreateView(APIView):
         )
         serializer = HelpRequestSerializer(help_request)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
+
+
+class IsMentor(BasePermission):
+    """
+    Grants access only to users who have a MentorProfile.
+
+    This permission is intentionally separate from `is_staff` so that
+    regular staff administrators are not automatically treated as mentors,
+    and mentors do not need elevated Django permissions.
+    """
+
+    message = "You must be a designated mentor to access this resource."
+
+    def has_permission(self, request, view) -> bool:
+        return (
+            request.user
+            and request.user.is_authenticated
+            and hasattr(request.user, "mentor_profile")
+        )
+
+
+class MentorHelpRequestListView(ListAPIView):
+    """
+    Read-only list of HelpRequest tickets scoped to the requesting mentor's
+    assigned lessons.
+
+    Only users with a MentorProfile may access this endpoint. The queryset
+    is automatically filtered so a mentor can never see tickets outside their
+    assigned module scope.
+
+    GET /api/progress/mentor/help-requests/
+    """
+
+    serializer_class = HelpRequestSerializer
+    permission_classes = [permissions.IsAuthenticated, IsMentor]
+
+    def get_queryset(self):
+        assigned = self.request.user.mentor_profile.assigned_lessons.all()
+        return (
+            HelpRequest.objects
+            .filter(lesson__in=assigned)
+            .select_related("user", "lesson")
+            .order_by("-created_at")
+        )
+
+
 class ContributorTimelineView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 

@@ -3,6 +3,7 @@ from .views import (
     BadgeListView,
     CommunityStatsView,
     HelpRequestListCreateView,
+    MentorHelpRequestListView,
     MyProgressView,
     ContributorTimelineView,
     QuizAttemptView,
@@ -14,6 +15,6 @@ urlpatterns = [
     path("contributor-timeline/", ContributorTimelineView.as_view(), name="contributor-timeline"),
     path("community-stats/", CommunityStatsView.as_view(), name="community-stats"),
     path("help-requests/", HelpRequestListCreateView.as_view(), name="help-requests"),
-    path("timeline/", ContributorTimelineView.as_view(), name="contributor-timeline"),
+    path("quiz-attempts/", QuizAttemptView.as_view(), name="quiz-attempts"),
+    path("mentor/help-requests/", MentorHelpRequestListView.as_view(), name="mentor-help-requests"),
 ]
-path("quiz-attempts/", QuizAttemptView.as_view(), name="quiz-attempts"),
