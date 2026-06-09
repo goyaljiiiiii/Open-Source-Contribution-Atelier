@@ -63,6 +63,8 @@ const BADGES = [
 export function DashboardPage() {
   const { user } = useAuth();
   const { isLessonCompleted } = useUserProgress();
+  const CONTRIBUTORS_CACHE_KEY = "github_contributors_cache";
+  const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
 
   // 1. Fetch static modules catalog
   const [curriculumData, setCurriculumData] = useState<any[]>([]);
@@ -114,25 +116,68 @@ export function DashboardPage() {
   // GitHub Live Contributors list
   const [gitHubContributors, setGitHubContributors] = useState<any[]>([]);
   useEffect(() => {
-    fetch("https://api.github.com/repos/goyaljiiiiii/Open-Source-Contribution-Atelier/contributors")
-      .then(res => {
-        if (!res.ok) throw new Error("API Limit");
-        return res.json();
-      })
-      .then(data => {
-        if (Array.isArray(data)) {
-          setGitHubContributors(data.slice(0, 8));
+  const fallbackContributors = [
+    {
+      login: "goyaljiiiiii",
+      avatar_url: "https://github.com/goyaljiiiiii.png",
+      html_url: "https://github.com/goyaljiiiiii"
+    },
+    {
+      login: "nandini",
+      avatar_url: "https://github.com/github.png",
+      html_url: "https://github.com"
+    },
+    {
+      login: "antigravity",
+      avatar_url: "https://github.com/google.png",
+      html_url: "https://github.com"
+    }
+  ];
+
+  fetch("https://api.github.com/repos/goyaljiiiiii/Open-Source-Contribution-Atelier/contributors")
+    .then(res => {
+      if (!res.ok) throw new Error("API Limit");
+      return res.json();
+    })
+    .then(data => {
+      if (Array.isArray(data)) {
+        const contributors = data.slice(0, 8);
+
+        setGitHubContributors(contributors);
+
+        localStorage.setItem(
+          CONTRIBUTORS_CACHE_KEY,
+          JSON.stringify({
+            data: contributors,
+            timestamp: Date.now()
+          })
+        );
+      }
+    })
+    .catch(() => {
+      const cachedData = localStorage.getItem(CONTRIBUTORS_CACHE_KEY);
+
+      if (cachedData) {
+        try {
+          const parsedCache = JSON.parse(cachedData);
+
+          const isCacheValid =
+            Date.now() - parsedCache.timestamp < CACHE_EXPIRY;
+
+          if (isCacheValid) {
+            setGitHubContributors(parsedCache.data);
+            return;
+          }
+
+          localStorage.removeItem(CONTRIBUTORS_CACHE_KEY);
+        } catch {
+          localStorage.removeItem(CONTRIBUTORS_CACHE_KEY);
         }
-      })
-      .catch(() => {
-        // Fallback contributors list
-        setGitHubContributors([
-          { login: "goyaljiiiiii", avatar_url: "https://github.com/goyaljiiiiii.png", html_url: "https://github.com/goyaljiiiiii" },
-          { login: "nandini", avatar_url: "https://github.com/github.png", html_url: "https://github.com" },
-          { login: "antigravity", avatar_url: "https://github.com/google.png", html_url: "https://github.com" }
-        ]);
-      });
-  }, []);
+      }
+
+      setGitHubContributors(fallbackContributors);
+    });
+}, []);
 
   // Onboarding Tour state
   const [showOnboarding, setShowOnboarding] = useState(false);
