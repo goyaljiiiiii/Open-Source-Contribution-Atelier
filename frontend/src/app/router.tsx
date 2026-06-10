@@ -10,6 +10,7 @@ import { LoginPage } from "../pages/LoginPage";
 import { SignupPage } from "../pages/SignupPage";
 import { LessonPage } from "../pages/LessonPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
+import { VerifyCertificatePage } from "../pages/VerifyCertificatePage";
 import { useAuth } from "../features/auth/AuthContext";
 import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
 
@@ -79,6 +80,7 @@ export function AppRouter() {
       {/* Public auth routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/verify/:hash" element={<VerifyCertificatePage />} />
 
 
       <Route path="*" element={<NotFoundPage />} />
