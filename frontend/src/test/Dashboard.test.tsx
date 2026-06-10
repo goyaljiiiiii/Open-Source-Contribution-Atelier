@@ -6,18 +6,26 @@ import React from "react";
 
 // Mock Recharts library to prevent JSDOM layout measuring issues
 vi.mock("recharts", () => ({
-  ResponsiveContainer: ({ children }: any) => <div data-testid="responsive-container">{children}</div>,
-  BarChart: ({ children }: any) => <div data-testid="bar-chart">{children}</div>,
+  ResponsiveContainer: ({ children }: any) => (
+    <div data-testid="responsive-container">{children}</div>
+  ),
+  BarChart: ({ children }: any) => (
+    <div data-testid="bar-chart">{children}</div>
+  ),
   Bar: () => <div data-testid="bar" />,
   XAxis: () => <div data-testid="xaxis" />,
   YAxis: () => <div data-testid="yaxis" />,
   CartesianGrid: () => <div data-testid="cartesian-grid" />,
   Tooltip: () => <div data-testid="tooltip" />,
   Legend: () => <div data-testid="legend" />,
-  PieChart: ({ children }: any) => <div data-testid="pie-chart">{children}</div>,
+  PieChart: ({ children }: any) => (
+    <div data-testid="pie-chart">{children}</div>
+  ),
   Pie: ({ children }: any) => <div data-testid="pie">{children}</div>,
   Cell: () => <div data-testid="cell" />,
-  AreaChart: ({ children }: any) => <div data-testid="area-chart">{children}</div>,
+  AreaChart: ({ children }: any) => (
+    <div data-testid="area-chart">{children}</div>
+  ),
   Area: () => <div data-testid="area" />,
 }));
 
@@ -48,9 +56,7 @@ function renderWithQueryClient(ui: React.ReactElement) {
     },
   });
   return render(
-    <QueryClientProvider client={queryClient}>
-      {ui}
-    </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
   );
 }
 
@@ -63,15 +69,21 @@ describe("DashboardPage Dual-Role Views", () => {
       if (url.includes("curriculum.json")) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({
-            modules: [
-              {
-                lessons: [
-                  { slug: "intro", title: "Open Source Mindset", description: "Understand how open source collaboration works." }
-                ]
-              }
-            ]
-          }),
+          json: () =>
+            Promise.resolve({
+              modules: [
+                {
+                  lessons: [
+                    {
+                      slug: "intro",
+                      title: "Open Source Mindset",
+                      description:
+                        "Understand how open source collaboration works.",
+                    },
+                  ],
+                },
+              ],
+            }),
         });
       }
       if (url.includes("contributors")) {
@@ -111,7 +123,13 @@ describe("DashboardPage Dual-Role Views", () => {
             active_contributors: 2,
           },
           pending_prs: [
-            { id: 9, title: "Feature request review", contributor: "bob_coder", issue_title: "Add dark mode toggle", created_at: "2026-06-01T12:00:00Z" }
+            {
+              id: 9,
+              title: "Feature request review",
+              contributor: "bob_coder",
+              issue_title: "Add dark mode toggle",
+              created_at: "2026-06-01T12:00:00Z",
+            },
           ],
         });
       }
@@ -121,8 +139,20 @@ describe("DashboardPage Dual-Role Views", () => {
           next: null,
           previous: null,
           results: [
-            { id: 2, username: "bob_coder", prs_merged: 2, issues_solved: 3, xp: 250 },
-            { id: 3, username: "alice_dev", prs_merged: 1, issues_solved: 1, xp: 100 },
+            {
+              id: 2,
+              username: "bob_coder",
+              prs_merged: 2,
+              issues_solved: 3,
+              xp: 250,
+            },
+            {
+              id: 3,
+              username: "alice_dev",
+              prs_merged: 1,
+              issues_solved: 1,
+              xp: 100,
+            },
           ],
         });
       }
@@ -132,14 +162,18 @@ describe("DashboardPage Dual-Role Views", () => {
     renderWithQueryClient(<DashboardPage />);
 
     // Assert that the Admin View specific sections render
-    expect(await screen.findByText("MAINTAINER CONTROL PANEL 🛠️")).toBeInTheDocument();
-    expect(screen.getByText("Project Health & Cohort Monitor")).toBeInTheDocument();
-    
+    expect(
+      await screen.findByText("MAINTAINER CONTROL PANEL 🛠️"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Project Health & Cohort Monitor"),
+    ).toBeInTheDocument();
+
     // Assert stats blocks
     expect(screen.getByText("System Issues")).toBeInTheDocument();
     expect(screen.getByText("10")).toBeInTheDocument(); // total issues count
     expect(screen.getByText("Solved: 4")).toBeInTheDocument();
-    
+
     // Assert pending PRs
     expect(screen.getByText("Pending Pull Requests (1)")).toBeInTheDocument();
     expect(screen.getByText("Feature request review")).toBeInTheDocument();
@@ -169,10 +203,24 @@ describe("DashboardPage Dual-Role Views", () => {
             rank: 1,
           },
           assigned_issues: [
-            { id: 11, title: "Fix git conflicts", description: "Practice conflict resolution", status: "in_progress", points: 50, created_at: "2026-06-01T10:00:00Z" }
+            {
+              id: 11,
+              title: "Fix git conflicts",
+              description: "Practice conflict resolution",
+              status: "in_progress",
+              points: 50,
+              created_at: "2026-06-01T10:00:00Z",
+            },
           ],
           recent_prs: [
-            { id: 22, title: "Mock PR submission", status: "merged", issue_title: "Fix git conflicts", created_at: "2026-06-01T11:00:00Z", merged_at: "2026-06-01T12:00:00Z" }
+            {
+              id: 22,
+              title: "Mock PR submission",
+              status: "merged",
+              issue_title: "Fix git conflicts",
+              created_at: "2026-06-01T11:00:00Z",
+              merged_at: "2026-06-01T12:00:00Z",
+            },
           ],
           progress_tracker: {
             completed_lessons: 2,
@@ -183,7 +231,13 @@ describe("DashboardPage Dual-Role Views", () => {
       }
       if (endpoint === "/content/lessons/") {
         return Promise.resolve([
-          { slug: "intro", title: "Introduction to Atelier", summary: "Welcome lesson", difficulty: "beginner", estimated_minutes: 5 }
+          {
+            slug: "intro",
+            title: "Introduction to Atelier",
+            summary: "Welcome lesson",
+            difficulty: "beginner",
+            estimated_minutes: 5,
+          },
         ]);
       }
       return Promise.reject(new Error("Unknown Endpoint"));
@@ -192,14 +246,16 @@ describe("DashboardPage Dual-Role Views", () => {
     renderWithQueryClient(<DashboardPage />);
 
     expect(await screen.findByText(/LEVEL/)).toBeInTheDocument();
-    expect(screen.getByText("Welcome to the Atelier, bob_coder.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Welcome to the Atelier, bob_coder."),
+    ).toBeInTheDocument();
     expect(screen.getByText(/completed.*course modules/)).toBeInTheDocument();
-    
+
     // Assert streak, xp, rank, and merged PR cards
     expect(screen.getByText("Streak Days")).toBeInTheDocument();
     expect(screen.getByText("4")).toBeInTheDocument();
     expect(screen.getByText("#1")).toBeInTheDocument(); // Rank
-    
+
     // Assert assigned issues
     expect(screen.getByText("Assigned Issues")).toBeInTheDocument();
     expect(screen.getByText("Fix git conflicts")).toBeInTheDocument();

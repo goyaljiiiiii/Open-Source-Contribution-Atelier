@@ -6,7 +6,6 @@ import clsx from "clsx";
 
 const difficulties: Difficulty[] = ["beginner", "intermediate", "advanced"];
 
-
 export function ChallengePage() {
   const [search, setSearch] = useState("");
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
@@ -24,8 +23,9 @@ export function ChallengePage() {
     <div className="space-y-6">
       <SectionCard eyebrow="Challenges" title="Recommended contribution drills">
         <p className="max-w-2xl text-sm leading-6 text-muted">
-          Practice branching, clean commits, pull request preparation, and review-response workflows.
-          Recommendation logic can adapt to progress, badges, and recent learner friction points.
+          Practice branching, clean commits, pull request preparation, and
+          review-response workflows. Recommendation logic can adapt to progress,
+          badges, and recent learner friction points.
         </p>
       </SectionCard>
 

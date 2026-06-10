@@ -16,7 +16,7 @@ import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
-  
+
   if (isLoading) {
     return (
       <div
@@ -32,13 +32,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) return <Navigate to="/" replace />;
-  
+
   return <>{children}</>;
 }
 
 function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
-  
+
   if (isLoading) {
     return (
       <div
@@ -54,7 +54,7 @@ function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
-  
+
   return <>{children}</>;
 }
 
@@ -62,26 +62,59 @@ export function AppRouter() {
   return (
     <Routes>
       {/* Standalone Route without AppLayout (No Navbar) */}
-      <Route path="/" element={
-        <PublicOnlyRoute>
-          <LandingPage />
-        </PublicOnlyRoute>
-      } />
-      <Route path="/auth/github/callback" element={<GitHubAuthCallbackPage />} />
+      <Route
+        path="/"
+        element={
+          <PublicOnlyRoute>
+            <LandingPage />
+          </PublicOnlyRoute>
+        }
+      />
+      <Route
+        path="/auth/github/callback"
+        element={<GitHubAuthCallbackPage />}
+      />
 
       {/* Authenticated Routes with Navbar Layout */}
       <Route element={<AppLayout />}>
-        <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-        <Route path="/lessons/:slug" element={<ProtectedRoute><LessonPage /></ProtectedRoute>} />
-        <Route path="/challenges" element={<ProtectedRoute><ChallengePage /></ProtectedRoute>} />
-        <Route path="/community" element={<ProtectedRoute><CommunityPage /></ProtectedRoute>} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/lessons/:slug"
+          element={
+            <ProtectedRoute>
+              <LessonPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/challenges"
+          element={
+            <ProtectedRoute>
+              <ChallengePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/community"
+          element={
+            <ProtectedRoute>
+              <CommunityPage />
+            </ProtectedRoute>
+          }
+        />
       </Route>
 
       {/* Public auth routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/verify/:hash" element={<VerifyCertificatePage />} />
-
 
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
