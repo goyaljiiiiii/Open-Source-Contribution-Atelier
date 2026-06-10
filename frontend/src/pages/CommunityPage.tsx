@@ -114,13 +114,14 @@ export function CommunityPage() {
   useEffect(() => {
     fetchLeaderboard();
 
-    const token = localStorage.getItem("accessToken");
-    if (!token) return;
-
     const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
     const wsHost = apiBase.replace(/^https?:\/\//, "").replace(/\/api$/, "");
     const wsScheme = apiBase.startsWith("https") ? "wss" : "ws";
-    const wsUrl = `${wsScheme}://${wsHost}/ws/leaderboard/?token=${token}`;
+    // Do NOT include the auth token in the URL query string — it would be
+    // visible in server access logs and browser history.  The leaderboard
+    // channel is public read; for write-protected actions the backend consumer
+    // should rely on session cookies or a first-message handshake.
+    const wsUrl = `${wsScheme}://${wsHost}/ws/leaderboard/`;
 
     const socket = new WebSocket(wsUrl);
 
