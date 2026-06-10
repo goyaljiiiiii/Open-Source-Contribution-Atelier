@@ -148,7 +148,7 @@ class UserAchievementsView(APIView):
 class HelpRequestListCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
- def get_throttles(self):
+    def get_throttles(self):
         if self.request.method == "POST":
             return [HelpRequestRateThrottle()]
         return []
