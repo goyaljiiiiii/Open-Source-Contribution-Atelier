@@ -11,7 +11,6 @@ class SandboxExecutionLog(models.Model):
         help_text="The user who attempted the command.",
     )
     command = models.TextField(help_text="The command the user attempted to execute.")
-    expected_command = models.TextField(help_text="The command expected by the sandbox challenge.")
     accepted = models.BooleanField(help_text="Whether the command was accepted.")
     feedback = models.TextField(blank=True, help_text="Feedback returned to the user.")
     score_delta = models.IntegerField(help_text="Score change resulting from this attempt.")
