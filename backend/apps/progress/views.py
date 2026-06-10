@@ -15,6 +15,8 @@ from .models import (
 from apps.content.models import Lesson
 from .serializers import BadgeSerializer, HelpRequestSerializer, LessonProgressSerializer, LessonProgressCreateSerializer
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse
+from .throttles import HelpRequestRateThrottle
+
 
 @extend_schema(responses=BadgeSerializer(many=True))
 class BadgeListView(ListAPIView):
@@ -139,8 +141,15 @@ class UserAchievementsView(APIView):
     get=extend_schema(responses=HelpRequestSerializer(many=True)),
     post=extend_schema(request=HelpRequestSerializer, responses=HelpRequestSerializer),
 )
+
+
 class HelpRequestListCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+
+ def get_throttles(self):
+        if self.request.method == "POST":
+            return [HelpRequestRateThrottle()]
+        return []
 
     def get(self, request):
         help_requests = HelpRequest.objects.filter(user=request.user).select_related("lesson")
