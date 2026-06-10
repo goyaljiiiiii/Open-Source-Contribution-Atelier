@@ -3,6 +3,7 @@ import { useGoogleLogin } from "@react-oauth/google";
 import { Github } from "lucide-react";
 import { fetchApi } from "../lib/api";
 import { useAuth } from "../features/auth/AuthContext";
+import OrganizationsGrid from '../components/OrganizationsGrid';
 
 const githubAuthUrl =
   import.meta.env.VITE_GITHUB_OAUTH_URL ||
@@ -97,7 +98,7 @@ export function LandingPage() {
           </h2>
           
           {error && <div className="text-black font-bold text-sm bg-primary p-3 rounded-xl border-4 border-black shadow-card-sm mb-4">{error}</div>}
-
+          <OrganizationsGrid />
           <form onSubmit={handleStandardLogin} className="space-y-4">
             <button 
               type="button" 
