@@ -2,7 +2,8 @@ import pytest
 from django.contrib.auth.models import User
 from rest_framework.test import APIClient
 from unittest.mock import patch, Mock
-
+from apps.content.models import Lesson
+from apps.progress.models import LessonProgress
 
 @pytest.mark.django_db
 def test_signup_and_login_flow():
@@ -154,3 +155,36 @@ def test_me_endpoint():
     assert auth_response.data["username"] == "testuser"
     assert auth_response.data["email"] == "testuser@example.com"
     assert auth_response.data["is_staff"] is False
+@pytest.mark.django_db
+def test_progress_post_creates_dynamic_lesson_stub():
+    user = User.objects.create_user(
+        username="progress_user",
+        password="strongpass123"
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+
+    response = client.post(
+        "/api/progress/me/",
+        {
+            "lesson_slug": "new-dynamic-lesson",
+            "score": 100,
+            "completed": True,
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+
+    lesson = Lesson.objects.get(slug="new-dynamic-lesson")
+
+    assert lesson.title == "New Dynamic Lesson"
+    assert lesson.summary == "Dynamic learning module"
+    assert lesson.content == "Dynamic content loaded from local file storage."
+    assert lesson.difficulty == "beginner"
+
+    assert LessonProgress.objects.filter(
+        user=user,
+        lesson=lesson
+    ).exists()
