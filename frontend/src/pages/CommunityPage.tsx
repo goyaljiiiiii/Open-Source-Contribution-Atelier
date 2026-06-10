@@ -12,11 +12,10 @@ export function CommunityPage() {
   const timezoneAbbreviation =
     new Intl.DateTimeFormat("en-US", {
       timeZoneName: "short",
-  })
+    })
       .formatToParts(new Date())
-      .find((part) => part.type === "timeZoneName")
-      ?.value || "UTC";
-      console.log("Timezone:", timezoneAbbreviation);
+      .find((part) => part.type === "timeZoneName")?.value || "UTC";
+  console.log("Timezone:", timezoneAbbreviation);
 
   // 1. Fetch backend community stats
   const { data: stats, isLoading } = useQuery({
@@ -33,7 +32,7 @@ export function CommunityPage() {
   const filteredLeaderboard = useMemo(() => {
     return [...leaderboard]
       .filter((item) =>
-        item.username.toLowerCase().includes(search.toLowerCase())
+        item.username.toLowerCase().includes(search.toLowerCase()),
       )
       .sort((a, b) => {
         if (sortOrder === "desc") {
@@ -45,7 +44,9 @@ export function CommunityPage() {
   }, [leaderboard, search, sortOrder]);
 
   useEffect(() => {
-    fetch("https://api.github.com/repos/goyaljiiiiii/Open-Source-Contribution-Atelier/contributors")
+    fetch(
+      "https://api.github.com/repos/goyaljiiiiii/Open-Source-Contribution-Atelier/contributors",
+    )
       .then((res) => {
         if (!res.ok) throw new Error("Rate limit or offline");
         return res.json();
@@ -68,17 +69,48 @@ export function CommunityPage() {
       .catch(() => {
         // High quality fallback leaderboard
         setLeaderboard([
-          { rank: 1, username: "goyaljiiiiii", avatar_url: "https://github.com/goyaljiiiiii.png", html_url: "https://github.com/goyaljiiiiii", contributions: 42, xp: 2220 },
-          { rank: 2, username: "nandini", avatar_url: "https://github.com/github.png", html_url: "https://github.com", contributions: 18, xp: 1020 },
-          { rank: 3, username: "antigravity", avatar_url: "https://github.com/google.png", html_url: "https://github.com", contributions: 12, xp: 720 },
-          { rank: 4, username: "octocat", avatar_url: "https://github.com/octocat.png", html_url: "https://github.com/octocat", contributions: 6, xp: 420 },
+          {
+            rank: 1,
+            username: "goyaljiiiiii",
+            avatar_url: "https://github.com/goyaljiiiiii.png",
+            html_url: "https://github.com/goyaljiiiiii",
+            contributions: 42,
+            xp: 2220,
+          },
+          {
+            rank: 2,
+            username: "nandini",
+            avatar_url: "https://github.com/github.png",
+            html_url: "https://github.com",
+            contributions: 18,
+            xp: 1020,
+          },
+          {
+            rank: 3,
+            username: "antigravity",
+            avatar_url: "https://github.com/google.png",
+            html_url: "https://github.com",
+            contributions: 12,
+            xp: 720,
+          },
+          {
+            rank: 4,
+            username: "octocat",
+            avatar_url: "https://github.com/octocat.png",
+            html_url: "https://github.com/octocat",
+            contributions: 6,
+            xp: 420,
+          },
         ]);
         setLoadingLeaderboard(false);
       });
   }, []);
 
   const displayStats = [
-    { label: "Weekly active contributors", value: stats?.active_contributors || "128" },
+    {
+      label: "Weekly active contributors",
+      value: stats?.active_contributors || "128",
+    },
     { label: "Merged learning PRs", value: stats?.merged_prs || "342" },
     {
       label: "Mentor response SLA",
@@ -90,9 +122,13 @@ export function CommunityPage() {
   return (
     <div className="space-y-10 pt-24 max-w-7xl mx-auto px-4 pb-12">
       {/* Page Header */}
-      <SectionCard eyebrow="Atelier Cohort" title="Community Standings & Leaders">
+      <SectionCard
+        eyebrow="Atelier Cohort"
+        title="Community Standings & Leaders"
+      >
         <p className="max-w-2xl text-sm leading-6 text-muted dark:text-[#c4bbae] font-bold">
-          Track weekly participation, review queue load times, and celebrate top open source contributors across the cohort.
+          Track weekly participation, review queue load times, and celebrate top
+          open source contributors across the cohort.
         </p>
       </SectionCard>
 
@@ -105,7 +141,9 @@ export function CommunityPage() {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {displayStats.map((item) => (
             <SectionCard key={item.label} title={item.value.toString()}>
-              <p className="text-sm font-bold text-muted dark:text-[#c4bbae]">{item.label}</p>
+              <p className="text-sm font-bold text-muted dark:text-[#c4bbae]">
+                {item.label}
+              </p>
             </SectionCard>
           ))}
         </div>
@@ -115,7 +153,8 @@ export function CommunityPage() {
       <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
         <div className="rounded-3xl border-4 border-black bg-white p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924]">
           <h3 className="text-2xl font-black mb-6 flex items-center gap-2 text-text dark:text-[#f0ebe2]">
-            <Trophy className="text-accent w-6 h-6 animate-bounce" /> Contributor Leaderboard
+            <Trophy className="text-accent w-6 h-6 animate-bounce" />{" "}
+            Contributor Leaderboard
           </h3>
 
           <div className="flex flex-wrap gap-4 mb-6">
@@ -137,16 +176,26 @@ export function CommunityPage() {
           </div>
 
           {loadingLeaderboard ? (
-            <p className="text-sm text-muted animate-pulse font-bold">Assembling standings...</p>
+            <p className="text-sm text-muted animate-pulse font-bold">
+              Assembling standings...
+            </p>
           ) : (
             <div className="overflow-x-auto rounded-2xl border-4 border-black shadow-card-sm dark:border-[#2e2924]">
               <table className="w-full border-collapse bg-white dark:bg-[#1f1c18] text-left text-sm font-bold">
                 <thead>
                   <tr className="bg-surface-low border-b-4 border-black dark:bg-[#151411] dark:border-[#2e2924]">
-                    <th className="px-4 py-3 text-xs uppercase tracking-wider border-r-2 border-black dark:border-[#2e2924]">Rank</th>
-                    <th className="px-4 py-3 text-xs uppercase tracking-wider border-r-2 border-black dark:border-[#2e2924]">Contributor</th>
-                    <th className="px-4 py-3 text-xs uppercase tracking-wider border-r-2 border-black dark:border-[#2e2924]">Commits</th>
-                    <th className="px-4 py-3 text-xs uppercase tracking-wider">Estimated XP</th>
+                    <th className="px-4 py-3 text-xs uppercase tracking-wider border-r-2 border-black dark:border-[#2e2924]">
+                      Rank
+                    </th>
+                    <th className="px-4 py-3 text-xs uppercase tracking-wider border-r-2 border-black dark:border-[#2e2924]">
+                      Contributor
+                    </th>
+                    <th className="px-4 py-3 text-xs uppercase tracking-wider border-r-2 border-black dark:border-[#2e2924]">
+                      Commits
+                    </th>
+                    <th className="px-4 py-3 text-xs uppercase tracking-wider">
+                      Estimated XP
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -164,21 +213,39 @@ export function CommunityPage() {
                         {idx + 1 > 3 && `#${idx + 1}`}
                       </td>
                       <td className="px-4 py-3 border-r-2 border-black dark:border-[#2e2924] flex items-center gap-2">
-                        <img src={item.avatar_url} alt={item.username} className="w-6 h-6 rounded-full border border-black" />
-                        <a href={item.html_url} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                        <img
+                          src={item.avatar_url}
+                          alt={item.username}
+                          className="w-6 h-6 rounded-full border border-black"
+                        />
+                        <a
+                          href={item.html_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-primary hover:underline"
+                        >
                           @{item.username}
                         </a>
                         {user?.username === item.username && (
-                          <span className="text-[8px] bg-black text-white px-1.5 py-0.5 rounded uppercase font-black tracking-wider dark:bg-[#2e2924]">You</span>
+                          <span className="text-[8px] bg-black text-white px-1.5 py-0.5 rounded uppercase font-black tracking-wider dark:bg-[#2e2924]">
+                            You
+                          </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 border-r-2 border-black dark:border-[#2e2924]">{item.contributions}</td>
-                      <td className="px-4 py-3 text-primary font-black">{item.xp} XP</td>
+                      <td className="px-4 py-3 border-r-2 border-black dark:border-[#2e2924]">
+                        {item.contributions}
+                      </td>
+                      <td className="px-4 py-3 text-primary font-black">
+                        {item.xp} XP
+                      </td>
                     </tr>
                   ))}
                   {filteredLeaderboard.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="px-4 py-8 text-center text-muted font-bold">
+                      <td
+                        colSpan={4}
+                        className="px-4 py-8 text-center text-muted font-bold"
+                      >
                         No matching contributors found.
                       </td>
                     </tr>
@@ -196,17 +263,22 @@ export function CommunityPage() {
               <Award size={22} /> Your Standings
             </h3>
             <p className="text-xs font-bold leading-relaxed text-black/75 dark:text-[#c4bbae]">
-              Solve more terminal exercises and answer theoretical quizzes to climb up the Atelier rank. Re-sync your streak daily!
+              Solve more terminal exercises and answer theoretical quizzes to
+              climb up the Atelier rank. Re-sync your streak daily!
             </p>
 
             <div className="bg-white p-4 rounded-2xl border-4 border-black shadow-card-sm dark:bg-[#151411] dark:border-[#2e2924]">
               <div className="flex justify-between items-center">
                 <span className="font-black text-sm">Active Streak</span>
-                <span className="font-mono text-lg font-black text-primary">🔥 Local Active</span>
+                <span className="font-mono text-lg font-black text-primary">
+                  🔥 Local Active
+                </span>
               </div>
               <div className="flex justify-between items-center mt-2 pt-2 border-t border-dashed border-black/15">
                 <span className="font-black text-sm">Graduation Goal</span>
-                <span className="font-black text-xs text-green-700">8 Modules Track</span>
+                <span className="font-black text-xs text-green-700">
+                  8 Modules Track
+                </span>
               </div>
             </div>
           </div>

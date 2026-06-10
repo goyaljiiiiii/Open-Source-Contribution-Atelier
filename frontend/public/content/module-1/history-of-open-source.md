@@ -5,6 +5,7 @@ The open source movement did not start overnight. It grew from a cultural clash 
 ---
 
 ### The Milestones
+
 - **The Hacker Era (1950s - 1970s)**: In the early days of computing, software was shared freely alongside hardware.
 - **The Proprietary Shift (1970s - 1980s)**: Companies started compiling software into binary format, restricting access to the source code to protect commercial profits.
 - **The Free Software Movement (1983)**: Richard Stallman launched the **GNU Project** and later created the **Free Software Foundation (FSF)**. He argued software should respect four essential user freedoms (run, study, modify, and redistribute).

@@ -5,6 +5,7 @@ Modern technology is built on a foundation of open source. From the servers host
 ---
 
 ### Key Benefits of Open Source
+
 1. **Quality and Innovation**
    Because anyone can see the code, developers can collaborate, patch bugs, and introduce features much faster than a single isolated company.
 2. **Security through Peer Review**

@@ -11,12 +11,14 @@ from .models import (
     LessonProgress,
     ExerciseAttempt,
     QuizAttempt,
+    Certificate,
 )
 from apps.content.models import Lesson
-from .serializers import BadgeSerializer, HelpRequestSerializer, LessonProgressSerializer, LessonProgressCreateSerializer
+from .serializers import BadgeSerializer, HelpRequestSerializer, LessonProgressSerializer, LessonProgressCreateSerializer, CertificateVerificationSerializer
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse
 from .throttles import HelpRequestRateThrottle
-
+from django.shortcuts import get_object_or_404
+from rest_framework.throttling import AnonRateThrottle
 
 @extend_schema(responses=BadgeSerializer(many=True))
 class BadgeListView(ListAPIView):
@@ -321,3 +323,19 @@ class QuizAttemptView(APIView):
                 "is_correct", "time_taken_seconds", "created_at"
             ))
         })
+
+class CertificateVerificationThrottle(AnonRateThrottle):
+    rate = '10/minute'
+
+@extend_schema(responses=CertificateVerificationSerializer)
+class CertificateVerificationView(APIView):
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [CertificateVerificationThrottle]
+
+    def get(self, request, hash):
+        certificate = get_object_or_404(Certificate, verification_hash=hash)
+        serializer = CertificateVerificationSerializer(certificate)
+        return Response({
+            "is_valid": True,
+            "certificate": serializer.data
+        }, status=status.HTTP_200_OK)

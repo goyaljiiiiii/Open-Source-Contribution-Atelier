@@ -7,6 +7,7 @@ from .views import (
     MyProgressView,
     ContributorTimelineView,
     QuizAttemptView,
+    CertificateVerificationView,
 )
 
 urlpatterns = [
@@ -19,4 +20,5 @@ urlpatterns = [
     path("contributor-timeline/", ContributorTimelineView.as_view(), name="contributor-timeline-alias"),
     path("quiz-attempts/", QuizAttemptView.as_view(), name="quiz-attempts"),
     path("mentor/help-requests/", MentorHelpRequestListView.as_view(), name="mentor-help-requests"),
+    path("verify/<str:hash>/", CertificateVerificationView.as_view(), name="verify-certificate"),
 ]
