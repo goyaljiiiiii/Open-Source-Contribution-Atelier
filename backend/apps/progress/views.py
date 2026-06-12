@@ -60,6 +60,9 @@ class MyProgressView(APIView):
             defaults={"completed": completed, "score": score}
         )
 
+        progress.attempt_count += 1
+        progress.save(update_fields=["attempt_count"])
+
         serializer = LessonProgressSerializer(progress)
         return Response(
             serializer.data,

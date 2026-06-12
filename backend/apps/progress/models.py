@@ -24,6 +24,7 @@ class LessonProgress(models.Model):
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
     completed = models.BooleanField(default=False)
     score = models.PositiveIntegerField(default=0)
+    attempt_count = models.PositiveIntegerField(default=0)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
