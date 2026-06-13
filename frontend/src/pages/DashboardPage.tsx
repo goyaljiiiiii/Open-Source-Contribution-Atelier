@@ -60,6 +60,35 @@ const BADGES = [
   { id: "grad", name: "Atelier Graduate", desc: "Complete 100% of the learning program.", icon: "🎓", isGraduation: true }
 ];
 
+function useCountUp(end: number, durationMs: number = 2000) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let current = 0;
+    if (end <= 0) {
+      setCount(end);
+      return;
+    }
+    const steps = 20;
+    const stepTime = Math.max(16, Math.floor(durationMs / steps));
+    const increment = end / steps;
+
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= end) {
+        setCount(end);
+        clearInterval(timer);
+      } else {
+        setCount(Math.ceil(current));
+      }
+    }, stepTime);
+
+    return () => clearInterval(timer);
+  }, [end, durationMs]);
+
+  return count;
+}
+
 export function DashboardPage() {
   const { user } = useAuth();
   const { isLessonCompleted } = useUserProgress();
@@ -106,6 +135,9 @@ export function DashboardPage() {
     queryFn: fetchLessonsApi,
     enabled: !user?.is_staff,
   });
+
+  const targetXP = contributorData?.personal_stats?.total_xp || 0;
+  const animatedXP = useCountUp(targetXP);
 
   // Random Fact of the Day
   const factOfDay = useMemo(() => {
@@ -486,7 +518,7 @@ export function DashboardPage() {
               Welcome to the Atelier, {user?.username}.
             </h1>
             <p className="text-lg font-bold text-black bg-white/95 p-4 rounded-xl border-4 border-black shadow-card-sm inline-block max-w-xl leading-relaxed dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2]">
-              You have completed {completedLessonsCount} of {totalLessonsCount} course modules, earning <span className="text-primary font-black">{personal_stats.total_xp} XP</span>.
+              You have completed {completedLessonsCount} of {totalLessonsCount} course modules, earning <span className="text-primary font-black" aria-hidden="true">{animatedXP} XP</span><span className="sr-only">{personal_stats.total_xp} XP</span>.
             </p>
           </div>
           <div className="absolute -right-6 -bottom-6 text-[10rem] opacity-20 rotate-12 pointer-events-none">
