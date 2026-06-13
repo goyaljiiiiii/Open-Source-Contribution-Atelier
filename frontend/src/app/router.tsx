@@ -114,6 +114,7 @@ export function AppRouter() {
       {/* Public auth routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/verify" element={<VerifyCertificatePage />} />
       <Route path="/verify/:hash" element={<VerifyCertificatePage />} />
 
       <Route path="*" element={<NotFoundPage />} />
