@@ -1,5 +1,5 @@
 import { openDB } from "./offlineDB";
-import { queryClient } from "../app/App";
+// import { queryClient } from "../app/App"; const queryClient = null;
 
 export interface QueuedAction {
   id: string;
