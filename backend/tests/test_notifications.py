@@ -71,3 +71,42 @@ def test_mark_all_read(user_a, notif_for_a):
     assert response.data["marked_read"] >= 1
     notif_for_a.refresh_from_db()
     assert notif_for_a.is_read is True
+
+
+def test_lesson_completed_broadcasts_to_leaderboard_channel(db, user_a):
+    from unittest.mock import patch, MagicMock, AsyncMock
+    from apps.progress.models import LessonProgress
+    from apps.content.models import Lesson
+
+    lesson = Lesson.objects.create(
+        slug="test-lesson-broadcast",
+        title="Test Lesson Broadcast",
+        summary="Test Summary",
+        content="Test Content",
+        difficulty="beginner",
+    )
+
+    mock_layer = MagicMock()
+    # group_send is a coroutine in Django Channels; AsyncMock lets
+    # async_to_sync() wrap it correctly without a real event loop.
+    mock_layer.group_send = AsyncMock()
+
+    # Patch get_channel_layer so the lazily-fetched layer inside the signal
+    # handler returns our mock, instead of patching the now-removed
+    # module-level variable.
+    with patch("apps.progress.signals.get_channel_layer", return_value=mock_layer):
+        LessonProgress.objects.create(
+            user=user_a,
+            lesson=lesson,
+            completed=True,
+            score=100,
+        )
+
+        mock_layer.group_send.assert_called_once_with(
+            "leaderboard",
+            {
+                "type": "leaderboard_update",
+                "message": f"User {user_a.username} completed lesson {lesson.title}",
+            },
+        )
+
