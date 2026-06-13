@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import { App } from "./app/App";
+import App from "./app/App";
 import { AuthProvider } from "./features/auth/AuthContext";
 import { syncOfflineQueue } from "./lib/offlineQueue";
 import "./styles.css";

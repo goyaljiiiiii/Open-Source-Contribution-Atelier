@@ -410,22 +410,51 @@ export function LessonPage() {
 
                   <div className="space-y-3">
                     {lesson.quizzes![currentQuizIndex].options.map((option, idx) => {
+                                          {lesson.quizzes![currentQuizIndex].options.map((option, idx) => {
                       const isSelected = selectedOption === idx;
+                      const currentQuiz = lesson.quizzes![currentQuizIndex];
+                      const isCorrectOption = idx === currentQuiz.answer;
+
+                      // Determine background color based on quiz state
+                      let bgColor = "";
+                      if (quizFeedback !== null) {
+                        // After answer submitted: show green for correct, red for incorrect
+                        if (isCorrectOption) {
+                          bgColor = "bg-green-600 border-green-800 text-white";
+                        } else if (isSelected && quizFeedback === "incorrect") {
+                          bgColor = "bg-red-600 border-red-800 text-white";
+                        }
+                      }
+
+                      // Fallback to original styling when no feedback is present
+                      if (!bgColor) {
+                        bgColor = isSelected
+                          ? "bg-accent shadow-card-sm -translate-y-0.5"
+                          : "bg-surface hover:bg-surface-low dark:bg-[#151411]";
+                      }
+
                       return (
                         <button
                           key={idx}
                           onClick={() => {
-                            if (quizFeedback !== "correct") {
-                              setSelectedOption(idx);
-                              setQuizFeedback(null);
+                            if (quizFeedback !== null) return; // Already answered
+                            setSelectedOption(idx);
+                            // Immediately validate the answer
+                            const isCorrect = idx === currentQuiz.answer;
+                            setQuizFeedback(isCorrect ? "correct" : "incorrect");
+                            if (isCorrect) {
+                              if (currentQuizIndex === lesson.quizzes!.length - 1) {
+                                setFeedback("correct");
+                                syncProgress({
+                                  lesson_slug: lesson.slug,
+                                  score: lesson.points || 15,
+                                  completed: true,
+                                });
+                              }
                             }
                           }}
-                          disabled={quizFeedback === "correct"}
-                          className={`w-full text-left p-4 rounded-xl border-4 border-black font-bold text-sm transition-all flex items-center justify-between ${
-                            isSelected
-                              ? "bg-accent shadow-card-sm -translate-y-0.5"
-                              : "bg-surface hover:bg-surface-low dark:bg-[#151411]"
-                          }`}
+                          disabled={quizFeedback !== null}
+                          className={`w-full text-left p-4 rounded-xl border-4 border-black font-bold text-sm transition-all flex items-center justify-between ${bgColor}`}
                         >
                           <span>{option}</span>
                           <div
@@ -459,10 +488,36 @@ export function LessonPage() {
                   )}
 
                   <div className="mt-6 flex justify-end">
-                    {quizFeedback === "correct" ? (
-                      currentQuizIndex < lesson.quizzes!.length - 1 ? (
-                        <button
-                          onClick={handleNextQuizQuestion}
+                                      {quizFeedback === "correct" ? (
+                    currentQuizIndex < lesson.quizzes!.length - 1 ? (
+                      <button
+                        onClick={handleNextQuizQuestion}
+                        className="px-6 py-2 bg-black text-white font-bold rounded-xl border-2 border-black shadow-brutal transition-transform active:translate-y-0.5"
+                      >
+                        Next Question
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          syncProgress({
+                            lesson_slug: lesson.slug,
+                            score: lesson.points || 15,
+                            completed: true,
+                          });
+                        }}
+                        className="px-6 py-2 bg-black text-white font-bold rounded-xl border-2 border-black shadow-brutal transition-transform active:translate-y-0.5"
+                      >
+                        Finish Lesson
+                      </button>
+                    )
+                  ) : (
+                    <button
+                      onClick={handleQuizOptionCheck}
+                      className="px-6 py-2 bg-black text-white font-bold rounded-xl border-2 border-black shadow-brutal transition-transform active:translate-y-0.5"
+                    >
+                      Check Answer
+                    </button>
+                  )}
                           className="px-5 py-2.5 bg-accent text-black font-black text-sm rounded-xl border-4 border-black shadow-card-sm hover:-translate-y-0.5 transition-all cursor-pointer"
                         >
                           Next Question
