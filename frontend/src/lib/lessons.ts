@@ -9,6 +9,12 @@ export interface Exercise {
   points?: number;
 }
 
+export interface ConflictScenario {
+  baseBranchName: string;
+  featureBranchName: string;
+  fileContent: string; // The file content containing Git conflict markers (<<<<<<< HEAD)
+}
+
 export interface Lesson {
   slug: string; // used for URL
   title: string;
@@ -30,6 +36,7 @@ export interface Lesson {
     answer: number;
     explanation: string;
   }>;
+  conflictScenario?: ConflictScenario;
 }
 
 // Small built-in fallback lessons (used if API unreachable)
@@ -86,6 +93,7 @@ export async function fetchLessonsApi(): Promise<Lesson[]> {
           tips: les.tips || [],
           exercises: les.exercises || [],
           quizzes: les.quizzes || [],
+          conflictScenario: les.conflictScenario || undefined,
           order: orderIndex++,
           filePath: les.filePath,
         });

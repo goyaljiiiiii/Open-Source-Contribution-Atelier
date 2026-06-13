@@ -484,8 +484,12 @@
           "estimatedMinutes": 12,
           "points": 25,
           "filePath": "module-7/conflict-resolution.md",
-          "expected": "git rebase --continue",
-          "hint": "After staging resolved files, tell Git to resume: git rebase --continue"
+          "expected": "function greet(name) { return `Hello, ${name}!`; }",
+          "conflictScenario": {
+            "baseBranchName": "main",
+            "featureBranchName": "feat/update-greeting",
+            "fileContent": "function greet(name) {\n<<<<<<< HEAD\n  return \"Greetings, \" + name;\n=======\n  return `Hello, ${name}!`;\n>>>>>>> feat/update-greeting\n}"
+          }
         },
         {
           "slug": "code-reviews-and-cicd",
