@@ -28,7 +28,7 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
 
     if (!response.ok) {
       const errorBody = await response.json().catch(() => ({}));
-      throw new Error(errorBody.detail || "An error occurred");
+      throw new Error(errorBody.detail || errorBody.error || "An error occurred");
     }
 
     return response.json().catch(() => ({}));

@@ -235,6 +235,14 @@ export function DashboardPage() {
     };
   }, [lessons, curriculumData, isLessonCompleted, user]);
 
+  // Fetch user certificate if course is completed
+  const { data: certificateData } = useQuery({
+    queryKey: ["userCertificate"],
+    queryFn: () => fetchApi("/progress/certificate/"),
+    enabled: !!user && !user.is_staff && completionPercentage === 100,
+    retry: false,
+  });
+
   if (isAdminLoading || isContributorLoading || isLessonsLoading) {
     return (
       <div className="grid gap-6 xl:grid-cols-[1fr_0.8fr] pt-24 max-w-7xl mx-auto px-4" aria-busy="true">
@@ -826,13 +834,28 @@ export function DashboardPage() {
               <div className="grid grid-cols-2 gap-4 max-w-md mx-auto pt-6 text-left border-t border-black/10">
                 <div>
                   <span className="block text-[10px] text-muted uppercase font-bold">Verification Hash</span>
-                  <span className="font-mono text-xs font-black truncate block">OS-ATELIER-{user?.id}-{user?.username.toUpperCase()}</span>
+                  <span className="font-mono text-xs font-black truncate block" title={certificateData?.certificate?.verification_hash || "GENERATING..."}>
+                    {certificateData?.certificate?.verification_hash || "GENERATING..."}
+                  </span>
                 </div>
                 <div>
                   <span className="block text-[10px] text-muted uppercase font-bold">Issue Date</span>
-                  <span className="font-mono text-xs font-black block">{new Date().toLocaleDateString()}</span>
+                  <span className="font-mono text-xs font-black block">
+                    {certificateData?.certificate?.issued_at
+                      ? new Date(certificateData.certificate.issued_at).toLocaleDateString()
+                      : new Date().toLocaleDateString()}
+                  </span>
                 </div>
               </div>
+
+              {certificateData?.certificate?.verification_hash && (
+                <div className="mt-4 text-[10px] text-muted font-bold text-center print:block">
+                  Verify authenticity at:{" "}
+                  <span className="text-primary underline select-all">
+                    {window.location.origin}/verify/{certificateData.certificate.verification_hash}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Print trigger button row */}

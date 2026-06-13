@@ -59,7 +59,7 @@ class CertificateVerificationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Certificate
-        fields = ["verification_hash", "course_name", "issued_at", "learner_name"]
+        fields = ["verification_hash", "course_name", "issued_at", "learner_name", "is_active"]
 
     def get_learner_name(self, obj):
         return obj.user.get_full_name() or obj.user.username

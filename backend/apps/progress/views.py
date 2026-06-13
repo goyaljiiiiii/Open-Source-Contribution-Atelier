@@ -333,9 +333,55 @@ class CertificateVerificationView(APIView):
     throttle_classes = [CertificateVerificationThrottle]
 
     def get(self, request, hash):
-        certificate = get_object_or_404(Certificate, verification_hash=hash)
+        try:
+            certificate = Certificate.objects.get(verification_hash=hash)
+        except Certificate.DoesNotExist:
+            return Response({
+                "is_valid": False,
+                "error": "Certificate not found or invalid hash."
+            }, status=status.HTTP_404_NOT_FOUND)
+
         serializer = CertificateVerificationSerializer(certificate)
+        if not certificate.is_active:
+            return Response({
+                "is_valid": False,
+                "error": "This certificate has been revoked or deactivated.",
+                "certificate": serializer.data
+            }, status=status.HTTP_200_OK)
+
         return Response({
             "is_valid": True,
             "certificate": serializer.data
         }, status=status.HTTP_200_OK)
+
+class MyCertificateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        certificate = Certificate.objects.filter(user=request.user).first()
+        if certificate:
+            serializer = CertificateVerificationSerializer(certificate)
+            return Response({
+                "has_certificate": True,
+                "certificate": serializer.data
+            }, status=status.HTTP_200_OK)
+
+        completed_lessons = LessonProgress.objects.filter(user=request.user, completed=True).count()
+        total_lessons = Lesson.objects.count()
+
+        if total_lessons > 0 and completed_lessons >= total_lessons:
+            certificate = Certificate.objects.create(
+                user=request.user,
+                course_name="Open Source Contribution Course"
+            )
+            serializer = CertificateVerificationSerializer(certificate)
+            return Response({
+                "has_certificate": True,
+                "certificate": serializer.data
+            }, status=status.HTTP_201_CREATED)
+
+        return Response({
+            "has_certificate": False,
+            "detail": "Course requirements not met. Complete all lessons to unlock."
+        }, status=status.HTTP_400_BAD_REQUEST)
+

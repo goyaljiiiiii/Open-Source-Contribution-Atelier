@@ -6,7 +6,7 @@ import random
 
 from apps.dashboard.models import Issue, PullRequest
 from apps.content.models import Lesson, Exercise
-from apps.progress.models import LessonProgress, ExerciseAttempt
+from apps.progress.models import LessonProgress, ExerciseAttempt, Certificate
 
 
 class Command(BaseCommand):
@@ -109,6 +109,19 @@ class Command(BaseCommand):
                     created_at=lp.updated_at
                 )
 
+        # 3.5 Create Mock Certificate for Alice
+        self.stdout.write("- Creating mock Certificate for Alice...")
+        alice = User.objects.get(username="alice")
+        cert, cert_created = Certificate.objects.get_or_create(
+            user=alice,
+            verification_hash="test-cert-hash-12345",
+            defaults={
+                "course_name": "Open Source Contribution Course",
+                "is_active": True
+            }
+        )
+        self.stdout.write(f"  Certificate for Alice: {cert.verification_hash} ({'created' if cert_created else 'updated'})")
+
         # 4. Create Issues
         self.stdout.write("- Creating repository Issues...")
         issues_data = [
@@ -156,5 +169,5 @@ class Command(BaseCommand):
             pr.save()
             self.stdout.write(f"  PR: {pr.title} ({pr.status})")
 
-        self.stdout.write(self.style.SUCCESS("Atelier dashboard data seeded successfully! 🎉"))
+        self.stdout.write(self.style.SUCCESS("Atelier dashboard data seeded successfully!"))
         self.stdout.write(self.style.SUCCESS("Demo credentials: Username: 'admin' or 'alice' or 'bob' · Password: 'password123'"))

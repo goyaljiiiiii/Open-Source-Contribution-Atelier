@@ -81,9 +81,11 @@ class Certificate(models.Model):
     course_name = models.CharField(max_length=255, default="Open Source Contribution Course")
     verification_hash = models.CharField(max_length=64, unique=True, default=uuid.uuid4, db_index=True)
     issued_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         ordering = ["-issued_at"]
 
     def __str__(self):
         return f"Certificate for {self.user.username} - {self.verification_hash}"
+
