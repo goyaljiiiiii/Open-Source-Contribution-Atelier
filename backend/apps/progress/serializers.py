@@ -29,7 +29,7 @@ class LessonProgressSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LessonProgress
-        fields = ["id", "user", "lesson", "lesson_slug", "completed", "score", "updated_at"]
+        fields = ["id", "user", "lesson", "lesson_slug", "completed", "score", "attempt_count", "updated_at"]
 
 
 class HelpRequestSerializer(serializers.ModelSerializer):
