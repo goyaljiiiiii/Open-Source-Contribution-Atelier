@@ -29,6 +29,25 @@ def test_signup_and_login_flow():
 
 
 @pytest.mark.django_db
+def test_signup_saves_email_as_lowercase():
+    client = APIClient()
+
+    response = client.post(
+        "/api/auth/signup/",
+        {
+            "username": "mentor_lowercase",
+            "email": "MENTOR@EXAMPLE.COM",
+            "password": "strongpass123",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+
+    user = User.objects.get(username="mentor_lowercase")
+    assert user.email == "mentor@example.com"
+
+@pytest.mark.django_db
 def test_login_with_email_identifier():
     client = APIClient()
     User.objects.create_user(
