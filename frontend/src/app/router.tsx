@@ -7,12 +7,18 @@ import { DashboardPage } from "../pages/DashboardPage";
 import { LandingPage } from "../pages/LandingPage";
 import { LessonPage } from "../pages/LessonPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
+import { VerificationPage } from "../pages/VerificationPage";
+
+// These imports use default exports (no curly braces)
+import SignupPage from "../pages/SignupPage";
+import VerifyNoticePage from "../pages/VerifyNoticePage";
+
 import { useAuth } from "../features/auth/AuthContext";
 import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
-  
+
   if (isLoading) {
     return (
       <div
@@ -28,13 +34,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) return <Navigate to="/" replace />;
-  
+
   return <>{children}</>;
 }
 
 function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
-  
+
   if (isLoading) {
     return (
       <div
@@ -50,7 +56,7 @@ function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
-  
+
   return <>{children}</>;
 }
 
@@ -58,11 +64,42 @@ export function AppRouter() {
   return (
     <Routes>
       {/* Standalone Route without AppLayout (No Navbar) */}
-      <Route path="/" element={
-        <PublicOnlyRoute>
-          <LandingPage />
-        </PublicOnlyRoute>
-      } />
+      <Route
+        path="/"
+        element={
+          <PublicOnlyRoute>
+            <LandingPage />
+          </PublicOnlyRoute>
+        }
+      />
+
+      {/* Auth Pages */}
+      <Route
+        path="/signup"
+        element={
+          <PublicOnlyRoute>
+            <SignupPage />
+          </PublicOnlyRoute>
+        }
+      />
+
+      <Route
+        path="/verify-notice"
+        element={
+          <PublicOnlyRoute>
+            <VerifyNoticePage />
+          </PublicOnlyRoute>
+        }
+      />
+
+      <Route
+        path="/verify/:token"
+        element={
+          <PublicOnlyRoute>
+            <VerificationPage />
+          </PublicOnlyRoute>
+        }
+      />
 
       {/* Authenticated Routes with Navbar Layout */}
       <Route element={<AppLayout />}>

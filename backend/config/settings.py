@@ -2,9 +2,7 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
-
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 def load_dotenv(dotenv_path: Path) -> None:
     if not dotenv_path.exists():
@@ -16,7 +14,6 @@ def load_dotenv(dotenv_path: Path) -> None:
             continue
         key, value = line.split("=", 1)
         os.environ.setdefault(key.strip(), value.strip())
-
 
 load_dotenv(BASE_DIR / ".env")
 
@@ -33,6 +30,7 @@ CORS_ALLOWED_ORIGINS = [
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
 
+# Consolidated INSTALLED_APPS
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -40,15 +38,18 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    'django_filters',
+    "django_filters",
     "corsheaders",
     "rest_framework",
     "rest_framework_simplejwt",
-    "apps.accounts",
+    "channels",
+    # Custom Apps
+    "apps.accounts.apps.AccountsConfig",
     "apps.content",
-    "apps.progress",
+    "apps.progress.apps.ProgressConfig",
     "apps.challenges",
     "apps.sandbox",
+    "apps.notifications.apps.NotificationsConfig",
 ]
 
 MIDDLEWARE = [
@@ -104,13 +105,10 @@ STATIC_URL = "/static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
-    # ── Sandbox Rate Limiting (10 requests/minute) ──────────────────────────
-    # Scoped throttling: ONLY affects sandbox endpoints, not global API routes.
     "DEFAULT_THROTTLE_RATES": {
-        "sandbox_anon": "10/minute",   # Anonymous users — throttled by IP
-        "sandbox_user": "10/minute",   # Authenticated users — throttled by user ID
+        "sandbox_anon": "10/minute",
+        "sandbox_user": "10/minute",
     },
-
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
@@ -124,29 +122,18 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.getenv("REFRESH_TOKEN_LIFETIME_DAYS", "7"))),
 }
 
-# ──────────────────────────────────────────
-# Django Channels + Notifications
-# ──────────────────────────────────────────
-INSTALLED_APPS += [
-    "channels",
-    "apps.notifications.apps.NotificationsConfig",
-]
-
-
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
             "hosts": [os.getenv("REDIS_URL", "redis://127.0.0.1:6379")],
-            "capacity":  1500,
-            "expiry":    10,
+            "capacity": 1500,
+            "expiry": 10,
         },
     },
 }
+
 AUTH_USER_MODEL = 'accounts.CustomUser'
-# Email Configuration
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'noreply@yourdomain.com'
-
-# This must match where your React frontend is running
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")

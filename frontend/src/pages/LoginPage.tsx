@@ -13,13 +13,13 @@ export function LoginPage() {
     e.preventDefault();
     setError("");
     try {
-      const tokens = await fetchApi("/auth/login/", {
+      const tokens = await fetchApi("/api/auth/login/", {
         method: "POST",
         requireAuth: false,
-        body: JSON.stringify({ username, password }),
+        // CHANGED KEY TO 'email' TO MATCH BACKEND VALIDATION
+        body: JSON.stringify({ username: username,email: username, password: password }),
       });
       login(tokens);
-      // Optional: Redirect to dashboard
       window.location.href = "/dashboard";
     } catch (err: any) {
       setError(err.message || "Failed to login");
