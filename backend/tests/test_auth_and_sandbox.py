@@ -13,7 +13,7 @@ def test_signup_and_login_flow():
         {
             "username": "mentor",
             "email": "mentor@example.com",
-            "password": "strongpass123",
+            "password": "StrongPass123!",
         },
         format="json",
     )
@@ -21,7 +21,7 @@ def test_signup_and_login_flow():
 
     login_response = client.post(
         "/api/auth/login/",
-        {"username": "mentor", "password": "strongpass123"},
+        {"username": "mentor", "password": "StrongPass123!"},
         format="json",
     )
     assert login_response.status_code == 200
@@ -37,7 +37,7 @@ def test_signup_saves_email_as_lowercase():
         {
             "username": "mentor_lowercase",
             "email": "MENTOR@EXAMPLE.COM",
-            "password": "strongpass123",
+            "password": "StrongPass123!",
         },
         format="json",
     )

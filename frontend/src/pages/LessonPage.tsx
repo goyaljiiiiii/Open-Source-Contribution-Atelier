@@ -410,7 +410,6 @@ export function LessonPage() {
 
                   <div className="space-y-3">
                     {lesson.quizzes![currentQuizIndex].options.map((option, idx) => {
-                                          {lesson.quizzes![currentQuizIndex].options.map((option, idx) => {
                       const isSelected = selectedOption === idx;
                       const currentQuiz = lesson.quizzes![currentQuizIndex];
                       const isCorrectOption = idx === currentQuiz.answer;
@@ -488,36 +487,10 @@ export function LessonPage() {
                   )}
 
                   <div className="mt-6 flex justify-end">
-                                      {quizFeedback === "correct" ? (
-                    currentQuizIndex < lesson.quizzes!.length - 1 ? (
-                      <button
-                        onClick={handleNextQuizQuestion}
-                        className="px-6 py-2 bg-black text-white font-bold rounded-xl border-2 border-black shadow-brutal transition-transform active:translate-y-0.5"
-                      >
-                        Next Question
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          syncProgress({
-                            lesson_slug: lesson.slug,
-                            score: lesson.points || 15,
-                            completed: true,
-                          });
-                        }}
-                        className="px-6 py-2 bg-black text-white font-bold rounded-xl border-2 border-black shadow-brutal transition-transform active:translate-y-0.5"
-                      >
-                        Finish Lesson
-                      </button>
-                    )
-                  ) : (
-                    <button
-                      onClick={handleQuizOptionCheck}
-                      className="px-6 py-2 bg-black text-white font-bold rounded-xl border-2 border-black shadow-brutal transition-transform active:translate-y-0.5"
-                    >
-                      Check Answer
-                    </button>
-                  )}
+                    {quizFeedback === "correct" ? (
+                      currentQuizIndex < lesson.quizzes!.length - 1 ? (
+                        <button
+                          onClick={handleNextQuizQuestion}
                           className="px-5 py-2.5 bg-accent text-black font-black text-sm rounded-xl border-4 border-black shadow-card-sm hover:-translate-y-0.5 transition-all cursor-pointer"
                         >
                           Next Question
