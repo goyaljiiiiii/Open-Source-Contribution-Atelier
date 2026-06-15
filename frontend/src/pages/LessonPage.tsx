@@ -9,7 +9,7 @@ import { fetchApi } from "../lib/api";
 import { Lesson, fetchLessonsApi, fetchLessonContent } from "../lib/lessons";
 import { MarkdownRenderer } from "../components/ui/MarkdownRenderer";
 import { GitGraph } from "../components/ui/GitGraph";
-import { ConflictSandbox } from "../components/ui/ConflictSandbox";
+
 import { createInitialRepo, parseGitCommand, RepoState } from "../lib/gitSimulator";
 
 function normalizeCommand(value: string) {
@@ -507,32 +507,7 @@ export function LessonPage() {
               ) : hasConflict ? (
                 // CONFLICT SANDBOX MODE
                 <div className="mt-8">
-                  <ConflictSandbox
-                    baseBranchName={lesson.conflictScenario?.baseBranchName}
-                    featureBranchName={lesson.conflictScenario?.featureBranchName}
-                    initialContent={lesson.conflictScenario?.fileContent || ""}
-                    onResolved={(finalContent) => {
-                       // Expected resolved content validation
-                       const expected = lesson.expected;
-                       let isCorrect = false;
-                       if (typeof expected === "string") {
-                         isCorrect = finalContent.trim() === expected.trim();
-                       } else {
-                         isCorrect = expected.test(finalContent.trim());
-                       }
-                       
-                       if (isCorrect || !expected) {
-                         setFeedback("correct");
-                         syncProgress({
-                           lesson_slug: lesson.slug,
-                           score: lesson.points || 25,
-                           completed: true,
-                         });
-                       } else {
-                         setFeedback("error");
-                       }
-                    }}
-                  />
+                  
                   {feedback === "correct" && (
                     <div className="mt-6 text-green-700 font-bold bg-green-50 p-4 rounded-xl border-4 border-green-600 animate-bounce">
                       ✅ Correct! You successfully resolved the merge conflict.
