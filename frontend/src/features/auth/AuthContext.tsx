@@ -23,21 +23,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  function safeGetItem(key: string): string | null {
+    try { return localStorage.getItem(key); } catch { return null; }
+  }
+  function safeSetItem(key: string, value: string) {
+    try { localStorage.setItem(key, value); } catch { /* localStorage unavailable */ }
+  }
+  function safeRemoveItem(key: string) {
+    try { localStorage.removeItem(key); } catch { /* localStorage unavailable */ }
+  }
+
   const login = (tokens: { access: string; refresh: string }) => {
-    localStorage.setItem("accessToken", tokens.access);
-    localStorage.setItem("refreshToken", tokens.refresh);
+    safeSetItem("accessToken", tokens.access);
+    safeSetItem("refreshToken", tokens.refresh);
     checkUser();
   };
 
   const logout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
+    safeRemoveItem("accessToken");
+    safeRemoveItem("refreshToken");
     setUser(null);
   };
 
   const checkUser = async () => {
     try {
-      const token = localStorage.getItem("accessToken");
+      const token = safeGetItem("accessToken");
       if (!token) {
         setUser(null);
         return;

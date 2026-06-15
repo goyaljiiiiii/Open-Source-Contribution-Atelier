@@ -87,14 +87,9 @@ def test_lesson_completed_broadcasts_to_leaderboard_channel(db, user_a):
     )
 
     mock_layer = MagicMock()
-    # group_send is a coroutine in Django Channels; AsyncMock lets
-    # async_to_sync() wrap it correctly without a real event loop.
     mock_layer.group_send = AsyncMock()
 
-    # Patch get_channel_layer so the lazily-fetched layer inside the signal
-    # handler returns our mock, instead of patching the now-removed
-    # module-level variable.
-    with patch("apps.progress.signals.get_channel_layer", return_value=mock_layer):
+    with patch("apps.dashboard.signals.get_channel_layer", return_value=mock_layer):
         LessonProgress.objects.create(
             user=user_a,
             lesson=lesson,
@@ -102,11 +97,13 @@ def test_lesson_completed_broadcasts_to_leaderboard_channel(db, user_a):
             score=100,
         )
 
-        mock_layer.group_send.assert_called_once_with(
-            "leaderboard",
-            {
-                "type": "leaderboard_update",
-                "message": f"User {user_a.username} completed lesson {lesson.title}",
-            },
-        )
+        mock_layer.group_send.assert_called_once()
+        call_args = mock_layer.group_send.call_args
+        assert call_args[0][0] == "leaderboard_updates"
+        payload = call_args[0][1]
+        assert payload["type"] == "leaderboard_update"
+        assert payload["event"] == "xp_update"
+        assert payload["user_id"] == user_a.id
+        assert payload["username"] == user_a.username
+        assert payload["xp"] >= 0
 

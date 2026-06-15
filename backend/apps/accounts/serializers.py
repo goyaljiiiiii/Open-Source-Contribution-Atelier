@@ -32,6 +32,8 @@ class SignupSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
+        if "email" in validated_data:
+            validated_data["email"] = validated_data["email"].lower()
         return User.objects.create_user(**validated_data)
 
 
