@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db.models import Sum, Count, Min
+from django.db import transaction
 from rest_framework import permissions, status
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import BasePermission
@@ -15,7 +16,14 @@ from .models import (
 )
 from apps.content.models import Lesson
 from apps.content.serializers import LessonSerializer
-from .serializers import BadgeSerializer, HelpRequestSerializer, LessonProgressSerializer, LessonProgressCreateSerializer, CertificateVerificationSerializer
+from .serializers import (
+    BadgeSerializer,
+    HelpRequestSerializer,
+    LessonProgressSerializer,
+    LessonProgressCreateSerializer,
+    CertificateVerificationSerializer,
+    BulkSyncSerializer,
+)
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse
 from .throttles import HelpRequestRateThrottle
 from django.shortcuts import get_object_or_404
@@ -70,7 +78,54 @@ class MyProgressView(APIView):
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
         )
 
+class BulkSyncProgressView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
+    def post(self, request):
+        serializer = BulkSyncSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        synced = []
+
+        with transaction.atomic():
+            for item in serializer.validated_data["lessons"]:
+
+                lesson_slug = item["lesson_slug"]
+                score = item.get("score", 100)
+                completed = item.get("completed", True)
+
+                try:
+                    lesson = Lesson.objects.get(slug=lesson_slug)
+                except Lesson.DoesNotExist:
+                    lesson = Lesson.objects.create(
+                        slug=lesson_slug,
+                        title=lesson_slug.replace("-", " ").title(),
+                        summary="Dynamic learning module",
+                        content="Dynamic content loaded from local file storage.",
+                        difficulty="beginner"
+                    )
+
+                progress, _ = LessonProgress.objects.update_or_create(
+                    user=request.user,
+                    lesson=lesson,
+                    defaults={
+                        "completed": completed,
+                        "score": score
+                    }
+                )
+
+                synced.append(progress.id)
+
+            from .badge_evaluator import BadgeEvaluator
+            BadgeEvaluator.evaluate(request.user)
+
+        return Response(
+            {
+                "synced_count": len(synced),
+                "progress_ids": synced
+            },
+            status=status.HTTP_200_OK
+        )
 @extend_schema(responses=OpenApiResponse(description="Community stats summary JSON: active_contributors, merged_prs, response_sla, open_requests"))
 class CommunityStatsView(APIView):
     def get(self, request):

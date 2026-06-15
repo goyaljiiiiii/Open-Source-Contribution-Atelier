@@ -55,6 +55,14 @@ class LessonProgressCreateSerializer(serializers.Serializer):
     score = serializers.IntegerField(default=100, help_text="Numeric score")
     completed = serializers.BooleanField(default=True, help_text="Whether the lesson is completed")
 
+class BulkLessonProgressSerializer(serializers.Serializer):
+    lesson_slug = serializers.SlugField()
+    score = serializers.IntegerField(default=100)
+    completed = serializers.BooleanField(default=True)
+
+class BulkSyncSerializer(serializers.Serializer):
+    lessons = BulkLessonProgressSerializer(many=True)
+    
 class CertificateVerificationSerializer(serializers.ModelSerializer):
     learner_name = serializers.SerializerMethodField()
 
