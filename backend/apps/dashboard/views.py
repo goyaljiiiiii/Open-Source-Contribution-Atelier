@@ -133,6 +133,36 @@ class AdminDashboardView(APIView):
         return Response(data)
 
 
+class PublicLandingStatsView(APIView):
+    """
+    Public API view returning summary stats for the landing page.
+    No authentication required.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        cache_key = "dashboard_public_landing_stats"
+        data = cache.get(cache_key)
+
+        if data is None:
+            total_users = User.objects.filter(is_staff=False).count()
+            total_lessons_solved = LessonProgress.objects.filter(completed=True).count()
+            total_xp = LessonProgress.objects.filter(completed=True).aggregate(
+                total=Sum("score")
+            )["total"] or 0
+
+            data = {
+                "total_users": total_users,
+                "total_lessons_solved": total_lessons_solved,
+                "total_xp": total_xp,
+            }
+
+            # Cache for 5 minutes
+            cache.set(cache_key, data, 300)
+
+        return Response(data)
+
+
 class ContributorDashboardView(APIView):
     """
     API view for Contributor Dashboard stats.
