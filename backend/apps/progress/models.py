@@ -8,6 +8,8 @@ class Badge(models.Model):
     name = models.CharField(max_length=120)
     slug = models.SlugField(unique=True)
     description = models.TextField()
+    category = models.CharField(max_length=100, default="general")
+    icon_asset_url = models.URLField(blank=True, default="")
 
 
 class UserBadge(models.Model):
@@ -24,6 +26,7 @@ class LessonProgress(models.Model):
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
     completed = models.BooleanField(default=False)
     score = models.PositiveIntegerField(default=0)
+    attempt_count = models.PositiveIntegerField(default=0)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -81,9 +84,11 @@ class Certificate(models.Model):
     course_name = models.CharField(max_length=255, default="Open Source Contribution Course")
     verification_hash = models.CharField(max_length=64, unique=True, default=uuid.uuid4, db_index=True)
     issued_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         ordering = ["-issued_at"]
 
     def __str__(self):
         return f"Certificate for {self.user.username} - {self.verification_hash}"
+

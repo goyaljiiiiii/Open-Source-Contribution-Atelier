@@ -86,6 +86,19 @@ export function Navigation() {
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery, lessonsCatalog]);
 
+  useEffect(() => {
+    async function loadBadges() {
+      try {
+        const badges = await fetchApi("/progress/badges/");
+        setBadgeCount(badges.length);
+      } catch (error) {
+        console.error("Failed to load badges:", error);
+      }
+    }
+
+    loadBadges();
+  }, []);
+
   return (
     <>
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-[280px] border-r border-outline bg-surface-lowest/90 backdrop-blur-xl lg:flex lg:flex-col dark:bg-[#0f0e0c]/90 dark:border-[#2e2924]">

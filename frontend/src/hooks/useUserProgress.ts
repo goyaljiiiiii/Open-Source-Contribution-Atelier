@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchApi } from "../lib/api";
+import { useLocalSync } from "./useLocalSync";
 
 export interface ProgressEntry {
   id: number;
@@ -13,6 +14,7 @@ export interface ProgressEntry {
 
 export function useUserProgress() {
   const queryClient = useQueryClient();
+  const { isLessonPendingCompleted, getPendingXP } = useLocalSync();
 
   // 1. Query to fetch all progress
   const { data: progress = [], isLoading } = useQuery<ProgressEntry[]>({
@@ -43,28 +45,16 @@ export function useUserProgress() {
     const isCompletedInBackend = progress.some((p) => p.lesson_slug === slug && p.completed);
     if (isCompletedInBackend) return true;
 
-    try {
-      const pending = JSON.parse(localStorage.getItem("atelier_pending_sync") || "[]");
-      return pending.some((p: any) => p.lesson_slug === slug && p.completed);
-    } catch {
-      return false;
-    }
+    return isLessonPendingCompleted(slug);
   };
 
-  const totalXP = useMemo(() => {
-    const backendXP = progress.reduce((acc, p) => acc + p.score, 0);
-    let pendingXP = 0;
-    try {
-      const pending = JSON.parse(localStorage.getItem("atelier_pending_sync") || "[]");
-      pending.forEach((p: any) => {
-        const inBackend = progress.some((bp) => bp.lesson_slug === p.lesson_slug);
-        if (!inBackend) {
-          pendingXP += p.score || 0;
-        }
-      });
-    } catch {}
-    return backendXP + pendingXP;
-  }, [progress]);
+const totalXP = useMemo(() => {
+  const backendXP = progress.reduce((acc, p) => acc + p.score, 0);
+  console.log("Backend XP:", backendXP, "Pending XP:", getPendingXP(progress));
+  return backendXP + getPendingXP(progress);
+}, [progress, getPendingXP]);
+
+console.log("Total XP:", totalXP);
 
   return {
     progress,

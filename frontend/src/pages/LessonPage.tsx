@@ -9,6 +9,7 @@ import { fetchApi } from "../lib/api";
 import { Lesson, fetchLessonsApi, fetchLessonContent } from "../lib/lessons";
 import { MarkdownRenderer } from "../components/ui/MarkdownRenderer";
 import { GitGraph } from "../components/ui/GitGraph";
+import { ConflictSandbox } from "../components/ui/ConflictSandbox";
 import { createInitialRepo, parseGitCommand, RepoState } from "../lib/gitSimulator";
 
 function normalizeCommand(value: string) {
@@ -255,6 +256,7 @@ export function LessonPage() {
   const nextLesson = lessonsList[currentLessonIndex + 1];
 
   const hasQuiz = lesson.quizzes && lesson.quizzes.length > 0;
+  const hasConflict = !!lesson.conflictScenario;
   const isCompleted = isLessonCompleted(lesson.slug);
   const activeModuleId = modules.find((mod) =>
   mod.lessons.some((les) => les.slug === lesson.slug)
@@ -409,21 +411,49 @@ export function LessonPage() {
                   <div className="space-y-3">
                     {lesson.quizzes![currentQuizIndex].options.map((option, idx) => {
                       const isSelected = selectedOption === idx;
+                      const currentQuiz = lesson.quizzes![currentQuizIndex];
+                      const isCorrectOption = idx === currentQuiz.answer;
+
+                      // Determine background color based on quiz state
+                      let bgColor = "";
+                      if (quizFeedback !== null) {
+                        // After answer submitted: show green for correct, red for incorrect
+                        if (isCorrectOption) {
+                          bgColor = "bg-green-600 border-green-800 text-white";
+                        } else if (isSelected && quizFeedback === "incorrect") {
+                          bgColor = "bg-red-600 border-red-800 text-white";
+                        }
+                      }
+
+                      // Fallback to original styling when no feedback is present
+                      if (!bgColor) {
+                        bgColor = isSelected
+                          ? "bg-accent shadow-card-sm -translate-y-0.5"
+                          : "bg-surface hover:bg-surface-low dark:bg-[#151411]";
+                      }
+
                       return (
                         <button
                           key={idx}
                           onClick={() => {
-                            if (quizFeedback !== "correct") {
-                              setSelectedOption(idx);
-                              setQuizFeedback(null);
+                            if (quizFeedback !== null) return; // Already answered
+                            setSelectedOption(idx);
+                            // Immediately validate the answer
+                            const isCorrect = idx === currentQuiz.answer;
+                            setQuizFeedback(isCorrect ? "correct" : "incorrect");
+                            if (isCorrect) {
+                              if (currentQuizIndex === lesson.quizzes!.length - 1) {
+                                setFeedback("correct");
+                                syncProgress({
+                                  lesson_slug: lesson.slug,
+                                  score: lesson.points || 15,
+                                  completed: true,
+                                });
+                              }
                             }
                           }}
-                          disabled={quizFeedback === "correct"}
-                          className={`w-full text-left p-4 rounded-xl border-4 border-black font-bold text-sm transition-all flex items-center justify-between ${
-                            isSelected
-                              ? "bg-accent shadow-card-sm -translate-y-0.5"
-                              : "bg-surface hover:bg-surface-low dark:bg-[#151411]"
-                          }`}
+                          disabled={quizFeedback !== null}
+                          className={`w-full text-left p-4 rounded-xl border-4 border-black font-bold text-sm transition-all flex items-center justify-between ${bgColor}`}
                         >
                           <span>{option}</span>
                           <div
@@ -437,13 +467,21 @@ export function LessonPage() {
                   </div>
 
                   {quizFeedback === "correct" && (
-                    <div className="mt-4 p-4 bg-green-50 text-green-800 border-4 border-green-600 rounded-xl font-bold text-sm">
+                    <div
+                      role="alert"
+                      aria-live="assertive"
+                      className="mt-4 p-4 bg-green-50 text-green-800 border-4 border-green-600 rounded-xl font-bold text-sm"
+                    >
                       🎉 Correct! {lesson.quizzes![currentQuizIndex].explanation}
                     </div>
                   )}
 
                   {quizFeedback === "incorrect" && (
-                    <div className="mt-4 p-4 bg-red-50 text-red-800 border-4 border-red-600 rounded-xl font-bold text-sm">
+                    <div
+                      role="alert"
+                      aria-live="assertive"
+                      className="mt-4 p-4 bg-red-50 text-red-800 border-4 border-red-600 rounded-xl font-bold text-sm"
+                    >
                       ❌ Not quite. Try reviewing the lesson text or options again.
                     </div>
                   )}
@@ -473,6 +511,46 @@ export function LessonPage() {
                     )}
                   </div>
                 </div>
+              ) : hasConflict ? (
+                // CONFLICT SANDBOX MODE
+                <div className="mt-8">
+                  <ConflictSandbox
+                    baseBranchName={lesson.conflictScenario?.baseBranchName}
+                    featureBranchName={lesson.conflictScenario?.featureBranchName}
+                    initialContent={lesson.conflictScenario?.fileContent || ""}
+                    onResolved={(finalContent) => {
+                       // Expected resolved content validation
+                       const expected = lesson.expected;
+                       let isCorrect = false;
+                       if (typeof expected === "string") {
+                         isCorrect = finalContent.trim() === expected.trim();
+                       } else {
+                         isCorrect = expected.test(finalContent.trim());
+                       }
+                       
+                       if (isCorrect || !expected) {
+                         setFeedback("correct");
+                         syncProgress({
+                           lesson_slug: lesson.slug,
+                           score: lesson.points || 25,
+                           completed: true,
+                         });
+                       } else {
+                         setFeedback("error");
+                       }
+                    }}
+                  />
+                  {feedback === "correct" && (
+                    <div className="mt-6 text-green-700 font-bold bg-green-50 p-4 rounded-xl border-4 border-green-600 animate-bounce">
+                      ✅ Correct! You successfully resolved the merge conflict.
+                    </div>
+                  )}
+                  {feedback === "error" && (
+                    <div className="mt-6 text-red-700 font-bold bg-red-50 p-4 rounded-xl border-4 border-red-600">
+                      ❌ The resolved output doesn't quite match what was expected. Try reviewing your selections.
+                    </div>
+                  )}
+                </div>
               ) : (
                 // TERMINAL INTERACTIVE COMMAND MODE
                 <div className="rounded-3xl border-4 border-black bg-surface-low p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924]">
@@ -494,6 +572,12 @@ export function LessonPage() {
                         placeholder="Type your git command here"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                            e.preventDefault();
+                            handleCommandSubmit(e as any);
+                          }
+                        }}
                         disabled={feedback === "correct"}
                         autoFocus
                       />

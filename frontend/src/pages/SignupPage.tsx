@@ -227,7 +227,16 @@ export function SignupPage() {
 
         </div>
 
-        <button className="w-full rounded-2xl border-4 border-black bg-accent px-5 py-5 font-black text-black text-xl shadow-card hover:bg-tertiary transition-colors cursor-pointer mt-4 uppercase">
+        <button
+          type="submit"
+          disabled={!isFormValid}
+          className={`w-full rounded-2xl border-4 border-black px-5 py-5 font-black text-black text-xl shadow-card transition-colors mt-4 uppercase
+    ${
+      isFormValid
+        ? "bg-accent hover:bg-tertiary cursor-pointer"
+        : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-70"
+    }`}
+        >
           Sign Me Up!
         </button>
 

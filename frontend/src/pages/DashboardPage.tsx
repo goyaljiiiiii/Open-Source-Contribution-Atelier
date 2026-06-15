@@ -23,7 +23,8 @@ import {
   ChevronRight,
   HelpCircle,
   Code,
-  X
+  X,
+  Lock
 } from "lucide-react";
 import {
   BarChart,
@@ -91,7 +92,7 @@ function useCountUp(end: number, durationMs: number = 2000) {
 
 export function DashboardPage() {
   const { user } = useAuth();
-  const { isLessonCompleted } = useUserProgress();
+  const { isLessonCompleted, totalXP } = useUserProgress();
   const CONTRIBUTORS_CACHE_KEY = "github_contributors_cache";
   const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -266,6 +267,14 @@ export function DashboardPage() {
       earnedBadges: earned
     };
   }, [lessons, curriculumData, isLessonCompleted, user]);
+
+  // Fetch user certificate if course is completed
+  const { data: certificateData } = useQuery({
+    queryKey: ["userCertificate"],
+    queryFn: () => fetchApi("/progress/certificate/"),
+    enabled: !!user && !user.is_staff && completionPercentage === 100,
+    retry: false,
+  });
 
   if (isAdminLoading || isContributorLoading || isLessonsLoading) {
     return (
@@ -518,7 +527,8 @@ export function DashboardPage() {
               Welcome to the Atelier, {user?.username}.
             </h1>
             <p className="text-lg font-bold text-black bg-white/95 p-4 rounded-xl border-4 border-black shadow-card-sm inline-block max-w-xl leading-relaxed dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2]">
-              You have completed {completedLessonsCount} of {totalLessonsCount} course modules, earning <span className="text-primary font-black" aria-hidden="true">{animatedXP} XP</span><span className="sr-only">{personal_stats.total_xp} XP</span>.
+               You have completed {completedLessonsCount} of {totalLessonsCount} course modules, earning <span className="text-primary font-black">{totalXP} XP</span>.
+
             </p>
           </div>
           <div className="absolute -right-6 -bottom-6 text-[10rem] opacity-20 rotate-12 pointer-events-none">
@@ -603,7 +613,7 @@ export function DashboardPage() {
                 <Link
                   key={lesson.slug}
                   to={`/lessons/${lesson.slug}`}
-                  className="flex flex-col gap-2 p-5 rounded-2xl border-4 border-black bg-surface-lowest shadow-card-sm hover:shadow-card hover:-translate-y-1 transition-all dark:bg-[#151411] dark:border-[#2e2924] dark:hover:bg-[#1f1c18]"
+                  className="flex flex-col gap-2 p-5 rounded-2xl border-4 border-black bg-surface-lowest shadow-card-sm hover:shadow-card hover:-translate-y-1 transition-all cursor-pointer dark:bg-[#151411] dark:border-[#2e2924] dark:hover:bg-[#1f1c18]"
                 >
                   <div className="flex justify-between items-end">
                     <h3 className="font-black text-xl dark:text-[#f0ebe2]">{lesson.title}</h3>
@@ -690,7 +700,8 @@ export function DashboardPage() {
                     UNLOCKED
                   </span>
                 ) : (
-                  <span className="absolute top-2 right-2 bg-gray-100 text-gray-400 border-2 border-gray-400 text-[8px] font-black px-1.5 py-0.5 rounded-full dark:border-none">
+                  <span className="absolute top-2 right-2 bg-gray-100 text-gray-400 border-2 border-gray-400 text-[8px] font-black px-1.5 py-0.5 rounded-full dark:border-none flex items-center gap-1">
+                    <Lock size={10} />
                     LOCKED
                   </span>
                 )}
@@ -858,13 +869,28 @@ export function DashboardPage() {
               <div className="grid grid-cols-2 gap-4 max-w-md mx-auto pt-6 text-left border-t border-black/10">
                 <div>
                   <span className="block text-[10px] text-muted uppercase font-bold">Verification Hash</span>
-                  <span className="font-mono text-xs font-black truncate block">OS-ATELIER-{user?.id}-{user?.username.toUpperCase()}</span>
+                  <span className="font-mono text-xs font-black truncate block" title={certificateData?.certificate?.verification_hash || "GENERATING..."}>
+                    {certificateData?.certificate?.verification_hash || "GENERATING..."}
+                  </span>
                 </div>
                 <div>
                   <span className="block text-[10px] text-muted uppercase font-bold">Issue Date</span>
-                  <span className="font-mono text-xs font-black block">{new Date().toLocaleDateString()}</span>
+                  <span className="font-mono text-xs font-black block">
+                    {certificateData?.certificate?.issued_at
+                      ? new Date(certificateData.certificate.issued_at).toLocaleDateString()
+                      : new Date().toLocaleDateString()}
+                  </span>
                 </div>
               </div>
+
+              {certificateData?.certificate?.verification_hash && (
+                <div className="mt-4 text-[10px] text-muted font-bold text-center print:block">
+                  Verify authenticity at:{" "}
+                  <span className="text-primary underline select-all">
+                    {window.location.origin}/verify/{certificateData.certificate.verification_hash}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Print trigger button row */}

@@ -14,7 +14,12 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
   headers.set("Content-Type", "application/json");
 
   if (requireAuth) {
-    const token = localStorage.getItem("accessToken");
+    let token: string | null = null;
+    try {
+      token = localStorage.getItem("accessToken");
+    } catch {
+      // localStorage unavailable (e.g. Safari private mode, SSR)
+    }
     if (token) {
       headers.set("Authorization", `Bearer ${token}`);
     }
@@ -28,7 +33,7 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
 
     if (!response.ok) {
       const errorBody = await response.json().catch(() => ({}));
-      throw new Error(errorBody.detail || "An error occurred");
+      throw new Error(errorBody.detail || errorBody.error || "An error occurred");
     }
 
     return response.json().catch(() => ({}));

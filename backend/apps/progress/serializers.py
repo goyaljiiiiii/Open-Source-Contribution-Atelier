@@ -21,7 +21,8 @@ class UserBadgeSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "slug", "description", "earned_at", "icon_url"]
 
     def get_icon_url(self, user_badge):
-        return getattr(user_badge.badge, "icon_url", None)
+        val = getattr(user_badge.badge, "icon_asset_url", None)
+        return val if val else None
 
 
 class LessonProgressSerializer(serializers.ModelSerializer):
@@ -29,7 +30,7 @@ class LessonProgressSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LessonProgress
-        fields = ["id", "user", "lesson", "lesson_slug", "completed", "score", "updated_at"]
+        fields = ["id", "user", "lesson", "lesson_slug", "completed", "score", "attempt_count", "updated_at"]
 
 
 class HelpRequestSerializer(serializers.ModelSerializer):
@@ -59,7 +60,7 @@ class CertificateVerificationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Certificate
-        fields = ["verification_hash", "course_name", "issued_at", "learner_name"]
+        fields = ["verification_hash", "course_name", "issued_at", "learner_name", "is_active"]
 
     def get_learner_name(self, obj):
         return obj.user.get_full_name() or obj.user.username
