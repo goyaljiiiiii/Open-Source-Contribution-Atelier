@@ -418,7 +418,7 @@ export function DashboardPage() {
               <h2 className="text-2xl font-black mb-6 flex items-center gap-2">
                 <span>🎯</span> Task Distribution
               </h2>
-              <div className="h-[200px] w-full flex justify-center items-center">
+              <div className="h-[180px] sm:h-[220px] w-full flex justify-center items-center">
                 {system_stats.total_issues > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -426,8 +426,8 @@ export function DashboardPage() {
                         data={issueStatusData}
                         cx="50%"
                         cy="50%"
-                        innerRadius={50}
-                        outerRadius={75}
+                        innerRadius="45%"
+                        outerRadius="70%"
                         paddingAngle={5}
                         dataKey="value"
                       >
@@ -642,7 +642,7 @@ export function DashboardPage() {
             <h2 className="text-2xl font-black mb-4 flex items-center gap-2">
               <span>🎯</span> Completion Progress
             </h2>
-            <div className="h-[180px] w-full flex items-center justify-center relative">
+            <div className="h-[180px] sm:h-[220px] w-full flex items-center justify-center relative">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -652,8 +652,8 @@ export function DashboardPage() {
                     ]}
                     cx="50%"
                     cy="50%"
-                    innerRadius={55}
-                    outerRadius={75}
+                    innerRadius="45%"
+                    outerRadius="70%"
                     paddingAngle={3}
                     dataKey="value"
                   >
