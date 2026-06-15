@@ -475,7 +475,7 @@ export function LessonPage() {
                       currentQuizIndex < lesson.quizzes!.length - 1 ? (
                         <button
                           onClick={handleNextQuizQuestion}
-                          className="px-6 py-2 bg-black text-white font-bold rounded-xl border-2 border-black shadow-brutal transition-transform active:translate-y-0.5"
+                          className="px-5 py-2.5 bg-accent text-black font-black text-sm rounded-xl border-4 border-black shadow-card-sm hover:-translate-y-0.5 transition-all cursor-pointer"
                         >
                           Next Question
                         </button>

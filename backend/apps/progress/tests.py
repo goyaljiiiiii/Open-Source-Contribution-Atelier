@@ -370,3 +370,74 @@ class MyCertificateTests(APITestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data["has_certificate"])
+
+
+# ---------------------------------------------------------------------------
+# RecommendationsView  (authenticated – GET /api/progress/recommendations/)
+# ---------------------------------------------------------------------------
+
+class RecommendationsTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="learner", password="password123")
+        self.url = reverse("recommendations")
+
+    def test_unauthenticated_returns_403(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_no_completed_lessons_returns_all_uncompleted_in_first_category(self):
+        self.client.force_authenticate(user=self.user)
+        # Create some lessons in a few categories
+        l1 = Lesson.objects.create(slug="c1-1", title="C1 L1", category="cat1", order=1)
+        l2 = Lesson.objects.create(slug="c1-2", title="C1 L2", category="cat1", order=2)
+        l3 = Lesson.objects.create(slug="c2-1", title="C2 L1", category="cat2", order=3)
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # 0 completion rate for all. "cat1" has lower min_order (1) so it should be the top category.
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data[0]["slug"], "c1-1")
+
+    def test_prioritizes_started_but_incomplete_categories(self):
+        self.client.force_authenticate(user=self.user)
+        # cat1: 1/3 completed = 33%
+        l1_1 = Lesson.objects.create(slug="c1-1", title="C1 L1", category="cat1", order=1)
+        l1_2 = Lesson.objects.create(slug="c1-2", title="C1 L2", category="cat1", order=2)
+        l1_3 = Lesson.objects.create(slug="c1-3", title="C1 L3", category="cat1", order=3)
+
+        # cat2: 1/2 completed = 50%
+        l2_1 = Lesson.objects.create(slug="c2-1", title="C2 L1", category="cat2", order=4)
+        l2_2 = Lesson.objects.create(slug="c2-2", title="C2 L2", category="cat2", order=5)
+
+        LessonProgress.objects.create(user=self.user, lesson=l1_1, completed=True)
+        LessonProgress.objects.create(user=self.user, lesson=l2_1, completed=True)
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # cat2 has 50% completion rate, which is higher than cat1's 33%.
+        # Should recommend uncompleted lessons from cat2.
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["slug"], "c2-2")
+
+    def test_ignores_fully_completed_categories(self):
+        self.client.force_authenticate(user=self.user)
+        # cat1: 1/1 completed = 100%
+        l1_1 = Lesson.objects.create(slug="c1-1", title="C1 L1", category="cat1", order=1)
+        # cat2: 0/1 completed = 0%
+        l2_1 = Lesson.objects.create(slug="c2-1", title="C2 L1", category="cat2", order=2)
+
+        LessonProgress.objects.create(user=self.user, lesson=l1_1, completed=True)
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["slug"], "c2-1")
+
+    def test_all_categories_completed_returns_empty(self):
+        self.client.force_authenticate(user=self.user)
+        l1 = Lesson.objects.create(slug="c1-1", title="C1 L1", category="cat1", order=1)
+        LessonProgress.objects.create(user=self.user, lesson=l1, completed=True)
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)

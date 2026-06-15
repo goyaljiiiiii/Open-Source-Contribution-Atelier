@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User
-from django.db.models import Sum
+from django.db.models import Sum, Count, Min
 from rest_framework import permissions, status
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import BasePermission
@@ -14,6 +14,7 @@ from .models import (
     Certificate,
 )
 from apps.content.models import Lesson
+from apps.content.serializers import LessonSerializer
 from .serializers import BadgeSerializer, HelpRequestSerializer, LessonProgressSerializer, LessonProgressCreateSerializer, CertificateVerificationSerializer
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse
 from .throttles import HelpRequestRateThrottle
@@ -387,4 +388,54 @@ class MyCertificateView(APIView):
             "has_certificate": False,
             "detail": "Course requirements not met. Complete all lessons to unlock."
         }, status=status.HTTP_400_BAD_REQUEST)
+
+@extend_schema(responses=LessonSerializer(many=True))
+class RecommendationsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        total_lessons_info = Lesson.objects.values("category").annotate(
+            total=Count("id"),
+            min_order=Min("order")
+        )
+        total_map = {
+            item["category"]: {"total": item["total"], "min_order": item["min_order"]}
+            for item in total_lessons_info
+        }
+
+        completed_progress = LessonProgress.objects.filter(user=user, completed=True)
+        completed_lessons_per_category = completed_progress.values("lesson__category").annotate(completed=Count("id"))
+        completed_map = {item["lesson__category"]: item["completed"] for item in completed_lessons_per_category}
+
+        category_rates = []
+        for category, info in total_map.items():
+            completed = completed_map.get(category, 0)
+            total = info["total"]
+            min_order = info["min_order"]
+            rate = completed / total if total > 0 else 0
+
+            if rate < 1.0:
+                category_rates.append({
+                    "category": category,
+                    "rate": rate,
+                    "min_order": min_order
+                })
+
+        if not category_rates:
+            return Response([])
+
+        category_rates.sort(key=lambda x: (-x["rate"], x["min_order"]))
+        top_category = category_rates[0]["category"]
+
+        completed_lesson_ids = completed_progress.values_list("lesson_id", flat=True)
+        recommended_lessons = Lesson.objects.filter(
+            category=top_category
+        ).exclude(
+            id__in=completed_lesson_ids
+        ).order_by("order")
+
+        serializer = LessonSerializer(recommended_lessons, many=True)
+        return Response(serializer.data)
 
