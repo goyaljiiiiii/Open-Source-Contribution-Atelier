@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@react-oauth/google": "^0.13.4",
@@ -29,6 +30,7 @@
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
     "@vitejs/plugin-react": "^4.4.1",
+    "@vitest/coverage-v8": "^3.0.5",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.19.0",
     "eslint-config-prettier": "^10.0.1",

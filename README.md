@@ -101,11 +101,13 @@ cd frontend && npm test
 
 ## CI/CD
 
-This repository ships with a GitHub Actions workflow that runs:
+This repository ships with a GitHub Actions workflow that automates the following checks:
 
-- Backend tests (`pytest`)
-- Frontend tests (`npm test`)
-- Frontend production build (`npm run build`)
+### Frontend CI
+- **ESLint Linting**: Automatically runs `npm run lint` to enforce code style and best practices.
+- **Unit Testing with Coverage**: Runs `npm run test:coverage` to execute unit tests via Vitest and generate code coverage reports (using the `v8` provider).
+- **Production Build Validation**: Runs `npm run build` to verify the application bundles correctly without compilation errors.
+- **npm Dependency Caching**: Caches npm dependencies to speed up subsequent workflow runs.
 
 Every push and pull request to `main` is validated automatically.
 
