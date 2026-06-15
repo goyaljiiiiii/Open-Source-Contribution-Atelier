@@ -29,23 +29,8 @@ export function LessonPage() {
   // Curriculum modules list for sidebar
   const [modules, setModules] = useState<{ id: string; title: string; lessons: { slug: string; title: string; difficulty?: string }[] }[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const sidebarRef = useRef<HTMLElement>(null);
 
   const closeSidebar = useCallback(() => setIsSidebarOpen(false), []);
-
-  // Close sidebar on click-outside (mobile drawer)
-  useEffect(() => {
-    if (!isSidebarOpen) return;
-
-    const handleClickOutside = (e: MouseEvent) => {
-      if (sidebarRef.current && !sidebarRef.current.contains(e.target as Node)) {
-        closeSidebar();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isSidebarOpen, closeSidebar]);
 
   // Command-based exercises
   const [input, setInput] = useState("");
@@ -292,7 +277,6 @@ export function LessonPage() {
       {/* 2. Side Course Directory Menu */}
       <aside
         id="course-sidebar"
-        ref={sidebarRef}
         className={`fixed top-0 left-0 h-full w-[300px] border-r-4 border-black bg-white dark:bg-[#151411] dark:border-[#2e2924] overflow-y-auto p-6 transition-transform duration-300 ease-in-out z-20 pt-20
           ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
           lg:relative lg:top-auto lg:left-auto lg:h-auto lg:w-[320px] lg:flex-shrink-0 lg:translate-x-0 lg:block lg:max-h-[calc(100vh-80px)]`}
@@ -496,17 +480,26 @@ export function LessonPage() {
                           Next Question
                         </button>
                       ) : (
-                        <div className="text-green-700 font-black flex items-center gap-2 bg-green-100 p-2.5 rounded-xl border-2 border-green-700">
-                          🏆 Course module completed! +{lesson.points || 15} XP
-                        </div>
+                        <button
+                          onClick={() => {
+                            syncProgress({
+                              lesson_slug: lesson.slug,
+                              score: lesson.points || 15,
+                              completed: true,
+                            });
+                          }}
+                          className="px-6 py-2 bg-black text-white font-bold rounded-xl border-2 border-black shadow-brutal transition-transform active:translate-y-0.5"
+                        >
+                          Finish Lesson
+                        </button>
                       )
                     ) : (
                       <button
                         onClick={handleQuizOptionCheck}
                         disabled={selectedOption === null}
-                        className="px-5 py-2.5 bg-primary text-white font-black text-sm rounded-xl border-4 border-black shadow-card-sm hover:-translate-y-0.5 disabled:opacity-50 transition-all cursor-pointer"
+                        className="px-6 py-2 bg-black text-white font-bold rounded-xl border-2 border-black shadow-brutal transition-transform active:translate-y-0.5 disabled:opacity-50"
                       >
-                        Submit Answer
+                        Check Answer
                       </button>
                     )}
                   </div>
