@@ -61,6 +61,35 @@ const BADGES = [
   { id: "grad", name: "Atelier Graduate", desc: "Complete 100% of the learning program.", icon: "🎓", isGraduation: true }
 ];
 
+function useCountUp(end: number, durationMs: number = 2000) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let current = 0;
+    if (end <= 0) {
+      setCount(end);
+      return;
+    }
+    const steps = 20;
+    const stepTime = Math.max(16, Math.floor(durationMs / steps));
+    const increment = end / steps;
+
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= end) {
+        setCount(end);
+        clearInterval(timer);
+      } else {
+        setCount(Math.ceil(current));
+      }
+    }, stepTime);
+
+    return () => clearInterval(timer);
+  }, [end, durationMs]);
+
+  return count;
+}
+
 export function DashboardPage() {
   const { user } = useAuth();
   const { isLessonCompleted, totalXP } = useUserProgress();
@@ -107,6 +136,9 @@ export function DashboardPage() {
     queryFn: fetchLessonsApi,
     enabled: !user?.is_staff,
   });
+
+  const targetXP = contributorData?.personal_stats?.total_xp || 0;
+  const animatedXP = useCountUp(targetXP);
 
   // Random Fact of the Day
   const factOfDay = useMemo(() => {
