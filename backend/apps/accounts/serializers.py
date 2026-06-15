@@ -1,8 +1,29 @@
-from django.contrib.auth import get_user_model
+import re
+
+from django.contrib.auth.models import User
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-User = get_user_model()
+
+def validate_strong_password(value):
+    if not re.search(r"\d", value):
+        raise serializers.ValidationError(
+            "Password must contain at least one number."
+        )
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", value):
+        raise serializers.ValidationError(
+            "Password must contain at least one special character (!@#$%^&* etc)."
+        )
+    if not re.search(r"[A-Z]", value):
+        raise serializers.ValidationError(
+            "Password must contain at least one uppercase letter."
+        )
+    if not re.search(r"[a-z]", value):
+        raise serializers.ValidationError(
+            "Password must contain at least one lowercase letter."
+        )
+    return value
+
 
 class SignupSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
@@ -11,34 +32,54 @@ class SignupSerializer(serializers.ModelSerializer):
         model = User
         fields = ("id", "username", "email", "password")
 
+    def validate_password(self, value):
+        return validate_strong_password(value)
+
     def create(self, validated_data):
+        if "email" in validated_data:
+            validated_data["email"] = validated_data["email"].lower()
         return User.objects.create_user(**validated_data)
+
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=False, min_length=8)
+
+    class Meta:
+        model = User
+        fields = ("email", "password")
+        extra_kwargs = {
+            "email": {"required": False},
+        }
+
+    def validate_password(self, value):
+        return validate_strong_password(value)
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop("password", None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        if password:
+            instance.set_password(password)
+        instance.save()
+        return instance
+
 
 class UserListSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ("id", "username", "email", "is_staff")
 
+
 class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
-    # These fields must be defined at the class level
-    email = serializers.EmailField(required=False)
-    username = serializers.CharField(required=False)
+    """Allow login with either username or email in the username field."""
 
-    # 1. Keep your class Meta here
-    class Meta:
-        model = User
-        fields = ('username', 'email', 'password')
-
-    # 2. REPLACE your old validate function with this one
     def validate(self, attrs):
-        email = attrs.get("email")
-        username = attrs.get("username")
+        username_key = self.username_field
+        identifier = attrs.get(username_key, "")
 
-        # Logic to map email to username if email is provided
-        if email and not username:
-            user = User.objects.filter(email__iexact=email.strip()).first()
+        if isinstance(identifier, str) and "@" in identifier:
+            user = User.objects.filter(email__iexact=identifier.strip()).first()
             if user:
-                attrs['username'] = user.username
-        
-        # Now call the parent class's validate method
+                attrs = {**attrs, username_key: user.username}
+
         return super().validate(attrs)
