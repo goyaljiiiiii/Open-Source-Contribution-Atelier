@@ -1,9 +1,33 @@
 import pytest
 from django.contrib.auth.models import User
-from rest_framework.test import APIClient
+from rest_framework.test import APIClient, APITestCase
+from rest_framework import status
 from unittest.mock import patch, Mock
 from apps.content.models import Lesson
 from apps.progress.models import LessonProgress
+
+class UserProfileUpdateTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser",
+            email="old@example.com",
+            password="OldPass123!",
+        )
+        self.client.force_authenticate(user=self.user)
+
+    def test_profile_update(self):
+        url = "/api/auth/me/"
+        payload = {
+            "email": "new@example.com",
+            "password": "NewPass456!",
+        }
+
+        response = self.client.put(url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, "new@example.com")
+        self.assertTrue(self.user.check_password("NewPass456!"))
 
 @pytest.mark.django_db
 def test_signup_and_login_flow():
