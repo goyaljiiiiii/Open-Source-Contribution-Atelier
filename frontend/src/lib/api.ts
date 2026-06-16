@@ -14,7 +14,12 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
   headers.set("Content-Type", "application/json");
 
   if (requireAuth) {
-    const token = localStorage.getItem("accessToken");
+    let token: string | null = null;
+    try {
+      token = localStorage.getItem("accessToken");
+    } catch {
+      // localStorage unavailable (e.g. Safari private mode, SSR)
+    }
     if (token) {
       headers.set("Authorization", `Bearer ${token}`);
     }

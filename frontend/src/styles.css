@@ -58,3 +58,27 @@ input {
     box-shadow 0.15s ease-out,
     color 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .certificate-printable,
+  .certificate-printable * {
+    visibility: visible;
+  }
+
+  .certificate-printable {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}

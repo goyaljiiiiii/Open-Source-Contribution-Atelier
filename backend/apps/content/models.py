@@ -10,13 +10,14 @@ class Lesson(models.Model):
     content = models.TextField()
     learning_objectives = models.JSONField(default=list, blank=True)
     tips = models.JSONField(default=list, blank=True)
+    category = models.CharField(max_length=100, default='general')
     estimated_minutes = models.PositiveIntegerField(
-    default=15,
-    validators=[
-        MinValueValidator(1),
-        MaxValueValidator(120),
-    ],
-)
+        default=15,
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(120),
+        ],
+    )
     order = models.PositiveIntegerField(default=0)
 
     class Meta:

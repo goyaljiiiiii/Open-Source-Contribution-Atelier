@@ -77,6 +77,37 @@ cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
 ```
 
+> [!WARNING]
+> **Google OAuth login will not work without a valid `VITE_GOOGLE_CLIENT_ID`.**
+> If this variable is missing or incorrect in `frontend/.env`, the app will load but Google Sign-In will fail with an OAuth configuration error.
+>
+> **How to set up your Google OAuth Client ID:**
+>
+> 1. Go to [Google Cloud Console](https://console.cloud.google.com/) and sign in.
+> 2. Create a new project or select an existing one.
+> 3. In the left sidebar, go to **APIs & Services → OAuth consent screen**.
+> 4. Select **External** (recommended for local/dev setups).
+> 5. Fill in the required app details and add test users if needed.
+> 6. Continue through the setup screens until the configuration is complete.
+> 7. Next, go to **APIs & Services → Credentials** in the sidebar.
+> 8. Click **Create Credentials → OAuth Client ID**.
+> 9. Set the application type to **Web application**.
+> 10. Under **Authorised JavaScript origins**, add:
+>     ```
+>     http://localhost:5173
+>     ```
+> 11. Under **Authorised redirect URIs**, add:
+>     ```
+>     http://localhost:5173
+>     ```
+> 12. Click **Create** and copy the generated **Client ID**.
+> 13. Open `frontend/.env` and set:
+>     ```
+>     VITE_GOOGLE_CLIENT_ID=your-client-id-here
+>     ```
+>
+> ⚠️ Never commit your `.env` file — it is already covered by `.gitignore`.
+
 #### 2. Initialize Backend
 The Django backend supports **Python 3.9+** and defaults to a local SQLite database for effortless onboarding without needing PostgreSQL or Redis.
 ```bash

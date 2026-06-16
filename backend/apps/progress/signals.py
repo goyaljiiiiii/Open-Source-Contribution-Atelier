@@ -1,7 +1,5 @@
 import logging
 
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -45,23 +43,9 @@ def on_lesson_completed(sender, instance, created, **kwargs):
         except LessonProgress.DoesNotExist:
             pass
 
-    channel_layer = get_channel_layer()
-    if channel_layer is None:
-        logger.warning("No channel layer configured; skipping leaderboard broadcast.")
-        return
-
-    try:
-        async_to_sync(channel_layer.group_send)(
-            "leaderboard",
-            {
-                "type": "leaderboard_update",
-                "message": f"User {instance.user.username} completed lesson {instance.lesson.title}",
-            },
-        )
-        logger.info(
-            "Pushed leaderboard update for user %s completing lesson %s",
-            instance.user.username,
-            instance.lesson.title,
-        )
-    except Exception as exc:
-        logger.error("Failed to push leaderboard update: %s", exc)
+    logger.info(
+        "Lesson completed by user %s: %s (score=%s)",
+        instance.user.username,
+        instance.lesson.title,
+        instance.score,
+    )
