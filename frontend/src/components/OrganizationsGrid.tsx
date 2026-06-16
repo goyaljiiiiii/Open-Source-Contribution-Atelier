@@ -14,16 +14,16 @@ const OrganizationsGrid: React.FC = () => {
             href={`https://github.com/${slug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="border rounded-lg p-3 flex items-start gap-3 hover:shadow transition-shadow bg-white dark:bg-gray-800"
+            className="border-2 border-black rounded-xl p-2.5 flex items-center gap-2 hover:-translate-y-0.5 transition-all bg-white dark:bg-gray-800 shadow-card-sm hover:shadow-card cursor-pointer"
           >
             <img
-              src={`https://github.com/${slug}.png?size=120`}
+              src={`https://github.com/${slug}.png?size=80`}
               alt={`${slug} avatar`}
-              className="w-12 h-12 rounded-md object-cover"
+              className="w-8 h-8 rounded-lg object-cover border border-black/20"
             />
-            <div>
-              <div className="font-medium">{slug}</div>
-              <div className="text-sm text-muted mt-1">Visit on GitHub</div>
+            <div className="truncate min-w-0">
+              <div className="font-bold text-xs truncate uppercase tracking-tight">{slug}</div>
+              <div className="text-[10px] text-muted truncate">GitHub</div>
             </div>
           </a>
         ))}

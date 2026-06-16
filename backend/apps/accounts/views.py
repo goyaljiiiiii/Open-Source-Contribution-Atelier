@@ -18,7 +18,12 @@ from urllib.parse import urlencode
 from django.db.models import Sum
 from apps.progress.models import LessonProgress, UserBadge
 from apps.progress.serializers import UserBadgeSerializer
-from .serializers import SignupSerializer, UserListSerializer, EmailOrUsernameTokenObtainPairSerializer
+from .serializers import (
+    SignupSerializer,
+    UserListSerializer,
+    UserUpdateSerializer,
+    EmailOrUsernameTokenObtainPairSerializer,
+)
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse
 
 def unique_username_from_value(value: str) -> str:
@@ -48,7 +53,7 @@ class SignupView(generics.CreateAPIView):
 
 
 class MeView(APIView):
-    permission_classes = [IsAuthenticated] # check jwt authentication
+    permission_classes = [IsAuthenticated]  # check jwt authentication
 
     @extend_schema(responses=UserListSerializer)
     def get(self, request):
@@ -61,6 +66,19 @@ class MeView(APIView):
             }
         )
 
+    @extend_schema(request=UserUpdateSerializer, responses=UserListSerializer)
+    def put(self, request):
+        serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {
+                "id": request.user.id,
+                "username": request.user.username,
+                "email": request.user.email,
+                "is_staff": request.user.is_staff,
+            }
+        )
 
 class MyBadgesView(APIView):
     permission_classes = [permissions.IsAuthenticated]
