@@ -74,6 +74,8 @@ export function SignupPage() {
   const labelColors = ["text-red-500", "text-yellow-600", "text-green-600"] as const;
   // ── END HELPER BLOCK ───────────────────────────────────────────────────────
 
+  const isFormValid = username.trim() !== "" && email.trim() !== "" && password.trim() !== "";
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -92,8 +94,8 @@ export function SignupPage() {
       });
       login(tokens);
       window.location.href = "/dashboard";
-    } catch (err: any) {
-      setError(err.message || "Failed to create account");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to create account");
     }
   };
 

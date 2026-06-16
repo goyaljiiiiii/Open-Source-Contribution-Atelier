@@ -36,6 +36,7 @@ export function Navigation() {
   } | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [lessonsCatalog, setLessonsCatalog] = useState<any[]>([]);
+  const [badgeCount, setBadgeCount] = useState(0);
 
   useEffect(() => {
     fetchLessonsApi().then((data) => setLessonsCatalog(data));
@@ -271,8 +272,14 @@ export function Navigation() {
             >
               {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
             </button>
-            <button className="rounded-xl bg-surface-low p-2 text-muted hover:text-text dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2]">
+            <button className="relative rounded-xl bg-surface-low p-2 text-muted hover:text-text dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2]">
               <Bell size={16} />
+              {badgeCount > 0 && (
+                <span className="absolute right-1.5 top-1.5 flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75"></span>
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-accent"></span>
+                </span>
+              )}
             </button>
             {user ? (
               <div className="flex items-center gap-2">

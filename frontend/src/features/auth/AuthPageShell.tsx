@@ -3,7 +3,7 @@ import React from "react";
 type AuthPageShellProps = {
   title: string;
   subtitle: string;
-  mode: "login" | "signup";
+  mode: "login" | "signup" | "info";
   children: React.ReactNode;
 };
 
@@ -20,6 +20,12 @@ export function AuthPageShell({
           text: "We all know you're just here to procrastinate on your real homework.",
           color: "bg-tertiary",
         }
+      : mode === "info"
+      ? {
+          title: "Verify your email",
+          text: "Just one more step. We sent a link to your inbox.",
+          color: "bg-tertiary",
+        }
       : {
           title: "Study like your life depends on it 💀",
           text: "Because it probably does. Let's get you set up.",
@@ -32,6 +38,12 @@ export function AuthPageShell({
           title: "Brain power 🧠",
           text: "Cramming 5 mins before the exam? We got you. Probably.",
           color: "bg-primary",
+        }
+      : mode === "info"
+      ? {
+          title: "Almost there",
+          text: "You can't skip this, don't even try.",
+          color: "bg-accent",
         }
       : {
           title: "Lessgooo 🚀",
