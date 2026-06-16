@@ -137,8 +137,7 @@ export function DashboardPage() {
     enabled: !user?.is_staff,
   });
 
-  const targetXP = contributorData?.personal_stats?.total_xp || 0;
-  const animatedXP = useCountUp(targetXP);
+  const animatedXP = useCountUp(totalXP);
 
   // Random Fact of the Day
   const factOfDay = useMemo(() => {
@@ -527,7 +526,7 @@ export function DashboardPage() {
               Welcome to the Atelier, {user?.username}.
             </h1>
             <p className="text-lg font-bold text-black bg-white/95 p-4 rounded-xl border-4 border-black shadow-card-sm inline-block max-w-xl leading-relaxed dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2]">
-               You have completed {completedLessonsCount} of {totalLessonsCount} course modules, earning <span className="text-primary font-black">{totalXP} XP</span>.
+               You have completed {completedLessonsCount} of {totalLessonsCount} course modules, earning <span className="text-primary font-black">{animatedXP} XP</span>.
 
             </p>
           </div>
