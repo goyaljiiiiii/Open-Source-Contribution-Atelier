@@ -7,9 +7,8 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    initial = True
-
     dependencies = [
+        ('accounts', '0001_initial'),
         ('content', '0002_lesson_learning_objectives_tips'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]

@@ -9,10 +9,13 @@ export function VerificationPage() {
     const verifyUser = async () => {
       try {
         // Adjust this URL if your backend is on a different port
-        const response = await fetch(`http://127.0.0.1:8000/api/auth/verify/${token}/`, {
-          method: "GET",
-        });
-        
+        const response = await fetch(
+          `http://127.0.0.1:8000/api/auth/verify/${token}/`,
+          {
+            method: "GET",
+          },
+        );
+
         if (response.ok) {
           alert("Verification successful!");
           navigate("/login"); // Adjust to your login route

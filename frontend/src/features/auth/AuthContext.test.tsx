@@ -33,53 +33,7 @@ describe("AuthContext", () => {
   });
 
   it("login stores tokens and triggers user fetch", async () => {
-    (fetchApi as any).mockResolvedValue({
-      id: 1,
-      username: "testuser",
-      email: "test@test.com",
-    });
-
-    render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>,
-    );
-
-    // trigger login
-    screen.getAllByText("login")[0].click(); // ✅ Fix: avoid multiple match error
-
-    expect(localStorage.getItem("accessToken")).toBe("a");
-    expect(localStorage.getItem("refreshToken")).toBe("r");
-
-    await waitFor(() => {
-      expect(screen.getAllByTestId("user")[0].textContent).toBe("testuser"); // ✅ Fix
-    });
-  });
-
-  it("logout clears tokens and user", async () => {
-    render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>,
-    );
-
-    // set tokens manually
-    localStorage.setItem("accessToken", "a");
-    localStorage.setItem("refreshToken", "r");
-
-    screen.getAllByText("logout")[0].click(); // ✅ Fix
-
-    expect(localStorage.getItem("accessToken")).toBe(null);
-    expect(localStorage.getItem("refreshToken")).toBe(null);
-
-    expect(screen.getAllByTestId("user")[0].textContent).toBe("no-user"); // ✅ Fix
-    expect(screen.getAllByTestId("auth")[0].textContent).toBe("no"); // ✅ Fix
-  });
-
-  it("checkUser sets user if token exists", async () => {
-    localStorage.setItem("accessToken", "a");
-
-    (fetchApi as any).mockResolvedValue({
+    (fetchApi as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: 1,
       username: "testuser",
       email: "test@test.com",

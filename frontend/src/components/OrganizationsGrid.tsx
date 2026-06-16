@@ -1,10 +1,13 @@
-import React from 'react';
-import { ORGS } from '../lib/organizations';
+import React from "react";
+import { ORGS } from "../lib/organizations";
 
 const OrganizationsGrid: React.FC = () => {
   return (
     <section aria-labelledby="orgs-heading" className="mb-6">
-      <h3 id="orgs-heading" className="text-xs font-black uppercase tracking-wider text-muted mb-3 text-center">
+      <h3
+        id="orgs-heading"
+        className="text-xs font-black uppercase tracking-wider text-muted mb-3 text-center"
+      >
         Supported Orgs
       </h3>
       <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
@@ -22,7 +25,9 @@ const OrganizationsGrid: React.FC = () => {
               className="w-8 h-8 rounded-lg object-cover border border-black/20"
             />
             <div className="truncate min-w-0">
-              <div className="font-bold text-xs truncate uppercase tracking-tight">{slug}</div>
+              <div className="font-bold text-xs truncate uppercase tracking-tight">
+                {slug}
+              </div>
               <div className="text-[10px] text-muted truncate">GitHub</div>
             </div>
           </a>

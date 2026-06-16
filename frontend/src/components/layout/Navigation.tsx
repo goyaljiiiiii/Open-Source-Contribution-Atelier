@@ -28,14 +28,21 @@ const navItems = [
 
 export function Navigation() {
   const { theme, toggleTheme } = useTheme();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<{
-    lessons: any[];
-    challenges: any[];
+    lessons: {
+      slug: string;
+      title: string;
+      description: string;
+      summary: string;
+    }[];
+    challenges: { slug: string; title: string; summary: string }[];
   } | null>(null);
   const [isSearching, setIsSearching] = useState(false);
-  const [lessonsCatalog, setLessonsCatalog] = useState<any[]>([]);
+  const [lessonsCatalog, setLessonsCatalog] = useState<
+    { slug: string; title: string; description: string }[]
+  >([]);
 
   useEffect(() => {
     fetchLessonsApi().then((data) => setLessonsCatalog(data));
@@ -267,7 +274,11 @@ export function Navigation() {
             <button
               className="rounded-xl bg-surface-low p-2 text-muted hover:text-text dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2]"
               onClick={toggleTheme}
-              aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+              aria-label={
+                theme === "light"
+                  ? "Switch to dark mode"
+                  : "Switch to light mode"
+              }
             >
               {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
             </button>

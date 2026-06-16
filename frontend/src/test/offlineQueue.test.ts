@@ -2,6 +2,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { queueProgressSync, syncOfflineQueue } from "../lib/offlineQueue";
 import { queryClient } from "../app/App";
 
+interface MockIDBRequest {
+  onsuccess: ((event: Event) => void) | null;
+  onerror: ((event: Event) => void) | null;
+  result?: unknown;
+  error?: unknown;
+}
+
 // Mock IndexedDB
 const mockStore = new Map();
 const mockIDBDatabase = {
@@ -9,37 +16,44 @@ const mockIDBDatabase = {
     objectStore: vi.fn().mockReturnValue({
       put: vi.fn().mockImplementation((item) => {
         mockStore.set(item.id, item);
-        const req = {
-          onsuccess: null as any,
-          onerror: null as any,
+        const req: MockIDBRequest = {
+          onsuccess: null,
+          onerror: null,
           result: item.id,
         };
         setTimeout(() => {
-          if (req.onsuccess) req.onsuccess({ target: { result: item.id } });
+          if (req.onsuccess)
+            req.onsuccess({ target: { result: item.id } } as unknown as Event);
         }, 0);
         return req;
       }),
       getAll: vi.fn().mockImplementation(() => {
         const resultVal = Array.from(mockStore.values());
-        const req = {
-          onsuccess: null as any,
-          onerror: null as any,
+        const req: MockIDBRequest = {
+          onsuccess: null,
+          onerror: null,
           result: resultVal,
         };
         setTimeout(() => {
-          if (req.onsuccess) req.onsuccess({ target: { result: resultVal } });
+          if (req.onsuccess)
+            req.onsuccess({
+              target: { result: resultVal },
+            } as unknown as Event);
         }, 0);
         return req;
       }),
       delete: vi.fn().mockImplementation((id) => {
         mockStore.delete(id);
-        const req = {
-          onsuccess: null as any,
-          onerror: null as any,
+        const req: MockIDBRequest = {
+          onsuccess: null,
+          onerror: null,
           result: undefined,
         };
         setTimeout(() => {
-          if (req.onsuccess) req.onsuccess({ target: { result: undefined } });
+          if (req.onsuccess)
+            req.onsuccess({
+              target: { result: undefined },
+            } as unknown as Event);
         }, 0);
         return req;
       }),
@@ -49,14 +63,14 @@ const mockIDBDatabase = {
 
 globalThis.indexedDB = {
   open: vi.fn().mockReturnValue({
-    onsuccess: null as any,
-    onerror: null as any,
-    onupgradeneeded: null as any,
+    onsuccess: null,
+    onerror: null,
+    onupgradeneeded: null,
     get result() {
       return mockIDBDatabase;
     },
   }),
-} as any;
+} as unknown as typeof globalThis.indexedDB;
 
 // Mock queryClient invalidation
 vi.spyOn(queryClient, "invalidateQueries").mockImplementation(async () => {});
@@ -78,16 +92,21 @@ describe("Offline Progress Queue", () => {
     });
 
     // Setup indexedDB open mock success trigger
-    const openReq = {
-      onsuccess: null as any,
-      onerror: null as any,
+    const openReq: MockIDBRequest = {
+      onsuccess: null,
+      onerror: null,
     };
-    (globalThis.indexedDB.open as any).mockImplementation(() => {
-      setTimeout(() => {
-        if (openReq.onsuccess) openReq.onsuccess({ target: { result: mockIDBDatabase } });
-      }, 0);
-      return openReq;
-    });
+    (globalThis.indexedDB.open as ReturnType<typeof vi.fn>).mockImplementation(
+      () => {
+        setTimeout(() => {
+          if (openReq.onsuccess)
+            openReq.onsuccess({
+              target: { result: mockIDBDatabase },
+            } as unknown as Event);
+        }, 0);
+        return openReq;
+      },
+    );
   });
 
   it("should queue a progress update in IndexedDB and localStorage when offline", async () => {
@@ -104,7 +123,9 @@ describe("Offline Progress Queue", () => {
     });
 
     // Check localStorage
-    const pendingLocal = JSON.parse(localStorage.getItem("atelier_pending_sync") || "[]");
+    const pendingLocal = JSON.parse(
+      localStorage.getItem("atelier_pending_sync") || "[]",
+    );
     expect(pendingLocal).toHaveLength(1);
     expect(pendingLocal[0].lesson_slug).toBe("git-basics");
     expect(pendingLocal[0].score).toBe(20);
@@ -134,10 +155,12 @@ describe("Offline Progress Queue", () => {
 
     // Verify queued
     expect(mockStore.size).toBe(1);
-    expect(JSON.parse(localStorage.getItem("atelier_pending_sync") || "[]")).toHaveLength(1);
+    expect(
+      JSON.parse(localStorage.getItem("atelier_pending_sync") || "[]"),
+    ).toHaveLength(1);
 
     // Mock successful fetch replay
-    (globalThis.fetch as any).mockResolvedValue({
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       status: 200,
       json: () => Promise.resolve({ success: true }),
@@ -151,8 +174,12 @@ describe("Offline Progress Queue", () => {
 
     // Verify queue is empty now
     expect(mockStore.size).toBe(0);
-    expect(JSON.parse(localStorage.getItem("atelier_pending_sync") || "[]")).toHaveLength(0);
-    expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ["userProgress"] });
+    expect(
+      JSON.parse(localStorage.getItem("atelier_pending_sync") || "[]"),
+    ).toHaveLength(0);
+    expect(queryClient.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["userProgress"],
+    });
   });
 
   it("should retain request in queue if replay fails with a network error", async () => {
@@ -166,7 +193,9 @@ describe("Offline Progress Queue", () => {
     await new Promise((resolve) => setTimeout(resolve, 10));
 
     // Mock fetch error (network failure)
-    (globalThis.fetch as any).mockRejectedValue(new TypeError("Failed to fetch"));
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new TypeError("Failed to fetch"),
+    );
 
     await syncOfflineQueue();
 
@@ -174,6 +203,8 @@ describe("Offline Progress Queue", () => {
 
     // Verify it is still in queue
     expect(mockStore.size).toBe(1);
-    expect(JSON.parse(localStorage.getItem("atelier_pending_sync") || "[]")).toHaveLength(1);
+    expect(
+      JSON.parse(localStorage.getItem("atelier_pending_sync") || "[]"),
+    ).toHaveLength(1);
   });
 });

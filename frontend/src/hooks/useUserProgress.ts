@@ -42,19 +42,26 @@ export function useUserProgress() {
 
   // 3. Convenience helpers
   const isLessonCompleted = (slug: string) => {
-    const isCompletedInBackend = progress.some((p) => p.lesson_slug === slug && p.completed);
+    const isCompletedInBackend = progress.some(
+      (p) => p.lesson_slug === slug && p.completed,
+    );
     if (isCompletedInBackend) return true;
 
     return isLessonPendingCompleted(slug);
   };
 
-const totalXP = useMemo(() => {
-  const backendXP = progress.reduce((acc, p) => acc + p.score, 0);
-  console.log("Backend XP:", backendXP, "Pending XP:", getPendingXP(progress));
-  return backendXP + getPendingXP(progress);
-}, [progress, getPendingXP]);
+  const totalXP = useMemo(() => {
+    const backendXP = progress.reduce((acc, p) => acc + p.score, 0);
+    console.log(
+      "Backend XP:",
+      backendXP,
+      "Pending XP:",
+      getPendingXP(progress),
+    );
+    return backendXP + getPendingXP(progress);
+  }, [progress, getPendingXP]);
 
-console.log("Total XP:", totalXP);
+  console.log("Total XP:", totalXP);
 
   return {
     progress,

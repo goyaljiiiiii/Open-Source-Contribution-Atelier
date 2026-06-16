@@ -24,13 +24,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   function safeGetItem(key: string): string | null {
-    try { return localStorage.getItem(key); } catch { return null; }
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
   }
   function safeSetItem(key: string, value: string) {
-    try { localStorage.setItem(key, value); } catch { /* localStorage unavailable */ }
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      /* localStorage unavailable */
+    }
   }
   function safeRemoveItem(key: string) {
-    try { localStorage.removeItem(key); } catch { /* localStorage unavailable */ }
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      /* localStorage unavailable */
+    }
   }
 
   const login = (tokens: { access: string; refresh: string }) => {

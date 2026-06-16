@@ -6,10 +6,10 @@ import React from "react";
 
 // Mock Recharts library to prevent JSDOM layout measuring issues
 vi.mock("recharts", () => ({
-  ResponsiveContainer: ({ children }: any) => (
+  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="responsive-container">{children}</div>
   ),
-  BarChart: ({ children }: any) => (
+  BarChart: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="bar-chart">{children}</div>
   ),
   Bar: () => <div data-testid="bar" />,
@@ -18,12 +18,14 @@ vi.mock("recharts", () => ({
   CartesianGrid: () => <div data-testid="cartesian-grid" />,
   Tooltip: () => <div data-testid="tooltip" />,
   Legend: () => <div data-testid="legend" />,
-  PieChart: ({ children }: any) => (
+  PieChart: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="pie-chart">{children}</div>
   ),
-  Pie: ({ children }: any) => <div data-testid="pie">{children}</div>,
+  Pie: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="pie">{children}</div>
+  ),
   Cell: () => <div data-testid="cell" />,
-  AreaChart: ({ children }: any) => (
+  AreaChart: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="area-chart">{children}</div>
   ),
   Area: () => <div data-testid="area" />,
@@ -31,7 +33,9 @@ vi.mock("recharts", () => ({
 
 // Mock react-router-dom Link component
 vi.mock("react-router-dom", () => ({
-  Link: ({ children, to }: any) => <a href={to}>{children}</a>,
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
+    <a href={to}>{children}</a>
+  ),
 }));
 
 // Mock useAuth context hook

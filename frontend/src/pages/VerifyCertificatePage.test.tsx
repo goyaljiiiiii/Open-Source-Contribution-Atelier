@@ -10,19 +10,21 @@ vi.mock("../lib/api", () => ({
 
 describe("VerifyCertificatePage", () => {
   it("renders loading state initially", () => {
-    (fetchApi as any).mockReturnValue(new Promise(() => {}));
+    (fetchApi as ReturnType<typeof vi.fn>).mockReturnValue(
+      new Promise(() => {}),
+    );
     render(
       <MemoryRouter initialEntries={["/verify/123"]}>
         <Routes>
           <Route path="/verify/:hash" element={<VerifyCertificatePage />} />
         </Routes>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
     expect(screen.getByText("Verifying Certificate...")).toBeInTheDocument();
   });
 
   it("renders verified certificate data", async () => {
-    (fetchApi as any).mockResolvedValue({
+    (fetchApi as ReturnType<typeof vi.fn>).mockResolvedValue({
       is_valid: true,
       certificate: {
         verification_hash: "123",
@@ -37,7 +39,7 @@ describe("VerifyCertificatePage", () => {
         <Routes>
           <Route path="/verify/:hash" element={<VerifyCertificatePage />} />
         </Routes>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     await waitFor(() => {
@@ -48,14 +50,16 @@ describe("VerifyCertificatePage", () => {
   });
 
   it("renders invalid certificate error", async () => {
-    (fetchApi as any).mockRejectedValue(new Error("Invalid Hash"));
+    (fetchApi as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error("Invalid Hash"),
+    );
 
     render(
       <MemoryRouter initialEntries={["/verify/invalid"]}>
         <Routes>
           <Route path="/verify/:hash" element={<VerifyCertificatePage />} />
         </Routes>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     await waitFor(() => {
