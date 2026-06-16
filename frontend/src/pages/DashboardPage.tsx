@@ -95,7 +95,25 @@ export function DashboardPage() {
   const { isLessonCompleted, totalXP } = useUserProgress();
   const CONTRIBUTORS_CACHE_KEY = "github_contributors_cache";
   const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const scrollToTop = () => {
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+};
 
+useEffect(() => {
+  const handleScroll = () => {
+    setShowScrollTop(window.scrollY > 300);
+  };
+
+  window.addEventListener("scroll", handleScroll);
+
+  return () => {
+    window.removeEventListener("scroll", handleScroll);
+  };
+}, []);
   // 1. Fetch static modules catalog
   const [curriculumData, setCurriculumData] = useState<any[]>([]);
   useEffect(() => {
@@ -910,6 +928,15 @@ export function DashboardPage() {
             </div>
           </div>
         </div>
+      )}
+            {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          aria-label="Scroll to top"
+          className="fixed bottom-6 right-6 z-50 rounded-xl bg-primary text-white border-4 border-black px-4 py-3 font-black shadow-card-sm hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-card-sm cursor-pointer"
+        >
+          ↑ Top
+        </button>
       )}
     </div>
   );
