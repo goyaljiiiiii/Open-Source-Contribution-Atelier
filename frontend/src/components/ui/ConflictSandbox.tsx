@@ -325,7 +325,7 @@ export function ConflictSandbox({
                 {isResolved && (
                   <button
                     onClick={() => handleResolve(block.id, null)}
-                    className="text-xs font-bold px-2 py-1 bg-white border-2 border-black rounded hover:bg-surface-low dark:bg-[#1f1c18] dark:text-[#f0ebe2] transition-colors"
+                    className="text-xs font-bold px-2 py-1 bg-white border-2 border-black rounded shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all hover:bg-surface-low dark:bg-[#1f1c18] dark:text-[#f0ebe2]"
                   >
                     Undo
                   </button>
@@ -342,7 +342,7 @@ export function ConflictSandbox({
                     {!isResolved && (
                       <button
                         onClick={() => handleResolve(block.id, "current")}
-                        className="bg-blue-600 text-white px-3 py-1 rounded shadow border-2 border-blue-900 hover:-translate-y-0.5 active:translate-y-0 transition-all"
+                        className="bg-blue-600 text-white px-3 py-1 rounded-xl border-2 border-black shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all font-black"
                       >
                         Accept Current
                       </button>
@@ -362,7 +362,7 @@ export function ConflictSandbox({
                     {!isResolved && (
                       <button
                         onClick={() => handleResolve(block.id, "incoming")}
-                        className="bg-green-600 text-white px-3 py-1 rounded shadow border-2 border-green-900 hover:-translate-y-0.5 active:translate-y-0 transition-all"
+                        className="bg-green-600 text-black px-3 py-1 rounded-xl border-2 border-black shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all font-black"
                       >
                         Accept Incoming
                       </button>
@@ -385,7 +385,7 @@ export function ConflictSandbox({
                   >
                     <button
                       onClick={() => handleResolve(block.id, "both")}
-                      className="bg-black text-white px-6 py-2 rounded-xl font-bold border-2 border-transparent hover:bg-gray-800 shadow-card-sm transition-all"
+                      className="bg-black text-white px-6 py-2 rounded-xl font-black border-2 border-black hover:bg-gray-800 shadow-card-sm transition-all"
                     >
                       Accept Both Changes
                     </button>
@@ -413,7 +413,7 @@ export function ConflictSandbox({
         <button
           onClick={handleComplete}
           disabled={!allResolved}
-          className="px-8 py-3 bg-primary text-white font-black uppercase tracking-wider rounded-xl border-4 border-black shadow-card hover:-translate-y-1 active:translate-y-0 disabled:opacity-50 disabled:shadow-none disabled:translate-y-0 transition-all"
+          className="px-8 py-3 bg-primary text-black font-black uppercase tracking-wider rounded-xl border-4 border-black shadow-card hover:-translate-y-1 active:translate-y-0 disabled:opacity-50 disabled:shadow-none disabled:translate-y-0 transition-all cursor-pointer"
         >
           Complete Merge
         </button>

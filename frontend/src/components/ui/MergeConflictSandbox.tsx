@@ -131,13 +131,13 @@ export function MergeConflictSandbox() {
                     <div className="flex gap-2 text-white items-center">
                       <button
                         onClick={() => handleResolve("current")}
-                        className={`text-[10px] px-2 py-1 rounded border-2 font-black transition-colors ${resolvedStatus === "current" ? "bg-blue-500 border-black text-black" : "bg-transparent border-blue-500 text-blue-500 hover:bg-blue-500/20"}`}
+                        className={`text-[10px] px-2 py-1 rounded-lg border-2 font-black transition-all hover:-translate-y-0.5 active:translate-y-0 ${resolvedStatus === "current" ? "bg-blue-500 border-black text-black shadow-card-sm" : "bg-transparent border-blue-400 text-blue-400 hover:bg-blue-400/20"}`}
                       >
                         Accept Current
                       </button>
                       <button
                         onClick={() => handleResolve("both")}
-                        className={`text-[10px] px-2 py-1 rounded border-2 font-black transition-colors ${resolvedStatus === "both" ? "bg-purple-500 border-black text-black" : "bg-transparent border-purple-500 text-purple-500 hover:bg-purple-500/20"}`}
+                        className={`text-[10px] px-2 py-1 rounded-lg border-2 font-black transition-all hover:-translate-y-0.5 active:translate-y-0 ${resolvedStatus === "both" ? "bg-purple-500 border-black text-black shadow-card-sm" : "bg-transparent border-purple-400 text-purple-400 hover:bg-purple-400/20"}`}
                       >
                         Accept Both
                       </button>
@@ -158,7 +158,7 @@ export function MergeConflictSandbox() {
                     <div className="flex gap-2 text-white items-center mt-1">
                       <button
                         onClick={() => handleResolve("incoming")}
-                        className={`text-[10px] px-2 py-1 rounded border-2 font-black transition-colors ${resolvedStatus === "incoming" ? "bg-green-500 border-black text-black" : "bg-transparent border-green-500 text-green-500 hover:bg-green-500/20"}`}
+                        className={`text-[10px] px-2 py-1 rounded-lg border-2 font-black transition-all hover:-translate-y-0.5 active:translate-y-0 ${resolvedStatus === "incoming" ? "bg-green-500 border-black text-black shadow-card-sm" : "bg-transparent border-green-500 text-green-500 hover:bg-green-500/20"}`}
                       >
                         Accept Incoming
                       </button>
@@ -213,8 +213,7 @@ export function MergeConflictSandbox() {
                 <button
                   onClick={handleMerge}
                   disabled={resolvedStatus === "unresolved"}
-                  className="w-full py-4 rounded-xl border-4 border-black font-black uppercase text-lg transition-all shadow-card-sm disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-1 active:translate-y-0 flex items-center justify-center gap-2
-                  bg-primary text-white"
+                  className="w-full py-4 rounded-xl border-4 border-black font-black uppercase text-lg transition-all shadow-card-sm disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-1 active:translate-y-0 flex items-center justify-center gap-2 bg-primary text-black cursor-pointer"
                 >
                   Complete Merge <ArrowRight size={20} />
                 </button>

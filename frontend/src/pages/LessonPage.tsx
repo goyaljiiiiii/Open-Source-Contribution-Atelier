@@ -482,8 +482,7 @@ export function LessonPage() {
                         if (quizFeedback !== null) {
                           // After answer submitted: show green for correct, red for incorrect
                           if (isCorrectOption) {
-                            bgColor =
-                              "bg-green-600 border-green-800 text-white";
+                            bgColor = "bg-green-600 border-black text-black";
                           } else if (
                             isSelected &&
                             quizFeedback === "incorrect"
@@ -579,7 +578,7 @@ export function LessonPage() {
                       <button
                         onClick={handleQuizOptionCheck}
                         disabled={selectedOption === null}
-                        className="px-5 py-2.5 bg-primary text-white font-black text-sm rounded-xl border-4 border-black shadow-card-sm hover:-translate-y-0.5 disabled:opacity-50 transition-all cursor-pointer"
+                        className="px-5 py-2.5 bg-primary text-black font-black text-sm rounded-xl border-4 border-black shadow-card-sm hover:-translate-y-0.5 disabled:opacity-50 transition-all cursor-pointer"
                       >
                         Submit Answer
                       </button>
@@ -664,7 +663,7 @@ export function LessonPage() {
                       />
                       <button
                         type="submit"
-                        className="px-5 py-2.5 bg-primary text-white font-black text-sm rounded-xl border-4 border-black shadow-card-sm hover:-translate-y-0.5 disabled:opacity-50 transition-all cursor-pointer flex items-center justify-center gap-2 min-w-[72px]"
+                        className="px-5 py-2.5 bg-primary text-black font-black text-sm rounded-xl border-4 border-black shadow-card-sm hover:-translate-y-0.5 disabled:opacity-50 transition-all cursor-pointer flex items-center justify-center gap-2 min-w-[72px]"
                         disabled={
                           feedback === "correct" || !input.trim() || isExecuting
                         }
@@ -844,7 +843,7 @@ export function LessonPage() {
 
               <button
                 type="submit"
-                className="w-full px-4 py-2 bg-primary text-white font-bold rounded-xl border-4 border-black shadow-gel hover:bg-[#E62814] disabled:opacity-60"
+                className="w-full px-4 py-2 bg-primary text-black font-bold rounded-xl border-4 border-black shadow-gel hover:bg-[#E62814] disabled:opacity-60"
                 disabled={!helpMessage.trim() || helpRequestMutation.isPending}
               >
                 {helpRequestMutation.isPending

@@ -760,7 +760,7 @@ export function DashboardPage() {
           {completionPercentage === 100 ? (
             <button
               onClick={() => setShowCertificate(true)}
-              className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl bg-green-500 text-white font-black py-3 border-4 border-black shadow-card-sm hover:-translate-y-0.5 transition-all cursor-pointer uppercase tracking-wider text-xs"
+              className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl bg-green-500 text-black font-black py-3 border-4 border-black shadow-card-sm hover:-translate-y-0.5 transition-all cursor-pointer uppercase tracking-wider text-xs"
             >
               <Download size={14} /> Download Certificate
             </button>
@@ -1034,7 +1034,7 @@ export function DashboardPage() {
                 {onboardingStep > 0 && (
                   <button
                     onClick={() => setOnboardingStep((prev) => prev - 1)}
-                    className="px-4 py-2 border-2 border-black rounded-xl text-xs font-black hover:bg-surface-low"
+                    className="px-4 py-2 border-2 border-black rounded-xl text-xs font-black bg-white hover:bg-surface-low shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all"
                   >
                     Back
                   </button>
@@ -1049,7 +1049,7 @@ export function DashboardPage() {
                 ) : (
                   <button
                     onClick={handleFinishOnboarding}
-                    className="px-4 py-2 bg-green-500 text-white border-2 border-black rounded-xl text-xs font-black shadow-card-sm hover:-translate-y-0.5"
+                    className="px-4 py-2 bg-green-500 text-black border-2 border-black rounded-xl text-xs font-black shadow-card-sm hover:-translate-y-0.5"
                   >
                     Let's Go!
                   </button>
@@ -1143,7 +1143,7 @@ export function DashboardPage() {
             <div className="mt-8 flex gap-3 print:hidden">
               <button
                 onClick={() => window.print()}
-                className="flex items-center gap-2 rounded-xl bg-primary text-white border-4 border-black px-6 py-3 font-black text-sm shadow-card-sm hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-card-sm cursor-pointer"
+                className="flex items-center gap-2 rounded-xl bg-primary text-black border-4 border-black px-6 py-3 font-black text-sm shadow-card-sm hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-card-sm cursor-pointer"
               >
                 <Printer size={16} /> Print Certificate
               </button>

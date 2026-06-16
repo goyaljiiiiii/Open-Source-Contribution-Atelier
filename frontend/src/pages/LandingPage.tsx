@@ -82,13 +82,21 @@ export function LandingPage() {
           <div className="flex gap-2 p-1 bg-surface-low rounded-xl border-2 border-black mb-6">
             <button
               onClick={() => setAuthRole("student")}
-              className={`flex-1 py-2 font-bold rounded-lg transition-colors border-2 ${authRole === "student" ? "bg-white border-black shadow-sm" : "border-transparent text-muted"}`}
+              className={`flex-1 py-2 font-bold rounded-lg transition-all border-2 ${
+                authRole === "student"
+                  ? "bg-white border-black shadow-card-sm -translate-y-0.5"
+                  : "border-transparent text-muted hover:text-text"
+              }`}
             >
               Contributor
             </button>
             <button
               onClick={() => setAuthRole("admin")}
-              className={`flex-1 py-2 font-bold rounded-lg transition-colors border-2 ${authRole === "admin" ? "bg-white border-black shadow-sm" : "border-transparent text-muted"}`}
+              className={`flex-1 py-2 font-bold rounded-lg transition-all border-2 ${
+                authRole === "admin"
+                  ? "bg-white border-black shadow-card-sm -translate-y-0.5"
+                  : "border-transparent text-muted hover:text-text"
+              }`}
             >
               Maintainer
             </button>
@@ -177,7 +185,7 @@ export function LandingPage() {
 
             <button
               type="submit"
-              className="w-full rounded-2xl border-4 border-black bg-primary px-5 py-4 font-black text-white text-xl shadow-gel hover:bg-[#E62814] active:translate-y-2 transition-all uppercase tracking-wide mt-4 cursor-pointer"
+              className="w-full rounded-2xl border-4 border-black bg-primary px-5 py-4 font-black text-black text-xl shadow-gel hover:bg-[#E62814] active:translate-y-2 transition-all uppercase tracking-wide mt-4 cursor-pointer"
             >
               Assemble & Run!
             </button>
