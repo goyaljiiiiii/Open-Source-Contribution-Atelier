@@ -194,6 +194,9 @@ export function DashboardPage() {
     enabled: !user?.is_staff,
   });
 
+  const targetXP = contributorData?.personal_stats?.total_xp || 0;
+  const animatedXP = useCountUp(targetXP);
+
   // Random Fact of the Day
   const factOfDay = useMemo(() => {
     const day = new Date().getDate();

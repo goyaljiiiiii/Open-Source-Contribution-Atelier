@@ -97,7 +97,7 @@ export function VerifyCertificatePage() {
   if (!hash) {
     return (
       <div className="min-h-screen bg-bg py-12 px-6 sm:px-12 flex flex-col items-center">
-        <div className="w-full max-w-3xl mb-8 flex items-center justify-between">
+        <div className="w-full max-w-3xl mb-8 flex items-center justify-between no-print">
           <Link
             to="/"
             className="group flex items-center gap-2 font-bold text-black border-4 border-black bg-white px-4 py-2 rounded-xl shadow-card-sm transition-all hover:-translate-y-1 hover:shadow-card active:translate-y-0 active:shadow-none"
@@ -183,7 +183,7 @@ export function VerifyCertificatePage() {
         </div>
       </div>
 
-      <div className="w-full max-w-3xl bg-white border-4 border-black rounded-3xl p-8 sm:p-12 shadow-card">
+      <div className="w-full max-w-3xl bg-white border-4 border-black rounded-3xl p-8 sm:p-12 shadow-card certificate-printable">
         {error && !data ? (
           /* Case 3a: Non-existent hash (404 Error) */
           <div className="flex flex-col items-center text-center space-y-6">

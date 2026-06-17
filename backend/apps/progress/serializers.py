@@ -21,7 +21,8 @@ class UserBadgeSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "slug", "description", "earned_at", "icon_url"]
 
     def get_icon_url(self, user_badge):
-        return getattr(user_badge.badge, "icon_url", None)
+        val = getattr(user_badge.badge, "icon_asset_url", None)
+        return val if val else None
 
 
 class LessonProgressSerializer(serializers.ModelSerializer):
