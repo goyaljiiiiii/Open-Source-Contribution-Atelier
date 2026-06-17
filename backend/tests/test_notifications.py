@@ -106,6 +106,10 @@ def test_lesson_completed_broadcasts_to_leaderboard_channel(db, user_a):
             "leaderboard",
             {
                 "type": "leaderboard_update",
+                "event": "xp_update",
+                "user_id": user_a.id,
+                "username": user_a.username,
+                "xp": 100,
                 "message": f"User {user_a.username} completed lesson {lesson.title}",
             },
         )

@@ -114,6 +114,10 @@ class LeaderboardConsumer(AsyncWebsocketConsumer):
         """Relay leaderboard update event to the websocket client."""
         await self.send(text_data=json.dumps({
             "type": "leaderboard_update",
+            "event": event.get("event", "xp_update"),
+            "user_id": event.get("user_id"),
+            "username": event.get("username"),
+            "xp": event.get("xp"),
             "message": event.get("message", "Leaderboard update triggered"),
         }))
 

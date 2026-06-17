@@ -51,10 +51,19 @@ def on_lesson_completed(sender, instance, created, **kwargs):
         return
 
     try:
+        from django.db.models import Sum
+        from apps.progress.models import LessonProgress as LP
+        total_xp = (
+            LP.objects.filter(user=instance.user).aggregate(total=Sum("score"))["total"] or 0
+        )
         async_to_sync(channel_layer.group_send)(
             "leaderboard",
             {
                 "type": "leaderboard_update",
+                "event": "xp_update",
+                "user_id": instance.user.id,
+                "username": instance.user.username,
+                "xp": total_xp,
                 "message": f"User {instance.user.username} completed lesson {instance.lesson.title}",
             },
         )
