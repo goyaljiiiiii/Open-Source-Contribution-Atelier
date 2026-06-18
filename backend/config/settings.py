@@ -107,16 +107,51 @@ USE_TZ = True
 STATIC_URL = "/static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# ── Email Configuration ────────────────────────────────────────────────────────
+# Default: console backend (prints emails to stdout) — safe for dev/CI.
+# Override EMAIL_BACKEND in production env with a real SMTP backend.
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend"
+)
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@atelier.dev")
+
+# ── Proxy / Load-Balancer Support ─────────────────────────────────────────────
+# Number of trusted proxy hops in front of Django (e.g. Nginx + AWS ALB = 2).
+# Used by throttles.py to extract the real client IP from X-Forwarded-For.
+TRUSTED_PROXY_COUNT = int(os.getenv("TRUSTED_PROXY_COUNT", "0"))
+
+# ── Password Reset ─────────────────────────────────────────────────────────────
+# How many minutes a password reset token remains valid.
+PASSWORD_RESET_TIMEOUT_MINUTES = int(os.getenv("PASSWORD_RESET_TIMEOUT_MINUTES", "15"))
+
 REST_FRAMEWORK = {
-    # ── Sandbox Rate Limiting (10 requests/minute) ──────────────────────────
-    # Scoped throttling: ONLY affects sandbox endpoints, not global API routes.
+    # ── Default Throttle Classes ─────────────────────────────────────────────
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
 
-"DEFAULT_THROTTLE_RATES": {
-    "sandbox_anon": "10/minute",
-    "sandbox_user": "10/minute",
-    "help_request": "5/hour",
-},
-
+    # ── Throttle Rates ───────────────────────────────────────────────────────
+    # Sandbox endpoints
+    # Auth endpoints (brute-force + spam protection)
+    "DEFAULT_THROTTLE_RATES": {
+        # ── Global Default ───────────────────────────────────────────────────
+        "anon": "100/minute",
+        "user": "1000/minute",
+        # ── Sandbox ──────────────────────────────────────────────────────────
+        "sandbox_anon": "10/minute",
+        "sandbox_user": "10/minute",
+        "help_request": "5/hour",
+        # ── Authentication ───────────────────────────────────────────────────
+        "auth_login":          os.getenv("RATE_AUTH_LOGIN",          "5/minute"),
+        "auth_signup":         os.getenv("RATE_AUTH_SIGNUP",         "10/hour"),
+        "auth_token_refresh":  os.getenv("RATE_AUTH_TOKEN_REFRESH",  "30/minute"),
+        "auth_otp_generate":   os.getenv("RATE_AUTH_OTP_GENERATE",   "3/minute"),
+        "auth_otp_verify":     os.getenv("RATE_AUTH_OTP_VERIFY",     "5/minute"),
+        "auth_password_reset": os.getenv("RATE_AUTH_PASSWORD_RESET", "3/hour"),
+        "auth_oauth":          os.getenv("RATE_AUTH_OAUTH",          "20/minute"),
+    },
 
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -125,6 +160,7 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "EXCEPTION_HANDLER": "apps.accounts.exceptions.throttle_exception_handler",
 }
 
 SIMPLE_JWT = {

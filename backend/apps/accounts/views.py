@@ -15,14 +15,32 @@ import os
 from typing import Optional
 from urllib.parse import urlencode
 
+from django.core.mail import send_mail
+from django.utils import timezone
+
+from .throttles import (
+    LoginThrottle,
+    SignupThrottle,
+    TokenRefreshThrottle,
+    OAuthThrottle,
+    OtpGenerateThrottle,
+    OtpVerifyThrottle,
+    PasswordResetThrottle,
+)
+
 from django.db.models import Sum
 from apps.progress.models import LessonProgress, UserBadge
 from apps.progress.serializers import UserBadgeSerializer
+from .models import PasswordResetToken, OTPToken
 from .serializers import (
     SignupSerializer,
     UserListSerializer,
     UserUpdateSerializer,
     EmailOrUsernameTokenObtainPairSerializer,
+    PasswordResetRequestSerializer,
+    PasswordResetConfirmSerializer,
+    OtpRequestSerializer,
+    OtpVerifySerializer,
 )
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse
 
@@ -50,6 +68,7 @@ class SignupView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = SignupSerializer
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [SignupThrottle]
 
 
 class MeView(APIView):
@@ -114,14 +133,17 @@ class MyBadgesView(APIView):
 class LoginView(TokenObtainPairView):
     permission_classes = [permissions.AllowAny]
     serializer_class = EmailOrUsernameTokenObtainPairSerializer
+    throttle_classes = [LoginThrottle]
 
 
 class RefreshView(TokenRefreshView):
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [TokenRefreshThrottle]
 
 
 class GoogleLoginView(APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [OAuthThrottle]
 
     @staticmethod
     def _unique_username_from_email(email: str) -> str:
@@ -176,6 +198,7 @@ class GoogleLoginView(APIView):
 
 class GitHubOAuthStartView(APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [OAuthThrottle]
 
     def get(self, request):
         client_id = os.getenv("GITHUB_CLIENT_ID", "")
@@ -195,6 +218,7 @@ class GitHubOAuthStartView(APIView):
 
 class GitHubOAuthCallbackView(APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [OAuthThrottle]
 
     def get(self, request):
         code = request.query_params.get("code")
@@ -272,3 +296,198 @@ class UserListView(generics.ListAPIView):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["username"]
     ordering_fields = ["id", "username"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Password Reset Views
+# ─────────────────────────────────────────────────────────────────────────────
+
+@extend_schema(
+    request=PasswordResetRequestSerializer,
+    responses=OpenApiResponse(description="Reset email sent if account exists.")
+)
+class PasswordResetRequestView(APIView):
+    """
+    POST /api/auth/password-reset/
+
+    Accept an email address and send a password reset link if the account exists.
+    Always returns the same response to prevent email enumeration attacks.
+    Rate-limited to 3 requests/hour per IP.
+    """
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [PasswordResetThrottle]
+
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data["email"].lower()
+        user = User.objects.filter(email__iexact=email).first()
+
+        if user:
+            # Invalidate any existing unused tokens for this user
+            PasswordResetToken.objects.filter(user=user, is_used=False).update(is_used=True)
+            reset_token = PasswordResetToken.objects.create(user=user)
+
+            reset_url = frontend_url(
+                "/reset-password",
+                {"token": str(reset_token.token)}
+            )
+            timeout = getattr(settings, "PASSWORD_RESET_TIMEOUT_MINUTES", 15)
+
+            send_mail(
+                subject="Password Reset Request",
+                message=(
+                    f"Hi {user.username},\n\n"
+                    f"Click the link below to reset your password (expires in {timeout} minutes):\n"
+                    f"{reset_url}\n\n"
+                    "If you did not request this, you can safely ignore this email."
+                ),
+                from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@atelier.dev"),
+                recipient_list=[user.email],
+                fail_silently=True,
+            )
+
+        # Always return the same response to prevent email enumeration
+        return Response(
+            {"message": "If an account with that email exists, a password reset link has been sent."},
+            status=status.HTTP_200_OK,
+        )
+
+
+@extend_schema(
+    request=PasswordResetConfirmSerializer,
+    responses=OpenApiResponse(description="Password successfully reset.")
+)
+class PasswordResetConfirmView(APIView):
+    """
+    POST /api/auth/password-reset/confirm/
+
+    Accept a reset token and new password to complete the password reset.
+    Tokens are single-use and expire after PASSWORD_RESET_TIMEOUT_MINUTES.
+    Rate-limited to 3 requests/hour per IP.
+    """
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [PasswordResetThrottle]
+
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        token_value = serializer.validated_data["token"]
+        new_password = serializer.validated_data["new_password"]
+
+        try:
+            reset_token = PasswordResetToken.objects.select_related("user").get(
+                token=token_value,
+                is_used=False,
+            )
+        except PasswordResetToken.DoesNotExist:
+            return Response(
+                {"error": "invalid_token", "message": "This reset link is invalid or has already been used."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if reset_token.is_expired():
+            return Response(
+                {"error": "expired_token", "message": "This reset link has expired. Please request a new one."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = reset_token.user
+        user.set_password(new_password)
+        user.save()
+
+        reset_token.is_used = True
+        reset_token.save(update_fields=["is_used"])
+
+        return Response(
+            {"message": "Your password has been successfully reset. You can now log in."},
+            status=status.HTTP_200_OK,
+        )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OTP (Email Verification) Views
+# ─────────────────────────────────────────────────────────────────────────────
+
+@extend_schema(
+    request=OtpRequestSerializer,
+    responses=OpenApiResponse(description="OTP sent to email if account exists.")
+)
+class OtpRequestView(APIView):
+    """
+    POST /api/auth/otp/request/
+
+    Regenerate and send a new OTP verification code to the given email.
+    Rate-limited to 3 requests/minute per IP to prevent email spam.
+    """
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [OtpGenerateThrottle]
+
+    def post(self, request):
+        serializer = OtpRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data["email"].lower()
+        user = User.objects.filter(email__iexact=email).first()
+
+        if user:
+            # Invalidate previous unused OTP tokens
+            OTPToken.objects.filter(user=user, is_used=False).update(is_used=True)
+            otp_obj = OTPToken.objects.create(user=user)
+
+            send_mail(
+                subject="Your Verification Code",
+                message=f"Hi {user.username},\n\nYour verification code is: {otp_obj.token}",
+                from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@atelier.dev"),
+                recipient_list=[user.email],
+                fail_silently=True,
+            )
+
+        return Response(
+            {"message": "If the email is registered, an OTP has been sent."},
+            status=status.HTTP_200_OK,
+        )
+
+
+@extend_schema(
+    request=OtpVerifySerializer,
+    responses=OpenApiResponse(description="Email verified successfully.")
+)
+class OtpVerifyView(APIView):
+    """
+    POST /api/auth/otp/verify/
+
+    Verify a user's email using the OTP token they received by email.
+    Rate-limited to 5 requests/minute per IP to prevent OTP guessing.
+    """
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [OtpVerifyThrottle]
+
+    def post(self, request):
+        serializer = OtpVerifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data["email"].lower()
+        otp = serializer.validated_data["otp"]
+
+        user = User.objects.filter(email__iexact=email).first()
+        if not user:
+            return Response({"error": "invalid_otp"}, status=status.HTTP_400_BAD_REQUEST)
+
+        token = OTPToken.objects.filter(user=user, token=otp, is_used=False).first()
+        if not token:
+            return Response({"error": "invalid_otp"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Mark token as used
+        token.is_used = True
+        token.save()
+
+        user.is_verified = True  # type: ignore[attr-defined]
+        user.save(update_fields=["is_verified"])
+
+        return Response(
+            {"message": "Your email has been verified successfully. You can now log in."},
+            status=status.HTTP_200_OK,
+        )
