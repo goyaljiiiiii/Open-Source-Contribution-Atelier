@@ -68,7 +68,7 @@ jobs:
         env:
           DATABASE_URL: postgres://contribution_atelier:contribution_atelier@localhost:5432/contribution_atelier
           REDIS_URL: redis://localhost:6379/0
-        run: python manage.py migrate --run-syncdb
+        run: python manage.py migrate
 
       - name: Run Backend Tests
         working-directory: ./backend
