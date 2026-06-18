@@ -46,16 +46,11 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework",
     "rest_framework_simplejwt",
-    "channels",
-    "drf_spectacular",
     "apps.accounts",
     "apps.content",
     "apps.progress",
     "apps.challenges",
     "apps.sandbox",
-    "apps.search",
-    "apps.dashboard",
-    "apps.notifications",
 ]
 
 MIDDLEWARE = [
