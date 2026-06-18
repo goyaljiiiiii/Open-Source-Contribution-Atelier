@@ -53,6 +53,7 @@ export function GitTerminal({
   xp = 20,
 }: GitTerminalProps) {
   const [inputVal, setInputVal] = useState("");
+  const [editorVal, setEditorVal] = useState("");
   const [completed, setCompleted] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -64,12 +65,21 @@ export function GitTerminal({
 
   const {
     lines,
+    shellState,
     runCmd,
     resetShell,
     navigateHistory,
     getHistoryEntry,
     historyIdx,
+    saveEditor,
+    closeEditor,
   } = useGitShell({ onObjectiveComplete: handleComplete });
+
+  useEffect(() => {
+    if (shellState.editorState) {
+        setEditorVal(shellState.editorState.content);
+    }
+  }, [shellState.editorState]);
 
   // animation hook for terminal wrapper
   const { ref: termRef, trigger: triggerTerm } = useFailureAnimation<HTMLDivElement>();
@@ -143,19 +153,48 @@ export function GitTerminal({
         </div>
       </div>
 
-      {/* ── Output area ───────────────────────────────────────────── */}
-      <div
-        className="bg-[#0d0d1a] min-h-[260px] max-h-[380px] overflow-y-auto p-4 space-y-1 cursor-text"
-        onClick={() => inputRef.current?.focus()}
-        role="log"
-        aria-label="Terminal output"
-        aria-live="polite"
-      >
-        {lines.map((line) => (
-          <LineRenderer key={line.id} line={line} />
-        ))}
-        <div ref={bottomRef} />
-      </div>
+      {/* ── Output area / Editor Overlay ───────────────────────────── */}
+      {shellState.editorState ? (
+        <div className="bg-[#1e1e1e] min-h-[260px] max-h-[380px] p-0 flex flex-col relative">
+            <div className="bg-gray-800 text-gray-300 text-xs px-3 py-1 font-mono flex justify-between items-center border-b border-gray-700">
+               <span>GNU nano - {shellState.editorState.file}</span>
+               <div className="flex gap-2">
+                 <button onClick={closeEditor} className="hover:text-red-400 font-bold px-1 transition-colors">^C Exit</button>
+                 <button onClick={() => saveEditor(editorVal)} className="hover:text-green-400 font-bold px-1 transition-colors">^X Save & Exit</button>
+               </div>
+            </div>
+            <textarea
+               className="flex-1 w-full bg-transparent text-white font-mono text-sm p-4 outline-none resize-none min-h-[235px]"
+               value={editorVal}
+               onChange={(e) => setEditorVal(e.target.value)}
+               autoFocus
+               spellCheck={false}
+               onKeyDown={(e) => {
+                 if (e.ctrlKey && e.key.toLowerCase() === 'x') {
+                     e.preventDefault();
+                     saveEditor(editorVal);
+                 }
+                 if (e.ctrlKey && e.key.toLowerCase() === 'c') {
+                     e.preventDefault();
+                     closeEditor();
+                 }
+               }}
+            />
+        </div>
+      ) : (
+        <div
+          className="bg-[#0d0d1a] min-h-[260px] max-h-[380px] overflow-y-auto p-4 space-y-1 cursor-text"
+          onClick={() => inputRef.current?.focus()}
+          role="log"
+          aria-label="Terminal output"
+          aria-live="polite"
+        >
+          {lines.map((line) => (
+            <LineRenderer key={line.id} line={line} />
+          ))}
+          <div ref={bottomRef} />
+        </div>
+      )}
 
       {/* ── Completion banner ─────────────────────────────────────── */}
       {completed && (
@@ -185,10 +224,11 @@ export function GitTerminal({
       )}
 
       {/* ── Input row ─────────────────────────────────────────────── */}
-      <form
-        onSubmit={handleSubmit}
-        className="flex items-center gap-2 bg-[#0f0f1d] border-t-4 border-black dark:border-[#2e2924] px-4 py-3"
-      >
+      {!shellState.editorState && (
+        <form
+          onSubmit={handleSubmit}
+          className="flex items-center gap-2 bg-[#0f0f1d] border-t-4 border-black dark:border-[#2e2924] px-4 py-3"
+        >
         <ChevronRight size={14} className="text-emerald-400 shrink-0" />
         <input
           ref={inputRef}
@@ -215,6 +255,7 @@ export function GitTerminal({
           Run
         </button>
       </form>
+      )}
     </div>
   );
 }

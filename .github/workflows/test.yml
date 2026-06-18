@@ -1,54 +1,75 @@
-name: CI - Run Tests
+name: Full Project Test Suite
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  backend-tests:
-    name: Run Django Tests (Pytest)
+  test-frontend:
+    name: Frontend Edge Cases
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install Dependencies
+        working-directory: ./frontend
+        run: npm ci
+        
+      - name: Run Frontend Tests
+        working-directory: ./frontend
+        run: npm run test -- --run
 
-    defaults:
-      run:
-        working-directory: backend
+  test-backend:
+    name: Backend Edge Cases
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: contribution_atelier
+          POSTGRES_USER: contribution_atelier
+          POSTGRES_PASSWORD: contribution_atelier
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
-      - name: Install Python dependencies
+          
+      - name: Install Dependencies
+        working-directory: ./backend
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
-      - name: Run Pytest
-        run: |
-          pytest
-
-  frontend-tests:
-    name: Run Frontend Tests (Vitest)
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - name: Install Node dependencies
-        run: |
-          cd frontend
-          npm install
-
-      - name: Run Vitest
-        run: |
-          cd frontend
-          npm run test
+          
+      - name: Run Backend Tests
+        working-directory: ./backend
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: contribution_atelier
+          DB_USER: contribution_atelier
+          DB_PASSWORD: contribution_atelier
+          REDIS_URL: redis://localhost:6379/0
+        run: python manage.py test

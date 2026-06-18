@@ -35,12 +35,15 @@ export interface GitRepo {
   objects: Record<string, GitObjectEntry>;
   branches: Record<string, string>; // branch → commit hash
   remotes: Record<string, string>; // name → url
+  mergeState?: boolean;
+  unmerged?: Record<string, boolean>;
 }
 
 export interface ShellState {
   cwd: string[]; // path segments, e.g. ["~", "myrepo"]
   fs: Record<string, FsNode>; // flat map keyed by "/"-joined path
   git: GitRepo;
+  editorState?: { file: string; content: string } | null;
 }
 
 export interface TerminalLine {
@@ -104,7 +107,10 @@ function makeInitialState(): ShellState {
       objects: {},
       branches: { main: "" },
       remotes: {},
+      mergeState: false,
+      unmerged: {},
     },
+    editorState: null,
   };
 }
 
@@ -247,6 +253,30 @@ function runCommand(
     };
   }
 
+  // ── nano / edit ──
+  if (cmd === "nano" || cmd === "edit") {
+    const name = argv[1];
+    if (!name)
+      return { lines: [out(`Usage: ${cmd} <filename>`, "error")], newState: s };
+    const key = joinPath([...s.cwd, name]);
+    let content = "";
+    if (s.fs[key]) {
+      const node = s.fs[key];
+      if (node.type !== "file") {
+        return {
+          lines: [out(`${cmd}: ${name} is a directory`, "error")],
+          newState: s,
+        };
+      }
+      content = (node as FileEntry).content;
+    }
+    // Set the editorState to open the UI overlay
+    return {
+      lines: [],
+      newState: { ...s, editorState: { file: key, content } },
+    };
+  }
+
   // ── clear ──
   if (cmd === "clear") {
     return { lines: [out("__CLEAR__", "info")], newState: s };
@@ -263,6 +293,7 @@ function runCommand(
       "  touch <file>           – create empty file",
       "  echo 'text' > file     – write text to file",
       "  cat <file>             – view file contents",
+      "  nano <file>            – open simplified text editor",
       "  clear                  – clear terminal",
       "",
       "Git commands:",
@@ -339,9 +370,21 @@ function runCommand(
       );
       const untracked = allFiles.filter((f) => !stagedRelative.has(f));
       const stagedFiles = [...stagedRelative];
+      const unmergedFiles = Object.keys(s.git.unmerged || {});
       const lines: TerminalLine[] = [];
       lines.push(out(`On branch ${s.git.currentBranch}`));
-      if (s.git.HEAD) lines.push(out(""));
+      if (s.git.mergeState) lines.push(out("You have unmerged paths.", "error"));
+      if (s.git.HEAD && !s.git.mergeState) lines.push(out(""));
+      
+      if (unmergedFiles.length > 0) {
+        lines.push(out("Unmerged paths:", "error"));
+        lines.push(out("  (use \"git add <file>...\" to mark resolution)", "info"));
+        unmergedFiles.forEach((f) => {
+          const relName = f.startsWith(prefix) ? f.slice(prefix.length) : f;
+          lines.push(out(`  both modified:   ${relName}`, "error"));
+        });
+      }
+
       if (stagedFiles.length > 0) {
         lines.push(out("Changes to be committed:", "success"));
         stagedFiles.forEach((f) =>
@@ -412,14 +455,39 @@ function runCommand(
         newlyAdded > 0
           ? `${newlyAdded} file(s) staged.`
           : "Nothing new to stage (already up to date).";
+      
+      const newUnmerged = { ...(s.git.unmerged || {}) };
+      for (const stagedKey of Object.keys(newStaged)) {
+          if (newUnmerged[stagedKey]) delete newUnmerged[stagedKey];
+      }
+      
       return {
         lines: [out(addedMsg, "success")],
-        newState: { ...s, git: { ...s.git, staged: newStaged } },
+        newState: { ...s, git: { ...s.git, staged: newStaged, unmerged: newUnmerged } },
       };
     }
 
     // git commit
     if (sub === "commit") {
+      if (s.git.mergeState) {
+          // Check if unmerged files exist
+          if (Object.keys(s.git.unmerged || {}).length > 0) {
+              return {
+                  lines: [out("error: Committing is not possible because you have unmerged files.", "error")],
+                  newState: s,
+              };
+          }
+          // Validate that the markers are actually gone in the staged files
+          for (const [key, content] of Object.entries(s.git.staged)) {
+              if (content.includes("<<<<<<<")) {
+                  return {
+                      lines: [out(`error: File '${key}' still contains conflict markers.`, "error")],
+                      newState: s,
+                  };
+              }
+          }
+      }
+
       if (Object.keys(s.git.staged).length === 0) {
         return {
           lines: [out("nothing to commit, working tree clean", "error")],
@@ -461,6 +529,8 @@ function runCommand(
             commits: newCommits,
             HEAD: hash,
             branches: newBranches,
+            mergeState: false,
+            unmerged: {},
           },
         },
       };
@@ -635,6 +705,43 @@ function runCommand(
           lines: [out("Usage: git merge <branch>", "error")],
           newState: s,
         };
+      
+      if (target === "conflict-branch") {
+        if (s.git.mergeState) {
+          return {
+            lines: [out("fatal: You have not concluded your merge (MERGE_HEAD exists).", "error")],
+            newState: s,
+          };
+        }
+        
+        // Inject a simulated conflict
+        const prefix = cwdKey(s.cwd) + "/";
+        const conflictKey = prefix + "app.js";
+        const conflictContent = `<<<<<<< HEAD\nconsole.log("Main branch initialized");\n=======\nconsole.log("Feature branch initialized");\n>>>>>>> conflict-branch\n`;
+        const newFs = {
+          ...s.fs,
+          [conflictKey]: { type: "file" as const, content: conflictContent },
+        };
+        const newUnmerged = { ...(s.git.unmerged || {}), [conflictKey]: true };
+        
+        return {
+          lines: [
+            out(`Auto-merging app.js`),
+            out(`CONFLICT (content): Merge conflict in app.js`, "error"),
+            out(`Automatic merge failed; fix conflicts and then commit the result.`, "error"),
+          ],
+          newState: {
+            ...s,
+            fs: newFs,
+            git: {
+              ...s.git,
+              mergeState: true,
+              unmerged: newUnmerged,
+            }
+          },
+        };
+      }
+
       if (!s.git.branches[target]) {
         return {
           lines: [
@@ -806,6 +913,22 @@ export function useGitShell(options: UseGitShellOptions = {}) {
     setHistoryIdx(-1);
   }, [nextId]);
 
+  const saveEditor = useCallback((content: string) => {
+    setShellState((prev) => {
+      if (!prev.editorState) return prev;
+      const fileKey = prev.editorState.file;
+      const newFs = {
+        ...prev.fs,
+        [fileKey]: { type: "file" as const, content },
+      };
+      return { ...prev, fs: newFs, editorState: null };
+    });
+  }, []);
+
+  const closeEditor = useCallback(() => {
+    setShellState((prev) => ({ ...prev, editorState: null }));
+  }, []);
+
   return {
     lines,
     shellState,
@@ -814,5 +937,7 @@ export function useGitShell(options: UseGitShellOptions = {}) {
     navigateHistory,
     getHistoryEntry,
     historyIdx,
+    saveEditor,
+    closeEditor,
   };
 }
