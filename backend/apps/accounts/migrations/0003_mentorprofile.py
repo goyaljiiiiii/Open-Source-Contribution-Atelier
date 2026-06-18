@@ -7,11 +7,9 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    initial = True
-
     dependencies = [
         ('content', '0002_lesson_learning_objectives_tips'),
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        ('accounts', '0002_customuser_is_verified_customuser_verification_token'),
     ]
 
     operations = [
