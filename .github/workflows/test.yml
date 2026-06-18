@@ -63,6 +63,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           
+      - name: Run Migrations
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgres://contribution_atelier:contribution_atelier@localhost:5432/contribution_atelier
+          REDIS_URL: redis://localhost:6379/0
+        run: python manage.py migrate --run-syncdb
+
       - name: Run Backend Tests
         working-directory: ./backend
         env:
@@ -73,4 +80,4 @@ jobs:
           DB_PASSWORD: contribution_atelier
           DATABASE_URL: postgres://contribution_atelier:contribution_atelier@localhost:5432/contribution_atelier
           REDIS_URL: redis://localhost:6379/0
-        run: python manage.py test
+        run: python manage.py test --verbosity=2
