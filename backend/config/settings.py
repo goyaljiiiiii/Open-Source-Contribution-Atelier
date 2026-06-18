@@ -140,6 +140,8 @@ INSTALLED_APPS += [
     "apps.notifications.apps.NotificationsConfig",
     "drf_spectacular",
     "apps.dashboard.apps.DashboardConfig",
+    "django.contrib.postgres",
+    "apps.search.apps.SearchConfig",
 ]
 
 
