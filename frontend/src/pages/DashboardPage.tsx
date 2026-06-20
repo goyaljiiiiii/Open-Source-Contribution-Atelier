@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchApi } from "../lib/api";
 import { Link } from "react-router-dom";
 import SkeletonCard from "../components/ui/skeletons/SkeletonCard";
+import { useRef } from 'react';
+import { useElementSize } from '../hooks/useElementSize';
 import { fetchLessonsApi, Lesson } from "../lib/lessons";
 import { useUserProgress } from "../hooks/useUserProgress";
 import { BADGES } from "../constants/badges";
@@ -140,6 +142,14 @@ interface AssignedIssue {
 }
 
 export function DashboardPage() {
+    const taskDistRef = useRef<HTMLDivElement>(null);
+    const { width: taskDistWidth } = useElementSize(taskDistRef);
+    const taskDistRadius = Math.min(taskDistWidth * 0.2, 75);
+    const completionRef = useRef<HTMLDivElement>(null);
+    const { width: completionWidth } = useElementSize(completionRef);
+    const completionRadius = Math.min(completionWidth * 0.2, 75);
+
+
   const { user } = useAuth();
   const { isLessonCompleted } = useUserProgress();
 
