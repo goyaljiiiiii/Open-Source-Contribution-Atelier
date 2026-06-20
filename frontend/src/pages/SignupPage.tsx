@@ -82,6 +82,8 @@ export function SignupPage() {
   ] as const;
   // ── END HELPER BLOCK ───────────────────────────────────────────────────────
 
+  const isFormValid = username.trim() !== "" && email.trim() !== "" && password.length > 0;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");

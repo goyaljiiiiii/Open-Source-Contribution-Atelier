@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useAuth } from "../features/auth/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { fetchApi } from "../lib/api";
@@ -8,7 +8,6 @@ import { useRef } from 'react';
 import { useElementSize } from '../hooks/useElementSize';
 import { fetchLessonsApi, Lesson } from "../lib/lessons";
 import { useUserProgress } from "../hooks/useUserProgress";
-import { BADGES } from "../constants/badges";
 import { useEarnedBadges } from "../hooks/useEarnedBadges";
 import {
   Award,
@@ -142,12 +141,17 @@ interface AssignedIssue {
 }
 
 export function DashboardPage() {
-    const taskDistRef = useRef<HTMLDivElement>(null);
+    const taskDistRef = useRef<HTMLElement>(null) as React.RefObject<HTMLElement>;
     const { width: taskDistWidth } = useElementSize(taskDistRef);
     const taskDistRadius = Math.min(taskDistWidth * 0.2, 75);
-    const completionRef = useRef<HTMLDivElement>(null);
+    const completionRef = useRef<HTMLElement>(null) as React.RefObject<HTMLElement>;
     const { width: completionWidth } = useElementSize(completionRef);
     const completionRadius = Math.min(completionWidth * 0.2, 75);
+    const [showScrollTop, setShowScrollTop] = useState(false);
+
+    const scrollToTop = () => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
 
 
   const { user } = useAuth();
@@ -179,22 +183,7 @@ useEffect(() => {
       );
   }, []);
 
-  // 1. Fetch static modules catalog
-  const [curriculumData, setCurriculumData] = useState<
-    { lessons: { slug: string; title?: string; description?: string }[] }[]
-  >([]);
-  useEffect(() => {
-    fetch("/content/curriculum.json")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.modules) {
-          setCurriculumData(data.modules);
-        }
-      })
-      .catch((err) =>
-        console.error("Error loading dashboard curriculum:", err),
-      );
-  }, []);
+
 
   // 2. Fetch Admin Dashboard stats (only queries if user is staff)
   const {
