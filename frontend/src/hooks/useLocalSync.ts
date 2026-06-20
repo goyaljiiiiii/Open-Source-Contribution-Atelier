@@ -14,7 +14,7 @@ export function useLocalSync() {
 
   const loadPending = useCallback(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY) || '[]';
+      const stored = localStorage.getItem(STORAGE_KEY) || "[]";
       if (stored) {
         setPending(JSON.parse(stored));
         console.log("Pending from localStorage:", JSON.parse(stored));
@@ -41,20 +41,28 @@ export function useLocalSync() {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, [loadPending]);
 
-  const isLessonPendingCompleted = useCallback((slug: string) => {
-    return pending.some((p) => p.lesson_slug === slug && p.completed);
-  }, [pending]);
+  const isLessonPendingCompleted = useCallback(
+    (slug: string) => {
+      return pending.some((p) => p.lesson_slug === slug && p.completed);
+    },
+    [pending],
+  );
 
-  const getPendingXP = useCallback((backendProgress: ProgressEntry[]) => {
-    let pendingXP = 0;
-    pending.forEach((p) => {
-      const inBackend = backendProgress.some((bp) => bp.lesson_slug === p.lesson_slug);
-      if (!inBackend) {
-        pendingXP += p.score || 0;
-      }
-    });
-    return pendingXP;
-  }, [pending]);
+  const getPendingXP = useCallback(
+    (backendProgress: ProgressEntry[]) => {
+      let pendingXP = 0;
+      pending.forEach((p) => {
+        const inBackend = backendProgress.some(
+          (bp) => bp.lesson_slug === p.lesson_slug,
+        );
+        if (!inBackend) {
+          pendingXP += p.score || 0;
+        }
+      });
+      return pendingXP;
+    },
+    [pending],
+  );
 
   return {
     pending,

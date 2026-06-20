@@ -12,8 +12,8 @@ export default function VerifyNoticePage() {
         <p className="font-bold text-black mb-6">
           Didn't receive anything? Check your spam folder or wait a few minutes.
         </p>
-        <Link 
-          to="/signup" 
+        <Link
+          to="/signup"
           className="inline-block w-full rounded-2xl border-4 border-black bg-primary px-5 py-4 font-black text-black shadow-card hover:bg-tertiary transition-colors"
         >
           Back to Signup

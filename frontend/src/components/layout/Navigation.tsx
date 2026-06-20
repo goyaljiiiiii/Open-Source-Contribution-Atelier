@@ -31,21 +31,21 @@ export function Navigation() {
   const [isStarting, setIsStarting] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
-
-  const handleStartSandbox = async () => {
-    if (isStarting) return;
-    setIsStarting(true);
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setIsStarting(false);
-    navigate("/lessons/what-is-open-source");
-  };
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<{
-    lessons: Lesson[];
-    challenges: { title: string; summary: string; slug: string }[];
+    lessons: {
+      slug: string;
+      title: string;
+      description: string;
+      summary: string;
+    }[];
+    challenges: { slug: string; title: string; summary: string }[];
   } | null>(null);
   const [isSearching, setIsSearching] = useState(false);
-  const [lessonsCatalog, setLessonsCatalog] = useState<Lesson[]>([]);
+  const [lessonsCatalog, setLessonsCatalog] = useState<
+    { slug: string; title: string; description: string }[]
+  >([]);
+  const [badgeCount, setBadgeCount] = useState(0);
 
   useEffect(() => {
     fetchLessonsApi().then((data) => setLessonsCatalog(data));

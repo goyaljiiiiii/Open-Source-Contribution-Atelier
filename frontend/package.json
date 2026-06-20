@@ -4,12 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "generate-index": "node scripts/generate-search-index.js",
-    "dev": "npm run generate-index && vite",
-    "build": "npm run generate-index && tsc -b && vite build",
+    "dev": "vite",
+    "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:update": "playwright test --update-snapshots",
@@ -27,8 +27,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.17.0",
-    "recharts": "^3.8.1",
-    "zxcvbn": "^4.4.2"
+    "recharts": "^3.8.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
@@ -36,10 +35,9 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^22.0.0",
+    "@types/node": "^25.9.3",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
-    "@types/zxcvbn": "^4.4.5",
     "@vitejs/plugin-react": "^4.4.1",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.19.0",

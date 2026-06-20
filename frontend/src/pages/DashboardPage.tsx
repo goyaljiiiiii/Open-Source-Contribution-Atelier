@@ -110,35 +110,6 @@ const BADGES = [
   },
 ];
 
-const CONTRIBUTORS_CACHE_KEY = "github_contributors_cache";
-const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
-
-interface ModuleData {
-  id: string;
-  title: string;
-  lessons: { slug: string }[];
-}
-
-interface GitHubContributor {
-  login: string;
-  avatar_url: string;
-  html_url: string;
-}
-
-interface PendingPR {
-  id: number;
-  created_at: string;
-  title: string;
-  contributor: string;
-  issue_title: string;
-}
-
-interface AssignedIssue {
-  id: number;
-  points: number;
-  title: string;
-}
-
 export function DashboardPage() {
   const { user } = useAuth();
   const { isLessonCompleted } = useUserProgress();
@@ -156,6 +127,23 @@ useEffect(() => {
 }, []);
   // 1. Fetch static modules catalog
   const [curriculumData, setCurriculumData] = useState<ModuleData[]>([]);
+  useEffect(() => {
+    fetch("/content/curriculum.json")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.modules) {
+          setCurriculumData(data.modules);
+        }
+      })
+      .catch((err) =>
+        console.error("Error loading dashboard curriculum:", err),
+      );
+  }, []);
+
+  // 1. Fetch static modules catalog
+  const [curriculumData, setCurriculumData] = useState<
+    { lessons: { slug: string; title?: string; description?: string }[] }[]
+  >([]);
   useEffect(() => {
     fetch("/content/curriculum.json")
       .then((res) => res.json())
@@ -207,8 +195,6 @@ useEffect(() => {
     enabled: !user?.is_staff,
   });
 
-  const animatedXP = useCountUp(totalXP);
-
   // Random Fact of the Day
   const factOfDay = useMemo(() => {
     const day = new Date().getDate();
@@ -217,7 +203,7 @@ useEffect(() => {
 
   // GitHub Live Contributors list
   const [gitHubContributors, setGitHubContributors] = useState<
-    GitHubContributor[]
+    { login: string; avatar_url: string; html_url: string }[]
   >([]);
   useEffect(() => {
     const fallbackContributors = [
@@ -334,7 +320,7 @@ useEffect(() => {
     // Calculate which badges are earned
     const earned: string[] = [];
     curriculumData.forEach((mod, index) => {
-      const allCompleted = mod.lessons.every((les) =>
+      const allCompleted = mod.lessons.every((les: { slug: string }) =>
         isLessonCompleted(les.slug),
       );
       if (allCompleted) {
@@ -609,39 +595,47 @@ useEffect(() => {
           </h2>
           <div className="space-y-4">
             {pending_prs.length > 0 ? (
-              pending_prs.map((pr: PendingPR) => (
-                <div
-                  key={pr.id}
-                  className="rounded-2xl border-4 border-black bg-white p-5 shadow-card-sm dark:bg-[#151411] dark:border-[#2e2924] flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
-                >
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-black text-[9px] bg-black text-white px-2 py-0.5 rounded-full">
-                        PENDING REVIEW
-                      </span>
-                      <span className="text-xs font-bold text-muted dark:text-[#c4bbae]">
-                        Opened: {new Date(pr.created_at).toLocaleDateString()}
-                      </span>
+              pending_prs.map(
+                (pr: {
+                  id: number;
+                  title: string;
+                  contributor: string;
+                  issue_title: string;
+                  created_at: string;
+                }) => (
+                  <div
+                    key={pr.id}
+                    className="rounded-2xl border-4 border-black bg-white p-5 shadow-card-sm dark:bg-[#151411] dark:border-[#2e2924] flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-black text-[9px] bg-black text-white px-2 py-0.5 rounded-full">
+                          PENDING REVIEW
+                        </span>
+                        <span className="text-xs font-bold text-muted dark:text-[#c4bbae]">
+                          Opened: {new Date(pr.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <h3 className="font-black text-xl mt-2 dark:text-[#f0ebe2]">
+                        {pr.title}
+                      </h3>
+                      <p className="text-sm font-bold text-muted mt-1 dark:text-[#c4bbae]">
+                        Submitted by:{" "}
+                        <span className="text-primary">@{pr.contributor}</span>{" "}
+                        · Issue: {pr.issue_title}
+                      </p>
                     </div>
-                    <h3 className="font-black text-xl mt-2 dark:text-[#f0ebe2]">
-                      {pr.title}
-                    </h3>
-                    <p className="text-sm font-bold text-muted mt-1 dark:text-[#c4bbae]">
-                      Submitted by:{" "}
-                      <span className="text-primary">@{pr.contributor}</span> ·
-                      Issue: {pr.issue_title}
-                    </p>
+                    <div className="flex gap-2 w-full md:w-auto">
+                      <button className="grow md:grow-0 rounded-xl bg-surface-low border-2 border-black px-4 py-2 text-xs font-black hover:-translate-y-0.5 shadow-card-sm transition-all dark:bg-[#0f0e0c] dark:text-[#f0ebe2]">
+                        Comment
+                      </button>
+                      <button className="grow md:grow-0 rounded-xl bg-[#c3c0ff] border-2 border-black px-4 py-2 text-xs font-black hover:-translate-y-0.5 shadow-card-sm transition-all">
+                        Approve & Merge
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex gap-2 w-full md:w-auto">
-                    <button className="grow md:grow-0 rounded-xl bg-surface-low border-2 border-black px-4 py-2 text-xs font-black hover:-translate-y-0.5 shadow-card-sm transition-all dark:bg-[#0f0e0c] dark:text-[#f0ebe2]">
-                      Comment
-                    </button>
-                    <button className="grow md:grow-0 rounded-xl bg-[#c3c0ff] border-2 border-black px-4 py-2 text-xs font-black hover:-translate-y-0.5 shadow-card-sm transition-all">
-                      Approve & Merge
-                    </button>
-                  </div>
-                </div>
-              ))
+                ),
+              )
             ) : (
               <div className="p-8 text-center bg-white rounded-2xl border-4 border-dashed border-black dark:bg-[#151411] dark:border-[#2e2924]">
                 <p className="font-bold text-muted dark:text-[#c4bbae]">
@@ -688,10 +682,7 @@ useEffect(() => {
             <p className="text-lg font-bold text-black bg-white/95 p-4 rounded-xl border-4 border-black shadow-card-sm inline-block max-w-xl leading-relaxed dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2]">
               You have completed {completedLessonsCount} of {totalLessonsCount}{" "}
               course modules, earning{" "}
-              <span className="text-primary font-black">
-                {personal_stats.total_xp} XP
-              </span>
-              .
+              <span className="text-primary font-black">{totalXP} XP</span>.
             </p>
           </div>
           <div className="absolute -right-6 -bottom-6 text-[10rem] opacity-20 rotate-12 pointer-events-none">
@@ -967,17 +958,19 @@ useEffect(() => {
             </h2>
             <div className="space-y-3">
               {assigned_issues.length > 0 ? (
-                assigned_issues.map((issue: AssignedIssue) => (
-                  <div
-                    key={issue.id}
-                    className="p-3 bg-white rounded-xl border-2 border-black dark:bg-[#151411] dark:border-[#2e2924]"
-                  >
-                    <span className="text-[9px] font-black uppercase text-primary">
-                      XP Bounty: {issue.points}
-                    </span>
-                    <h4 className="font-black text-sm mt-1">{issue.title}</h4>
-                  </div>
-                ))
+                assigned_issues.map(
+                  (issue: { id: number; title: string; points: number }) => (
+                    <div
+                      key={issue.id}
+                      className="p-3 bg-white rounded-xl border-2 border-black dark:bg-[#151411] dark:border-[#2e2924]"
+                    >
+                      <span className="text-[9px] font-black uppercase text-primary">
+                        XP Bounty: {issue.points}
+                      </span>
+                      <h4 className="font-black text-sm mt-1">{issue.title}</h4>
+                    </div>
+                  ),
+                )
               ) : (
                 <div className="p-6 text-center bg-white rounded-xl border-2 border-dashed border-black/35 text-xs font-bold text-muted dark:bg-[#151411]">
                   All issues resolved! Go grab a task in the Challenges board.
@@ -1048,7 +1041,7 @@ useEffect(() => {
                 {onboardingStep > 0 && (
                   <button
                     onClick={() => setOnboardingStep((prev) => prev - 1)}
-                    className="px-4 py-2 border-2 border-black rounded-xl text-xs font-black bg-white hover:bg-surface-low shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all"
+                    className="px-4 py-2 border-2 border-black rounded-xl text-xs font-black hover:bg-surface-low"
                   >
                     Back
                   </button>

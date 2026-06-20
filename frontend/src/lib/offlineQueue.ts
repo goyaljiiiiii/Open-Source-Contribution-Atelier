@@ -11,6 +11,13 @@ export interface QueuedAction {
   timestamp: number;
 }
 
+interface PendingSyncItem {
+  lesson_slug: string;
+  score?: number;
+  completed?: boolean;
+  timestamp: number;
+}
+
 export async function queueProgressSync(data: {
   lesson_slug: string;
   score?: number;
@@ -53,8 +60,10 @@ export async function queueProgressSync(data: {
   try {
     const pending = JSON.parse(
       localStorage.getItem("atelier_pending_sync") || "[]",
-    ) as { lesson_slug: string; score: number; completed: boolean }[];
-    const exists = pending.some((p) => p.lesson_slug === data.lesson_slug);
+    );
+    const exists = pending.some(
+      (p: PendingSyncItem) => p.lesson_slug === data.lesson_slug,
+    );
     if (!exists) {
       pending.push({
         lesson_slug: data.lesson_slug,
@@ -77,9 +86,7 @@ export async function queueProgressSync(data: {
       const reg = await navigator.serviceWorker.ready;
       if ("sync" in reg) {
         await (
-          reg as ServiceWorkerRegistration & {
-            sync: { register: (tag: string) => Promise<void> };
-          }
+          reg as ServiceWorkerRegistration & { sync: SyncManager }
         ).sync.register("sync-progress");
         console.log(
           "[OfflineQueue] Registered background sync tag 'sync-progress'",
@@ -145,9 +152,9 @@ export async function syncOfflineQueue() {
           // Remove from localStorage
           const pending = JSON.parse(
             localStorage.getItem("atelier_pending_sync") || "[]",
-          ) as { lesson_slug: string; score: number; completed: boolean }[];
+          );
           const filtered = pending.filter(
-            (p) => p.lesson_slug !== bodyObj.lesson_slug,
+            (p: PendingSyncItem) => p.lesson_slug !== bodyObj.lesson_slug,
           );
           localStorage.setItem(
             "atelier_pending_sync",
@@ -187,8 +194,10 @@ if (typeof window !== "undefined") {
         try {
           const pending = JSON.parse(
             localStorage.getItem("atelier_pending_sync") || "[]",
-          ) as { lesson_slug: string; score: number; completed: boolean }[];
-          const filtered = pending.filter((p) => p.lesson_slug !== lesson_slug);
+          );
+          const filtered = pending.filter(
+            (p: PendingSyncItem) => p.lesson_slug !== lesson_slug,
+          );
           localStorage.setItem(
             "atelier_pending_sync",
             JSON.stringify(filtered),

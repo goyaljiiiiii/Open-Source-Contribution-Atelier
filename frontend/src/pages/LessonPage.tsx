@@ -202,7 +202,6 @@ export function LessonPage() {
       setTerminalOutput(result.error);
       setFeedback("error");
       setShowHint(true);
-      setIsExecuting(false);
       return; // Stop processing further for invalid commands
     } else {
       setTerminalOutput(result.output || "");
@@ -481,7 +480,8 @@ export function LessonPage() {
                         if (quizFeedback !== null) {
                           // After answer submitted: show green for correct, red for incorrect
                           if (isCorrectOption) {
-                            bgColor = "bg-green-600 border-black text-black";
+                            bgColor =
+                              "bg-green-600 border-green-800 text-white";
                           } else if (
                             isSelected &&
                             quizFeedback === "incorrect"
@@ -670,7 +670,9 @@ export function LessonPage() {
                         onKeyDown={(e) => {
                           if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
                             e.preventDefault();
-                            handleCommandSubmit(e);
+                            handleCommandSubmit(
+                              e as unknown as React.FormEvent,
+                            );
                           }
                         }}
                         disabled={feedback === "correct" || isExecuting}
