@@ -6,6 +6,8 @@ import { Link } from "react-router-dom";
 import SkeletonCard from "../components/ui/skeletons/SkeletonCard";
 import { fetchLessonsApi, Lesson } from "../lib/lessons";
 import { useUserProgress } from "../hooks/useUserProgress";
+import { BADGES } from "../constants/badges";
+import { useEarnedBadges } from "../hooks/useEarnedBadges";
 import {
   BookOpen,
   Award,
@@ -49,17 +51,6 @@ const FACTS = [
   "The Apache HTTP Server project was founded in 1995 and played a key role in the early expansion of the World Wide Web."
 ];
 
-const BADGES = [
-  { id: "mod-1", name: "Open Source Explorer", desc: "Understand open source mindset and history.", icon: "🧭", moduleIndex: 0 },
-  { id: "mod-2", name: "Git Cadet", desc: "Initialize repos, commit, and manage local branches.", icon: "🌿", moduleIndex: 1 },
-  { id: "mod-3", name: "GitHub Knight", desc: "Master forks, issues, PRs, and team organizations.", icon: "🛡️", moduleIndex: 2 },
-  { id: "mod-4", name: "Etiquette Master", desc: "Practice professional communication and PR workflows.", icon: "🤝", moduleIndex: 3 },
-  { id: "mod-5", name: "First Merge", desc: "Practice local-upstream commit pushing.", icon: "🚀", moduleIndex: 4 },
-  { id: "mod-6", name: "Workflow Champion", desc: "Understand issue life-cycle management.", icon: "🔄", moduleIndex: 5 },
-  { id: "mod-7", name: "Rebase Sensei", desc: "Rebase, resolve conflicts, and parse CI/CD checks.", icon: "🧠", moduleIndex: 6 },
-  { id: "mod-8", name: "Hacktoberfest Ready", desc: "Find beginner-friendly repositories and issues.", icon: "🎃", moduleIndex: 7 },
-  { id: "grad", name: "Atelier Graduate", desc: "Complete 100% of the learning program.", icon: "🎓", isGraduation: true }
-];
 
 function useCountUp(end: number, durationMs: number = 2000) {
   const [count, setCount] = useState(0);
@@ -92,22 +83,19 @@ function useCountUp(end: number, durationMs: number = 2000) {
 
 export function DashboardPage() {
   const { user } = useAuth();
-  const { isLessonCompleted, totalXP } = useUserProgress();
+  const { totalXP } = useUserProgress();
+  const {
+    completedLessonsCount,
+    totalLessonsCount,
+    completionPercentage,
+    activeLessonsQueue,
+    earnedBadges,
+    lessons,
+    isLessonsLoading,
+    curriculumData
+  } = useEarnedBadges();
   const CONTRIBUTORS_CACHE_KEY = "github_contributors_cache";
   const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
-
-  // 1. Fetch static modules catalog
-  const [curriculumData, setCurriculumData] = useState<any[]>([]);
-  useEffect(() => {
-    fetch("/content/curriculum.json")
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.modules) {
-          setCurriculumData(data.modules);
-        }
-      })
-      .catch(err => console.error("Error loading dashboard curriculum:", err));
-  }, []);
 
   // 2. Fetch Admin Dashboard stats (only queries if user is staff)
   const { data: adminData, isLoading: isAdminLoading, error: adminError } = useQuery({
@@ -130,12 +118,7 @@ export function DashboardPage() {
     enabled: !!user && !user.is_staff,
   });
 
-  // 5. Fetch standard list of lessons via cache
-  const { data: lessons = [], isLoading: isLessonsLoading } = useQuery<Lesson[]>({
-    queryKey: ["lessons"],
-    queryFn: fetchLessonsApi,
-    enabled: !user?.is_staff,
-  });
+
 
   const targetXP = contributorData?.personal_stats?.total_xp || 0;
   const animatedXP = useCountUp(targetXP);
@@ -149,68 +132,68 @@ export function DashboardPage() {
   // GitHub Live Contributors list
   const [gitHubContributors, setGitHubContributors] = useState<any[]>([]);
   useEffect(() => {
-  const fallbackContributors = [
-    {
-      login: "goyaljiiiiii",
-      avatar_url: "https://github.com/goyaljiiiiii.png",
-      html_url: "https://github.com/goyaljiiiiii"
-    },
-    {
-      login: "nandini",
-      avatar_url: "https://github.com/github.png",
-      html_url: "https://github.com"
-    },
-    {
-      login: "antigravity",
-      avatar_url: "https://github.com/google.png",
-      html_url: "https://github.com"
-    }
-  ];
-
-  fetch("https://api.github.com/repos/goyaljiiiiii/Open-Source-Contribution-Atelier/contributors")
-    .then(res => {
-      if (!res.ok) throw new Error("API Limit");
-      return res.json();
-    })
-    .then(data => {
-      if (Array.isArray(data)) {
-        const contributors = data.slice(0, 8);
-
-        setGitHubContributors(contributors);
-
-        localStorage.setItem(
-          CONTRIBUTORS_CACHE_KEY,
-          JSON.stringify({
-            data: contributors,
-            timestamp: Date.now()
-          })
-        );
+    const fallbackContributors = [
+      {
+        login: "goyaljiiiiii",
+        avatar_url: "https://github.com/goyaljiiiiii.png",
+        html_url: "https://github.com/goyaljiiiiii"
+      },
+      {
+        login: "nandini",
+        avatar_url: "https://github.com/github.png",
+        html_url: "https://github.com"
+      },
+      {
+        login: "antigravity",
+        avatar_url: "https://github.com/google.png",
+        html_url: "https://github.com"
       }
-    })
-    .catch(() => {
-      const cachedData = localStorage.getItem(CONTRIBUTORS_CACHE_KEY);
+    ];
 
-      if (cachedData) {
-        try {
-          const parsedCache = JSON.parse(cachedData);
+    fetch("https://api.github.com/repos/goyaljiiiiii/Open-Source-Contribution-Atelier/contributors")
+      .then(res => {
+        if (!res.ok) throw new Error("API Limit");
+        return res.json();
+      })
+      .then(data => {
+        if (Array.isArray(data)) {
+          const contributors = data.slice(0, 8);
 
-          const isCacheValid =
-            Date.now() - parsedCache.timestamp < CACHE_EXPIRY;
+          setGitHubContributors(contributors);
 
-          if (isCacheValid) {
-            setGitHubContributors(parsedCache.data);
-            return;
-          }
-
-          localStorage.removeItem(CONTRIBUTORS_CACHE_KEY);
-        } catch {
-          localStorage.removeItem(CONTRIBUTORS_CACHE_KEY);
+          localStorage.setItem(
+            CONTRIBUTORS_CACHE_KEY,
+            JSON.stringify({
+              data: contributors,
+              timestamp: Date.now()
+            })
+          );
         }
-      }
+      })
+      .catch(() => {
+        const cachedData = localStorage.getItem(CONTRIBUTORS_CACHE_KEY);
 
-      setGitHubContributors(fallbackContributors);
-    });
-}, []);
+        if (cachedData) {
+          try {
+            const parsedCache = JSON.parse(cachedData);
+
+            const isCacheValid =
+              Date.now() - parsedCache.timestamp < CACHE_EXPIRY;
+
+            if (isCacheValid) {
+              setGitHubContributors(parsedCache.data);
+              return;
+            }
+
+            localStorage.removeItem(CONTRIBUTORS_CACHE_KEY);
+          } catch {
+            localStorage.removeItem(CONTRIBUTORS_CACHE_KEY);
+          }
+        }
+
+        setGitHubContributors(fallbackContributors);
+      });
+  }, []);
 
   // Onboarding Tour state
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -233,40 +216,8 @@ export function DashboardPage() {
   // Certificate Modal state
   const [showCertificate, setShowCertificate] = useState(false);
 
-  // Compute local progress metrics based on frontend curriculum data
-  const { completedLessonsCount, totalLessonsCount, completionPercentage, activeLessonsQueue, earnedBadges } = useMemo(() => {
-    if (user?.is_staff || !lessons.length || !curriculumData.length) {
-      return { completedLessonsCount: 0, totalLessonsCount: 0, completionPercentage: 0, activeLessonsQueue: [], earnedBadges: [] };
-    }
 
-    const total = lessons.length;
-    const completed = lessons.filter(l => isLessonCompleted(l.slug)).length;
-    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-    // Build the lessons queue (uncompleted ones first, up to 3)
-    const queue = lessons.filter(l => !isLessonCompleted(l.slug)).slice(0, 3);
-
-    // Calculate which badges are earned
-    const earned: string[] = [];
-    curriculumData.forEach((mod, index) => {
-      const allCompleted = mod.lessons.every((les: any) => isLessonCompleted(les.slug));
-      if (allCompleted) {
-        earned.push(`mod-${index + 1}`);
-      }
-    });
-
-    if (percentage === 100) {
-      earned.push("grad");
-    }
-
-    return {
-      completedLessonsCount: completed,
-      totalLessonsCount: total,
-      completionPercentage: percentage,
-      activeLessonsQueue: queue,
-      earnedBadges: earned
-    };
-  }, [lessons, curriculumData, isLessonCompleted, user]);
 
   // Fetch user certificate if course is completed
   const { data: certificateData } = useQuery({
@@ -527,8 +478,7 @@ export function DashboardPage() {
               Welcome to the Atelier, {user?.username}.
             </h1>
             <p className="text-lg font-bold text-black bg-white/95 p-4 rounded-xl border-4 border-black shadow-card-sm inline-block max-w-xl leading-relaxed dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2]">
-               You have completed {completedLessonsCount} of {totalLessonsCount} course modules, earning <span className="text-primary font-black">{totalXP} XP</span>.
-
+              You have completed {completedLessonsCount} of {totalLessonsCount} lessons, earning <span className="text-primary font-black">{totalXP} XP</span>.
             </p>
           </div>
           <div className="absolute -right-6 -bottom-6 text-[10rem] opacity-20 rotate-12 pointer-events-none">
@@ -686,11 +636,10 @@ export function DashboardPage() {
             return (
               <div
                 key={badge.id}
-                className={`relative rounded-2xl border-4 border-black p-5 flex flex-col items-center text-center shadow-card-sm transition-all ${
-                  isEarned
+                className={`relative rounded-2xl border-4 border-black p-5 flex flex-col items-center text-center shadow-card-sm transition-all ${isEarned
                     ? "bg-white dark:bg-[#1f1c18] hover:-translate-y-1"
                     : "bg-surface-low/30 opacity-60 dark:bg-black/20"
-                }`}
+                  }`}
               >
                 <div className={`text-5xl mb-3 ${isEarned ? "" : "grayscale"}`}>{badge.icon}</div>
                 <h4 className="font-black text-sm mb-1 text-text dark:text-[#f0ebe2]">{badge.name}</h4>
