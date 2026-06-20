@@ -55,6 +55,14 @@ class LessonProgressCreateSerializer(serializers.Serializer):
     score = serializers.IntegerField(default=100, help_text="Numeric score")
     completed = serializers.BooleanField(default=True, help_text="Whether the lesson is completed")
 
+class BulkLessonProgressSerializer(serializers.Serializer):
+    lesson_slug = serializers.SlugField()
+    score = serializers.IntegerField(default=100)
+    completed = serializers.BooleanField(default=True)
+
+class BulkSyncSerializer(serializers.Serializer):
+    lessons = BulkLessonProgressSerializer(many=True)
+    
 class CertificateVerificationSerializer(serializers.ModelSerializer):
     learner_name = serializers.SerializerMethodField()
 
@@ -64,20 +72,3 @@ class CertificateVerificationSerializer(serializers.ModelSerializer):
 
     def get_learner_name(self, obj):
         return obj.user.get_full_name() or obj.user.username
-
-
-class QuizAttemptSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = QuizAttempt
-        fields = [
-            "id",
-            "user",
-            "question_id",
-            "question_text",
-            "selected_answer",
-            "correct_answer",
-            "is_correct",
-            "time_taken_seconds",
-            "created_at",
-        ]
-        read_only_fields = ["id", "user", "created_at"]
