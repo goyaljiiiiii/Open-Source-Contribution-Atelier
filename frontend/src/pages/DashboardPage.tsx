@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useMemo, useState, useEffect } from "react";
 import { useAuth } from "../features/auth/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -9,7 +10,6 @@ import { useElementSize } from '../hooks/useElementSize';
 import { fetchLessonsApi, Lesson } from "../lib/lessons";
 import { useUserProgress } from "../hooks/useUserProgress";
 import { BADGES } from "../constants/badges";
-import { useEarnedBadges } from "../hooks/useEarnedBadges";
 import {
   Award,
   Flame,
@@ -144,14 +144,13 @@ interface AssignedIssue {
 export function DashboardPage() {
     const taskDistRef = useRef<HTMLDivElement>(null);
     const { width: taskDistWidth } = useElementSize(taskDistRef);
-    const taskDistRadius = Math.min(taskDistWidth * 0.2, 75);
     const completionRef = useRef<HTMLDivElement>(null);
     const { width: completionWidth } = useElementSize(completionRef);
-    const completionRadius = Math.min(completionWidth * 0.2, 75);
 
 
   const { user } = useAuth();
   const { isLessonCompleted } = useUserProgress();
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
 useEffect(() => {
   const handleScroll = () => {
@@ -179,22 +178,7 @@ useEffect(() => {
       );
   }, []);
 
-  // 1. Fetch static modules catalog
-  const [curriculumData, setCurriculumData] = useState<
-    { lessons: { slug: string; title?: string; description?: string }[] }[]
-  >([]);
-  useEffect(() => {
-    fetch("/content/curriculum.json")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.modules) {
-          setCurriculumData(data.modules);
-        }
-      })
-      .catch((err) =>
-        console.error("Error loading dashboard curriculum:", err),
-      );
-  }, []);
+
 
   // 2. Fetch Admin Dashboard stats (only queries if user is staff)
   const {

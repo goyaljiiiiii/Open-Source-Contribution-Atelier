@@ -1,7 +1,5 @@
 import { openDB } from "./offlineDB";
 import { queryClient } from "./queryClient";
-import { queryClient } from "../app/App";
-
 export interface QueuedAction {
   id: string;
   url: string;

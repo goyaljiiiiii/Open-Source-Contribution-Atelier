@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchApi } from "../lib/api";
 import { useLocalSync } from "./useLocalSync";
@@ -14,7 +14,7 @@ export interface ProgressEntry {
 
 export function useUserProgress() {
   const queryClient = useQueryClient();
-  const { isLessonPendingCompleted, getPendingXP } = useLocalSync();
+  useLocalSync();
 
   // 1. Query to fetch all progress
   const { data: progress = [], isLoading } = useQuery<ProgressEntry[]>({

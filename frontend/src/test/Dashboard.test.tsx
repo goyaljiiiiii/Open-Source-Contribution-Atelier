@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { render, screen, cleanup } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { DashboardPage } from "../pages/DashboardPage";
@@ -254,7 +254,7 @@ describe("DashboardPage Dual-Role Views", () => {
     expect(
       screen.getByText("Welcome to the Atelier, bob_coder."),
     ).toBeInTheDocument();
-    expect(screen.getByText(/completed.*lessons/)).toBeInTheDocument();
+    expect(screen.getByText(/completed.*course modules/)).toBeInTheDocument();
 
     // Assert streak, xp, rank, and merged PR cards
     expect(screen.getByText("Streak Days")).toBeInTheDocument();

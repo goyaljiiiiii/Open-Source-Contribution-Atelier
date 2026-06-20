@@ -12,11 +12,10 @@ import {
   Sun,
   Moon,
 } from "lucide-react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
-import { fetchApi } from "../../lib/api";
+import { Link, NavLink } from "react-router-dom";
 import { useTheme } from "../../hooks/useTheme";
 import { useAuth } from "../../features/auth/AuthContext";
-import { fetchLessonsApi, Lesson } from "../../lib/lessons";
+import { fetchLessonsApi } from "../../lib/lessons";
 import LogoutButtonWithConfirm from "./LogoutButtonWithConfirm";
 
 const navItems = [
@@ -27,8 +26,7 @@ const navItems = [
 ];
 
 export function Navigation() {
-  const navigate = useNavigate();
-  const [isStarting, setIsStarting] = useState(false);
+  const [isStarting] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
@@ -45,7 +43,7 @@ export function Navigation() {
   const [lessonsCatalog, setLessonsCatalog] = useState<
     { slug: string; title: string; description: string }[]
   >([]);
-  const [badgeCount, setBadgeCount] = useState(0);
+  const badgeCount = 0;
 
   useEffect(() => {
     fetchLessonsApi().then((data) => setLessonsCatalog(data));
@@ -149,7 +147,6 @@ export function Navigation() {
                 Run guided Git practice without exposing the real shell.
               </p>
               <button
-                onClick={handleStartSandbox}
                 disabled={isStarting}
                 className="w-full mt-4 flex items-center justify-center gap-2 rounded-xl bg-primary text-white border-4 border-black dark:border-[#2e2924] px-4 py-3 text-sm font-black shadow-card hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer disabled:opacity-50"
               >
