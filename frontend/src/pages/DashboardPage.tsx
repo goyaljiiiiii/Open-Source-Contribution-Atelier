@@ -141,16 +141,7 @@ interface AssignedIssue {
 
 export function DashboardPage() {
   const { user } = useAuth();
-  const { isLessonCompleted, totalXP } = useUserProgress();
-  const CONTRIBUTORS_CACHE_KEY = "github_contributors_cache";
-  const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
-  const [showScrollTop, setShowScrollTop] = useState(false);
-  const scrollToTop = () => {
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth",
-  });
-};
+  const { isLessonCompleted } = useUserProgress();
 
 useEffect(() => {
   const handleScroll = () => {
@@ -695,8 +686,12 @@ useEffect(() => {
               Welcome to the Atelier, {user?.username}.
             </h1>
             <p className="text-lg font-bold text-black bg-white/95 p-4 rounded-xl border-4 border-black shadow-card-sm inline-block max-w-xl leading-relaxed dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2]">
-               You have completed {completedLessonsCount} of {totalLessonsCount} course modules, earning <span className="text-primary font-black">{animatedXP} XP</span>.
-
+              You have completed {completedLessonsCount} of {totalLessonsCount}{" "}
+              course modules, earning{" "}
+              <span className="text-primary font-black">
+                {personal_stats.total_xp} XP
+              </span>
+              .
             </p>
           </div>
           <div className="absolute -right-6 -bottom-6 text-[10rem] opacity-20 rotate-12 pointer-events-none">
