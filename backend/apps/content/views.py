@@ -1,12 +1,12 @@
-from rest_framework import viewsets, views, response, permissions
-from django.db.models import Q
-from django.core.cache import cache
-
-from .models import Lesson
-from .serializers import LessonSerializer
 from apps.challenges.models import Challenge
 from apps.challenges.serializers import ChallengeSerializer
 from apps.progress.models import LessonProgress
+from django.core.cache import cache
+from django.db.models import Q
+from rest_framework import permissions, response, views, viewsets
+from . import semantic_search
+from .models import Lesson
+from .serializers import LessonSearchSerializer, LessonSerializer
 
 
 def get_active_lessons():
@@ -26,19 +26,67 @@ class LessonViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = self.get_serializer(lessons, many=True)
         return response.Response(serializer.data)
 
+
 class SearchView(views.APIView):
     def get(self, request):
         query = request.GET.get("q", "")
         if not query:
             return response.Response({"lessons": [], "challenges": []})
-        
-        lessons = Lesson.objects.filter(Q(title__icontains=query) | Q(summary__icontains=query))
-        challenges = Challenge.objects.filter(Q(title__icontains=query) | Q(summary__icontains=query))
-        
-        return response.Response({
-            "lessons": LessonSerializer(lessons, many=True).data,
-            "challenges": ChallengeSerializer(challenges, many=True).data
-        })
+
+        lessons = Lesson.objects.filter(
+            Q(title__icontains=query) | Q(summary__icontains=query)
+        )
+        challenges = Challenge.objects.filter(
+            Q(title__icontains=query) | Q(summary__icontains=query)
+        )
+
+        return response.Response(
+            {
+                "lessons": LessonSerializer(lessons, many=True).data,
+                "challenges": ChallengeSerializer(challenges, many=True).data,
+            }
+        )
+
+
+class SemanticSearchView(views.APIView):
+    def get(self, request):
+        query = request.GET.get("q", "").strip()
+        top_k = int(request.GET.get("top_k", 10))
+
+        if not query:
+            return response.Response({"query": query, "results": []})
+
+        if not semantic_search.is_available():
+            return response.Response(
+                {
+                    "error": "Semantic search is not available.",
+                    "query": query,
+                    "results": [],
+                },
+                status=503,
+            )
+
+        lessons = Lesson.objects.filter(embedding__isnull=False).prefetch_related(
+            "exercises"
+        )
+        if not lessons.exists():
+            return response.Response({"query": query, "results": []})
+
+        service = semantic_search.SemanticSearchService(list(lessons))
+        results = service.search(query, top_k=top_k, min_score=0.15)
+
+        return response.Response(
+            {
+                "query": query,
+                "results": [
+                    {
+                        "score": r["score"],
+                        "lesson": LessonSearchSerializer(r["lesson"]).data,
+                    }
+                    for r in results
+                ],
+            }
+        )
 
 
 class RoadmapView(views.APIView):
@@ -92,4 +140,3 @@ class RoadmapView(views.APIView):
                 },
             }
         )
-

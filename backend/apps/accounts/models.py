@@ -1,8 +1,8 @@
-from django.conf import settings
-from django.db import models
 import uuid
 
 from apps.content.models import Lesson
+from django.conf import settings
+from django.db import models
 
 
 class MentorProfile(models.Model):
@@ -55,8 +55,9 @@ class PasswordResetToken(models.Model):
 
     def is_expired(self) -> bool:
         """Return True if the token is older than PASSWORD_RESET_TIMEOUT_MINUTES."""
-        from django.utils import timezone
         from datetime import timedelta
+        from django.utils import timezone
+
         timeout = getattr(settings, "PASSWORD_RESET_TIMEOUT_MINUTES", 15)
         return timezone.now() > self.created_at + timedelta(minutes=timeout)
 

@@ -1,8 +1,8 @@
 import os
-import dj_database_url
 from datetime import timedelta
 from pathlib import Path
 
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -21,7 +21,9 @@ def load_dotenv(dotenv_path: Path) -> None:
 
 load_dotenv(BASE_DIR / ".env")
 
-SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-dev-key-not-for-production-use-32bytes!!")
+SECRET_KEY = os.getenv(
+    "SECRET_KEY", "django-insecure-dev-key-not-for-production-use-32bytes!!"
+)
 DEBUG = os.getenv("DEBUG", "False") == "True"
 ALLOWED_HOSTS = [
     host.strip()
@@ -29,7 +31,9 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 CORS_ALLOWED_ORIGINS = [
-    origin.strip() for origin in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",") if origin.strip()
+    origin.strip()
+    for origin in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+    if origin.strip()
 ]
 CORS_ALLOW_CREDENTIALS = True
 if DEBUG:
@@ -42,7 +46,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    'django_filters',
+    "django_filters",
     "corsheaders",
     "rest_framework",
     "rest_framework_simplejwt",
@@ -93,16 +97,18 @@ DATABASES = {
     ),
     "replica": dj_database_url.config(
         env="REPLICA_DATABASE_URL",
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}", # Falls back to local sqlite in dev
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",  # Falls back to local sqlite in dev
         conn_max_age=600,
         conn_health_checks=True,
-    )
+    ),
 }
 
-DATABASE_ROUTERS = ['config.db_router.PrimaryReplicaRouter']
+DATABASE_ROUTERS = ["config.db_router.PrimaryReplicaRouter"]
 
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
 ]
@@ -119,8 +125,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Default: console backend (prints emails to stdout) — safe for dev/CI.
 # Override EMAIL_BACKEND in production env with a real SMTP backend.
 EMAIL_BACKEND = os.getenv(
-    "EMAIL_BACKEND",
-    "django.core.mail.backends.console.EmailBackend"
+    "EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"
 )
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@atelier.dev")
 
@@ -139,7 +144,6 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
     ],
-
     # ── Throttle Rates ───────────────────────────────────────────────────────
     # Sandbox endpoints
     # Auth endpoints (brute-force + spam protection)
@@ -152,15 +156,14 @@ REST_FRAMEWORK = {
         "sandbox_user": "10/minute",
         "help_request": "5/hour",
         # ── Authentication ───────────────────────────────────────────────────
-        "auth_login":          os.getenv("RATE_AUTH_LOGIN",          "5/minute"),
-        "auth_signup":         os.getenv("RATE_AUTH_SIGNUP",         "10/hour"),
-        "auth_token_refresh":  os.getenv("RATE_AUTH_TOKEN_REFRESH",  "30/minute"),
-        "auth_otp_generate":   os.getenv("RATE_AUTH_OTP_GENERATE",   "3/minute"),
-        "auth_otp_verify":     os.getenv("RATE_AUTH_OTP_VERIFY",     "5/minute"),
+        "auth_login": os.getenv("RATE_AUTH_LOGIN", "5/minute"),
+        "auth_signup": os.getenv("RATE_AUTH_SIGNUP", "10/hour"),
+        "auth_token_refresh": os.getenv("RATE_AUTH_TOKEN_REFRESH", "30/minute"),
+        "auth_otp_generate": os.getenv("RATE_AUTH_OTP_GENERATE", "3/minute"),
+        "auth_otp_verify": os.getenv("RATE_AUTH_OTP_VERIFY", "5/minute"),
         "auth_password_reset": os.getenv("RATE_AUTH_PASSWORD_RESET", "3/hour"),
-        "auth_oauth":          os.getenv("RATE_AUTH_OAUTH",          "20/minute"),
+        "auth_oauth": os.getenv("RATE_AUTH_OAUTH", "20/minute"),
     },
-
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
@@ -172,8 +175,12 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(os.getenv("ACCESS_TOKEN_LIFETIME_MINUTES", "30"))),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.getenv("REFRESH_TOKEN_LIFETIME_DAYS", "7"))),
+    "ACCESS_TOKEN_LIFETIME": timedelta(
+        minutes=int(os.getenv("ACCESS_TOKEN_LIFETIME_MINUTES", "30"))
+    ),
+    "REFRESH_TOKEN_LIFETIME": timedelta(
+        days=int(os.getenv("REFRESH_TOKEN_LIFETIME_DAYS", "7"))
+    ),
 }
 
 # ──────────────────────────────────────────
@@ -194,6 +201,7 @@ INSTALLED_APPS += [
 # ──────────────────────────────────────────
 import socket
 
+
 def is_redis_available(url):
     try:
         if not url:
@@ -208,7 +216,7 @@ def is_redis_available(url):
         else:
             host = host_port
             port = 6379
-        
+
         # Test connection with a very short timeout
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(0.5)

@@ -1,48 +1,37 @@
-from django.contrib.auth.models import User
-from django.conf import settings
-from django.shortcuts import redirect
-from rest_framework import generics, filters, permissions, status
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.permissions import IsAuthenticated
-import requests as http_requests
-from django.utils.text import slugify
-import secrets
 import os
+import secrets
 from typing import Optional
 from urllib.parse import urlencode
-
-from django.core.mail import send_mail
-from django.utils import timezone
-
-from .throttles import (
-    LoginThrottle,
-    SignupThrottle,
-    TokenRefreshThrottle,
-    OAuthThrottle,
-    OtpGenerateThrottle,
-    OtpVerifyThrottle,
-    PasswordResetThrottle,
-)
-
-from django.db.models import Sum
+import requests as http_requests
 from apps.progress.models import LessonProgress, UserBadge
 from apps.progress.serializers import UserBadgeSerializer
-from .models import PasswordResetToken, OTPToken
-from .serializers import (
-    SignupSerializer,
-    UserListSerializer,
-    UserUpdateSerializer,
-    EmailOrUsernameTokenObtainPairSerializer,
-    PasswordResetRequestSerializer,
-    PasswordResetConfirmSerializer,
-    OtpRequestSerializer,
-    OtpVerifySerializer,
-)
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse
+from django.conf import settings
+from django.contrib.auth.models import User
+from django.core.mail import send_mail
+from django.db.models import Sum
+from django.shortcuts import redirect
+from django.utils import timezone
+from django.utils.text import slugify
+from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import (OpenApiResponse, extend_schema,extend_schema_view)
+from rest_framework import filters, generics, permissions, status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import (TokenObtainPairView,
+                                            TokenRefreshView)
+
+from .models import OTPToken, PasswordResetToken
+from .serializers import (EmailOrUsernameTokenObtainPairSerializer,
+                          OtpRequestSerializer, OtpVerifySerializer,
+                          PasswordResetConfirmSerializer,
+                          PasswordResetRequestSerializer, SignupSerializer,
+                          UserListSerializer, UserUpdateSerializer)
+from .throttles import (LoginThrottle, OAuthThrottle, OtpGenerateThrottle,
+                        OtpVerifyThrottle, PasswordResetThrottle,
+                        SignupThrottle, TokenRefreshThrottle)
+
 
 def unique_username_from_value(value: str) -> str:
     base = slugify(value.split("@")[0]) or "user"
@@ -57,7 +46,11 @@ def unique_username_from_value(value: str) -> str:
 
 
 def frontend_url(path: str, query: Optional[dict[str, str]] = None) -> str:
-    base_url = os.getenv("FRONTEND_URL") or (settings.CORS_ALLOWED_ORIGINS[0] if settings.CORS_ALLOWED_ORIGINS else "http://localhost:5173")
+    base_url = os.getenv("FRONTEND_URL") or (
+        settings.CORS_ALLOWED_ORIGINS[0]
+        if settings.CORS_ALLOWED_ORIGINS
+        else "http://localhost:5173"
+    )
     url = f"{base_url.rstrip('/')}{path}"
     if query:
         url = f"{url}?{urlencode(query)}"
@@ -115,7 +108,10 @@ class MyBadgesView(APIView):
             .order_by("-earned_at")
         )
         progress_points = (
-            LessonProgress.objects.filter(user=request.user).aggregate(total=Sum("score"))["total"] or 0
+            LessonProgress.objects.filter(user=request.user).aggregate(
+                total=Sum("score")
+            )["total"]
+            or 0
         )
         serializer = UserBadgeSerializer(earned_badges, many=True)
 
@@ -128,7 +124,9 @@ class MyBadgesView(APIView):
 
 @extend_schema(
     request=EmailOrUsernameTokenObtainPairSerializer,
-    responses=OpenApiResponse(description="Returns JWT refresh & access tokens and basic user info.")
+    responses=OpenApiResponse(
+        description="Returns JWT refresh & access tokens and basic user info."
+    ),
 )
 class LoginView(TokenObtainPairView):
     permission_classes = [permissions.AllowAny]
@@ -152,7 +150,10 @@ class GoogleLoginView(APIView):
     def post(self, request):
         token = request.data.get("access_token") or request.data.get("access")
         if not token:
-            return Response({"detail": "No access token provided"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "No access token provided"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
             # Use OAuth2 userinfo endpoint with Bearer auth for better compatibility.
@@ -163,12 +164,18 @@ class GoogleLoginView(APIView):
             )
 
             if not user_info_resp.ok:
-                return Response({"detail": "Failed to verify Google token"}, status=status.HTTP_401_UNAUTHORIZED)
+                return Response(
+                    {"detail": "Failed to verify Google token"},
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
 
             idinfo = user_info_resp.json()
             email = idinfo.get("email")
             if not email:
-                return Response({"detail": "Google account has no email"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"detail": "Google account has no email"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             user = User.objects.filter(email__iexact=email).first()
             if not user:
@@ -203,7 +210,10 @@ class GitHubOAuthStartView(APIView):
     def get(self, request):
         client_id = os.getenv("GITHUB_CLIENT_ID", "")
         if not client_id:
-            return Response({"detail": "GitHub OAuth is not configured."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "GitHub OAuth is not configured."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         callback_url = request.build_absolute_uri("/api/auth/github/callback/")
         params = urlencode(
@@ -223,12 +233,16 @@ class GitHubOAuthCallbackView(APIView):
     def get(self, request):
         code = request.query_params.get("code")
         if not code:
-            return redirect(frontend_url("/", {"auth_error": "GitHub authorization was cancelled."}))
+            return redirect(
+                frontend_url("/", {"auth_error": "GitHub authorization was cancelled."})
+            )
 
         client_id = os.getenv("GITHUB_CLIENT_ID", "")
         client_secret = os.getenv("GITHUB_CLIENT_SECRET", "")
         if not client_id or not client_secret:
-            return redirect(frontend_url("/", {"auth_error": "GitHub OAuth is not configured."}))
+            return redirect(
+                frontend_url("/", {"auth_error": "GitHub OAuth is not configured."})
+            )
 
         callback_url = request.build_absolute_uri("/api/auth/github/callback/")
 
@@ -245,25 +259,51 @@ class GitHubOAuthCallbackView(APIView):
                 timeout=10,
             )
             token_response.raise_for_status()
-            access_token = token_response.json().get("access_token") or token_response.json().get("access")
+            access_token = token_response.json().get(
+                "access_token"
+            ) or token_response.json().get("access")
             if not access_token:
-                return redirect(frontend_url("/", {"auth_error": "GitHub did not return an access token."}))
+                return redirect(
+                    frontend_url(
+                        "/", {"auth_error": "GitHub did not return an access token."}
+                    )
+                )
 
-            github_headers = {"Authorization": f"Bearer {access_token}", "Accept": "application/vnd.github+json"}
-            user_response = http_requests.get("https://api.github.com/user", headers=github_headers, timeout=10)
+            github_headers = {
+                "Authorization": f"Bearer {access_token}",
+                "Accept": "application/vnd.github+json",
+            }
+            user_response = http_requests.get(
+                "https://api.github.com/user", headers=github_headers, timeout=10
+            )
             user_response.raise_for_status()
             github_user = user_response.json()
 
             email = github_user.get("email")
             if not email:
-                email_response = http_requests.get("https://api.github.com/user/emails", headers=github_headers, timeout=10)
+                email_response = http_requests.get(
+                    "https://api.github.com/user/emails",
+                    headers=github_headers,
+                    timeout=10,
+                )
                 email_response.raise_for_status()
                 emails = email_response.json()
-                primary_email = next((item for item in emails if item.get("primary") and item.get("verified")), None)
+                primary_email = next(
+                    (
+                        item
+                        for item in emails
+                        if item.get("primary") and item.get("verified")
+                    ),
+                    None,
+                )
                 email = primary_email.get("email") if primary_email else None
 
             if not email:
-                return redirect(frontend_url("/", {"auth_error": "GitHub account has no verified email."}))
+                return redirect(
+                    frontend_url(
+                        "/", {"auth_error": "GitHub account has no verified email."}
+                    )
+                )
 
             user = User.objects.filter(email__iexact=email).first()
             if not user:
@@ -285,7 +325,10 @@ class GitHubOAuthCallbackView(APIView):
                 )
             )
         except Exception:
-            return redirect(frontend_url("/", {"auth_error": "GitHub authentication failed."}))
+            return redirect(
+                frontend_url("/", {"auth_error": "GitHub authentication failed."})
+            )
+
 
 @extend_schema(responses=UserListSerializer(many=True))
 class UserListView(generics.ListAPIView):
@@ -293,7 +336,11 @@ class UserListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = UserListSerializer
 
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
     search_fields = ["username"]
     ordering_fields = ["id", "username"]
 
@@ -304,7 +351,7 @@ class UserListView(generics.ListAPIView):
 
 @extend_schema(
     request=PasswordResetRequestSerializer,
-    responses=OpenApiResponse(description="Reset email sent if account exists.")
+    responses=OpenApiResponse(description="Reset email sent if account exists."),
 )
 class PasswordResetRequestView(APIView):
     """
@@ -326,12 +373,13 @@ class PasswordResetRequestView(APIView):
 
         if user:
             # Invalidate any existing unused tokens for this user
-            PasswordResetToken.objects.filter(user=user, is_used=False).update(is_used=True)
+            PasswordResetToken.objects.filter(user=user, is_used=False).update(
+                is_used=True
+            )
             reset_token = PasswordResetToken.objects.create(user=user)
 
             reset_url = frontend_url(
-                "/reset-password",
-                {"token": str(reset_token.token)}
+                "/reset-password", {"token": str(reset_token.token)}
             )
             timeout = getattr(settings, "PASSWORD_RESET_TIMEOUT_MINUTES", 15)
 
@@ -343,21 +391,25 @@ class PasswordResetRequestView(APIView):
                     f"{reset_url}\n\n"
                     "If you did not request this, you can safely ignore this email."
                 ),
-                from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@atelier.dev"),
+                from_email=getattr(
+                    settings, "DEFAULT_FROM_EMAIL", "noreply@atelier.dev"
+                ),
                 recipient_list=[user.email],
                 fail_silently=True,
             )
 
         # Always return the same response to prevent email enumeration
         return Response(
-            {"message": "If an account with that email exists, a password reset link has been sent."},
+            {
+                "message": "If an account with that email exists, a password reset link has been sent."
+            },
             status=status.HTTP_200_OK,
         )
 
 
 @extend_schema(
     request=PasswordResetConfirmSerializer,
-    responses=OpenApiResponse(description="Password successfully reset.")
+    responses=OpenApiResponse(description="Password successfully reset."),
 )
 class PasswordResetConfirmView(APIView):
     """
@@ -384,13 +436,19 @@ class PasswordResetConfirmView(APIView):
             )
         except PasswordResetToken.DoesNotExist:
             return Response(
-                {"error": "invalid_token", "message": "This reset link is invalid or has already been used."},
+                {
+                    "error": "invalid_token",
+                    "message": "This reset link is invalid or has already been used.",
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         if reset_token.is_expired():
             return Response(
-                {"error": "expired_token", "message": "This reset link has expired. Please request a new one."},
+                {
+                    "error": "expired_token",
+                    "message": "This reset link has expired. Please request a new one.",
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -402,7 +460,9 @@ class PasswordResetConfirmView(APIView):
         reset_token.save(update_fields=["is_used"])
 
         return Response(
-            {"message": "Your password has been successfully reset. You can now log in."},
+            {
+                "message": "Your password has been successfully reset. You can now log in."
+            },
             status=status.HTTP_200_OK,
         )
 
@@ -413,7 +473,7 @@ class PasswordResetConfirmView(APIView):
 
 @extend_schema(
     request=OtpRequestSerializer,
-    responses=OpenApiResponse(description="OTP sent to email if account exists.")
+    responses=OpenApiResponse(description="OTP sent to email if account exists."),
 )
 class OtpRequestView(APIView):
     """
@@ -440,7 +500,9 @@ class OtpRequestView(APIView):
             send_mail(
                 subject="Your Verification Code",
                 message=f"Hi {user.username},\n\nYour verification code is: {otp_obj.token}",
-                from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@atelier.dev"),
+                from_email=getattr(
+                    settings, "DEFAULT_FROM_EMAIL", "noreply@atelier.dev"
+                ),
                 recipient_list=[user.email],
                 fail_silently=True,
             )
@@ -453,7 +515,7 @@ class OtpRequestView(APIView):
 
 @extend_schema(
     request=OtpVerifySerializer,
-    responses=OpenApiResponse(description="Email verified successfully.")
+    responses=OpenApiResponse(description="Email verified successfully."),
 )
 class OtpVerifyView(APIView):
     """
@@ -474,11 +536,15 @@ class OtpVerifyView(APIView):
 
         user = User.objects.filter(email__iexact=email).first()
         if not user:
-            return Response({"error": "invalid_otp"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "invalid_otp"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         token = OTPToken.objects.filter(user=user, token=otp, is_used=False).first()
         if not token:
-            return Response({"error": "invalid_otp"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "invalid_otp"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Mark token as used
         token.is_used = True
@@ -488,6 +554,8 @@ class OtpVerifyView(APIView):
         user.save(update_fields=["is_verified"])
 
         return Response(
-            {"message": "Your email has been verified successfully. You can now log in."},
+            {
+                "message": "Your email has been verified successfully. You can now log in."
+            },
             status=status.HTTP_200_OK,
         )

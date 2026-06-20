@@ -7,9 +7,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 def validate_strong_password(value):
     if not re.search(r"\d", value):
-        raise serializers.ValidationError(
-            "Password must contain at least one number."
-        )
+        raise serializers.ValidationError("Password must contain at least one number.")
     if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", value):
         raise serializers.ValidationError(
             "Password must contain at least one special character (!@#$%^&* etc)."
@@ -124,4 +122,3 @@ class OtpVerifySerializer(serializers.Serializer):
     """Accept email + OTP token to complete email verification."""
     email = serializers.EmailField()
     otp = serializers.UUIDField()
-
