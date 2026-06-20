@@ -47,6 +47,14 @@ export function Navigation() {
   >([]);
   const [badgeCount, setBadgeCount] = useState(0);
 
+  const handleStartSandbox = () => {
+    setIsStarting(true);
+    setTimeout(() => {
+      setIsStarting(false);
+      navigate("/sandbox");
+    }, 500);
+  };
+
   useEffect(() => {
     fetchLessonsApi().then((data) => setLessonsCatalog(data));
   }, []);
