@@ -6,7 +6,7 @@ export default function VerifyNoticePage() {
     <AuthPageShell 
       title="Check your email." 
       subtitle="We've sent a verification link to your inbox. You need to click it before you can join the club." 
-      mode="info"
+      mode="login"
     >
       <div className="text-center pt-4">
         <p className="font-bold text-black mb-6">

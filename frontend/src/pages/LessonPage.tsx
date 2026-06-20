@@ -48,6 +48,7 @@ export function LessonPage() {
   const [isHelpPanelOpen, setIsHelpPanelOpen] = useState(false);
   const [helpMessage, setHelpMessage] = useState("");
   const [helpSuccessMessage, setHelpSuccessMessage] = useState("");
+  const MAX_HELP_CHARS = 500;
 
   // Reading progress scroll ref
   const mainContentRef = useRef<HTMLDivElement>(null);
@@ -546,7 +547,14 @@ export function LessonPage() {
                 </div>
               ) : (
                 // TERMINAL INTERACTIVE COMMAND MODE
-                <div className="rounded-3xl border-4 border-black bg-surface-low p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924]">
+                <div
+                  className={`rounded-3xl border-4 bg-surface-low p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924]
+                    ${
+                      feedback === "error"
+                        ? "border-red-600 shake-error"
+                        : "border-black"
+                    }`}
+                >
                   <h3 className="text-xl font-black mb-4 flex items-center gap-2 text-text dark:text-[#f0ebe2]">
                     <span>💻</span> Sandbox terminal check
                   </h3>
@@ -562,7 +570,7 @@ export function LessonPage() {
                       <span className="font-mono text-primary font-black">$</span>
                       <input
                         className="flex-1 rounded-xl border-4 border-black bg-surface-lowest px-4 py-2.5 text-text font-bold outline-none placeholder:text-muted/40 dark:bg-[#151411] dark:border-[#2e2924]"
-                        placeholder="Type your git command here"
+                        placeholder={lesson.hint || "Type your git command here"}
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={(e) => {
@@ -714,7 +722,11 @@ export function LessonPage() {
                 value={helpMessage}
                 onChange={(e) => setHelpMessage(e.target.value)}
                 disabled={helpRequestMutation.isPending}
+                maxLength={MAX_HELP_CHARS}
               />
+              <p className={`text-xs font-black text-right ${helpMessage.length > MAX_HELP_CHARS ? "text-red-600" : "text-muted dark:text-[#c4bbae]"}`}>
+                {helpMessage.length} / {MAX_HELP_CHARS} characters
+              </p>
 
               {helpRequestMutation.isError && (
                 <div className="text-red-700 text-xs font-black bg-red-50 p-2 rounded-lg border-2 border-red-700">
@@ -731,7 +743,7 @@ export function LessonPage() {
               <button
                 type="submit"
                 className="w-full px-4 py-2 bg-primary text-white font-bold rounded-xl border-4 border-black shadow-gel hover:bg-[#E62814] disabled:opacity-60"
-                disabled={!helpMessage.trim() || helpRequestMutation.isPending}
+                disabled={!helpMessage.trim() || helpMessage.length > MAX_HELP_CHARS || helpRequestMutation.isPending}
               >
                 {helpRequestMutation.isPending ? "Connecting..." : "Submit to cohort queue"}
               </button>

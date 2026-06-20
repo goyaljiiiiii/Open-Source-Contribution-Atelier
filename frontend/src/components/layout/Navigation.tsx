@@ -13,7 +13,6 @@ import {
   Moon,
 } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
-import { fetchApi } from "../../lib/api";
 import { useTheme } from "../../hooks/useTheme";
 import { useAuth } from "../../features/auth/AuthContext";
 import { fetchLessonsApi } from "../../lib/lessons";
@@ -87,18 +86,7 @@ export function Navigation() {
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery, lessonsCatalog]);
 
-  useEffect(() => {
-    async function loadBadges() {
-      try {
-        const badges = await fetchApi("/progress/badges/");
-        setBadgeCount(badges.length);
-      } catch (error) {
-        console.error("Failed to load badges:", error);
-      }
-    }
 
-    loadBadges();
-  }, []);
 
   return (
     <>

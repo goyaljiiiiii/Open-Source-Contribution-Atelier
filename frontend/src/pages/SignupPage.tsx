@@ -20,6 +20,8 @@ export function SignupPage() {
   const [error, setError] = useState("");
   const { login } = useAuth();
 
+  const isFormValid = username.trim() !== "" && email.trim() !== "" && password.length >= 8;
+
   const handleGithubSignIn = () => {
     window.location.href = githubAuthUrl;
   };
@@ -74,7 +76,6 @@ export function SignupPage() {
   const labelColors = ["text-red-500", "text-yellow-600", "text-green-600"] as const;
   // ── END HELPER BLOCK ───────────────────────────────────────────────────────
 
-  const isFormValid = username.trim() !== "" && email.trim() !== "" && password.trim() !== "";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

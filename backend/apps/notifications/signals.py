@@ -58,6 +58,23 @@ def on_badge_awarded(sender, instance, created, **kwargs):
         },
     )
     _push_notification(notif)
+    
+    # Offload bulk email or notification digest to the independent worker
+    from celery import current_app
+    current_app.send_task(
+        'tasks.send_bulk_email',
+        kwargs={
+            'payload': {
+                'template_id': 'badge_earned_email',
+                'recipients': [instance.user.email],
+                'data': {
+                    'badge_name': instance.badge.name,
+                    'username': instance.user.username
+                }
+            }
+        }
+    )
+
 
 
 # ------------------------------------------------------------------ #

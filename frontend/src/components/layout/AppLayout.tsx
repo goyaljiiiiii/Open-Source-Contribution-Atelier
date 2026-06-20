@@ -1,5 +1,6 @@
 import { Outlet } from "react-router-dom";
 import { Navigation } from "./Navigation";
+import { BadgeToastNotifier } from "../ui/BadgeToastNotifier";
 
 export function AppLayout() {
   return (
@@ -12,6 +13,8 @@ export function AppLayout() {
           </div>
         </div>
       </main>
+      <BadgeToastNotifier />
     </div>
   );
 }
+

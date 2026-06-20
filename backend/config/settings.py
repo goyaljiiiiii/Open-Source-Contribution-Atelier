@@ -88,10 +88,18 @@ ASGI_APPLICATION = "config.asgi.application"
 DATABASES = {
     "default": dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600,  # Prepares for PgBouncer connection pooling
+        conn_health_checks=True,
+    ),
+    "replica": dj_database_url.config(
+        env="REPLICA_DATABASE_URL",
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}", # Falls back to local sqlite in dev
         conn_max_age=600,
         conn_health_checks=True,
     )
 }
+
+DATABASE_ROUTERS = ['config.db_router.PrimaryReplicaRouter']
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -140,6 +148,8 @@ INSTALLED_APPS += [
     "apps.notifications.apps.NotificationsConfig",
     "drf_spectacular",
     "apps.dashboard.apps.DashboardConfig",
+    "django.contrib.postgres",
+    "apps.search.apps.SearchConfig",
 ]
 
 
@@ -207,4 +217,11 @@ else:
         }
     }
 
-
+# ──────────────────────────────────────────
+# Celery Configuration
+# ──────────────────────────────────────────
+CELERY_BROKER_URL = ENV_REDIS_URL or "redis://127.0.0.1:6379/0"
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
