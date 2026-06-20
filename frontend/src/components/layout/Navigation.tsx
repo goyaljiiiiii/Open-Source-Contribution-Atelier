@@ -13,7 +13,6 @@ import {
   Moon,
 } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
-import { fetchApi } from "../../lib/api";
 import { useTheme } from "../../hooks/useTheme";
 import { useAuth } from "../../features/auth/AuthContext";
 import { fetchLessonsApi } from "../../lib/lessons";
@@ -43,6 +42,7 @@ export function Navigation() {
   const [lessonsCatalog, setLessonsCatalog] = useState<
     { slug: string; title: string; description: string }[]
   >([]);
+  const [badgeCount, setBadgeCount] = useState(0);
 
   useEffect(() => {
     fetchLessonsApi().then((data) => setLessonsCatalog(data));
@@ -93,18 +93,7 @@ export function Navigation() {
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery, lessonsCatalog]);
 
-  useEffect(() => {
-    async function loadBadges() {
-      try {
-        const badges = await fetchApi("/progress/badges/");
-        setBadgeCount(badges.length);
-      } catch (error) {
-        console.error("Failed to load badges:", error);
-      }
-    }
 
-    loadBadges();
-  }, []);
 
   return (
     <>

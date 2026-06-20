@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchApi } from "../lib/api";
 import { useLocalSync } from "./useLocalSync";
@@ -48,7 +48,7 @@ export function useUserProgress() {
     if (isCompletedInBackend) return true;
 
     return isLessonPendingCompleted(slug);
-  };
+  }, [progress, isLessonPendingCompleted]);
 
   const totalXP = useMemo(() => {
     const backendXP = progress.reduce((acc, p) => acc + p.score, 0);

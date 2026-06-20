@@ -6,6 +6,8 @@ import { Link } from "react-router-dom";
 import SkeletonCard from "../components/ui/skeletons/SkeletonCard";
 import { fetchLessonsApi, Lesson } from "../lib/lessons";
 import { useUserProgress } from "../hooks/useUserProgress";
+import { BADGES } from "../constants/badges";
+import { useEarnedBadges } from "../hooks/useEarnedBadges";
 import {
   Award,
   Flame,
@@ -110,7 +112,17 @@ const BADGES = [
 
 export function DashboardPage() {
   const { user } = useAuth();
-  const { isLessonCompleted, totalXP } = useUserProgress();
+  const { totalXP } = useUserProgress();
+  const {
+    completedLessonsCount,
+    totalLessonsCount,
+    completionPercentage,
+    activeLessonsQueue,
+    earnedBadges,
+    lessons,
+    isLessonsLoading,
+    curriculumData
+  } = useEarnedBadges();
   const CONTRIBUTORS_CACHE_KEY = "github_contributors_cache";
   const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -509,8 +521,8 @@ export function DashboardPage() {
                         data={issueStatusData}
                         cx="50%"
                         cy="50%"
-                        innerRadius={50}
-                        outerRadius={75}
+                        innerRadius="45%"
+                        outerRadius="70%"
                         paddingAngle={5}
                         dataKey="value"
                       >
@@ -821,8 +833,8 @@ export function DashboardPage() {
                     ]}
                     cx="50%"
                     cy="50%"
-                    innerRadius={55}
-                    outerRadius={75}
+                    innerRadius="50%"
+                    outerRadius="72%"
                     paddingAngle={3}
                     dataKey="value"
                   >
@@ -860,11 +872,10 @@ export function DashboardPage() {
             return (
               <div
                 key={badge.id}
-                className={`relative rounded-2xl border-4 border-black p-5 flex flex-col items-center text-center shadow-card-sm transition-all ${
-                  isEarned
+                className={`relative rounded-2xl border-4 border-black p-5 flex flex-col items-center text-center shadow-card-sm transition-all ${isEarned
                     ? "bg-white dark:bg-[#1f1c18] hover:-translate-y-1"
                     : "bg-surface-low/30 opacity-60 dark:bg-black/20"
-                }`}
+                  }`}
               >
                 <div className={`text-5xl mb-3 ${isEarned ? "" : "grayscale"}`}>
                   {badge.icon}
