@@ -1,3 +1,4 @@
+/// <reference lib="webworker" />
 import { openDB } from "./offlineDB";
 import { queryClient } from "./queryClient";
 export interface QueuedAction {
@@ -84,7 +85,7 @@ export async function queueProgressSync(data: {
       const reg = await navigator.serviceWorker.ready;
       if ("sync" in reg) {
         await (
-          reg as ServiceWorkerRegistration & { sync: SyncManager }
+          reg as any
         ).sync.register("sync-progress");
         console.log(
           "[OfflineQueue] Registered background sync tag 'sync-progress'",

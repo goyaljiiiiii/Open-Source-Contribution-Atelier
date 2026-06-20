@@ -105,6 +105,8 @@ export function SignupPage() {
     }
   };
 
+  const isFormValid = username.length > 0 && email.length > 0 && password.length > 0;
+
   return (
     <AuthPageShell
       title="Join the Club."

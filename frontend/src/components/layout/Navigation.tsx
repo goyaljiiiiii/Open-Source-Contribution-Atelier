@@ -82,7 +82,7 @@ export function Navigation() {
         );
 
         setSearchResults({
-          lessons: filteredLessons,
+          lessons: filteredLessons.map(l => ({ ...l, summary: l.description })),
           challenges: filteredChallenges,
         });
         setIsSearching(false);

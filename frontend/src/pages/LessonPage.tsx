@@ -43,6 +43,7 @@ export function LessonPage() {
     }[]
   >([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const sidebarRef = useRef<HTMLElement>(null);
 
   const closeSidebar = useCallback(() => setIsSidebarOpen(false), []);
 
@@ -324,6 +325,7 @@ export function LessonPage() {
       {/* 2. Side Course Directory Menu */}
       <aside
         id="course-sidebar"
+        ref={sidebarRef}
         className={`fixed top-0 left-0 h-full w-[300px] border-r-4 border-black bg-white dark:bg-[#151411] dark:border-[#2e2924] overflow-y-auto p-6 transition-transform duration-300 ease-in-out z-20 pt-20
           ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
           lg:relative lg:top-auto lg:left-auto lg:h-auto lg:w-[320px] lg:flex-shrink-0 lg:translate-x-0 lg:block lg:max-h-[calc(100vh-80px)]`}
