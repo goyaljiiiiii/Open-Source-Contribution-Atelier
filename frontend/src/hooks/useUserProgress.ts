@@ -59,16 +59,24 @@ export function useUserProgress() {
 
   const totalXP = useMemo(() => {
     const backendXP = progress.reduce((acc, p) => acc + p.score, 0);
-    console.log(
-      "Backend XP:",
-      backendXP,
-      "Pending XP:",
-      getPendingXP(progress),
-    );
-    return backendXP + getPendingXP(progress);
-  }, [progress, getPendingXP]);
-
-  console.log("Total XP:", totalXP);
+    let pendingXP = 0;
+    try {
+      const pending = JSON.parse(
+        localStorage.getItem("atelier_pending_sync") || "[]",
+      ) as { lesson_slug: string; score: number; completed: boolean }[];
+      pending.forEach((p) => {
+        const inBackend = progress.some(
+          (bp) => bp.lesson_slug === p.lesson_slug,
+        );
+        if (!inBackend) {
+          pendingXP += p.score || 0;
+        }
+      });
+    } catch {
+      // Ignore invalid JSON in localStorage
+    }
+    return backendXP + pendingXP;
+  }, [progress]);
 
   return {
     progress,
