@@ -1,14 +1,15 @@
-from rest_framework import viewsets, views, response, permissions
+from rest_framework import viewsets, views, response, permissions, generics, filters
+from rest_framework.permissions import AllowAny
 from django.db.models import Q
 from django.core.cache import cache
 
-from .models import Lesson
-from .serializers import LessonSerializer
+from .models import Lesson, Organization
+from .serializers import LessonSerializer, OrganizationSerializer
 from apps.challenges.models import Challenge
 from apps.challenges.serializers import ChallengeSerializer
 from apps.progress.models import LessonProgress
 
-
+# --- Helper Functions ---
 def get_active_lessons():
     lessons = cache.get("active_lessons_list")
     if lessons is None:
@@ -16,7 +17,7 @@ def get_active_lessons():
         cache.set("active_lessons_list", lessons, 60 * 60 * 24)
     return lessons
 
-
+# --- Existing Views ---
 class LessonViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Lesson.objects.prefetch_related("exercises").all()
     serializer_class = LessonSerializer
@@ -40,10 +41,8 @@ class SearchView(views.APIView):
             "challenges": ChallengeSerializer(challenges, many=True).data
         })
 
-
 class RoadmapView(views.APIView):
     """Return ordered curriculum with optional per-user completion state."""
-
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get(self, request):
@@ -93,3 +92,11 @@ class RoadmapView(views.APIView):
             }
         )
 
+# --- New: Organization View ---
+class OrganizationListView(generics.ListAPIView):
+    queryset = Organization.objects.all()
+    serializer_class = OrganizationSerializer
+    permission_classes = [AllowAny]
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['name', 'date_added', 'popularity_score']
+    ordering = ['-popularity_score']
