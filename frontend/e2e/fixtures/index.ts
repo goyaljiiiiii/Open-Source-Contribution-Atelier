@@ -16,6 +16,7 @@ export const test = base.extend<MyFixtures>({
     await setAuthenticatedState(page);
     
     // 3. Use the page in the test
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(page);
   },
 });

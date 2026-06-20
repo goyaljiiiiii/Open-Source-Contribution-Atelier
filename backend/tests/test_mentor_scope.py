@@ -10,6 +10,7 @@ Verifies that the GET /api/progress/mentor/help-requests/ endpoint:
 
 import pytest
 from django.contrib.auth.models import User
+from typing import Optional, List
 from rest_framework.test import APIClient
 
 from apps.accounts.models import MentorProfile
@@ -23,7 +24,7 @@ MENTOR_ENDPOINT = "/api/progress/mentor/help-requests/"
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_lesson(slug: str, title: str | None = None, order: int = 0) -> Lesson:
+def _make_lesson(slug: str, title: Optional[str] = None, order: int = 0) -> Lesson:
     return Lesson.objects.create(
         title=title or slug.replace("-", " ").title(),
         slug=slug,
@@ -37,7 +38,7 @@ def _make_help_request(user: User, lesson: Lesson, message: str = "Help!") -> He
     return HelpRequest.objects.create(user=user, lesson=lesson, message=message)
 
 
-def _make_mentor(username: str, lessons: list[Lesson] | None = None) -> User:
+def _make_mentor(username: str, lessons: Optional[List[Lesson]] = None) -> User:
     user = User.objects.create_user(username=username, password="strongpass123")
     profile = MentorProfile.objects.create(user=user)
     if lessons:

@@ -23,6 +23,7 @@ from .serializers import (
     LessonProgressCreateSerializer,
     CertificateVerificationSerializer,
     BulkSyncSerializer,
+    QuizAttemptSerializer,
 )
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse
 from .throttles import HelpRequestRateThrottle

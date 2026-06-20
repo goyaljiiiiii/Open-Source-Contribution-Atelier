@@ -8,9 +8,10 @@ export function VerificationPage() {
   useEffect(() => {
     const verifyUser = async () => {
       try {
-        // Adjust this URL if your backend is on a different port
+        // Uses Vercel environment variable in production, falls back to local dev server
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
         const response = await fetch(
-          `http://127.0.0.1:8000/api/auth/verify/${token}/`,
+          `${baseUrl}/auth/verify/${token}/`,
           {
             method: "GET",
           },

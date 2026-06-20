@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useMemo, useState, useEffect } from "react";
 import { useAuth } from "../features/auth/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -8,7 +9,7 @@ import { useRef } from 'react';
 import { useElementSize } from '../hooks/useElementSize';
 import { fetchLessonsApi, Lesson } from "../lib/lessons";
 import { useUserProgress } from "../hooks/useUserProgress";
-import { useEarnedBadges } from "../hooks/useEarnedBadges";
+import { BADGES } from "../constants/badges";
 import {
   Award,
   Flame,
@@ -45,72 +46,6 @@ const FACTS = [
   "The Apache HTTP Server project was founded in 1995 and played a key role in the early expansion of the World Wide Web.",
 ];
 
-const BADGES = [
-  {
-    id: "mod-1",
-    name: "Open Source Explorer",
-    desc: "Understand open source mindset and history.",
-    icon: "🧭",
-    moduleIndex: 0,
-  },
-  {
-    id: "mod-2",
-    name: "Git Cadet",
-    desc: "Initialize repos, commit, and manage local branches.",
-    icon: "🌿",
-    moduleIndex: 1,
-  },
-  {
-    id: "mod-3",
-    name: "GitHub Knight",
-    desc: "Master forks, issues, PRs, and team organizations.",
-    icon: "🛡️",
-    moduleIndex: 2,
-  },
-  {
-    id: "mod-4",
-    name: "Etiquette Master",
-    desc: "Practice professional communication and PR workflows.",
-    icon: "🤝",
-    moduleIndex: 3,
-  },
-  {
-    id: "mod-5",
-    name: "First Merge",
-    desc: "Practice local-upstream commit pushing.",
-    icon: "🚀",
-    moduleIndex: 4,
-  },
-  {
-    id: "mod-6",
-    name: "Workflow Champion",
-    desc: "Understand issue life-cycle management.",
-    icon: "🔄",
-    moduleIndex: 5,
-  },
-  {
-    id: "mod-7",
-    name: "Rebase Sensei",
-    desc: "Rebase, resolve conflicts, and parse CI/CD checks.",
-    icon: "🧠",
-    moduleIndex: 6,
-  },
-  {
-    id: "mod-8",
-    name: "Hacktoberfest Ready",
-    desc: "Find beginner-friendly repositories and issues.",
-    icon: "🎃",
-    moduleIndex: 7,
-  },
-  {
-    id: "grad",
-    name: "Atelier Graduate",
-    desc: "Complete 100% of the learning program.",
-    icon: "🎓",
-    isGraduation: true,
-  },
-];
-
 const CONTRIBUTORS_CACHE_KEY = "github_contributors_cache";
 const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -143,19 +78,13 @@ interface AssignedIssue {
 export function DashboardPage() {
     const taskDistRef = useRef<HTMLElement>(null) as React.RefObject<HTMLElement>;
     const { width: taskDistWidth } = useElementSize(taskDistRef);
-    const taskDistRadius = Math.min(taskDistWidth * 0.2, 75);
     const completionRef = useRef<HTMLElement>(null) as React.RefObject<HTMLElement>;
     const { width: completionWidth } = useElementSize(completionRef);
-    const completionRadius = Math.min(completionWidth * 0.2, 75);
-    const [showScrollTop, setShowScrollTop] = useState(false);
-
-    const scrollToTop = () => {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    };
 
 
   const { user } = useAuth();
   const { isLessonCompleted } = useUserProgress();
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
 useEffect(() => {
   const handleScroll = () => {
@@ -1197,7 +1126,7 @@ useEffect(() => {
       )}
             {showScrollTop && (
         <button
-          onClick={scrollToTop}
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           aria-label="Scroll to top"
           className="fixed bottom-6 right-6 z-50 rounded-xl bg-primary text-white border-4 border-black px-4 py-3 font-black shadow-card-sm hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-card-sm cursor-pointer"
         >
