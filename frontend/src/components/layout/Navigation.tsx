@@ -36,6 +36,7 @@ export function Navigation() {
   } | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [lessonsCatalog, setLessonsCatalog] = useState<any[]>([]);
+  const [badgeCount, setBadgeCount] = useState(0);
 
   useEffect(() => {
     fetchLessonsApi().then((data) => setLessonsCatalog(data));

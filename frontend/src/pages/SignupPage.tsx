@@ -74,6 +74,8 @@ export function SignupPage() {
   const labelColors = ["text-red-500", "text-yellow-600", "text-green-600"] as const;
   // ── END HELPER BLOCK ───────────────────────────────────────────────────────
 
+  const isFormValid = username.length > 0 && email.length > 0 && password.length > 0;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
