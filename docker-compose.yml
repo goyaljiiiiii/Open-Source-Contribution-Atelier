@@ -49,5 +49,14 @@ services:
     depends_on:
       - backend
 
+  notifications_worker:
+    build:
+      context: ./services/notifications_worker
+    container_name: contribution_atelier_notifications_worker
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+
 volumes:
   postgres_data:
