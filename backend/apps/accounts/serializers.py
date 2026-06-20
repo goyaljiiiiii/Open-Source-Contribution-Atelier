@@ -83,3 +83,37 @@ class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
                 attrs = {**attrs, username_key: user.username}
 
         return super().validate(attrs)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Password Reset serializers
+# ─────────────────────────────────────────────────────────────────────────────
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    """Accept an email address to trigger a password reset email."""
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    """Accept a reset token and the new password to complete the reset."""
+    token = serializers.UUIDField()
+    new_password = serializers.CharField(write_only=True, min_length=8)
+
+    def validate_new_password(self, value):
+        return validate_strong_password(value)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OTP (Email Verification) serializers
+# ─────────────────────────────────────────────────────────────────────────────
+
+class OtpRequestSerializer(serializers.Serializer):
+    """Accept an email address to trigger sending a new OTP verification code."""
+    email = serializers.EmailField()
+
+
+class OtpVerifySerializer(serializers.Serializer):
+    """Accept email + OTP token to complete email verification."""
+    email = serializers.EmailField()
+    otp = serializers.UUIDField()
+

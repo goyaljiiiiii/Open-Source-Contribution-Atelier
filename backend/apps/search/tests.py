@@ -12,12 +12,14 @@ class SearchEngineEdgeCaseTests(TestCase):
         # Create test models
         self.user = User.objects.create_user(username="searchtestuser", email="test@search.com")
         self.lesson1 = Lesson.objects.create(
+            difficulty="Beginner",
             title="Introduction to React",
             slug="intro-to-react",
             summary="A comprehensive guide to React hooks.",
             content="Use useState and useEffect for side effects."
         )
         self.lesson2 = Lesson.objects.create(
+            difficulty="Advanced",
             title="Advanced Python Programming",
             slug="advanced-python",
             summary="Deep dive into Python internals.",
