@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.pagination import LimitOffsetPagination
 import requests as http_requests
 from django.utils.text import slugify
 import secrets
@@ -292,6 +293,7 @@ class UserListView(generics.ListAPIView):
     queryset = User.objects.all().order_by("id")
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = UserListSerializer
+    pagination_class = LimitOffsetPagination
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["username"]
@@ -321,7 +323,7 @@ class PasswordResetRequestView(APIView):
         serializer = PasswordResetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data["email"].lower()
+        email = serializer.validated_data["email"].lower() # type: ignore
         user = User.objects.filter(email__iexact=email).first()
 
         if user:
@@ -374,8 +376,8 @@ class PasswordResetConfirmView(APIView):
         serializer = PasswordResetConfirmSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        token_value = serializer.validated_data["token"]
-        new_password = serializer.validated_data["new_password"]
+        token_value = serializer.validated_data["token"] # type: ignore
+        new_password = serializer.validated_data["new_password"] # type: ignore
 
         try:
             reset_token = PasswordResetToken.objects.select_related("user").get(
@@ -429,7 +431,7 @@ class OtpRequestView(APIView):
         serializer = OtpRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data["email"].lower()
+        email = serializer.validated_data["email"].lower() # type: ignore
         user = User.objects.filter(email__iexact=email).first()
 
         if user:
@@ -469,8 +471,8 @@ class OtpVerifyView(APIView):
         serializer = OtpVerifySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data["email"].lower()
-        otp = serializer.validated_data["otp"]
+        email = serializer.validated_data["email"].lower() # type: ignore
+        otp = serializer.validated_data["otp"] # type: ignore
 
         user = User.objects.filter(email__iexact=email).first()
         if not user:
