@@ -1,9 +1,9 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import { AppRouter } from "./router";
 import ScrollToTop from "../components/ScrollToTop";
-
-const queryClient = new QueryClient();
+import { queryClient } from "../lib/queryClient";
+import { CommandPalette } from "../components/CommandPalette";
 
 export function App() {
   return (
@@ -11,8 +11,10 @@ export function App() {
       <BrowserRouter>
         <AppRouter />
         <ScrollToTop />
+        <CommandPalette />
       </BrowserRouter>
     </QueryClientProvider>
   );
 }
 
+export default App;

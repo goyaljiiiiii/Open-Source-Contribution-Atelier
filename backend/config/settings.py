@@ -1,4 +1,5 @@
 import os
+import dj_database_url
 from datetime import timedelta
 from pathlib import Path
 
@@ -20,7 +21,7 @@ def load_dotenv(dotenv_path: Path) -> None:
 
 load_dotenv(BASE_DIR / ".env")
 
-SECRET_KEY = os.getenv("SECRET_KEY", "change-me")
+SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-dev-key-not-for-production-use-32bytes!!")
 DEBUG = os.getenv("DEBUG", "False") == "True"
 ALLOWED_HOSTS = [
     host.strip()
@@ -30,6 +31,7 @@ ALLOWED_HOSTS = [
 CORS_ALLOWED_ORIGINS = [
     origin.strip() for origin in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",") if origin.strip()
 ]
+CORS_ALLOW_CREDENTIALS = True
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
 
@@ -61,6 +63,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "apps.sandbox.middleware.SandboxExecutionLogMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -84,11 +87,20 @@ WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600,  # Prepares for PgBouncer connection pooling
+        conn_health_checks=True,
+    ),
+    "replica": dj_database_url.config(
+        env="REPLICA_DATABASE_URL",
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}", # Falls back to local sqlite in dev
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 }
+
+DATABASE_ROUTERS = ['config.db_router.PrimaryReplicaRouter']
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -104,12 +116,50 @@ USE_TZ = True
 STATIC_URL = "/static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# ── Email Configuration ────────────────────────────────────────────────────────
+# Default: console backend (prints emails to stdout) — safe for dev/CI.
+# Override EMAIL_BACKEND in production env with a real SMTP backend.
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend"
+)
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@atelier.dev")
+
+# ── Proxy / Load-Balancer Support ─────────────────────────────────────────────
+# Number of trusted proxy hops in front of Django (e.g. Nginx + AWS ALB = 2).
+# Used by throttles.py to extract the real client IP from X-Forwarded-For.
+TRUSTED_PROXY_COUNT = int(os.getenv("TRUSTED_PROXY_COUNT", "0"))
+
+# ── Password Reset ─────────────────────────────────────────────────────────────
+# How many minutes a password reset token remains valid.
+PASSWORD_RESET_TIMEOUT_MINUTES = int(os.getenv("PASSWORD_RESET_TIMEOUT_MINUTES", "15"))
+
 REST_FRAMEWORK = {
-    # ── Sandbox Rate Limiting (10 requests/minute) ──────────────────────────
-    # Scoped throttling: ONLY affects sandbox endpoints, not global API routes.
+    # ── Default Throttle Classes ─────────────────────────────────────────────
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+
+    # ── Throttle Rates ───────────────────────────────────────────────────────
+    # Sandbox endpoints
+    # Auth endpoints (brute-force + spam protection)
     "DEFAULT_THROTTLE_RATES": {
-        "sandbox_anon": "10/minute",   # Anonymous users — throttled by IP
-        "sandbox_user": "10/minute",   # Authenticated users — throttled by user ID
+        # ── Global Default ───────────────────────────────────────────────────
+        "anon": "100/minute",
+        "user": "1000/minute",
+        # ── Sandbox ──────────────────────────────────────────────────────────
+        "sandbox_anon": "10/minute",
+        "sandbox_user": "10/minute",
+        "help_request": "5/hour",
+        # ── Authentication ───────────────────────────────────────────────────
+        "auth_login":          os.getenv("RATE_AUTH_LOGIN",          "5/minute"),
+        "auth_signup":         os.getenv("RATE_AUTH_SIGNUP",         "10/hour"),
+        "auth_token_refresh":  os.getenv("RATE_AUTH_TOKEN_REFRESH",  "30/minute"),
+        "auth_otp_generate":   os.getenv("RATE_AUTH_OTP_GENERATE",   "3/minute"),
+        "auth_otp_verify":     os.getenv("RATE_AUTH_OTP_VERIFY",     "5/minute"),
+        "auth_password_reset": os.getenv("RATE_AUTH_PASSWORD_RESET", "3/hour"),
+        "auth_oauth":          os.getenv("RATE_AUTH_OAUTH",          "20/minute"),
     },
 
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -119,6 +169,7 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "EXCEPTION_HANDLER": "apps.accounts.exceptions.throttle_exception_handler",
 }
 
 SIMPLE_JWT = {
@@ -133,16 +184,81 @@ INSTALLED_APPS += [
     "channels",
     "apps.notifications.apps.NotificationsConfig",
     "drf_spectacular",
+    "apps.dashboard.apps.DashboardConfig",
+    "django.contrib.postgres",
+    "apps.search.apps.SearchConfig",
 ]
 
 
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [os.getenv("REDIS_URL", "redis://127.0.0.1:6379")],
-            "capacity":  1500,
-            "expiry":    10,
+# ──────────────────────────────────────────
+# Redis Availability and Configuration (Dynamic Fallbacks)
+# ──────────────────────────────────────────
+import socket
+
+def is_redis_available(url):
+    try:
+        if not url:
+            return False
+        clean_url = url.replace("redis://", "")
+        host_port = clean_url.split("/")[0]
+        if "@" in host_port:
+            host_port = host_port.split("@")[1]
+        if ":" in host_port:
+            host, port = host_port.split(":")
+            port = int(port)
+        else:
+            host = host_port
+            port = 6379
+        
+        # Test connection with a very short timeout
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(0.5)
+        s.connect((host, port))
+        s.close()
+        return True
+    except Exception:
+        return False
+
+# Candidates check: use REDIS_URL if set, or default to standard local redis host for check
+ENV_REDIS_URL = os.getenv("REDIS_URL", "")
+CHECK_REDIS_URL = ENV_REDIS_URL or "redis://127.0.0.1:6379"
+
+if is_redis_available(CHECK_REDIS_URL):
+    REDIS_URL = CHECK_REDIS_URL
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [REDIS_URL],
+                "capacity": 1500,
+                "expiry": 10,
+            },
         },
-    },
-}
+    }
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": REDIS_URL,
+        }
+    }
+else:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        },
+    }
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "atelier-unique-cache",
+        }
+    }
+
+# ──────────────────────────────────────────
+# Celery Configuration
+# ──────────────────────────────────────────
+CELERY_BROKER_URL = ENV_REDIS_URL or "redis://127.0.0.1:6379/0"
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
