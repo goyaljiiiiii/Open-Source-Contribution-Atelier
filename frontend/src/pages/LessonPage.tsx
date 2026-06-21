@@ -499,26 +499,8 @@ export function LessonPage() {
                           <button
                             key={idx}
                             onClick={() => {
-                              if (quizFeedback !== null) return; // Already answered
+                              if (quizFeedback !== null) return; // Already submitted — lock selection
                               setSelectedOption(idx);
-                              // Immediately validate the answer
-                              const isCorrect = idx === currentQuiz.answer;
-                              setQuizFeedback(
-                                isCorrect ? "correct" : "incorrect",
-                              );
-                              if (isCorrect) {
-                                if (
-                                  currentQuizIndex ===
-                                  lesson.quizzes!.length - 1
-                                ) {
-                                  setFeedback("correct");
-                                  syncProgress({
-                                    lesson_slug: lesson.slug,
-                                    score: lesson.points || 15,
-                                    completed: true,
-                                  });
-                                }
-                              }
                             }}
                             disabled={quizFeedback !== null}
                             className={`w-full text-left p-4 rounded-xl border-4 border-black font-bold text-sm transition-all flex items-center justify-between ${bgColor}`}
@@ -586,7 +568,7 @@ export function LessonPage() {
                         disabled={selectedOption === null}
                         className="px-5 py-2.5 bg-primary text-black font-black text-sm rounded-xl border-4 border-black shadow-card-sm hover:-translate-y-0.5 disabled:opacity-50 transition-all cursor-pointer"
                       >
-                        Check Answer
+                        Submit Answer
                       </button>
                     )}
                   </div>
