@@ -18,7 +18,14 @@ class MyProgressView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        progress = LessonProgress.objects.filter(user=request.user).select_related("lesson")
+        progress = (
+            LessonProgress.objects.filter(
+                user=request.user,
+                organization=request.user.organization
+            )
+            .select_related("lesson")
+        )
+
         serializer = LessonProgressSerializer(progress, many=True)
         return Response(serializer.data)
 
@@ -28,20 +35,31 @@ class MyProgressView(APIView):
         completed = request.data.get("completed", True)
 
         try:
-            lesson = Lesson.objects.get(slug=lesson_slug)
+            lesson = Lesson.objects.get(
+                slug=lesson_slug,
+                organization=request.user.organization
+            )
         except Lesson.DoesNotExist:
-            return Response({"error": "Lesson not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Lesson not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
         progress, created = LessonProgress.objects.update_or_create(
             user=request.user,
             lesson=lesson,
-            defaults={"completed": completed, "score": score}
+            defaults={
+                "completed": completed,
+                "score": score,
+                "organization": request.user.organization,
+            },
         )
 
         serializer = LessonProgressSerializer(progress)
+
         return Response(
             serializer.data,
-            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
         )
 
 
@@ -50,24 +68,42 @@ class CommunityStatsView(APIView):
         from django.contrib.auth.models import User
 
         user_count = User.objects.count()
-        completed_lessons = LessonProgress.objects.filter(completed=True).count()
-        open_help_requests = HelpRequest.objects.filter(status=HelpRequest.Status.OPEN).count()
+
+        completed_lessons = LessonProgress.objects.filter(
+            organization=request.user.organization,
+            completed=True,
+        ).count()
+
+        open_help_requests = HelpRequest.objects.filter(
+            organization=request.user.organization,
+            status=HelpRequest.Status.OPEN,
+        ).count()
+
         active_contributors = 100 + user_count
         merged_prs = 300 + completed_lessons
 
-        return Response({
-            "active_contributors": active_contributors,
-            "merged_prs": merged_prs,
-            "response_sla": "3.5h",
-            "open_requests": open_help_requests
-        })
+        return Response(
+            {
+                "active_contributors": active_contributors,
+                "merged_prs": merged_prs,
+                "response_sla": "3.5h",
+                "open_requests": open_help_requests,
+            }
+        )
 
 
 class HelpRequestListCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        help_requests = HelpRequest.objects.filter(user=request.user).select_related("lesson")
+        help_requests = (
+            HelpRequest.objects.filter(
+                user=request.user,
+                organization=request.user.organization,
+            )
+            .select_related("lesson")
+        )
+
         serializer = HelpRequestSerializer(help_requests, many=True)
         return Response(serializer.data)
 
@@ -76,20 +112,38 @@ class HelpRequestListCreateView(APIView):
         message = request.data.get("message", "").strip()
 
         if not lesson_slug:
-            return Response({"error": "lesson_slug is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "lesson_slug is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if not message:
-            return Response({"error": "message is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "message is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
-            lesson = Lesson.objects.get(slug=lesson_slug)
+            lesson = Lesson.objects.get(
+                slug=lesson_slug,
+                organization=request.user.organization,
+            )
         except Lesson.DoesNotExist:
-            return Response({"error": "Lesson not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Lesson not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
         help_request = HelpRequest.objects.create(
             user=request.user,
             lesson=lesson,
             message=message,
+            organization=request.user.organization,
         )
+
         serializer = HelpRequestSerializer(help_request)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED,
+        )

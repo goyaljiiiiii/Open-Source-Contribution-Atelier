@@ -1,7 +1,13 @@
 from django.db import models
-
+from apps.organizations.models import Organization
 
 class Lesson(models.Model):
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
     difficulty = models.CharField(max_length=32)
     title = models.CharField(max_length=255)
     slug = models.SlugField(unique=True)
@@ -14,7 +20,6 @@ class Lesson(models.Model):
 
     class Meta:
         ordering = ["order", "id"]
-
 
 class Exercise(models.Model):
     lesson = models.ForeignKey(Lesson, related_name="exercises", on_delete=models.CASCADE)

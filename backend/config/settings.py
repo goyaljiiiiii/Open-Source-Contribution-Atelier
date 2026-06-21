@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "apps.progress",
     "apps.challenges",
     "apps.sandbox",
+    "apps.organizations",
 ]
 
 MIDDLEWARE = [
