@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Badge, HelpRequest, LessonProgress
+from .models import Badge, HelpRequest, LessonProgress, Bookmark
 
 
 class BadgeSerializer(serializers.ModelSerializer):
@@ -33,3 +33,20 @@ class HelpRequestSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["user", "status", "created_at", "updated_at"]
+
+
+class BookmarkSerializer(serializers.ModelSerializer):
+    lesson_slug = serializers.ReadOnlyField(source="lesson.slug")
+    lesson_title = serializers.ReadOnlyField(source="lesson.title")
+
+    class Meta:
+        model = Bookmark
+        fields = [
+            "id",
+            "user",
+            "lesson",
+            "lesson_slug",
+            "lesson_title",
+            "created_at",
+        ]
+        read_only_fields = ["user", "created_at"]

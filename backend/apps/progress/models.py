@@ -1,6 +1,5 @@
 from django.contrib.auth.models import User
 from django.db import models
-
 from apps.content.models import Exercise, Lesson
 
 
@@ -40,3 +39,22 @@ class HelpRequest(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.OPEN, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class Bookmark(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="bookmarks"
+    )
+
+    lesson = models.ForeignKey(
+        Lesson,
+        on_delete=models.CASCADE,
+        related_name="bookmarks"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "lesson")

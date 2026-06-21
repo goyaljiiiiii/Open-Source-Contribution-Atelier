@@ -4,9 +4,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.content.models import Lesson
-from .models import Badge, HelpRequest, LessonProgress
-from .serializers import BadgeSerializer, HelpRequestSerializer, LessonProgressSerializer
-
+from .models import Badge, HelpRequest, LessonProgress, Bookmark
+from .serializers import (
+    BadgeSerializer,
+    HelpRequestSerializer,
+    LessonProgressSerializer,
+    BookmarkSerializer,
+)
 
 class BadgeListView(ListAPIView):
     queryset = Badge.objects.all()
@@ -93,3 +97,67 @@ class HelpRequestListCreateView(APIView):
         )
         serializer = HelpRequestSerializer(help_request)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class BookmarkListCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        bookmarks = Bookmark.objects.filter(
+            user=request.user
+        ).select_related("lesson")
+
+        serializer = BookmarkSerializer(bookmarks, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        lesson_slug = request.data.get("lesson_slug")
+
+        if not lesson_slug:
+            return Response(
+                {"error": "lesson_slug is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            lesson = Lesson.objects.get(slug=lesson_slug)
+        except Lesson.DoesNotExist:
+            return Response(
+                {"error": "Lesson not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        bookmark, created = Bookmark.objects.get_or_create(
+            user=request.user,
+            lesson=lesson,
+        )
+
+        serializer = BookmarkSerializer(bookmark)
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+
+class BookmarkDeleteView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, lesson_id):
+        try:
+            bookmark = Bookmark.objects.get(
+                user=request.user,
+                lesson_id=lesson_id,
+            )
+        except Bookmark.DoesNotExist:
+            return Response(
+                {"error": "Bookmark not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        bookmark.delete()
+
+        return Response(
+            {"message": "Bookmark removed"},
+            status=status.HTTP_200_OK,
+        )
