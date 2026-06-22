@@ -116,6 +116,10 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <SandboxPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/profile"
           element={
             <ProtectedRoute>
