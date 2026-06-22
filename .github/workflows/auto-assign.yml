@@ -25,7 +25,13 @@ jobs:
 
             // Optional: check for specific keywords if desired
             const body = comment.body.toLowerCase();
-            const triggerWords = ['/assign', 'assign to me', 'can i work on this', 'i would like to work on this'];
+            const triggerWords = [
+              '/assign', 'assign to me', 'can i work on this', 'i would like to work on this',
+              'assign me', 'i am interested', "i'll work on this", 'i will work on this',
+              'please assign', 'assign it to me', 'can you assign', 'could you assign',
+              'assign this to me', 'can i take this', 'i want to work on this',
+              'would like to work', 'please assign me'
+            ];
             const shouldAssign = triggerWords.some(word => body.includes(word)) || body.includes('assign');
             
             if (shouldAssign) {

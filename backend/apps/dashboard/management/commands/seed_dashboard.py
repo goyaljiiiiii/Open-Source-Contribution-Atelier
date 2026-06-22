@@ -1,5 +1,6 @@
 import random
 from datetime import timedelta
+
 from apps.content.models import Exercise, Lesson
 from apps.dashboard.models import Issue, PullRequest
 from apps.progress.models import Certificate, ExerciseAttempt, LessonProgress

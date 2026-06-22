@@ -18,6 +18,7 @@ class NotificationListView(generics.ListAPIView):
 
 class MarkAllReadView(APIView):
     """POST /api/notifications/mark-all-read/"""
+
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
@@ -29,6 +30,7 @@ class MarkAllReadView(APIView):
 
 class MarkOneReadView(APIView):
     """POST /api/notifications/<pk>/read/"""
+
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):

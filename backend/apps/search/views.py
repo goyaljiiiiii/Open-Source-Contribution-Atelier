@@ -1,15 +1,18 @@
-from django.contrib.postgres.search import (SearchQuery, SearchRank,TrigramSimilarity)
+from django.contrib.postgres.search import (SearchQuery, SearchRank,
+                                            TrigramSimilarity)
 from rest_framework import generics
 from rest_framework.response import Response
 
 from .models import SearchDocument
 from .serializers import SearchDocumentSerializer
 
+
 class UnifiedSearchView(generics.ListAPIView):
     """
     Provides a unified search API across all indexed models.
     Supports PostgreSQL Full-Text Search ranking and Trigram Similarity (fuzzy matching/typos).
     """
+
     serializer_class = SearchDocumentSerializer
 
     def get_queryset(self):

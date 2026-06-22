@@ -51,6 +51,7 @@ def _clear_throttle_cache():
 # CertificateVerificationView  (public – GET /api/progress/verify/<hash>/)
 # ---------------------------------------------------------------------------
 
+
 @override_settings(REST_FRAMEWORK=NO_THROTTLE_SETTINGS)
 class CertificateVerificationTests(APITestCase):
     """Tests for the public certificate verification endpoint."""
@@ -201,6 +202,7 @@ class CertificateVerificationTests(APITestCase):
 # ---------------------------------------------------------------------------
 # MyCertificateView  (authenticated – GET /api/progress/certificate/)
 # ---------------------------------------------------------------------------
+
 
 @override_settings(REST_FRAMEWORK=NO_THROTTLE_SETTINGS)
 class MyCertificateTests(APITestCase):
@@ -376,6 +378,7 @@ class MyCertificateTests(APITestCase):
 # RecommendationsView  (authenticated – GET /api/progress/recommendations/)
 # ---------------------------------------------------------------------------
 
+
 class RecommendationsTests(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="learner", password="password123")
@@ -460,6 +463,7 @@ class RecommendationsTests(APITestCase):
 # ---------------------------------------------------------------------------
 # QuizAttemptView  (authenticated – POST/GET /api/progress/quiz-attempts/)
 # ---------------------------------------------------------------------------
+
 
 class QuizAttemptTests(APITestCase):
     def setUp(self):

@@ -3,14 +3,9 @@ Custom DRF exception handler that produces user-friendly API responses.
 """
 
 from rest_framework import status
-from rest_framework.views import exception_handler
-from rest_framework.exceptions import (
-    Throttled,
-    NotAuthenticated,
-    AuthenticationFailed,
-    ValidationError,
-    PermissionDenied,
-)
+from rest_framework.exceptions import (AuthenticationFailed, NotAuthenticated,
+                                       PermissionDenied, Throttled,
+                                       ValidationError)
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
@@ -37,10 +32,17 @@ def throttle_exception_handler(exc, context):
 
     # Authentication required
     if isinstance(exc, NotAuthenticated):
+        code = "authentication_required"
+        if hasattr(exc, "get_codes"):
+            codes = exc.get_codes()
+            if isinstance(codes, str):
+                code = codes
+            elif isinstance(codes, dict) and "detail" in codes:
+                code = codes["detail"]
         return Response(
             {
                 "error": True,
-                "code": "authentication_required",
+                "code": code,
                 "message": str(exc.detail),
             },
             status=status.HTTP_401_UNAUTHORIZED,
@@ -48,10 +50,24 @@ def throttle_exception_handler(exc, context):
 
     # Invalid credentials / authentication failure
     if isinstance(exc, AuthenticationFailed):
+        code = "authentication_failed"
+        if hasattr(exc, "get_codes"):
+            codes = exc.get_codes()
+            if isinstance(codes, str):
+                code = codes
+            elif isinstance(codes, dict) and "detail" in codes:
+                code = codes["detail"]
+            elif isinstance(codes, dict) and "code" in codes:
+                code = codes["code"]
+        
+        # SimpleJWT sometimes puts code in detail dict directly
+        if isinstance(getattr(exc, "detail", None), dict) and "code" in exc.detail:
+            code = exc.detail["code"]
+
         return Response(
             {
                 "error": True,
-                "code": "authentication_failed",
+                "code": code,
                 "message": str(exc.detail),
             },
             status=status.HTTP_401_UNAUTHORIZED,
@@ -60,24 +76,29 @@ def throttle_exception_handler(exc, context):
     # Validation errors
     if isinstance(exc, ValidationError):
         message = "Validation error"
+        field_errors = {}
 
         if isinstance(exc.detail, dict):
             first_field = next(iter(exc.detail))
             first_error = exc.detail[first_field][0]
             message = str(first_error)
+            # Add all field errors for frontend highlighting
+            for field, errors in exc.detail.items():
+                field_errors[field] = [str(e) for e in errors]
         elif isinstance(exc.detail, list):
             message = str(exc.detail[0])
         else:
             message = str(exc.detail)
 
-        return Response(
-            {
-                "error": True,
-                "code": "validation_error",
-                "message": message,
-            },
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+        response_data = {
+            "error": True,
+            "code": "validation_error",
+            "message": message,
+        }
+        if field_errors:
+            response_data["errors"] = field_errors
+
+        return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
     if isinstance(exc, PermissionDenied):
         return Response(
             {

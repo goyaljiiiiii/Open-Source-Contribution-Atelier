@@ -4,21 +4,6 @@ from typing import Optional
 from urllib.parse import urlencode
 
 import requests as http_requests
-
-from .tasks import send_password_reset_email_task, send_otp_email_task
-from django.utils import timezone
-
-from .throttles import (
-    LoginThrottle,
-    SignupThrottle,
-    TokenRefreshThrottle,
-    OAuthThrottle,
-    OtpGenerateThrottle,
-    OtpVerifyThrottle,
-    PasswordResetThrottle,
-)
-
-from django.db.models import Sum
 from apps.progress.models import LessonProgress, UserBadge
 from apps.progress.serializers import UserBadgeSerializer
 from django.conf import settings
@@ -29,12 +14,13 @@ from django.shortcuts import redirect
 from django.utils import timezone
 from django.utils.text import slugify
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import (OpenApiResponse, extend_schema,extend_schema_view)
+from drf_spectacular.utils import (OpenApiResponse, extend_schema,
+                                   extend_schema_view)
 from rest_framework import filters, generics, permissions, status
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.pagination import LimitOffsetPagination
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import (TokenObtainPairView,
                                             TokenRefreshView)
@@ -45,6 +31,7 @@ from .serializers import (EmailOrUsernameTokenObtainPairSerializer,
                           PasswordResetConfirmSerializer,
                           PasswordResetRequestSerializer, SignupSerializer,
                           UserListSerializer, UserUpdateSerializer)
+from .tasks import send_otp_email_task, send_password_reset_email_task
 from .throttles import (LoginThrottle, OAuthThrottle, OtpGenerateThrottle,
                         OtpVerifyThrottle, PasswordResetThrottle,
                         SignupThrottle, TokenRefreshThrottle)
@@ -73,6 +60,7 @@ def frontend_url(path: str, query: Optional[dict[str, str]] = None) -> str:
         url = f"{url}?{urlencode(query)}"
     return url
 
+
 @extend_schema(request=SignupSerializer, responses=SignupSerializer)
 class SignupView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -86,16 +74,21 @@ class MeView(APIView):
 
     @extend_schema(responses=UserListSerializer)
     def get(self, request):
-        serializer = UserListSerializer(request.user, context={'request': request})
+        serializer = UserListSerializer(request.user, context={"request": request})
         return Response(serializer.data)
 
     @extend_schema(request=UserUpdateSerializer, responses=UserListSerializer)
     def put(self, request):
-        serializer = UserUpdateSerializer(request.user, data=request.data, partial=True, context={'request': request})
+        serializer = UserUpdateSerializer(
+            request.user, data=request.data, partial=True, context={"request": request}
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        response_serializer = UserListSerializer(request.user, context={'request': request})
+        response_serializer = UserListSerializer(
+            request.user, context={"request": request}
+        )
         return Response(response_serializer.data)
+
 
 class MyBadgesView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -127,6 +120,7 @@ class MyBadgesView(APIView):
             }
         )
 
+
 @extend_schema(
     request=EmailOrUsernameTokenObtainPairSerializer,
     responses=OpenApiResponse(
@@ -143,7 +137,7 @@ class UserStatisticsView(APIView):
     )
     def get(self, request):
         user = request.user
-        
+
         # Count total LessonProgress entries as "contributions"
         total_contributions = LessonProgress.objects.filter(user=user).count()
 
@@ -152,8 +146,10 @@ class UserStatisticsView(APIView):
                 "join_date": user.date_joined,
                 "total_contributions": total_contributions,
             },
-            status=status.HTTP_200_OK
+            status=status.HTTP_200_OK,
         )
+
+
 class LoginView(TokenObtainPairView):
     permission_classes = [permissions.AllowAny]
     serializer_class = EmailOrUsernameTokenObtainPairSerializer
@@ -358,6 +354,7 @@ class GitHubOAuthCallbackView(APIView):
 
 from .permissions import IsAdminOrModeratorRole
 
+
 @extend_schema(responses=UserListSerializer(many=True))
 class UserListView(generics.ListAPIView):
     queryset = User.objects.all().order_by("id")
@@ -378,6 +375,7 @@ class UserListView(generics.ListAPIView):
 # Password Reset Views
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 @extend_schema(
     request=PasswordResetRequestSerializer,
     responses=OpenApiResponse(description="Reset email sent if account exists."),
@@ -390,6 +388,7 @@ class PasswordResetRequestView(APIView):
     Always returns the same response to prevent email enumeration attacks.
     Rate-limited to 3 requests/hour per IP.
     """
+
     permission_classes = [permissions.AllowAny]
     throttle_classes = [PasswordResetThrottle]
 
@@ -397,7 +396,7 @@ class PasswordResetRequestView(APIView):
         serializer = PasswordResetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data["email"].lower() # type: ignore
+        email = serializer.validated_data["email"].lower()  # type: ignore
         user = User.objects.filter(email__iexact=email).first()
 
         if user:
@@ -416,8 +415,7 @@ class PasswordResetRequestView(APIView):
                 user_email=user.email,
                 user_username=user.username,
                 reset_url=reset_url,
-                timeout=timeout
-
+                timeout=timeout,
             )
 
         # Always return the same response to prevent email enumeration
@@ -441,6 +439,7 @@ class PasswordResetConfirmView(APIView):
     Tokens are single-use and expire after PASSWORD_RESET_TIMEOUT_MINUTES.
     Rate-limited to 3 requests/hour per IP.
     """
+
     permission_classes = [permissions.AllowAny]
     throttle_classes = [PasswordResetThrottle]
 
@@ -448,8 +447,8 @@ class PasswordResetConfirmView(APIView):
         serializer = PasswordResetConfirmSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        token_value = serializer.validated_data["token"] # type: ignore
-        new_password = serializer.validated_data["new_password"] # type: ignore
+        token_value = serializer.validated_data["token"]  # type: ignore
+        new_password = serializer.validated_data["new_password"]  # type: ignore
 
         try:
             reset_token = PasswordResetToken.objects.select_related("user").get(
@@ -493,6 +492,7 @@ class PasswordResetConfirmView(APIView):
 # OTP (Email Verification) Views
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 @extend_schema(
     request=OtpRequestSerializer,
     responses=OpenApiResponse(description="OTP sent to email if account exists."),
@@ -504,6 +504,7 @@ class OtpRequestView(APIView):
     Regenerate and send a new OTP verification code to the given email.
     Rate-limited to 3 requests/minute per IP to prevent email spam.
     """
+
     permission_classes = [permissions.AllowAny]
     throttle_classes = [OtpGenerateThrottle]
 
@@ -511,7 +512,7 @@ class OtpRequestView(APIView):
         serializer = OtpRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data["email"].lower() # type: ignore
+        email = serializer.validated_data["email"].lower()  # type: ignore
         user = User.objects.filter(email__iexact=email).first()
 
         if user:
@@ -522,7 +523,7 @@ class OtpRequestView(APIView):
             send_otp_email_task.delay(
                 user_email=user.email,
                 user_username=user.username,
-                otp_token=otp_obj.token
+                otp_token=otp_obj.token,
             )
 
         return Response(
@@ -542,6 +543,7 @@ class OtpVerifyView(APIView):
     Verify a user's email using the OTP token they received by email.
     Rate-limited to 5 requests/minute per IP to prevent OTP guessing.
     """
+
     permission_classes = [permissions.AllowAny]
     throttle_classes = [OtpVerifyThrottle]
 
@@ -549,8 +551,8 @@ class OtpVerifyView(APIView):
         serializer = OtpVerifySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data["email"].lower() # type: ignore
-        otp = serializer.validated_data["otp"] # type: ignore
+        email = serializer.validated_data["email"].lower()  # type: ignore
+        otp = serializer.validated_data["otp"]  # type: ignore
 
         user = User.objects.filter(email__iexact=email).first()
         if not user:
@@ -578,36 +580,52 @@ class OtpVerifyView(APIView):
             status=status.HTTP_200_OK,
         )
 
+
 from django.http import HttpResponse, JsonResponse
+
 from .export import DataExportService
+
 
 class ExportDataView(APIView):
     """
-    GET /api/users/me/export/?format=csv|json
+    GET /api/users/me/export/?export_format=csv|json
     Generates a GDPR-compliant export of all personal data.
     """
+
     permission_classes = [permissions.IsAuthenticated]
 
     @extend_schema(
         responses={
-            200: OpenApiResponse(description="Data export file (JSON or ZIP containing CSVs)"),
-            400: OpenApiResponse(description="Unsupported format requested")
+            200: OpenApiResponse(
+                description="Data export file (JSON or ZIP containing CSVs)"
+            ),
+            400: OpenApiResponse(description="Unsupported format requested"),
         }
     )
     def get(self, request):
-        export_format = request.query_params.get("format", "json").lower()
+        export_format = request.query_params.get("export_format", "json").lower()
         service = DataExportService(request.user)
-        
+
         if export_format == "json":
             json_data = service.generate_json()
-            response = HttpResponse(json_data, content_type='application/json')
-            response['Content-Disposition'] = f'attachment; filename="data_export_{request.user.username}.json"'
+            response = HttpResponse(json_data, content_type="application/json")
+            response["Content-Disposition"] = (
+                f'attachment; filename="data_export_{request.user.username}.json"'
+            )
             return response
-            
+
         elif export_format == "csv":
             zip_data = service.generate_csv_zip()
-            response = HttpResponse(zip_data, content_type='application/zip')
-            response['Content-Disposition'] = f'attachment; filename="data_export_{request.user.username}.zip"'
+            response = HttpResponse(zip_data, content_type="application/zip")
+            response["Content-Disposition"] = (
+                f'attachment; filename="data_export_{request.user.username}.zip"'
+            )
             return response
-            
-        return Response({"error": "unsupported_format", "message": "Only 'json' and 'csv' formats are supported."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(
+            {
+                "error": "unsupported_format",
+                "message": "Only 'json' and 'csv' formats are supported.",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )

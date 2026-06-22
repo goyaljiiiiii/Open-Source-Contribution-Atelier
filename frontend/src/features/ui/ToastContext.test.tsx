@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, act, renderHook, cleanup, fireEvent } from "@testing-library/react";
 import { ToastProvider, useToast } from "./ToastContext";
@@ -8,15 +8,15 @@ vi.mock("framer-motion", async () => {
   const actual = await vi.importActual("framer-motion");
   return {
     ...actual,
-    AnimatePresence: ({ children }: any) => <>{children}</>,
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
     motion: {
-      div: ({ children, className }: any) => <div className={className}>{children}</div>,
+      div: ({ children, className }: { children: React.ReactNode, className?: string }) => <div className={className}>{children}</div>,
     },
   };
 });
 
 // A simple test component to trigger toasts
-const TestComponent = ({ duration, type = "success" }: { duration?: number; type?: any }) => {
+const TestComponent = ({ duration, type = "success" }: { duration?: number; type?: "success" | "error" | "info" | "warning" }) => {
   const { addToast } = useToast();
 
   return (

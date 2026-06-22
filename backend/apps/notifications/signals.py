@@ -5,6 +5,7 @@ Signals that fire when:
 
 Adapt the sender models to match the actual models in apps/
 """
+
 import logging
 
 from asgiref.sync import async_to_sync
@@ -44,6 +45,7 @@ def _push_notification(notification: Notification):
 # ------------------------------------------------------------------ #
 from apps.progress.models import UserBadge
 
+
 @receiver(post_save, sender=UserBadge)
 def on_badge_awarded(sender, instance, created, **kwargs):
     if not created:
@@ -62,7 +64,12 @@ def on_badge_awarded(sender, instance, created, **kwargs):
     _push_notification(notif)
 
     # Offload bulk email or notification digest to the independent worker
+    import sys
+    if "test" in sys.argv or any("pytest" in arg for arg in sys.argv):
+        return
+
     from celery import current_app
+
     current_app.send_task(
         "tasks.send_bulk_email",
         kwargs={

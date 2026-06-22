@@ -24,7 +24,16 @@ class LessonSearchSerializer(serializers.ModelSerializer):
         model = Lesson
         exclude = ["embedding"]
 
+
 class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization
-        fields = ['id', 'name', 'slug', 'description', 'logo_url', 'date_added', 'popularity_score']
+        fields = [
+            "id",
+            "name",
+            "slug",
+            "description",
+            "logo_url",
+            "date_added",
+            "popularity_score",
+        ]

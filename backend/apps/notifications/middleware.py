@@ -2,6 +2,7 @@
 JWT Token Authentication middleware for Django Channels.
 Reads the token from the query string:  ws://host/ws/notifications/?token=<JWT>
 """
+
 from urllib.parse import parse_qs
 
 from channels.db import database_sync_to_async

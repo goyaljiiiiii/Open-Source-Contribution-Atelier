@@ -3,11 +3,13 @@ from apps.content.models import Lesson
 from apps.content.views import get_active_lessons
 from django.core.cache import cache
 
+
 @pytest.fixture(autouse=True)
 def clear_cache_before_tests():
     cache.clear()
     yield
     cache.clear()
+
 
 @pytest.mark.django_db(transaction=True)
 def test_active_lessons_caching():

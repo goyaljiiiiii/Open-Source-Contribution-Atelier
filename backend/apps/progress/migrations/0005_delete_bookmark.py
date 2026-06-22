@@ -6,11 +6,11 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('progress', '0004_merge_20260622_0937'),
+        ("progress", "0004_merge_20260622_0937"),
     ]
 
     operations = [
         migrations.DeleteModel(
-            name='Bookmark',
+            name="Bookmark",
         ),
     ]

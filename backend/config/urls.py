@@ -1,8 +1,8 @@
 from apps.dashboard.views import LeaderboardView
 from django.contrib import admin
 from django.urls import include, path
-from drf_spectacular.views import (SpectacularAPIView,  # Add this line
-                                   SpectacularSwaggerView)
+from drf_spectacular.views import SpectacularAPIView  # Add this line
+from drf_spectacular.views import SpectacularSwaggerView
 
 urlpatterns = [
     path("admin/", admin.site.urls),

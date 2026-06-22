@@ -1,12 +1,10 @@
-from django.db import models
 from apps.organizations.models import Organization
+from django.db import models
+
 
 class Challenge(models.Model):
     organization = models.ForeignKey(
-        Organization,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True
+        Organization, on_delete=models.CASCADE, null=True, blank=True
     )
 
     title = models.CharField(max_length=255)

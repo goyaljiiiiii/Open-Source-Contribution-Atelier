@@ -1,6 +1,8 @@
-from rest_framework import viewsets, permissions
-from .models import WebhookEndpoint, WebhookDelivery
-from .serializers import WebhookEndpointSerializer, WebhookDeliverySerializer
+from rest_framework import permissions, viewsets
+
+from .models import WebhookDelivery, WebhookEndpoint
+from .serializers import WebhookDeliverySerializer, WebhookEndpointSerializer
+
 
 class WebhookEndpointViewSet(viewsets.ModelViewSet):
     serializer_class = WebhookEndpointSerializer
@@ -11,6 +13,7 @@ class WebhookEndpointViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
 
 class WebhookDeliveryViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = WebhookDeliverySerializer

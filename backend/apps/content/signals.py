@@ -7,10 +7,13 @@ from django.dispatch import receiver
 
 from .models import Lesson
 from .semantic_search import encode
+
 logger = logging.getLogger(__name__)
+
 
 def clear_curriculum_caches():
     cache.delete("active_lessons_list")
+
 
 def _update_embedding(lesson):
     text = f"{lesson.title}. {lesson.summary} {lesson.content}"
@@ -20,6 +23,7 @@ def _update_embedding(lesson):
             Lesson.objects.filter(id=lesson.id).update(embedding=vec[0].tolist())
     except Exception as exc:
         logger.warning("Failed to update embedding for lesson %s: %s", lesson.slug, exc)
+
 
 @receiver([post_save, post_delete], sender=Lesson)
 def invalidate_lesson_cache(sender, instance, **kwargs):
