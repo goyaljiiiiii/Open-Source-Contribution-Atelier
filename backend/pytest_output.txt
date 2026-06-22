@@ -1,0 +1,11 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.7, pytest-9.1.1, pluggy-1.6.0 -- X:\SSOC\Open-Source-Contribution-Atelier\backend\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+django: version: 5.1.15, settings: config.settings (from ini)
+rootdir: X:\SSOC\Open-Source-Contribution-Atelier\backend
+configfile: pytest.ini
+plugins: Faker-40.23.0, asyncio-1.4.0, django-4.12.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 6 items
+
+apps/progress/test_bulk_update.py::BulkProgressUpdateTests::test_duplicate_entries_rejected 
