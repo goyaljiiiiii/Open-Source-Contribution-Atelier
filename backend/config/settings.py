@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "apps.progress",
     "apps.challenges",
     "apps.sandbox",
+    "apps.organizations",
     "apps.webhooks",
     "rest_framework_simplejwt.token_blacklist",
 ]
@@ -137,6 +138,7 @@ PASSWORD_RESET_TIMEOUT_MINUTES = int(os.getenv("PASSWORD_RESET_TIMEOUT_MINUTES",
 
 REST_FRAMEWORK = {
     # ── Default Throttle Classes ─────────────────────────────────────────────
+    "DATETIME_FORMAT": "%Y-%m-%dT%H:%M:%SZ",
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
