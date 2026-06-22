@@ -287,10 +287,12 @@ class GitHubOAuthCallbackView(APIView):
         except Exception:
             return redirect(frontend_url("/", {"auth_error": "GitHub authentication failed."}))
 
+from .permissions import IsAdminOrModeratorRole
+
 @extend_schema(responses=UserListSerializer(many=True))
 class UserListView(generics.ListAPIView):
     queryset = User.objects.all().order_by("id")
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrModeratorRole]
     serializer_class = UserListSerializer
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
