@@ -372,7 +372,7 @@ useEffect(() => {
             <div className="flex items-center gap-3">
               <span className="text-4xl">🚨</span>
               <div>
-                <h3 className="font-mono text-xs uppercase tracking-widest text-muted dark:text-[#c4bbae]">
+                <h3 className=" text-xs uppercase tracking-widest text-muted dark:text-[#c4bbae]">
                   System Issues
                 </h3>
                 <p className="text-4xl font-black text-primary drop-shadow-[2px_2px_0_#000] dark:drop-shadow-none">
@@ -390,7 +390,7 @@ useEffect(() => {
             <div className="flex items-center gap-3">
               <span className="text-4xl">💻</span>
               <div>
-                <h3 className="font-mono text-xs uppercase tracking-widest text-muted dark:text-[#c4bbae]">
+                <h3 className=" text-xs uppercase tracking-widest text-muted dark:text-[#c4bbae]">
                   Pull Requests
                 </h3>
                 <p className="text-4xl font-black text-tertiary drop-shadow-[2px_2px_0_#000] dark:drop-shadow-none">
@@ -408,7 +408,7 @@ useEffect(() => {
             <div className="flex items-center gap-3">
               <span className="text-4xl">👥</span>
               <div>
-                <h3 className="font-mono text-xs uppercase tracking-widest text-muted dark:text-[#c4bbae]">
+                <h3 className=" text-xs uppercase tracking-widest text-muted dark:text-[#c4bbae]">
                   Active Contributors
                 </h3>
                 <p className="text-4xl font-black text-accent drop-shadow-[2px_2px_0_#000] dark:drop-shadow-none">
@@ -1043,7 +1043,7 @@ useEffect(() => {
             {/* Certificate Contents */}
             <div className="space-y-6 w-full border-4 border-dashed border-black/35 rounded-2xl p-6 sm:p-10 relative">
               <div className="text-6xl mb-2">🎓</div>
-              <h2 className="font-display text-4xl sm:text-5xl font-black uppercase tracking-tight text-text">
+              <h2 className=" text-4xl sm:text-5xl font-black uppercase tracking-tight text-text">
                 Certificate of Completion
               </h2>
               <p className="font-mono text-xs text-primary uppercase tracking-widest font-black">
