@@ -1,8 +1,16 @@
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
+
+from django.core.exceptions import ObjectDoesNotExist
 
 class Lesson(models.Model):
+    class DoesNotExist(ObjectDoesNotExist):
+        pass
+
+    objects = models.Manager()
     difficulty = models.CharField(max_length=32)
     title = models.CharField(max_length=255)
     slug = models.SlugField(unique=True)
@@ -25,6 +33,7 @@ class Lesson(models.Model):
 
 
 class Exercise(models.Model):
+    objects = models.Manager()
     lesson = models.ForeignKey(Lesson, related_name="exercises", on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
     prompt = models.TextField()
@@ -32,3 +41,52 @@ class Exercise(models.Model):
     explanation = models.TextField(blank=True)
     points = models.PositiveIntegerField(default=10)
 
+
+class ActiveCommentManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+
+
+class Comment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comments")
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="comments", null=True, blank=True)
+    content = models.TextField(help_text="The main body of the comment")
+    is_deleted = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    objects = models.Manager()
+    active_objects = ActiveCommentManager()
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["is_deleted"], name="idx_comment_is_deleted"),
+        ]
+
+    def soft_delete(self):
+        self.is_deleted = True
+        self.save(update_fields=["is_deleted"])
+
+    def restore(self):
+        self.is_deleted = False
+        self.save(update_fields=["is_deleted"])
+
+    def __str__(self):
+        status = "[DELETED] " if self.is_deleted else ""
+        return f"{status}Comment by {self.user.username}"
+
+
+class Organization(models.Model):
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True)
+    description = models.TextField(blank=True)
+    logo_url = models.URLField(blank=True, help_text="URL to the organization's logo")
+    date_added = models.DateTimeField(auto_now_add=True)
+    popularity_score = models.IntegerField(default=0, help_text="Higher score means more popular")
+
+    class Meta:
+        ordering = ['-popularity_score']
+
+    def __str__(self):
+        return self.name
