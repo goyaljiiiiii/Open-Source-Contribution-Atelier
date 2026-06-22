@@ -634,7 +634,7 @@ export function LessonPage() {
                         $
                       </span>
                       <input
-                        className="flex-1 rounded-xl border-4 border-black bg-surface-lowest px-4 py-2.5 text-text font-bold outline-none placeholder:text-muted/40 dark:bg-[#151411] dark:border-[#2e2924]"
+                        className="flex-1 min-w-0 rounded-xl border-4 border-black bg-surface-lowest px-4 py-2.5 text-text font-bold outline-none placeholder:text-muted/40 dark:bg-[#151411] dark:border-[#2e2924]"
                         placeholder={lesson.hint || "Type your git command here"}
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
@@ -709,7 +709,7 @@ export function LessonPage() {
             </div>
 
             {/* Course Navigation Footer */}
-            <div className="flex items-center justify-between pt-10 pb-12">
+            <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between sm:gap-0 pt-10 pb-12">
               {previousLesson ? (
                 <Link
                   to={`/lessons/${previousLesson.slug}`}
@@ -719,7 +719,7 @@ export function LessonPage() {
                   Prev: {previousLesson.title}
                 </Link>
               ) : (
-                <div />
+                <div className="hidden sm:block" />
               )}
 
               {nextLesson ? (
