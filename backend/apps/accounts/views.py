@@ -131,6 +131,27 @@ class MyBadgesView(APIView):
     request=EmailOrUsernameTokenObtainPairSerializer,
     responses=OpenApiResponse(description="Returns JWT refresh & access tokens and basic user info.")
 )
+class UserStatisticsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        responses=OpenApiResponse(
+            description="Returns basic user stats: join date and total contributions (lessons completed)."
+        )
+    )
+    def get(self, request):
+        user = request.user
+        
+        # Count total LessonProgress entries as "contributions"
+        total_contributions = LessonProgress.objects.filter(user=user).count()
+
+        return Response(
+            {
+                "join_date": user.date_joined,
+                "total_contributions": total_contributions,
+            },
+            status=status.HTTP_200_OK
+        )
 class LoginView(TokenObtainPairView):
     permission_classes = [permissions.AllowAny]
     serializer_class = EmailOrUsernameTokenObtainPairSerializer
