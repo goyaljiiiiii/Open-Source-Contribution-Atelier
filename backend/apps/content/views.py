@@ -1,17 +1,18 @@
-from rest_framework import viewsets, views, response, permissions
+from rest_framework import viewsets, views, response, permissions, generics, filters
+from rest_framework.permissions import AllowAny
 from django.db.models import Q
 from django.core.cache import cache
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.search import SearchQuery, SearchRank, TrigramSimilarity
 
-from .models import Lesson
-from .serializers import LessonSerializer
+from .models import Lesson, Organization
+from .serializers import LessonSerializer, OrganizationSerializer
 from apps.challenges.models import Challenge
 from apps.challenges.serializers import ChallengeSerializer
 from apps.progress.models import LessonProgress
 from apps.search.models import SearchDocument
 
-
+# --- Helper Functions ---
 def get_active_lessons():
     lessons = cache.get("active_lessons_list")
     if lessons is None:
@@ -19,9 +20,8 @@ def get_active_lessons():
         cache.set("active_lessons_list", lessons, 60 * 60 * 24)
     return lessons
 
-
+# --- Existing Views ---
 class LessonViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Lesson.objects.prefetch_related("exercises").all()
     serializer_class = LessonSerializer
 
     def list(self, request, *args, **kwargs):
@@ -52,9 +52,10 @@ class SearchView(views.APIView):
             if not object_ids:
                 return []
                 
-            objects = model_class.objects.filter(id__in=object_ids)
+            objects = model_class.objects.filter(id__in=object_ids, organization=request.user.organization)
             # Sort them in the exact order returned by FTS
-            return sorted(objects, key=lambda x: object_ids.index(x.id))
+            ordered_objects = sorted(objects, key=lambda x: object_ids.index(x.id))
+            return ordered_objects
 
         lessons = get_fts_objects(Lesson, lesson_ct)
         challenges = get_fts_objects(Challenge, challenge_ct)
@@ -64,22 +65,27 @@ class SearchView(views.APIView):
             "challenges": ChallengeSerializer(challenges, many=True).data
         })
 
-
 class RoadmapView(views.APIView):
     """Return ordered curriculum with optional per-user completion state."""
-
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get(self, request):
         lessons = get_active_lessons()
 
         progress_by_slug = {}
+
         if request.user and request.user.is_authenticated:
-            progress_rows = LessonProgress.objects.filter(
-                user=request.user,
-                lesson__in=lessons,
-            ).select_related("lesson")
-            progress_by_slug = {p.lesson.slug: p for p in progress_rows}
+            progress_rows = (
+                LessonProgress.objects.filter(
+                    user=request.user,
+                    organization=request.user.organization,
+                    lesson__in=lessons,
+                ).select_related("lesson")
+            )
+
+            progress_by_slug = {
+                p.lesson.slug: p for p in progress_rows
+            }
 
         track = []
         completed_count = 0
@@ -117,3 +123,11 @@ class RoadmapView(views.APIView):
             }
         )
 
+# --- New: Organization View ---
+class OrganizationListView(generics.ListAPIView):
+    queryset = Organization.objects.all()
+    serializer_class = OrganizationSerializer
+    permission_classes = [AllowAny]
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['name', 'date_added', 'popularity_score']
+    ordering = ['-popularity_score']

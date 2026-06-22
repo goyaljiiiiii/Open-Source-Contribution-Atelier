@@ -119,7 +119,7 @@ class AdminDashboardView(APIView):
                     "title": pr.title,
                     "contributor": pr.user.username,
                     "issue_title": pr.issue.title if pr.issue else "No Issue Link",
-                    "created_at": pr.created_at.isoformat(),
+                    "created_at": pr.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
                 })
 
             data = {
@@ -237,7 +237,7 @@ class ContributorDashboardView(APIView):
                     "description": issue.description,
                     "status": issue.status,
                     "points": issue.points,
-                    "created_at": issue.created_at.isoformat(),
+                    "created_at": issue.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
                 })
 
             # 3. Recent PRs
@@ -252,8 +252,11 @@ class ContributorDashboardView(APIView):
                     "title": pr.title,
                     "status": pr.status,
                     "issue_title": pr.issue.title if pr.issue else "No Issue Link",
-                    "created_at": pr.created_at.isoformat(),
-                    "merged_at": pr.merged_at.isoformat() if pr.merged_at else None,
+                    "created_at": pr.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "merged_at": (pr.merged_at.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    if pr.merged_at
+                                else None
+                            ),
                 })
 
             # 4. Progress tracker

@@ -4,6 +4,7 @@ import { fetchApi } from "../lib/api";
 import { useAuth } from "../features/auth/AuthContext";
 import { useGoogleLogin } from "@react-oauth/google";
 import { Github } from "lucide-react";
+import PasswordStrengthMeter from "../components/PasswordStrengthMeter";
 
 const githubAuthUrl =
   import.meta.env.VITE_GITHUB_OAUTH_URL ||
@@ -82,6 +83,8 @@ export function SignupPage() {
   ] as const;
   // ── END HELPER BLOCK ───────────────────────────────────────────────────────
 
+  const isFormValid = username.trim() !== "" && email.trim() !== "" && password.length > 0;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -105,7 +108,8 @@ export function SignupPage() {
     }
   };
 
-  const isFormValid = username.length > 0 && email.length > 0 && password.length > 0;
+  const isFormValid =
+    username.length > 0 && email.length > 0 && password.length > 0;
 
   return (
     <AuthPageShell
@@ -210,47 +214,7 @@ export function SignupPage() {
             required
           />
 
-          {/* ── PASSWORD STRENGTH INDICATOR ────────────────────────────────────
-              Only rendered once the user starts typing (password is non-empty).
-              Three segmented bars + a text label give instant visual feedback.
-          ──────────────────────────────────────────────────────────────────── */}
-          {password &&
-            (() => {
-              // Compute score and tier index once; reuse in bars + label below.
-              const score = getPasswordScore(password);
-              const tierIndex = getStrengthIndex(score);
-
-              return (
-                <div className="ml-1 mt-2">
-                  {/* Three segmented bars — one per tier (Weak / Medium / Strong).
-                    A bar is "filled" (colored) when its index ≤ the current tier.
-                    All bars share the same active color so the whole group reads
-                    as a single progress indicator, not three separate lights.     */}
-                  <div className="flex gap-1.5 mb-1">
-                    {(["Weak", "Medium", "Strong"] as const).map((_, i) => (
-                      <div
-                        key={i}
-                        className={[
-                          "h-2 flex-1 rounded-full border-2 border-black",
-                          "transition-all duration-300",
-                          // Fill bars up to and including the current tier index;
-                          // leave bars beyond the tier a neutral gray.
-                          i <= tierIndex ? barColors[tierIndex] : "bg-gray-200",
-                        ].join(" ")}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Text label — matches the bar color so they feel connected. */}
-                  <p
-                    className={`text-xs font-bold ml-0.5 ${labelColors[tierIndex]}`}
-                  >
-                    {strengthLabels[tierIndex]}
-                  </p>
-                </div>
-              );
-            })()}
-          {/* ── END PASSWORD STRENGTH INDICATOR ────────────────────────────── */}
+          <PasswordStrengthMeter password={password} />
         </div>
 
         <button

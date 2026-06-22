@@ -47,6 +47,14 @@ export function Navigation() {
   >([]);
   const badgeCount = 0;
 
+  const handleStartSandbox = () => {
+    setIsStarting(true);
+    setTimeout(() => {
+      setIsStarting(false);
+      navigate("/sandbox");
+    }, 500);
+  };
+
   useEffect(() => {
     fetchLessonsApi().then((data) => setLessonsCatalog(data));
   }, []);
@@ -84,7 +92,10 @@ export function Navigation() {
         );
 
         setSearchResults({
-          lessons: filteredLessons.map(l => ({ ...l, summary: l.description })),
+          lessons: filteredLessons.map((l) => ({
+            ...l,
+            summary: l.description,
+          })),
           challenges: filteredChallenges,
         });
         setIsSearching(false);
@@ -95,8 +106,6 @@ export function Navigation() {
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery, lessonsCatalog]);
-
-
 
   return (
     <>

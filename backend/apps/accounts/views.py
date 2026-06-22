@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.pagination import LimitOffsetPagination
 import requests as http_requests
 from django.utils.text import slugify
 import secrets
@@ -118,6 +119,27 @@ class MyBadgesView(APIView):
     request=EmailOrUsernameTokenObtainPairSerializer,
     responses=OpenApiResponse(description="Returns JWT refresh & access tokens and basic user info.")
 )
+class UserStatisticsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        responses=OpenApiResponse(
+            description="Returns basic user stats: join date and total contributions (lessons completed)."
+        )
+    )
+    def get(self, request):
+        user = request.user
+        
+        # Count total LessonProgress entries as "contributions"
+        total_contributions = LessonProgress.objects.filter(user=user).count()
+
+        return Response(
+            {
+                "join_date": user.date_joined,
+                "total_contributions": total_contributions,
+            },
+            status=status.HTTP_200_OK
+        )
 class LoginView(TokenObtainPairView):
     permission_classes = [permissions.AllowAny]
     serializer_class = EmailOrUsernameTokenObtainPairSerializer
@@ -282,6 +304,7 @@ class UserListView(generics.ListAPIView):
     queryset = User.objects.all().order_by("id")
     permission_classes = [permissions.IsAuthenticated, IsAdminOrModeratorRole]
     serializer_class = UserListSerializer
+    pagination_class = LimitOffsetPagination
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["username"]
@@ -311,7 +334,7 @@ class PasswordResetRequestView(APIView):
         serializer = PasswordResetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data["email"].lower()
+        email = serializer.validated_data["email"].lower() # type: ignore
         user = User.objects.filter(email__iexact=email).first()
 
         if user:
@@ -358,8 +381,8 @@ class PasswordResetConfirmView(APIView):
         serializer = PasswordResetConfirmSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        token_value = serializer.validated_data["token"]
-        new_password = serializer.validated_data["new_password"]
+        token_value = serializer.validated_data["token"] # type: ignore
+        new_password = serializer.validated_data["new_password"] # type: ignore
 
         try:
             reset_token = PasswordResetToken.objects.select_related("user").get(
@@ -413,7 +436,7 @@ class OtpRequestView(APIView):
         serializer = OtpRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data["email"].lower()
+        email = serializer.validated_data["email"].lower() # type: ignore
         user = User.objects.filter(email__iexact=email).first()
 
         if user:
@@ -451,8 +474,8 @@ class OtpVerifyView(APIView):
         serializer = OtpVerifySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data["email"].lower()
-        otp = serializer.validated_data["otp"]
+        email = serializer.validated_data["email"].lower() # type: ignore
+        otp = serializer.validated_data["otp"] # type: ignore
 
         user = User.objects.filter(email__iexact=email).first()
         if not user:
@@ -473,3 +496,37 @@ class OtpVerifyView(APIView):
             {"message": "Your email has been verified successfully. You can now log in."},
             status=status.HTTP_200_OK,
         )
+
+from django.http import HttpResponse, JsonResponse
+from .export import DataExportService
+
+class ExportDataView(APIView):
+    """
+    GET /api/users/me/export/?format=csv|json
+    Generates a GDPR-compliant export of all personal data.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        responses={
+            200: OpenApiResponse(description="Data export file (JSON or ZIP containing CSVs)"),
+            400: OpenApiResponse(description="Unsupported format requested")
+        }
+    )
+    def get(self, request):
+        export_format = request.query_params.get("format", "json").lower()
+        service = DataExportService(request.user)
+        
+        if export_format == "json":
+            json_data = service.generate_json()
+            response = HttpResponse(json_data, content_type='application/json')
+            response['Content-Disposition'] = f'attachment; filename="data_export_{request.user.username}.json"'
+            return response
+            
+        elif export_format == "csv":
+            zip_data = service.generate_csv_zip()
+            response = HttpResponse(zip_data, content_type='application/zip')
+            response['Content-Disposition'] = f'attachment; filename="data_export_{request.user.username}.zip"'
+            return response
+            
+        return Response({"error": "unsupported_format", "message": "Only 'json' and 'csv' formats are supported."}, status=status.HTTP_400_BAD_REQUEST)
