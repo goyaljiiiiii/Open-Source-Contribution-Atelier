@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { fetchApi } from "../../lib/api";
 import { useAuth } from "./AuthContext";
+import { useToast } from "../ui/ToastContext";
 
 const profileSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -20,8 +21,7 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 
 export function ProfileSettingsForm() {
   const { user } = useAuth();
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const { addToast } = useToast();
   const [loading, setLoading] = useState(false);
 
   const {
@@ -44,8 +44,6 @@ export function ProfileSettingsForm() {
   }, [user, reset]);
 
   const onSubmit = async (data: ProfileFormValues) => {
-    setError("");
-    setSuccess("");
     setLoading(true);
 
     try {
@@ -61,11 +59,12 @@ export function ProfileSettingsForm() {
         body: JSON.stringify(payload),
       });
       
-      setSuccess("Profile settings updated successfully!");
+      addToast("Profile settings updated successfully!", "success");
       reset({ email: data.email, password: "" });
     } catch (err: unknown) {
-      setError(
+      addToast(
         err instanceof Error ? err.message : "Failed to update profile settings.",
+        "error"
       );
     } finally {
       setLoading(false);
@@ -74,18 +73,6 @@ export function ProfileSettingsForm() {
 
   return (
     <form className="space-y-6 pt-2" onSubmit={handleSubmit(onSubmit)}>
-      {error && (
-        <div className="text-black font-bold text-sm bg-primary p-4 rounded-xl border-4 border-black shadow-card-sm">
-          {error}
-        </div>
-      )}
-      
-      {success && (
-        <div className="text-black font-bold text-sm bg-green-400 p-4 rounded-xl border-4 border-black shadow-card-sm">
-          {success}
-        </div>
-      )}
-
       <div className="space-y-2">
         <label className="font-bold text-black ml-2 uppercase tracking-wide text-sm">
           Email Address

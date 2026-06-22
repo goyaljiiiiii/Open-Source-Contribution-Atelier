@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { ProfileSettingsForm } from "./ProfileSettingsForm";
 import { AuthProvider } from "./AuthContext";
+import { ToastProvider } from "../ui/ToastContext";
 import { fetchApi } from "../../lib/api";
 
 // Mock fetchApi to prevent actual network calls
@@ -27,13 +28,21 @@ describe("ProfileSettingsForm Edge Cases", () => {
   });
 
   it("renders with the user's current email", () => {
-    render(<ProfileSettingsForm />);
+    render(
+      <ToastProvider>
+        <ProfileSettingsForm />
+      </ToastProvider>
+    );
     const emailInput = screen.getByLabelText(/Email Address/i) as HTMLInputElement;
     expect(emailInput.value).toBe("test@example.com");
   });
 
   it("shows validation error for invalid email format", async () => {
-    render(<ProfileSettingsForm />);
+    render(
+      <ToastProvider>
+        <ProfileSettingsForm />
+      </ToastProvider>
+    );
     const emailInput = screen.getByLabelText(/Email Address/i);
     const submitBtn = screen.getByRole("button", { name: /Save Settings/i });
 
@@ -49,7 +58,11 @@ describe("ProfileSettingsForm Edge Cases", () => {
   });
 
   it("shows validation error when password is less than 8 characters", async () => {
-    render(<ProfileSettingsForm />);
+    render(
+      <ToastProvider>
+        <ProfileSettingsForm />
+      </ToastProvider>
+    );
     const passwordInput = screen.getByLabelText(/New Password/i);
     const submitBtn = screen.getByRole("button", { name: /Save Settings/i });
 
@@ -64,7 +77,11 @@ describe("ProfileSettingsForm Edge Cases", () => {
   });
 
   it("submits successfully with a valid email and empty password (password is optional)", async () => {
-    render(<ProfileSettingsForm />);
+    render(
+      <ToastProvider>
+        <ProfileSettingsForm />
+      </ToastProvider>
+    );
     const emailInput = screen.getByLabelText(/Email Address/i);
     const passwordInput = screen.getByLabelText(/New Password/i);
     const submitBtn = screen.getByRole("button", { name: /Save Settings/i });
@@ -84,7 +101,11 @@ describe("ProfileSettingsForm Edge Cases", () => {
   });
 
   it("submits successfully with valid email and valid 8-character password", async () => {
-    render(<ProfileSettingsForm />);
+    render(
+      <ToastProvider>
+        <ProfileSettingsForm />
+      </ToastProvider>
+    );
     const emailInput = screen.getByLabelText(/Email Address/i);
     const passwordInput = screen.getByLabelText(/New Password/i);
     const submitBtn = screen.getByRole("button", { name: /Save Settings/i });
@@ -109,7 +130,11 @@ describe("ProfileSettingsForm Edge Cases", () => {
   it("displays an error message when the API request fails", async () => {
     vi.mocked(fetchApi).mockRejectedValueOnce(new Error("Server error, could not update."));
 
-    render(<ProfileSettingsForm />);
+    render(
+      <ToastProvider>
+        <ProfileSettingsForm />
+      </ToastProvider>
+    );
     const submitBtn = screen.getByRole("button", { name: /Save Settings/i });
 
     fireEvent.click(submitBtn);
