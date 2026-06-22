@@ -4,11 +4,12 @@ Custom DRF exception handler that produces user-friendly 429 responses.
 Returns a clear JSON body instead of the generic DRF throttle message,
 so the frontend can display helpful error messages.
 """
-
+import logging
 from rest_framework.views import exception_handler
 from rest_framework.exceptions import Throttled
 from rest_framework.response import Response
 from rest_framework import status
+logger = logging.getLogger(__name__)
 
 
 # Map throttle scope names → human-readable messages
@@ -38,6 +39,17 @@ def throttle_exception_handler(exc, context):
     """
     response = exception_handler(exc, context)
 
+    if response is None:
+        request = context.get("request")
+
+        logger.exception(
+            "Internal server error",
+            extra={
+                "path": request.path if request else None,
+                "method": request.method if request else None,
+            },
+        )
+
     if isinstance(exc, Throttled):
         view = context.get("view")
         scope = None
@@ -50,7 +62,7 @@ def throttle_exception_handler(exc, context):
                     break
 
         message = _THROTTLE_MESSAGES.get(scope, _DEFAULT_MESSAGE)
-        retry_after = exc.wait  # seconds remaining, may be None
+        retry_after = exc.wait
 
         return Response(
             {
