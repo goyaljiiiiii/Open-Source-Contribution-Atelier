@@ -83,11 +83,20 @@ export function VerifyCertificatePage() {
   // 1. Loading State
   if (loading) {
     return (
-      <div className="min-h-screen bg-bg flex flex-col items-center justify-center p-6">
-        <div className="animate-pulse flex flex-col items-center gap-4">
-          <div className="h-16 w-16 bg-muted rounded-full animate-spin"></div>
-          <div className="h-6 w-48 bg-muted rounded-xl"></div>
-          <p className="text-black font-bold">Verifying Certificate...</p>
+      <div className="min-h-screen bg-bg py-12 px-6 sm:px-12 animate-pulse">
+        <div className="w-full max-w-3xl mx-auto">
+          <div className="h-10 w-48 bg-muted rounded mb-8"></div>
+
+          <div className="bg-white border-4 border-black rounded-3xl p-8 space-y-6">
+            <div className="h-8 w-64 bg-muted rounded"></div>
+
+            <div className="h-24 w-full bg-muted rounded-2xl"></div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="h-32 bg-muted rounded-2xl"></div>
+              <div className="h-32 bg-muted rounded-2xl"></div>
+            </div>
+          </div>
         </div>
       </div>
     );

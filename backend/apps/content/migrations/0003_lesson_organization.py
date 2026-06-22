@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('content', '0002_lesson_learning_objectives_tips'),
+        ('content', '0002_add_embedding_field'),
         ('organizations', '0001_initial'),
     ]
 

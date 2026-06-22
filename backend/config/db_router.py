@@ -73,7 +73,7 @@ class PrimaryReplicaRouter:
         """
         Writes always go to primary.
         """
-        return 'default'
+        return "default"
 
     def allow_relation(self, obj1, obj2, **hints):
         """

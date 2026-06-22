@@ -1,7 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { ProfileSettingsForm } from "./ProfileSettingsForm";
-import { AuthProvider } from "./AuthContext";
 import { ToastProvider } from "../ui/ToastContext";
 import { fetchApi } from "../../lib/api";
 
@@ -9,6 +8,11 @@ import { fetchApi } from "../../lib/api";
 vi.mock("../../lib/api", () => ({
   fetchApi: vi.fn(),
 }));
+
+beforeAll(() => {
+  global.URL.createObjectURL = vi.fn(() => 'blob:mock-url');
+  global.URL.revokeObjectURL = vi.fn();
+});
 
 // Mock useAuth context values
 vi.mock("./AuthContext", async (importOriginal) => {
@@ -18,6 +22,7 @@ vi.mock("./AuthContext", async (importOriginal) => {
     useAuth: () => ({
       user: { email: "test@example.com", username: "testuser" },
       isLoading: false,
+      checkUser: vi.fn(),
     }),
   };
 });

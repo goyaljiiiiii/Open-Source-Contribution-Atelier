@@ -5,6 +5,7 @@ import * as z from "zod";
 import { fetchApi } from "../../lib/api";
 import { useAuth } from "./AuthContext";
 import { useToast } from "../ui/ToastContext";
+import { AvatarUploadDropzone } from "../../components/ui/AvatarUploadDropzone";
 
 const profileSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -17,12 +18,13 @@ const profileSchema = z.object({
     }),
 });
 
-type ProfileFormValues = z.infer<typeof profileSchema>;
+type ProfileFormValues = z.input<typeof profileSchema>;
 
 export function ProfileSettingsForm() {
-  const { user } = useAuth();
+  const { user, checkUser } = useAuth();
   const { addToast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [selectedAvatar, setSelectedAvatar] = useState<File | null>(null);
 
   const {
     register,
@@ -47,18 +49,33 @@ export function ProfileSettingsForm() {
     setLoading(true);
 
     try {
-      // Create payload dynamically, omitting undefined fields like empty password
-      const payload: Record<string, string> = { email: data.email };
-      if (data.password) {
-        payload.password = data.password;
+      let body: FormData | string;
+      
+      // If we have a file, we MUST use FormData
+      if (selectedAvatar) {
+        const formData = new FormData();
+        formData.append("email", data.email);
+        if (data.password) {
+          formData.append("password", data.password);
+        }
+        formData.append("avatar", selectedAvatar);
+        body = formData;
+      } else {
+        // Fallback to JSON payload if no file is selected (cleaner for simple updates)
+        const payload: Record<string, string> = { email: data.email };
+        if (data.password) {
+          payload.password = data.password;
+        }
+        body = JSON.stringify(payload);
       }
 
       await fetchApi("/auth/me/", {
         method: "PUT",
         requireAuth: true,
-        body: JSON.stringify(payload),
+        body: body,
       });
       
+      await checkUser(); // Refresh global user context to show new avatar instantly
       addToast("Profile settings updated successfully!", "success");
       reset({ email: data.email, password: "" });
     } catch (err: unknown) {
@@ -73,6 +90,11 @@ export function ProfileSettingsForm() {
 
   return (
     <form className="space-y-6 pt-2" onSubmit={handleSubmit(onSubmit)}>
+      <AvatarUploadDropzone
+        currentAvatarUrl={user?.avatar_url}
+        onFileSelect={(file) => setSelectedAvatar(file)}
+      />
+
       <div className="space-y-2">
         <label className="font-bold text-black ml-2 uppercase tracking-wide text-sm">
           Email Address

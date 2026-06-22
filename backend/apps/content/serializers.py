@@ -17,6 +17,13 @@ class LessonSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class LessonSearchSerializer(serializers.ModelSerializer):
+    exercises = ExerciseSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Lesson
+        exclude = ["embedding"]
+
 class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization

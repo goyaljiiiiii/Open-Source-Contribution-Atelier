@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import SkeletonCard from './ui/skeletons/SkeletonCard';
 
 const OrganizationsGrid: React.FC = () => {
   const [organizations, setOrganizations] = useState<any[]>([]);
@@ -15,7 +16,24 @@ const OrganizationsGrid: React.FC = () => {
       .catch((err) => console.error("Error fetching organizations:", err));
   }, []);
 
-  if (loading) return <div className="text-center">Loading Organizations...</div>;
+  if (loading) {
+    return (
+      <section aria-labelledby="orgs-heading" className="mb-6">
+        <h3
+          id="orgs-heading"
+          className="text-xs font-black uppercase tracking-wider text-muted mb-3 text-center"
+        >
+          Supported Orgs
+        </h3>
+
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <SkeletonCard key={index} />
+          ))}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section aria-labelledby="orgs-heading" className="mb-6">
