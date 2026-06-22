@@ -12,7 +12,9 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
   const { requireAuth = true, headers: customHeaders, ...config } = options;
 
   const headers = new Headers(customHeaders);
-  headers.set("Content-Type", "application/json");
+  if (!(config.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
 
   if (requireAuth) {
     let token: string | null = null;

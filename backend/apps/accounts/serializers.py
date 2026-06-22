@@ -51,10 +51,11 @@ class SignupSerializer(serializers.ModelSerializer):
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, min_length=8)
+    avatar = serializers.ImageField(required=False)
 
     class Meta:
         model = User
-        fields = ("email", "password")
+        fields = ("email", "password", "avatar")
         extra_kwargs = {
             "email": {"required": False},
         }
@@ -64,19 +65,39 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         password = validated_data.pop("password", None)
+        avatar = validated_data.pop("avatar", None)
+        
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         if password:
             instance.set_password(password)
         instance.save()
+        
+        if avatar is not None:
+            if hasattr(instance, 'profile'):
+                instance.profile.avatar = avatar
+                instance.profile.save()
+            else:
+                from apps.accounts.models import UserProfile
+                UserProfile.objects.create(user=instance, avatar=avatar)
+                
         return instance
 
 
 class UserListSerializer(serializers.ModelSerializer):
+    avatar_url = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ("id", "username", "email", "is_staff")
+        fields = ("id", "username", "email", "is_staff", "avatar_url")
 
+    def get_avatar_url(self, obj):
+        if hasattr(obj, 'profile') and obj.profile.avatar:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.profile.avatar.url)
+            return obj.profile.avatar.url
+        return None
 
 class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
     """Allow login with either username or email in the username field."""

@@ -76,28 +76,16 @@ class MeView(APIView):
 
     @extend_schema(responses=UserListSerializer)
     def get(self, request):
-        return Response(
-            {
-                "id": request.user.id,
-                "username": request.user.username,
-                "email": request.user.email,
-                "is_staff": request.user.is_staff,
-            }
-        )
+        serializer = UserListSerializer(request.user, context={'request': request})
+        return Response(serializer.data)
 
     @extend_schema(request=UserUpdateSerializer, responses=UserListSerializer)
     def put(self, request):
-        serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
+        serializer = UserUpdateSerializer(request.user, data=request.data, partial=True, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(
-            {
-                "id": request.user.id,
-                "username": request.user.username,
-                "email": request.user.email,
-                "is_staff": request.user.is_staff,
-            }
-        )
+        response_serializer = UserListSerializer(request.user, context={'request': request})
+        return Response(response_serializer.data)
 
 class MyBadgesView(APIView):
     permission_classes = [permissions.IsAuthenticated]
