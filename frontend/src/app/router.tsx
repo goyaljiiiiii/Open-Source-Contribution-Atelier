@@ -103,7 +103,7 @@ export function AppRouter() {
             </ProtectedRoute>
           }
         />
-        <Route
+        <Routex
           path="/community"
           element={
             <ProtectedRoute>
@@ -116,6 +116,10 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <SandboxPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/profile"
           element={
             <ProtectedRoute>

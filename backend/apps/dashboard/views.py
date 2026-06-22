@@ -32,6 +32,7 @@ class LeaderboardView(ListAPIView):
     """
     Paginated contributor leaderboard ordered by total XP.
     """
+
     serializer_class = LeaderboardSerializer
     pagination_class = LeaderboardPagination
 
@@ -104,6 +105,7 @@ class AdminDashboardView(APIView):
     API view for Admin Dashboard stats.
     Only users with is_staff=True can access this.
     """
+
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 
     def get(self, request):
@@ -158,13 +160,15 @@ class AdminDashboardView(APIView):
 
             pending_prs = []
             for pr in pending_prs_qs:
-                pending_prs.append({
-                    "id": pr.id,
-                    "title": pr.title,
-                    "contributor": pr.user.username,
-                    "issue_title": pr.issue.title if pr.issue else "No Issue Link",
-                    "created_at": pr.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                })
+                pending_prs.append(
+                    {
+                        "id": pr.id,
+                        "title": pr.title,
+                        "contributor": pr.user.username,
+                        "issue_title": pr.issue.title if pr.issue else "No Issue Link",
+                        "created_at": pr.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    }
+                )
 
             data = {
                 "system_stats": system_stats,
@@ -182,6 +186,7 @@ class PublicLandingStatsView(APIView):
     Public API view returning summary stats for the landing page.
     No authentication required.
     """
+
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
@@ -215,6 +220,7 @@ class ContributorDashboardView(APIView):
     API view for Contributor Dashboard stats.
     Accessible to any authenticated user.
     """
+
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
@@ -302,14 +308,16 @@ class ContributorDashboardView(APIView):
 
             assigned_issues = []
             for issue in assigned_issues_qs:
-                assigned_issues.append({
-                    "id": issue.id,
-                    "title": issue.title,
-                    "description": issue.description,
-                    "status": issue.status,
-                    "points": issue.points,
-                    "created_at": issue.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                })
+                assigned_issues.append(
+                    {
+                        "id": issue.id,
+                        "title": issue.title,
+                        "description": issue.description,
+                        "status": issue.status,
+                        "points": issue.points,
+                        "created_at": issue.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    }
+                )
 
             # 3. Recent PRs
             recent_prs_qs = (
@@ -320,17 +328,20 @@ class ContributorDashboardView(APIView):
 
             recent_prs = []
             for pr in recent_prs_qs:
-                recent_prs.append({
-                    "id": pr.id,
-                    "title": pr.title,
-                    "status": pr.status,
-                    "issue_title": pr.issue.title if pr.issue else "No Issue Link",
-                    "created_at": pr.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                    "merged_at": (pr.merged_at.strftime("%Y-%m-%dT%H:%M:%SZ")
-                    if pr.merged_at
-                                else None
-                            ),
-                })
+                recent_prs.append(
+                    {
+                        "id": pr.id,
+                        "title": pr.title,
+                        "status": pr.status,
+                        "issue_title": pr.issue.title if pr.issue else "No Issue Link",
+                        "created_at": pr.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                        "merged_at": (
+                            pr.merged_at.strftime("%Y-%m-%dT%H:%M:%SZ")
+                            if pr.merged_at
+                            else None
+                        ),
+                    }
+                )
 
             # 4. Progress tracker
             completed_lessons = LessonProgress.objects.filter(

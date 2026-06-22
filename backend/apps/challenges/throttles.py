@@ -4,6 +4,7 @@ from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
 class SandboxAnonRateThrottle(AnonRateThrottle):
     """Rate limit anonymous users: 10 requests/minute by IP."""
+
     scope = "sandbox_anon"
 
     def throttle_failure(self):
@@ -18,6 +19,7 @@ class SandboxAnonRateThrottle(AnonRateThrottle):
 
 class SandboxUserRateThrottle(UserRateThrottle):
     """Rate limit authenticated users: 10 requests/minute by user ID."""
+
     scope = "sandbox_user"
 
     def throttle_failure(self):

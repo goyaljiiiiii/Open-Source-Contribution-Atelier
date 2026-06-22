@@ -2,6 +2,7 @@
 ASGI config for the project.
 Handles both HTTP (via Django) and WebSocket (via Django Channels).
 """
+
 import os
 
 from channels.routing import ProtocolTypeRouter, URLRouter

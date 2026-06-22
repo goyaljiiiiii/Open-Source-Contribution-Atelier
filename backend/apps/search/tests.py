@@ -1,15 +1,14 @@
 import unittest
 
-from django.conf import settings
-from django.contrib.auth import get_user_model
-from django.test import RequestFactory, TestCase
-
-from apps.content.models import Lesson
 from apps.challenges.models import Challenge
+from apps.content.models import Lesson
 from apps.dashboard.models import Issue
 from apps.search.models import SearchDocument
 from apps.search.tasks import index_model_for_search, remove_model_from_search
 from apps.search.views import UnifiedSearchView
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.test import RequestFactory, TestCase
 
 User = get_user_model()
 
@@ -46,20 +45,30 @@ class SearchEngineEdgeCaseTests(TestCase):
             slug="fix-navbar",
             summary="The navbar is broken on mobile.",
             difficulty="Beginner",
-            points=10
+            points=10,
         )
         self.issue1 = Issue.objects.create(
             title="Database Connection Pool",
             description="Optimize the connection pool for Postgres.",
             status="open",
-            points=50
+            points=50,
         )
-        
+
         # Manually index them
         self._index_model(self.user, self.user.username, self.user.email)
-        self._index_model(self.lesson1, self.lesson1.title, f"{self.lesson1.summary} {self.lesson1.content}")
-        self._index_model(self.lesson2, self.lesson2.title, f"{self.lesson2.summary} {self.lesson2.content}")
-        self._index_model(self.challenge1, self.challenge1.title, self.challenge1.summary)
+        self._index_model(
+            self.lesson1,
+            self.lesson1.title,
+            f"{self.lesson1.summary} {self.lesson1.content}",
+        )
+        self._index_model(
+            self.lesson2,
+            self.lesson2.title,
+            f"{self.lesson2.summary} {self.lesson2.content}",
+        )
+        self._index_model(
+            self.challenge1, self.challenge1.title, self.challenge1.summary
+        )
         self._index_model(self.issue1, self.issue1.title, self.issue1.description)
         self.factory = RequestFactory()
         self.view = UnifiedSearchView.as_view()
@@ -114,26 +123,26 @@ class SearchEngineEdgeCaseTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         data = response.data[0]
-        self.assertEqual(data['type'], 'User')
-        self.assertTrue(data['url'].startswith('/api/users/'))
+        self.assertEqual(data["type"], "User")
+        self.assertTrue(data["url"].startswith("/api/users/"))
 
         # Test Challenge URL
-        request = self.factory.get('/api/search/', {'q': 'Navbar'})
+        request = self.factory.get("/api/search/", {"q": "Navbar"})
         response = self.view(request)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data[0]['type'], 'Challenge')
-        self.assertTrue(response.data[0]['url'].startswith('/api/challenges/'))
-        
+        self.assertEqual(response.data[0]["type"], "Challenge")
+        self.assertTrue(response.data[0]["url"].startswith("/api/challenges/"))
+
         # Test Issue URL
-        request = self.factory.get('/api/search/', {'q': 'Database'})
+        request = self.factory.get("/api/search/", {"q": "Database"})
         response = self.view(request)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data[0]['type'], 'Issue')
-        self.assertTrue(response.data[0]['url'].startswith('/api/dashboard/issues/'))
+        self.assertEqual(response.data[0]["type"], "Issue")
+        self.assertTrue(response.data[0]["url"].startswith("/api/dashboard/issues/"))
 
     def test_stop_words_only(self):
         """Edge Case: Query contains only stop words (e.g., 'the', 'and', 'a')."""
-        request = self.factory.get('/api/search/', {'q': 'the and a with'})
+        request = self.factory.get("/api/search/", {"q": "the and a with"})
         response = self.view(request)
         self.assertEqual(response.status_code, 200)
         # Stop words are ignored by Postgres FTS, so it should cleanly return empty or broad results depending on Trigram fallback
@@ -142,22 +151,22 @@ class SearchEngineEdgeCaseTests(TestCase):
 
     def test_case_insensitivity(self):
         """Edge Case: Ensure FTS and Trigram are case-insensitive."""
-        request = self.factory.get('/api/search/', {'q': 'rEaCt'})
+        request = self.factory.get("/api/search/", {"q": "rEaCt"})
         response = self.view(request)
         self.assertEqual(response.status_code, 200)
         self.assertGreater(len(response.data), 0)
-        self.assertEqual(response.data[0]['title'], "Introduction to React")
+        self.assertEqual(response.data[0]["title"], "Introduction to React")
 
     def test_non_existent_term(self):
         """Edge Case: Searching for a complete gibberish string."""
-        request = self.factory.get('/api/search/', {'q': 'asdfqwerzxcv'})
+        request = self.factory.get("/api/search/", {"q": "asdfqwerzxcv"})
         response = self.view(request)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
 
     def test_html_tags_in_query(self):
         """Edge Case: Searching with HTML tags should not break or cause 500s."""
-        request = self.factory.get('/api/search/', {'q': '<html>React</html>'})
+        request = self.factory.get("/api/search/", {"q": "<html>React</html>"})
         response = self.view(request)
         self.assertEqual(response.status_code, 200)
         # Even with HTML tags, Postgres FTS strips symbols, so "React" might match

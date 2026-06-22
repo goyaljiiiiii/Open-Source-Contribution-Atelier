@@ -13,7 +13,7 @@ import {
   Moon,
   Settings,
 } from "lucide-react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useTheme } from "../../hooks/useTheme";
 import { useAuth } from "../../features/auth/AuthContext";
 import { fetchLessonsApi } from "../../lib/lessons";
@@ -31,6 +31,7 @@ export function Navigation() {
   const [isStarting] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<{
     lessons: {
@@ -159,6 +160,7 @@ export function Navigation() {
               </p>
               <button
                 disabled={isStarting}
+                onClick={handleStartSandbox}
                 className="w-full mt-4 flex items-center justify-center gap-2 rounded-xl bg-primary text-white border-4 border-black dark:border-[#2e2924] px-4 py-3 text-sm font-black shadow-card hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer disabled:opacity-50"
               >
                 {isStarting ? (

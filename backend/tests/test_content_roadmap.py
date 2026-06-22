@@ -72,6 +72,7 @@ def test_roadmap_endpoint_includes_user_progress():
     assert response.data["track"][0]["completed"] is True
     assert response.data["track"][0]["score"] == 95
 
+
 @pytest.mark.django_db
 def test_estimated_minutes_below_range_raises_validation_error():
     lesson = Lesson(

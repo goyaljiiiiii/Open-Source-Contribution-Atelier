@@ -64,21 +64,22 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         password = validated_data.pop("password", None)
         avatar = validated_data.pop("avatar", None)
-        
+
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         if password:
             instance.set_password(password)
         instance.save()
-        
+
         if avatar is not None:
-            if hasattr(instance, 'profile'):
+            if hasattr(instance, "profile"):
                 instance.profile.avatar = avatar
                 instance.profile.save()
             else:
                 from apps.accounts.models import UserProfile
+
                 UserProfile.objects.create(user=instance, avatar=avatar)
-                
+
         return instance
 
 
@@ -90,12 +91,13 @@ class UserListSerializer(serializers.ModelSerializer):
         fields = ("id", "username", "email", "is_staff", "avatar_url")
 
     def get_avatar_url(self, obj):
-        if hasattr(obj, 'profile') and obj.profile.avatar:
-            request = self.context.get('request')
+        if hasattr(obj, "profile") and obj.profile.avatar:
+            request = self.context.get("request")
             if request:
                 return request.build_absolute_uri(obj.profile.avatar.url)
             return obj.profile.avatar.url
         return None
+
 
 class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
     """Allow login with either username or email in the username field."""
@@ -116,13 +118,16 @@ class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
 # Password Reset serializers
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class PasswordResetRequestSerializer(serializers.Serializer):
     """Accept an email address to trigger a password reset email."""
+
     email = serializers.EmailField()
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
     """Accept a reset token and the new password to complete the reset."""
+
     token = serializers.UUIDField()
     new_password = serializers.CharField(write_only=True, min_length=8)
 
@@ -134,12 +139,15 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 # OTP (Email Verification) serializers
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class OtpRequestSerializer(serializers.Serializer):
     """Accept an email address to trigger sending a new OTP verification code."""
+
     email = serializers.EmailField()
 
 
 class OtpVerifySerializer(serializers.Serializer):
     """Accept email + OTP token to complete email verification."""
+
     email = serializers.EmailField()
     otp = serializers.UUIDField()

@@ -44,46 +44,7 @@ export function SignupPage() {
     },
   });
 
-  // ── PASSWORD STRENGTH HELPER ───────────────────────────────────────────────
-  // Scores the password 0–4 based on 4 criteria:
-  //   +1  length is at least 8 characters
-  //   +1  contains at least one uppercase letter (A-Z)
-  //   +1  contains at least one digit (0-9)
-  //   +1  contains at least one special character (!@#$ etc.)
-  // Returns the numeric score so the JSX below can derive bar color + label.
-  const getPasswordScore = (pwd: string): number =>
-    (pwd.length >= 8 ? 1 : 0) +
-    (/[A-Z]/.test(pwd) ? 1 : 0) +
-    (/[0-9]/.test(pwd) ? 1 : 0) +
-    (/[^A-Za-z0-9]/.test(pwd) ? 1 : 0);
-
-  // Maps a score to which of the 3 strength tiers we are in:
-  //   0-1  → index 0  (Weak)
-  //   2-3  → index 1  (Medium)
-  //   4    → index 2  (Strong)
-  const getStrengthIndex = (score: number): number =>
-    score <= 1 ? 0 : score <= 3 ? 1 : 2;
-
-  // One Tailwind color class per tier, applied to the filled bars.
-  // Matches the red / yellow / green traffic-light convention users expect.
-  const barColors = ["bg-red-500", "bg-yellow-400", "bg-green-500"] as const;
-
-  // Human-readable label shown below the bars.
-  const strengthLabels = [
-    "Weak password",
-    "Medium password",
-    "Strong password 💪",
-  ] as const;
-
-  // Text color for the label — keeps it consistent with the bar color.
-  const labelColors = [
-    "text-red-500",
-    "text-yellow-600",
-    "text-green-600",
-  ] as const;
   // ── END HELPER BLOCK ───────────────────────────────────────────────────────
-
-  const isFormValid = username.trim() !== "" && email.trim() !== "" && password.length > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

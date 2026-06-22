@@ -7,29 +7,49 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('organizations', '0001_initial'),
-        ('progress', '0001_initial'),
+        ("organizations", "0001_initial"),
+        ("progress", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='exerciseattempt',
-            name='organization',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='organizations.organization'),
+            model_name="exerciseattempt",
+            name="organization",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="organizations.organization",
+            ),
         ),
         migrations.AddField(
-            model_name='helprequest',
-            name='organization',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='organizations.organization'),
+            model_name="helprequest",
+            name="organization",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="organizations.organization",
+            ),
         ),
         migrations.AddField(
-            model_name='lessonprogress',
-            name='organization',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='organizations.organization'),
+            model_name="lessonprogress",
+            name="organization",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="organizations.organization",
+            ),
         ),
         migrations.AlterField(
-            model_name='helprequest',
-            name='status',
-            field=models.CharField(choices=[('open', 'Open'), ('resolved', 'Resolved')], db_index=True, default='open', max_length=20),
+            model_name="helprequest",
+            name="status",
+            field=models.CharField(
+                choices=[("open", "Open"), ("resolved", "Resolved")],
+                db_index=True,
+                default="open",
+                max_length=20,
+            ),
         ),
     ]

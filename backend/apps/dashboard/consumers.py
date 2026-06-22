@@ -1,5 +1,7 @@
 import json
+
 from channels.generic.websocket import AsyncWebsocketConsumer
+
 
 class LeaderboardConsumer(AsyncWebsocketConsumer):
     async def connect(self):

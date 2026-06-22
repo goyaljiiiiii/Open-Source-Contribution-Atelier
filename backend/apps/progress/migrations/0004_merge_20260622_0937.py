@@ -6,9 +6,8 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('progress', '0003_alter_helprequest_status_bookmark'),
-        ('progress', '0003_exerciseattempt_organization_and_more'),
+        ("progress", "0003_alter_helprequest_status_bookmark"),
+        ("progress", "0003_exerciseattempt_organization_and_more"),
     ]
 
-    operations = [
-    ]
+    operations = []

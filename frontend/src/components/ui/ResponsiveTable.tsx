@@ -13,7 +13,7 @@ interface ResponsiveTableProps<T> {
   keyExtractor: (item: T, index: number) => string;
   rowClassName?: (item: T, index: number) => string;
   emptyMessage?: React.ReactNode;
-  lastElementRef?: (node: HTMLElement | null) => void;
+  lastElementRef?: (node: Element | null) => void;
   footerContent?: React.ReactNode;
 }
 
@@ -102,7 +102,7 @@ export function ResponsiveTable<T>({
                 return (
                   <tr
                     key={keyExtractor(item, idx)}
-                    ref={isLast ? lastElementRef as any : null}
+                    ref={isLast ? (lastElementRef as React.RefCallback<HTMLTableRowElement>) : null}
                     className={`border-b-2 border-black last:border-b-0 hover:bg-surface-lowest transition dark:border-[#2e2924] dark:hover:bg-black/10 ${rowClassName ? rowClassName(item, idx) : ""}`}
                   >
                     {columns.map((col, colIdx) => (

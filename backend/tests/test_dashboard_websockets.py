@@ -6,6 +6,7 @@ from channels.testing import WebsocketCommunicator
 from config.asgi import application
 from django.contrib.auth.models import User
 
+
 @pytest.mark.asyncio
 @pytest.mark.django_db(transaction=True)
 async def test_leaderboard_websocket_update():
@@ -17,6 +18,7 @@ async def test_leaderboard_websocket_update():
 
     # Generate a real JWT access token so JWTAuthMiddleware can authenticate the user
     from rest_framework_simplejwt.tokens import AccessToken
+
     token = str(AccessToken.for_user(user))
 
     # Connect with the token in the query string (how JWTAuthMiddleware reads it)
