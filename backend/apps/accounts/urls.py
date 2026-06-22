@@ -16,7 +16,6 @@ from .views import (
     UserStatisticsView,
 )
 
-
 urlpatterns = [
     # ── Core Auth ──────────────────────────────────────────────────────────────
     path("signup/",           SignupView.as_view(),             name="signup"),
@@ -26,17 +25,22 @@ urlpatterns = [
 
     path("stats/",           UserStatisticsView.as_view(),    name="user-stats"),
     path("users/",            UserListView.as_view(),           name="user-list"),
-
     # ── OAuth ──────────────────────────────────────────────────────────────────
-    path("google/",           GoogleLoginView.as_view(),        name="google-login"),
-    path("github/",           GitHubOAuthStartView.as_view(),   name="github-login"),
-    path("github/callback/",  GitHubOAuthCallbackView.as_view(),name="github-callback"),
-
+    path("google/", GoogleLoginView.as_view(), name="google-login"),
+    path("github/", GitHubOAuthStartView.as_view(), name="github-login"),
+    path("github/callback/", GitHubOAuthCallbackView.as_view(), name="github-callback"),
     # ── Password Reset ─────────────────────────────────────────────────────────
-    path("password-reset/",          PasswordResetRequestView.as_view(), name="password-reset-request"),
-    path("password-reset/confirm/",  PasswordResetConfirmView.as_view(), name="password-reset-confirm"),
-
+    path(
+        "password-reset/",
+        PasswordResetRequestView.as_view(),
+        name="password-reset-request",
+    ),
+    path(
+        "password-reset/confirm/",
+        PasswordResetConfirmView.as_view(),
+        name="password-reset-confirm",
+    ),
     # ── OTP / Email Verification ───────────────────────────────────────────────
-    path("otp/request/",  OtpRequestView.as_view(), name="otp-request"),
-    path("otp/verify/",   OtpVerifyView.as_view(),  name="otp-verify"),
+    path("otp/request/", OtpRequestView.as_view(), name="otp-request"),
+    path("otp/verify/", OtpVerifyView.as_view(), name="otp-verify"),
 ]

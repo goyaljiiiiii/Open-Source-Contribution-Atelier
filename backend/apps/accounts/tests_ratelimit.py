@@ -8,10 +8,10 @@ Verifies that:
   - Each IP has its own independent throttle counter.
 """
 
-from django.test import TestCase
 from django.contrib.auth import get_user_model
-from rest_framework.test import APIClient
+from django.test import TestCase
 from rest_framework import status
+from rest_framework.test import APIClient
 
 User = get_user_model()
 
@@ -50,8 +50,17 @@ class RateLimitShapeTests(TestCase):
     def test_signup_429_shape(self):
         c = _client()
         # RATE_AUTH_SIGNUP is "10/hour"
-        _hit(c, "/api/auth/signup/", {"username": "u1", "email": "u1@x.com", "password": "Aa1!aaaa"}, n=10)
-        resp = _hit(c, "/api/auth/signup/", {"username": "u2", "email": "u2@x.com", "password": "Aa1!aaaa"})
+        _hit(
+            c,
+            "/api/auth/signup/",
+            {"username": "u1", "email": "u1@x.com", "password": "Aa1!aaaa"},
+            n=10,
+        )
+        resp = _hit(
+            c,
+            "/api/auth/signup/",
+            {"username": "u2", "email": "u2@x.com", "password": "Aa1!aaaa"},
+        )
         self.assertEqual(resp.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
         self.assertEqual(resp.data["error"], "rate_limited")
 
@@ -118,7 +127,9 @@ class BelowThresholdTests(TestCase):
         c = _client()
         # Limit is 5, making 3 should not throttle
         for _ in range(3):
-            resp = _hit(c, "/api/auth/login/", {"username": "nobody", "password": "wrong"})
+            resp = _hit(
+                c, "/api/auth/login/", {"username": "nobody", "password": "wrong"}
+            )
             self.assertNotEqual(resp.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
 
     def test_password_reset_below_limit_not_throttled(self):
@@ -171,7 +182,7 @@ class IpIsolationTests(TestCase):
         # Exhaust c1 (limit is 5)
         _hit(c1, url, data, n=5)
         resp_c1 = _hit(c1, url, data)  # 6th - throttled
-        
+
         # c2 fresh
         resp_c2 = _hit(c2, url, data)
 
@@ -197,10 +208,14 @@ class PasswordResetFlowTests(TestCase):
     def test_reset_request_always_returns_200(self):
         """Never reveals if email exists (anti-enumeration)."""
         # Known email
-        resp = self.client.post("/api/auth/password-reset/", {"email": "reset@example.com"}, format="json")
+        resp = self.client.post(
+            "/api/auth/password-reset/", {"email": "reset@example.com"}, format="json"
+        )
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         # Unknown email — same response
-        resp2 = self.client.post("/api/auth/password-reset/", {"email": "ghost@x.com"}, format="json")
+        resp2 = self.client.post(
+            "/api/auth/password-reset/", {"email": "ghost@x.com"}, format="json"
+        )
         self.assertEqual(resp2.status_code, status.HTTP_200_OK)
 
     def test_reset_confirm_with_invalid_token_returns_400(self):
@@ -208,16 +223,25 @@ class PasswordResetFlowTests(TestCase):
         resp = self.client.post(
             "/api/auth/password-reset/confirm/",
             {"token": str(uuid.uuid4()), "new_password": "NewPass1!"},
-            format="json"
+            format="json",
         )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(resp.data["error"], "invalid_otp" if "error" in resp.data and resp.data["error"] == "invalid_otp" else "invalid_token")
+        self.assertEqual(
+            resp.data["error"],
+            (
+                "invalid_otp"
+                if "error" in resp.data and resp.data["error"] == "invalid_otp"
+                else "invalid_token"
+            ),
+        )
 
     def test_full_reset_flow(self):
         """Request → confirm with valid token → password is changed."""
         from apps.accounts.models import PasswordResetToken
         # Trigger reset (creates token in DB)
-        self.client.post("/api/auth/password-reset/", {"email": "reset@example.com"}, format="json")
+        self.client.post(
+            "/api/auth/password-reset/", {"email": "reset@example.com"}, format="json"
+        )
         token = PasswordResetToken.objects.filter(user=self.user, is_used=False).first()
         self.assertIsNotNone(token)
 
@@ -225,7 +249,7 @@ class PasswordResetFlowTests(TestCase):
         resp = self.client.post(
             "/api/auth/password-reset/confirm/",
             {"token": str(token.token), "new_password": "NewPass1!"},
-            format="json"
+            format="json",
         )
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
@@ -240,20 +264,21 @@ class PasswordResetFlowTests(TestCase):
     def test_token_cannot_be_reused(self):
         """A used token must be rejected on a second attempt."""
         from apps.accounts.models import PasswordResetToken
-        self.client.post("/api/auth/password-reset/", {"email": "reset@example.com"}, format="json")
+
+        self.client.post(
+            "/api/auth/password-reset/", {"email": "reset@example.com"}, format="json"
+        )
         token = PasswordResetToken.objects.filter(user=self.user, is_used=False).first()
 
         self.client.post(
             "/api/auth/password-reset/confirm/",
             {"token": str(token.token), "new_password": "NewPass1!"},
-            format="json"
+            format="json",
         )
         # Attempt reuse
         resp = self.client.post(
             "/api/auth/password-reset/confirm/",
             {"token": str(token.token), "new_password": "AnotherPass1!"},
-            format="json"
+            format="json",
         )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-
-

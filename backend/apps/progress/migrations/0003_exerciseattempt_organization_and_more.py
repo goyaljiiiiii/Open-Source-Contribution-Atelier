@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('organizations', '0001_initial'),
-        ('progress', '0002_helprequest'),
+        ('progress', '0001_initial'),
     ]
 
     operations = [

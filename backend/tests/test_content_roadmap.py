@@ -1,10 +1,11 @@
 import pytest
-from django.contrib.auth.models import User
-from rest_framework.test import APIClient
-from django.core.exceptions import ValidationError
-from apps.content.models import Lesson, Exercise
+from apps.content.models import Exercise, Lesson
 from apps.progress.models import LessonProgress
+from django.contrib.auth.models import User
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
+from rest_framework.test import APIClient
+
 
 @pytest.fixture(autouse=True)
 def clear_cache_before_tests():

@@ -2,6 +2,7 @@
 Custom DRF exception handler that produces user-friendly API responses.
 """
 
+from rest_framework import status
 from rest_framework.views import exception_handler
 from rest_framework.exceptions import (
     Throttled,
@@ -11,8 +12,7 @@ from rest_framework.exceptions import (
     PermissionDenied,
 )
 from rest_framework.response import Response
-from rest_framework import status
-
+from rest_framework.views import exception_handler
 
 # Map throttle scope names → human-readable messages
 _THROTTLE_MESSAGES = {

@@ -8,8 +8,8 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('content', '0002_lesson_learning_objectives_tips'),
-        ('progress', '0002_helprequest'),
+        ('content', '0001_initial'),
+        ('progress', '0001_initial'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
