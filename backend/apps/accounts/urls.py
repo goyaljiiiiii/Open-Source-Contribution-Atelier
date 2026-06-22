@@ -13,6 +13,7 @@ from .views import (
     PasswordResetConfirmView,
     OtpRequestView,
     OtpVerifyView,
+    UserStatisticsView,
 )
 
 
@@ -22,6 +23,8 @@ urlpatterns = [
     path("login/",            LoginView.as_view(),              name="login"),
     path("refresh/",          RefreshView.as_view(),            name="refresh"),
     path("me/",               MeView.as_view(),                 name="me"),
+
+    path("stats/",           UserStatisticsView.as_view(),    name="user-stats"),
     path("users/",            UserListView.as_view(),           name="user-list"),
 
     # ── OAuth ──────────────────────────────────────────────────────────────────

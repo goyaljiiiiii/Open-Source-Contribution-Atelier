@@ -36,6 +36,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { OnboardingTour } from "../components/ui/OnboardingTour";
 
 const FACTS = [
   "Git was created in 2005 by Linus Torvalds because he was frustrated with the commercial tool they were using for Linux development.",
@@ -622,9 +623,10 @@ useEffect(() => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 pt-24 pb-12 space-y-10">
+      <OnboardingTour run={showOnboarding} onFinish={handleFinishOnboarding} />
       {/* 1. Header Banner */}
       <section className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-        <div className="rounded-[2.5rem] border-4 border-black bg-tertiary p-8 sm:p-10 shadow-card relative overflow-hidden dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none flex flex-col justify-between min-h-[260px]">
+        <div id="tour-welcome" className="rounded-[2.5rem] border-4 border-black bg-tertiary p-8 sm:p-10 shadow-card relative overflow-hidden dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none flex flex-col justify-between min-h-[260px]">
           <div className="relative z-10">
             <span className="font-black text-sm bg-white text-black px-4 py-2 rounded-full border-2 border-black rotate-[-2deg] inline-block shadow-card-sm mb-4 dark:bg-[#151411] dark:text-[#f0ebe2] dark:border-[#2e2924]">
               LEVEL{" "}
@@ -651,7 +653,7 @@ useEffect(() => {
         </div>
 
         {/* Action / Streaks Box */}
-        <div className="grid grid-cols-2 gap-4">
+        <div id="tour-stats" className="grid grid-cols-2 gap-4">
           <div className="rounded-[2rem] border-4 border-black bg-white p-6 shadow-card flex flex-col justify-center items-center text-center dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none hover:-translate-y-0.5 transition-transform">
             <Flame className="w-12 h-12 text-primary animate-pulse mb-2" />
             <span className="text-4xl font-black text-primary drop-shadow-[2px_2px_0_#000] dark:drop-shadow-none">
@@ -696,7 +698,7 @@ useEffect(() => {
 
       {/* 2. Fact of the Day and Certificate Unlock */}
       <section className="grid gap-6 md:grid-cols-[1.3fr_0.7fr]">
-        <div className="rounded-3xl border-4 border-black bg-surface-low p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none flex items-start gap-4">
+        <div id="tour-fact" className="rounded-3xl border-4 border-black bg-surface-low p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none flex items-start gap-4">
           <div className="bg-white p-3 rounded-2xl border-2 border-black flex-shrink-0 text-2xl dark:bg-[#151411] dark:border-[#2e2924]">
             💡
           </div>
@@ -711,7 +713,7 @@ useEffect(() => {
         </div>
 
         {/* Certificate Card */}
-        <div className="rounded-3xl border-4 border-black bg-white p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none flex flex-col justify-between">
+        <div id="tour-certificate" className="rounded-3xl border-4 border-black bg-white p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none flex flex-col justify-between">
           <div className="flex items-center gap-2">
             <span className="text-2xl">🎓</span>
             <div>
@@ -740,7 +742,7 @@ useEffect(() => {
 
       {/* 3. Learning Queue Sidebar & Course Completion Chart */}
       <section className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-        <div className="rounded-3xl border-4 border-black bg-white p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none">
+        <div id="tour-learning-queue" className="rounded-3xl border-4 border-black bg-white p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none">
           <h2 className="text-3xl font-black mb-6 flex items-center gap-3">
             <span className="bg-primary text-white w-10 h-10 rounded-full border-2 border-black flex items-center justify-center text-lg dark:bg-primary/20 dark:text-primary">
               📚

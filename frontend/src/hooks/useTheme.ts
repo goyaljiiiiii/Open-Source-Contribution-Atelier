@@ -2,7 +2,10 @@ import { useState, useEffect } from "react";
 
 function getInitialTheme(): string {
   try {
-    return localStorage.getItem("theme") || "light";
+    if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      return "dark";
+    }
+    return "light";
   } catch {
     return "light";
   }
@@ -27,6 +30,16 @@ export function useTheme() {
       document.documentElement.classList.remove("dark");
     }
   }, [theme]);
+
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "theme" && (e.newValue === "light" || e.newValue === "dark")) {
+        setTheme(e.newValue);
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
 
   const toggleTheme = () => {
     setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));

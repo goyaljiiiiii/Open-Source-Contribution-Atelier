@@ -127,6 +127,146 @@ class BulkSyncProgressView(APIView):
             },
             status=status.HTTP_200_OK
         )
+
+@extend_schema(
+    summary="Bulk update lesson progress",
+    description="Updates multiple lesson progress states atomically in a single transaction.",
+    request=BulkSyncSerializer,
+    responses={
+        200: OpenApiResponse(description="Successful bulk update summary: {success, transaction_outcome, updated_count, updated_ids, metadata}"),
+        400: OpenApiResponse(description="Validation failures (duplicate entries, invalid lessons, etc.)"),
+        500: OpenApiResponse(description="Transaction failures or internal errors")
+    }
+)
+class BulkProgressUpdateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = BulkSyncSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {
+                    "success": False,
+                    "transaction_outcome": "failed",
+                    "validation_failures": serializer.errors,
+                    "updated_count": 0,
+                    "updated_ids": []
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        validated_data = serializer.validated_data["lessons"]
+        
+        # Check for duplicate entries within the same request
+        seen_slugs = set()
+        duplicates = set()
+        for item in validated_data:
+            slug = item["lesson_slug"]
+            if slug in seen_slugs:
+                duplicates.add(slug)
+            seen_slugs.add(slug)
+        
+        if duplicates:
+            return Response(
+                {
+                    "success": False,
+                    "transaction_outcome": "failed",
+                    "validation_failures": {"duplicate_entries": list(duplicates)},
+                    "updated_count": 0,
+                    "updated_ids": []
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        success_ids = []
+        missing_slugs = []
+        try:
+            with transaction.atomic():
+                lesson_slugs = list(seen_slugs)
+                existing_lessons = {lesson.slug: lesson for lesson in Lesson.objects.filter(slug__in=lesson_slugs)}
+                
+                # Validation: Invalid lesson IDs
+                missing_slugs = [slug for slug in lesson_slugs if slug not in existing_lessons]
+                
+                if missing_slugs:
+                    # rollback transaction if anything fails validation
+                    raise ValueError(f"Invalid lesson IDs: {missing_slugs}")
+
+                existing_progress = {
+                    progress.lesson_id: progress 
+                    for progress in LessonProgress.objects.filter(user=request.user, lesson__slug__in=lesson_slugs)
+                }
+                
+                progress_to_create = []
+                progress_to_update = []
+
+                for item in validated_data:
+                    lesson = existing_lessons[item["lesson_slug"]]
+                    completed = item.get("completed", True)
+                    score = item.get("score", 100)
+                    
+                    if lesson.id in existing_progress:
+                        prog = existing_progress[lesson.id]
+                        prog.completed = completed
+                        prog.score = score
+                        progress_to_update.append(prog)
+                    else:
+                        progress_to_create.append(
+                            LessonProgress(
+                                user=request.user,
+                                lesson=lesson,
+                                completed=completed,
+                                score=score
+                            )
+                        )
+
+                if progress_to_create:
+                    created_progresses = LessonProgress.objects.bulk_create(progress_to_create)
+                    success_ids.extend([p.id for p in created_progresses])
+                    
+                if progress_to_update:
+                    LessonProgress.objects.bulk_update(progress_to_update, ["completed", "score"])
+                    success_ids.extend([p.id for p in progress_to_update])
+
+                from .badge_evaluator import BadgeEvaluator
+                BadgeEvaluator.evaluate(request.user)
+
+        except ValueError as ve:
+            return Response(
+                {
+                    "success": False,
+                    "transaction_outcome": "rolled_back",
+                    "validation_failures": {"invalid_lessons": missing_slugs},
+                    "updated_count": 0,
+                    "updated_ids": []
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response(
+                {
+                    "success": False,
+                    "transaction_outcome": "rolled_back",
+                    "validation_failures": {"exception": str(e)},
+                    "updated_count": 0,
+                    "updated_ids": []
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        return Response(
+            {
+                "success": True,
+                "transaction_outcome": "committed",
+                "validation_failures": {},
+                "updated_count": len(success_ids),
+                "updated_ids": success_ids,
+                "metadata": {
+                    "synced_at": request.data.get("metadata", {}).get("timestamp", None)
+                }
+            },
+            status=status.HTTP_200_OK
+        )
 @extend_schema(responses=OpenApiResponse(description="Community stats summary JSON: active_contributors, merged_prs, response_sla, open_requests"))
 class CommunityStatsView(APIView):
     def get(self, request):
@@ -328,7 +468,7 @@ class QuizAttemptView(APIView):
                 "id": attempt.id,
                 "question_id": attempt.question_id,
                 "is_correct": attempt.is_correct,
-                "created_at": attempt.created_at,
+                "created_at": attempt.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
             }, status=status.HTTP_201_CREATED)
         
         # If there are field errors, extract the first one generically to match typical client expectations
