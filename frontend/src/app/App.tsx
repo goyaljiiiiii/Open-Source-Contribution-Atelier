@@ -3,6 +3,7 @@ import { BrowserRouter } from "react-router-dom";
 import { AppRouter } from "./router";
 import ScrollToTop from "../components/ScrollToTop";
 import { queryClient } from "../lib/queryClient";
+import { CommandPalette } from "../components/CommandPalette";
 
 export function App() {
   return (

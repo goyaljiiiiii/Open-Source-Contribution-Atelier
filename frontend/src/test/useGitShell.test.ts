@@ -1,7 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import "@testing-library/jest-dom/vitest";
-import { vi } from 'vitest';
 import { useGitShell } from '../hooks/useGitShell';
 
 const localStorageMock = (function() {
@@ -38,7 +37,7 @@ describe('useGitShell - Merge Conflict Edge Cases', () => {
     
     const appJsNode = result.current.shellState.fs['~/app.js'];
     expect(appJsNode.type).toBe('file');
-    expect((appJsNode as any).content).toContain('<<<<<<< HEAD');
+    expect((appJsNode as { content: string }).content).toContain('<<<<<<< HEAD');
   });
 
   it('should prevent committing if unmerged files exist', () => {

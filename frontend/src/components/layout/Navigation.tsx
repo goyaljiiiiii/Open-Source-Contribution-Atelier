@@ -11,12 +11,12 @@ import {
   X,
   Sun,
   Moon,
+  Settings,
 } from "lucide-react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
-import { fetchApi } from "../../lib/api";
+import { Link, NavLink } from "react-router-dom";
 import { useTheme } from "../../hooks/useTheme";
 import { useAuth } from "../../features/auth/AuthContext";
-import { fetchLessonsApi, Lesson } from "../../lib/lessons";
+import { fetchLessonsApi } from "../../lib/lessons";
 import LogoutButtonWithConfirm from "./LogoutButtonWithConfirm";
 
 const navItems = [
@@ -24,11 +24,11 @@ const navItems = [
   { to: "/lessons/what-is-open-source", label: "Lessons", icon: BookOpen },
   { to: "/challenges", label: "Challenges", icon: Trophy },
   { to: "/community", label: "Community", icon: BriefcaseBusiness },
+  { to: "/profile", label: "Profile Settings", icon: Settings },
 ];
 
 export function Navigation() {
-  const navigate = useNavigate();
-  const [isStarting, setIsStarting] = useState(false);
+  const [isStarting] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
@@ -45,7 +45,7 @@ export function Navigation() {
   const [lessonsCatalog, setLessonsCatalog] = useState<
     { slug: string; title: string; description: string }[]
   >([]);
-  const [badgeCount, setBadgeCount] = useState(0);
+  const badgeCount = 0;
 
   const handleStartSandbox = () => {
     setIsStarting(true);
@@ -92,7 +92,7 @@ export function Navigation() {
         );
 
         setSearchResults({
-          lessons: filteredLessons,
+          lessons: filteredLessons.map(l => ({ ...l, summary: l.description })),
           challenges: filteredChallenges,
         });
         setIsSearching(false);
@@ -157,7 +157,6 @@ export function Navigation() {
                 Run guided Git practice without exposing the real shell.
               </p>
               <button
-                onClick={handleStartSandbox}
                 disabled={isStarting}
                 className="w-full mt-4 flex items-center justify-center gap-2 rounded-xl bg-primary text-white border-4 border-black dark:border-[#2e2924] px-4 py-3 text-sm font-black shadow-card hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer disabled:opacity-50"
               >
@@ -307,7 +306,11 @@ export function Navigation() {
             </button>
             {user ? (
               <div className="flex items-center gap-2">
-                <span className="font-bold text-sm text-text bg-white px-3 py-2 rounded-xl border-2 border-black dark:bg-[#151411] dark:text-[#f0ebe2] dark:border-[#2e2924] flex items-center gap-1.5 shadow-card-sm">
+                <Link
+                  to="/profile"
+                  className="font-bold text-sm text-text bg-white px-3 py-2 rounded-xl border-2 border-black dark:bg-[#151411] dark:text-[#f0ebe2] dark:border-[#2e2924] flex items-center gap-1.5 shadow-card-sm hover:bg-surface-low transition-colors dark:hover:bg-[#1f1c18]"
+                  title="Profile Settings"
+                >
                   👤{" "}
                   <span className="max-w-[80px] truncate">{user.username}</span>
                   {user.is_staff && (
@@ -315,7 +318,7 @@ export function Navigation() {
                       ADMIN
                     </span>
                   )}
-                </span>
+                </Link>
                 <LogoutButtonWithConfirm />
               </div>
             ) : (

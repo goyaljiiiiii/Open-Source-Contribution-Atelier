@@ -43,6 +43,7 @@ export function LessonPage() {
     }[]
   >([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const sidebarRef = useRef<HTMLElement>(null);
 
   const closeSidebar = useCallback(() => setIsSidebarOpen(false), []);
 
@@ -324,6 +325,7 @@ export function LessonPage() {
       {/* 2. Side Course Directory Menu */}
       <aside
         id="course-sidebar"
+        ref={sidebarRef}
         className={`fixed top-0 left-0 h-full w-[300px] border-r-4 border-black bg-white dark:bg-[#151411] dark:border-[#2e2924] overflow-y-auto p-6 transition-transform duration-300 ease-in-out z-20 pt-20
           ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
           lg:relative lg:top-auto lg:left-auto lg:h-auto lg:w-[320px] lg:flex-shrink-0 lg:translate-x-0 lg:block lg:max-h-[calc(100vh-80px)]`}
@@ -632,7 +634,7 @@ export function LessonPage() {
                         $
                       </span>
                       <input
-                        className="flex-1 rounded-xl border-4 border-black bg-surface-lowest px-4 py-2.5 text-text font-bold outline-none placeholder:text-muted/40 dark:bg-[#151411] dark:border-[#2e2924]"
+                        className="flex-1 min-w-0 rounded-xl border-4 border-black bg-surface-lowest px-4 py-2.5 text-text font-bold outline-none placeholder:text-muted/40 dark:bg-[#151411] dark:border-[#2e2924]"
                         placeholder={lesson.hint || "Type your git command here"}
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
@@ -707,7 +709,7 @@ export function LessonPage() {
             </div>
 
             {/* Course Navigation Footer */}
-            <div className="flex items-center justify-between pt-10 pb-12">
+            <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between sm:gap-0 pt-10 pb-12">
               {previousLesson ? (
                 <Link
                   to={`/lessons/${previousLesson.slug}`}
@@ -717,7 +719,7 @@ export function LessonPage() {
                   Prev: {previousLesson.title}
                 </Link>
               ) : (
-                <div />
+                <div className="hidden sm:block" />
               )}
 
               {nextLesson ? (

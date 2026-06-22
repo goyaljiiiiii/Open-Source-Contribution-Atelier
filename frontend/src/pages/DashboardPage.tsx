@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useMemo, useState, useEffect } from "react";
 import { useAuth } from "../features/auth/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -9,7 +10,6 @@ import { useElementSize } from '../hooks/useElementSize';
 import { fetchLessonsApi, Lesson } from "../lib/lessons";
 import { useUserProgress } from "../hooks/useUserProgress";
 import { BADGES } from "../constants/badges";
-import { useEarnedBadges } from "../hooks/useEarnedBadges";
 import {
   Award,
   Flame,
@@ -36,6 +36,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { OnboardingTour } from "../components/ui/OnboardingTour";
 
 const FACTS = [
   "Git was created in 2005 by Linus Torvalds because he was frustrated with the commercial tool they were using for Linux development.",
@@ -44,72 +45,6 @@ const FACTS = [
   "Richard Stallman launched the GNU Project in 1983, publishing the GNU Manifesto to advocate for computer user freedoms.",
   "Spamming duplicate or low-effort pull requests (like formatting comments) wastes maintainers' time and can get you blocked.",
   "The Apache HTTP Server project was founded in 1995 and played a key role in the early expansion of the World Wide Web.",
-];
-
-const BADGES = [
-  {
-    id: "mod-1",
-    name: "Open Source Explorer",
-    desc: "Understand open source mindset and history.",
-    icon: "🧭",
-    moduleIndex: 0,
-  },
-  {
-    id: "mod-2",
-    name: "Git Cadet",
-    desc: "Initialize repos, commit, and manage local branches.",
-    icon: "🌿",
-    moduleIndex: 1,
-  },
-  {
-    id: "mod-3",
-    name: "GitHub Knight",
-    desc: "Master forks, issues, PRs, and team organizations.",
-    icon: "🛡️",
-    moduleIndex: 2,
-  },
-  {
-    id: "mod-4",
-    name: "Etiquette Master",
-    desc: "Practice professional communication and PR workflows.",
-    icon: "🤝",
-    moduleIndex: 3,
-  },
-  {
-    id: "mod-5",
-    name: "First Merge",
-    desc: "Practice local-upstream commit pushing.",
-    icon: "🚀",
-    moduleIndex: 4,
-  },
-  {
-    id: "mod-6",
-    name: "Workflow Champion",
-    desc: "Understand issue life-cycle management.",
-    icon: "🔄",
-    moduleIndex: 5,
-  },
-  {
-    id: "mod-7",
-    name: "Rebase Sensei",
-    desc: "Rebase, resolve conflicts, and parse CI/CD checks.",
-    icon: "🧠",
-    moduleIndex: 6,
-  },
-  {
-    id: "mod-8",
-    name: "Hacktoberfest Ready",
-    desc: "Find beginner-friendly repositories and issues.",
-    icon: "🎃",
-    moduleIndex: 7,
-  },
-  {
-    id: "grad",
-    name: "Atelier Graduate",
-    desc: "Complete 100% of the learning program.",
-    icon: "🎓",
-    isGraduation: true,
-  },
 ];
 
 const CONTRIBUTORS_CACHE_KEY = "github_contributors_cache";
@@ -143,15 +78,14 @@ interface AssignedIssue {
 
 export function DashboardPage() {
     const taskDistRef = useRef<HTMLDivElement>(null);
-    const { width: taskDistWidth } = useElementSize(taskDistRef);
-    const taskDistRadius = Math.min(taskDistWidth * 0.2, 75);
+    const { width: taskDistWidth } = useElementSize(taskDistRef as any);
     const completionRef = useRef<HTMLDivElement>(null);
-    const { width: completionWidth } = useElementSize(completionRef);
-    const completionRadius = Math.min(completionWidth * 0.2, 75);
+    const { width: completionWidth } = useElementSize(completionRef as any);
 
 
   const { user } = useAuth();
   const { isLessonCompleted } = useUserProgress();
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
 useEffect(() => {
   const handleScroll = () => {
@@ -179,22 +113,7 @@ useEffect(() => {
       );
   }, []);
 
-  // 1. Fetch static modules catalog
-  const [curriculumData, setCurriculumData] = useState<
-    { lessons: { slug: string; title?: string; description?: string }[] }[]
-  >([]);
-  useEffect(() => {
-    fetch("/content/curriculum.json")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.modules) {
-          setCurriculumData(data.modules);
-        }
-      })
-      .catch((err) =>
-        console.error("Error loading dashboard curriculum:", err),
-      );
-  }, []);
+
 
   // 2. Fetch Admin Dashboard stats (only queries if user is staff)
   const {
@@ -704,9 +623,10 @@ useEffect(() => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 pt-24 pb-12 space-y-10">
+      <OnboardingTour run={showOnboarding} onFinish={handleFinishOnboarding} />
       {/* 1. Header Banner */}
       <section className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-        <div className="rounded-[2.5rem] border-4 border-black bg-tertiary p-8 sm:p-10 shadow-card relative overflow-hidden dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none flex flex-col justify-between min-h-[260px]">
+        <div id="tour-welcome" className="rounded-[2.5rem] border-4 border-black bg-tertiary p-8 sm:p-10 shadow-card relative overflow-hidden dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none flex flex-col justify-between min-h-[260px]">
           <div className="relative z-10">
             <span className="font-black text-sm bg-white text-black px-4 py-2 rounded-full border-2 border-black rotate-[-2deg] inline-block shadow-card-sm mb-4 dark:bg-[#151411] dark:text-[#f0ebe2] dark:border-[#2e2924]">
               LEVEL{" "}
@@ -733,7 +653,7 @@ useEffect(() => {
         </div>
 
         {/* Action / Streaks Box */}
-        <div className="grid grid-cols-2 gap-4">
+        <div id="tour-stats" className="grid grid-cols-2 gap-4">
           <div className="rounded-[2rem] border-4 border-black bg-white p-6 shadow-card flex flex-col justify-center items-center text-center dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none hover:-translate-y-0.5 transition-transform">
             <Flame className="w-12 h-12 text-primary animate-pulse mb-2" />
             <span className="text-4xl font-black text-primary drop-shadow-[2px_2px_0_#000] dark:drop-shadow-none">
@@ -778,7 +698,7 @@ useEffect(() => {
 
       {/* 2. Fact of the Day and Certificate Unlock */}
       <section className="grid gap-6 md:grid-cols-[1.3fr_0.7fr]">
-        <div className="rounded-3xl border-4 border-black bg-surface-low p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none flex items-start gap-4">
+        <div id="tour-fact" className="rounded-3xl border-4 border-black bg-surface-low p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none flex items-start gap-4">
           <div className="bg-white p-3 rounded-2xl border-2 border-black flex-shrink-0 text-2xl dark:bg-[#151411] dark:border-[#2e2924]">
             💡
           </div>
@@ -793,7 +713,7 @@ useEffect(() => {
         </div>
 
         {/* Certificate Card */}
-        <div className="rounded-3xl border-4 border-black bg-white p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none flex flex-col justify-between">
+        <div id="tour-certificate" className="rounded-3xl border-4 border-black bg-white p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none flex flex-col justify-between">
           <div className="flex items-center gap-2">
             <span className="text-2xl">🎓</span>
             <div>
@@ -822,7 +742,7 @@ useEffect(() => {
 
       {/* 3. Learning Queue Sidebar & Course Completion Chart */}
       <section className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-        <div className="rounded-3xl border-4 border-black bg-white p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none">
+        <div id="tour-learning-queue" className="rounded-3xl border-4 border-black bg-white p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none">
           <h2 className="text-3xl font-black mb-6 flex items-center gap-3">
             <span className="bg-primary text-white w-10 h-10 rounded-full border-2 border-black flex items-center justify-center text-lg dark:bg-primary/20 dark:text-primary">
               📚
@@ -1208,7 +1128,7 @@ useEffect(() => {
       )}
             {showScrollTop && (
         <button
-          onClick={scrollToTop}
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           aria-label="Scroll to top"
           className="fixed bottom-6 right-6 z-50 rounded-xl bg-primary text-white border-4 border-black px-4 py-3 font-black shadow-card-sm hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-card-sm cursor-pointer"
         >
