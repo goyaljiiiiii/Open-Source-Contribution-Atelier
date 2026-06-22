@@ -328,7 +328,7 @@ class QuizAttemptView(APIView):
                 "id": attempt.id,
                 "question_id": attempt.question_id,
                 "is_correct": attempt.is_correct,
-                "created_at": attempt.created_at,
+                "created_at": attempt.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
             }, status=status.HTTP_201_CREATED)
         
         # If there are field errors, extract the first one generically to match typical client expectations
