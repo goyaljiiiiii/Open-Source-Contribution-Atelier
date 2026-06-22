@@ -1,7 +1,14 @@
 from django.db import models
-
+from apps.organizations.models import Organization
 
 class Challenge(models.Model):
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+
     title = models.CharField(max_length=255)
     slug = models.SlugField(unique=True)
     summary = models.TextField()

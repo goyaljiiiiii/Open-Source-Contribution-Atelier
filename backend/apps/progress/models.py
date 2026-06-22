@@ -1,9 +1,14 @@
 from apps.content.models import Exercise, Lesson
 from django.contrib.auth.models import User
 from django.db import models
-
+from apps.organizations.models import Organization
+from django.core.exceptions import ObjectDoesNotExist
 
 class Badge(models.Model):
+    class DoesNotExist(ObjectDoesNotExist):
+        pass
+
+    objects = models.Manager()
     name = models.CharField(max_length=120)
     slug = models.SlugField(unique=True)
     description = models.TextField()
@@ -12,9 +17,11 @@ class Badge(models.Model):
 
 
 class UserBadge(models.Model):
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="earned_badges"
-    )
+    class DoesNotExist(ObjectDoesNotExist):
+        pass
+
+    objects = models.Manager()
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="earned_badges")
     badge = models.ForeignKey(Badge, on_delete=models.CASCADE, related_name="earned_by")
     earned_at = models.DateTimeField(auto_now_add=True)
 
@@ -23,6 +30,13 @@ class UserBadge(models.Model):
 
 
 class LessonProgress(models.Model):
+    objects = models.Manager()
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
     completed = models.BooleanField(default=False)
@@ -49,6 +63,13 @@ class LessonProgress(models.Model):
 
 
 class ExerciseAttempt(models.Model):
+    objects = models.Manager()
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
     submitted_command = models.CharField(max_length=255)
@@ -68,19 +89,29 @@ class ExerciseAttempt(models.Model):
 
 
 class HelpRequest(models.Model):
+    class DoesNotExist(ObjectDoesNotExist):
+        pass
+
+    objects = models.Manager()
     class Status(models.TextChoices):
         OPEN = "open", "Open"
         RESOLVED = "resolved", "Resolved"
 
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="help_requests"
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
     )
-    lesson = models.ForeignKey(
-        Lesson, on_delete=models.CASCADE, related_name="help_requests"
-    )
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="help_requests")
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="help_requests")
     message = models.TextField()
     status = models.CharField(
-        max_length=20, choices=Status.choices, default=Status.OPEN, db_index=True
+        max_length=20,
+        choices=Status.choices,
+        default=Status.OPEN,
+        db_index=True
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -95,9 +126,11 @@ class HelpRequest(models.Model):
 
 
 class QuizAttempt(models.Model):
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="quiz_attempts"
-    )
+    class DoesNotExist(ObjectDoesNotExist):
+        pass
+
+    objects = models.Manager()
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="quiz_attempts")
     question_id = models.CharField(max_length=255)
     question_text = models.TextField()
     selected_answer = models.CharField(max_length=255)
@@ -118,15 +151,13 @@ class QuizAttempt(models.Model):
 import uuid
 
 class Certificate(models.Model):
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="certificates"
-    )
-    course_name = models.CharField(
-        max_length=255, default="Open Source Contribution Course"
-    )
-    verification_hash = models.CharField(
-        max_length=64, unique=True, default=uuid.uuid4, db_index=True
-    )
+    class DoesNotExist(ObjectDoesNotExist):
+        pass
+
+    objects = models.Manager()
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="certificates")
+    course_name = models.CharField(max_length=255, default="Open Source Contribution Course")
+    verification_hash = models.CharField(max_length=64, unique=True, default=uuid.uuid4, db_index=True)
     issued_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
 

@@ -2,7 +2,23 @@ import os
 import secrets
 from typing import Optional
 from urllib.parse import urlencode
+
 import requests as http_requests
+
+from .tasks import send_password_reset_email_task, send_otp_email_task
+from django.utils import timezone
+
+from .throttles import (
+    LoginThrottle,
+    SignupThrottle,
+    TokenRefreshThrottle,
+    OAuthThrottle,
+    OtpGenerateThrottle,
+    OtpVerifyThrottle,
+    PasswordResetThrottle,
+)
+
+from django.db.models import Sum
 from apps.progress.models import LessonProgress, UserBadge
 from apps.progress.serializers import UserBadgeSerializer
 from django.conf import settings
@@ -18,6 +34,7 @@ from rest_framework import filters, generics, permissions, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import (TokenObtainPairView,
                                             TokenRefreshView)
@@ -128,6 +145,27 @@ class MyBadgesView(APIView):
         description="Returns JWT refresh & access tokens and basic user info."
     ),
 )
+class UserStatisticsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        responses=OpenApiResponse(
+            description="Returns basic user stats: join date and total contributions (lessons completed)."
+        )
+    )
+    def get(self, request):
+        user = request.user
+        
+        # Count total LessonProgress entries as "contributions"
+        total_contributions = LessonProgress.objects.filter(user=user).count()
+
+        return Response(
+            {
+                "join_date": user.date_joined,
+                "total_contributions": total_contributions,
+            },
+            status=status.HTTP_200_OK
+        )
 class LoginView(TokenObtainPairView):
     permission_classes = [permissions.AllowAny]
     serializer_class = EmailOrUsernameTokenObtainPairSerializer
@@ -330,11 +368,14 @@ class GitHubOAuthCallbackView(APIView):
             )
 
 
+from .permissions import IsAdminOrModeratorRole
+
 @extend_schema(responses=UserListSerializer(many=True))
 class UserListView(generics.ListAPIView):
     queryset = User.objects.all().order_by("id")
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrModeratorRole]
     serializer_class = UserListSerializer
+    pagination_class = LimitOffsetPagination
 
     filter_backends = [
         DjangoFilterBackend,
@@ -368,7 +409,7 @@ class PasswordResetRequestView(APIView):
         serializer = PasswordResetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data["email"].lower()
+        email = serializer.validated_data["email"].lower() # type: ignore
         user = User.objects.filter(email__iexact=email).first()
 
         if user:
@@ -383,19 +424,12 @@ class PasswordResetRequestView(APIView):
             )
             timeout = getattr(settings, "PASSWORD_RESET_TIMEOUT_MINUTES", 15)
 
-            send_mail(
-                subject="Password Reset Request",
-                message=(
-                    f"Hi {user.username},\n\n"
-                    f"Click the link below to reset your password (expires in {timeout} minutes):\n"
-                    f"{reset_url}\n\n"
-                    "If you did not request this, you can safely ignore this email."
-                ),
-                from_email=getattr(
-                    settings, "DEFAULT_FROM_EMAIL", "noreply@atelier.dev"
-                ),
-                recipient_list=[user.email],
-                fail_silently=True,
+            send_password_reset_email_task.delay(
+                user_email=user.email,
+                user_username=user.username,
+                reset_url=reset_url,
+                timeout=timeout
+
             )
 
         # Always return the same response to prevent email enumeration
@@ -426,8 +460,8 @@ class PasswordResetConfirmView(APIView):
         serializer = PasswordResetConfirmSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        token_value = serializer.validated_data["token"]
-        new_password = serializer.validated_data["new_password"]
+        token_value = serializer.validated_data["token"] # type: ignore
+        new_password = serializer.validated_data["new_password"] # type: ignore
 
         try:
             reset_token = PasswordResetToken.objects.select_related("user").get(
@@ -489,7 +523,7 @@ class OtpRequestView(APIView):
         serializer = OtpRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data["email"].lower()
+        email = serializer.validated_data["email"].lower() # type: ignore
         user = User.objects.filter(email__iexact=email).first()
 
         if user:
@@ -497,14 +531,10 @@ class OtpRequestView(APIView):
             OTPToken.objects.filter(user=user, is_used=False).update(is_used=True)
             otp_obj = OTPToken.objects.create(user=user)
 
-            send_mail(
-                subject="Your Verification Code",
-                message=f"Hi {user.username},\n\nYour verification code is: {otp_obj.token}",
-                from_email=getattr(
-                    settings, "DEFAULT_FROM_EMAIL", "noreply@atelier.dev"
-                ),
-                recipient_list=[user.email],
-                fail_silently=True,
+            send_otp_email_task.delay(
+                user_email=user.email,
+                user_username=user.username,
+                otp_token=otp_obj.token
             )
 
         return Response(
@@ -531,8 +561,8 @@ class OtpVerifyView(APIView):
         serializer = OtpVerifySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data["email"].lower()
-        otp = serializer.validated_data["otp"]
+        email = serializer.validated_data["email"].lower() # type: ignore
+        otp = serializer.validated_data["otp"] # type: ignore
 
         user = User.objects.filter(email__iexact=email).first()
         if not user:

@@ -139,11 +139,13 @@ class BadgeEvaluator:
             # Evaluate the rule
             meets_criteria = False
             if "min_lessons" in rule:
-                meets_criteria = len(completed_slugs) >= rule["min_lessons"]
+                min_lessons = rule["min_lessons"]
+                if isinstance(min_lessons, int):
+                    meets_criteria = len(completed_slugs) >= min_lessons
             elif "lessons" in rule:
-                meets_criteria = all(
-                    slug in completed_slugs for slug in rule["lessons"]
-                )
+                lessons_list = rule["lessons"]
+                if isinstance(lessons_list, list):
+                    meets_criteria = all(slug in completed_slugs for slug in lessons_list)
 
             if meets_criteria:
                 badge, _ = Badge.objects.get_or_create(

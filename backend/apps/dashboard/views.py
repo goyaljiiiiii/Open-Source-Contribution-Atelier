@@ -158,15 +158,13 @@ class AdminDashboardView(APIView):
 
             pending_prs = []
             for pr in pending_prs_qs:
-                pending_prs.append(
-                    {
-                        "id": pr.id,
-                        "title": pr.title,
-                        "contributor": pr.user.username,
-                        "issue_title": pr.issue.title if pr.issue else "No Issue Link",
-                        "created_at": pr.created_at.isoformat(),
-                    }
-                )
+                pending_prs.append({
+                    "id": pr.id,
+                    "title": pr.title,
+                    "contributor": pr.user.username,
+                    "issue_title": pr.issue.title if pr.issue else "No Issue Link",
+                    "created_at": pr.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                })
 
             data = {
                 "system_stats": system_stats,
@@ -304,16 +302,14 @@ class ContributorDashboardView(APIView):
 
             assigned_issues = []
             for issue in assigned_issues_qs:
-                assigned_issues.append(
-                    {
-                        "id": issue.id,
-                        "title": issue.title,
-                        "description": issue.description,
-                        "status": issue.status,
-                        "points": issue.points,
-                        "created_at": issue.created_at.isoformat(),
-                    }
-                )
+                assigned_issues.append({
+                    "id": issue.id,
+                    "title": issue.title,
+                    "description": issue.description,
+                    "status": issue.status,
+                    "points": issue.points,
+                    "created_at": issue.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                })
 
             # 3. Recent PRs
             recent_prs_qs = (
@@ -324,16 +320,17 @@ class ContributorDashboardView(APIView):
 
             recent_prs = []
             for pr in recent_prs_qs:
-                recent_prs.append(
-                    {
-                        "id": pr.id,
-                        "title": pr.title,
-                        "status": pr.status,
-                        "issue_title": pr.issue.title if pr.issue else "No Issue Link",
-                        "created_at": pr.created_at.isoformat(),
-                        "merged_at": pr.merged_at.isoformat() if pr.merged_at else None,
-                    }
-                )
+                recent_prs.append({
+                    "id": pr.id,
+                    "title": pr.title,
+                    "status": pr.status,
+                    "issue_title": pr.issue.title if pr.issue else "No Issue Link",
+                    "created_at": pr.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "merged_at": (pr.merged_at.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    if pr.merged_at
+                                else None
+                            ),
+                })
 
             # 4. Progress tracker
             completed_lessons = LessonProgress.objects.filter(

@@ -1,18 +1,30 @@
 from django.urls import path
 
-from .views import (GitHubOAuthCallbackView, GitHubOAuthStartView,
-                    GoogleLoginView, LoginView, MeView, OtpRequestView,
-                    OtpVerifyView, PasswordResetConfirmView,
-                    PasswordResetRequestView, RefreshView, SignupView,
-                    UserListView)
+from .views import (
+    GitHubOAuthCallbackView,
+    GitHubOAuthStartView,
+    GoogleLoginView,
+    LoginView,
+    MeView,
+    RefreshView,
+    SignupView,
+    UserListView,
+    PasswordResetRequestView,
+    PasswordResetConfirmView,
+    OtpRequestView,
+    OtpVerifyView,
+    UserStatisticsView,
+)
 
 urlpatterns = [
     # ── Core Auth ──────────────────────────────────────────────────────────────
-    path("signup/", SignupView.as_view(), name="signup"),
-    path("login/", LoginView.as_view(), name="login"),
-    path("refresh/", RefreshView.as_view(), name="refresh"),
-    path("me/", MeView.as_view(), name="me"),
-    path("users/", UserListView.as_view(), name="user-list"),
+    path("signup/",           SignupView.as_view(),             name="signup"),
+    path("login/",            LoginView.as_view(),              name="login"),
+    path("refresh/",          RefreshView.as_view(),            name="refresh"),
+    path("me/",               MeView.as_view(),                 name="me"),
+
+    path("stats/",           UserStatisticsView.as_view(),    name="user-stats"),
+    path("users/",            UserListView.as_view(),           name="user-list"),
     # ── OAuth ──────────────────────────────────────────────────────────────────
     path("google/", GoogleLoginView.as_view(), name="google-login"),
     path("github/", GitHubOAuthStartView.as_view(), name="github-login"),

@@ -1,15 +1,24 @@
 from django.urls import path
-
-from .views import (BadgeListView, BulkSyncProgressView,
-                    CertificateVerificationView, CommunityStatsView,
-                    ContributorTimelineView, HelpRequestListCreateView,
-                    MentorHelpRequestListView, MyCertificateView,
-                    MyProgressView, QuizAttemptView, RecommendationsView)
+from .views import (
+    BadgeListView,
+    CommunityStatsView,
+    HelpRequestListCreateView,
+    MentorHelpRequestListView,
+    MyProgressView,
+    BulkSyncProgressView,
+    BulkProgressUpdateView,
+    ContributorTimelineView,
+    QuizAttemptView,
+    CertificateVerificationView,
+    MyCertificateView,
+    RecommendationsView,
+)
 
 urlpatterns = [
     path("badges/", BadgeListView.as_view(), name="badges"),
     path("me/", MyProgressView.as_view(), name="my-progress"),
     path("bulk-sync/", BulkSyncProgressView.as_view(), name="bulk-sync"),
+    path("bulk-update/", BulkProgressUpdateView.as_view(), name="bulk-update"),
     path("recommendations/", RecommendationsView.as_view(), name="recommendations"),
     path("community-stats/", CommunityStatsView.as_view(), name="community-stats"),
     path("help-requests/", HelpRequestListCreateView.as_view(), name="help-requests"),

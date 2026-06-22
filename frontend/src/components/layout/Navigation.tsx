@@ -11,6 +11,7 @@ import {
   X,
   Sun,
   Moon,
+  Settings,
 } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 import { useTheme } from "../../hooks/useTheme";
@@ -23,6 +24,7 @@ const navItems = [
   { to: "/lessons/what-is-open-source", label: "Lessons", icon: BookOpen },
   { to: "/challenges", label: "Challenges", icon: Trophy },
   { to: "/community", label: "Community", icon: BriefcaseBusiness },
+  { to: "/profile", label: "Profile Settings", icon: Settings },
 ];
 
 export function Navigation() {
@@ -44,6 +46,14 @@ export function Navigation() {
     { slug: string; title: string; description: string }[]
   >([]);
   const badgeCount = 0;
+
+  const handleStartSandbox = () => {
+    setIsStarting(true);
+    setTimeout(() => {
+      setIsStarting(false);
+      navigate("/sandbox");
+    }, 500);
+  };
 
   useEffect(() => {
     fetchLessonsApi().then((data) => setLessonsCatalog(data));
@@ -82,7 +92,10 @@ export function Navigation() {
         );
 
         setSearchResults({
-          lessons: filteredLessons.map(l => ({ ...l, summary: l.description })),
+          lessons: filteredLessons.map((l) => ({
+            ...l,
+            summary: l.description,
+          })),
           challenges: filteredChallenges,
         });
         setIsSearching(false);
@@ -93,8 +106,6 @@ export function Navigation() {
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery, lessonsCatalog]);
-
-
 
   return (
     <>
@@ -296,7 +307,11 @@ export function Navigation() {
             </button>
             {user ? (
               <div className="flex items-center gap-2">
-                <span className="font-bold text-sm text-text bg-white px-3 py-2 rounded-xl border-2 border-black dark:bg-[#151411] dark:text-[#f0ebe2] dark:border-[#2e2924] flex items-center gap-1.5 shadow-card-sm">
+                <Link
+                  to="/profile"
+                  className="font-bold text-sm text-text bg-white px-3 py-2 rounded-xl border-2 border-black dark:bg-[#151411] dark:text-[#f0ebe2] dark:border-[#2e2924] flex items-center gap-1.5 shadow-card-sm hover:bg-surface-low transition-colors dark:hover:bg-[#1f1c18]"
+                  title="Profile Settings"
+                >
                   👤{" "}
                   <span className="max-w-[80px] truncate">{user.username}</span>
                   {user.is_staff && (
@@ -304,7 +319,7 @@ export function Navigation() {
                       ADMIN
                     </span>
                   )}
-                </span>
+                </Link>
                 <LogoutButtonWithConfirm />
               </div>
             ) : (
