@@ -10,6 +10,8 @@ import { LoginPage } from "../pages/LoginPage";
 import { SignupPage } from "../pages/SignupPage";
 import { LessonPage } from "../pages/LessonPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
+import { SandboxPage } from "../pages/SandboxPage";
+import { ProfileSettingsPage } from "../pages/ProfileSettingsPage";
 import { VerifyCertificatePage } from "../pages/VerifyCertificatePage";
 import { useAuth } from "../features/auth/AuthContext";
 import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
@@ -106,6 +108,18 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <CommunityPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/sandbox"
+          element={
+            <ProtectedRoute>
+              <SandboxPage />
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfileSettingsPage />
             </ProtectedRoute>
           }
         />

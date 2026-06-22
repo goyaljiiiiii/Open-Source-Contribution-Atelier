@@ -1,6 +1,6 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { SectionCard } from "../components/ui/SectionCard";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchApi } from "../lib/api";
 import SkeletonStatGrid from "../components/ui/skeletons/SkeletonStatGrid";
 import { Trophy, Award } from "lucide-react";
@@ -33,11 +33,65 @@ export function CommunityPage() {
     queryFn: () => fetchApi("/progress/community-stats/"),
   });
 
-  // 2. Fetch GitHub contributors for the leaderboard
-  const [leaderboard, setLeaderboard] = useState<LeaderboardItem[]>([]);
-  const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
+  // 2. Fetch GitHub contributors for the leaderboard using infinite scroll
   const [search, setSearch] = useState("");
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+  const queryClient = useQueryClient();
+
+  const {
+    data: leaderboardData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: loadingLeaderboard,
+  } = useInfiniteQuery({
+    queryKey: ["leaderboard"],
+    queryFn: async ({ pageParam = 1 }) => {
+      try {
+        const data = await fetchApi(`/leaderboard/?page=${pageParam}`);
+        return data;
+      } catch (err) {
+        if (pageParam === 1) {
+          return {
+            results: [
+              { username: "goyaljiiiiii", prs_merged: 42, xp: 2220 },
+              { username: "nandini", prs_merged: 18, xp: 1020 },
+              { username: "antigravity", prs_merged: 12, xp: 720 },
+              { username: "octocat", prs_merged: 6, xp: 420 },
+            ],
+            next: null,
+          };
+        }
+        throw err;
+      }
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      if (lastPage && lastPage.next) {
+        const url = new URL(lastPage.next);
+        return Number(url.searchParams.get("page")) || undefined;
+      }
+      return undefined;
+    },
+  });
+
+  const leaderboard = useMemo(() => {
+    if (!leaderboardData) return [];
+    const flattened = leaderboardData.pages.flatMap((page) => {
+      if (page && Array.isArray(page.results)) {
+        return page.results;
+      }
+      return [];
+    });
+    return flattened.map((item: any, idx: number) => ({
+      rank: idx + 1,
+      username: item.username,
+      avatar_url: `https://github.com/${item.username}.png`,
+      html_url: `https://github.com/${item.username}`,
+      contributions: item.prs_merged,
+      xp: item.xp,
+    }));
+  }, [leaderboardData]);
 
   const filteredLeaderboard = useMemo(() => {
     return [...leaderboard]
@@ -53,72 +107,23 @@ export function CommunityPage() {
       });
   }, [leaderboard, search, sortOrder]);
 
-  const fetchLeaderboard = () => {
-    setLoadingLeaderboard(true);
-    fetchApi("/leaderboard/")
-      .then((data) => {
-        if (data && Array.isArray(data.results)) {
-          const mapped = data.results.map(
-            (
-              item: { username: string; prs_merged: number; xp: number },
-              idx: number,
-            ) => ({
-              rank: idx + 1,
-              username: item.username,
-              avatar_url: `https://github.com/${item.username}.png`,
-              html_url: `https://github.com/${item.username}`,
-              contributions: item.prs_merged,
-              xp: item.xp,
-            }),
-          );
-          setLeaderboard(mapped.slice(0, 10));
-        } else {
-          throw new Error("Invalid results format");
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const lastElementRef = useCallback(
+    (node: HTMLTableRowElement) => {
+      if (isFetchingNextPage || loadingLeaderboard) return;
+      if (observerRef.current) observerRef.current.disconnect();
+      
+      observerRef.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasNextPage) {
+          fetchNextPage();
         }
-        setLoadingLeaderboard(false);
-      })
-      .catch(() => {
-        // High quality fallback leaderboard
-        setLeaderboard([
-          {
-            rank: 1,
-            username: "goyaljiiiiii",
-            avatar_url: "https://github.com/goyaljiiiiii.png",
-            html_url: "https://github.com/goyaljiiiiii",
-            contributions: 42,
-            xp: 2220,
-          },
-          {
-            rank: 2,
-            username: "nandini",
-            avatar_url: "https://github.com/github.png",
-            html_url: "https://github.com",
-            contributions: 18,
-            xp: 1020,
-          },
-          {
-            rank: 3,
-            username: "antigravity",
-            avatar_url: "https://github.com/google.png",
-            html_url: "https://github.com",
-            contributions: 12,
-            xp: 720,
-          },
-          {
-            rank: 4,
-            username: "octocat",
-            avatar_url: "https://github.com/octocat.png",
-            html_url: "https://github.com/octocat",
-            contributions: 6,
-            xp: 420,
-          },
-        ]);
-        setLoadingLeaderboard(false);
       });
-  };
+      if (node) observerRef.current.observe(node);
+    },
+    [isFetchingNextPage, loadingLeaderboard, hasNextPage, fetchNextPage]
+  );
 
   useEffect(() => {
-    fetchLeaderboard();
 
     const apiBase =
       import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
@@ -137,7 +142,7 @@ export function CommunityPage() {
         const data = JSON.parse(event.data);
         if (data.type === "leaderboard_update") {
           console.log("Leaderboard updated:", data.message);
-          fetchLeaderboard();
+          queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
         }
       } catch (err) {
         console.error("Failed to parse websocket message:", err);
@@ -222,7 +227,7 @@ export function CommunityPage() {
             </select>
           </div>
 
-          {loadingLeaderboard ? (
+          {loadingLeaderboard && leaderboard.length === 0 ? (
             <p className="text-sm text-muted animate-pulse font-bold">
               Assembling standings...
             </p>
@@ -231,6 +236,8 @@ export function CommunityPage() {
               data={filteredLeaderboard}
               keyExtractor={(item) => item.username}
               emptyMessage="No matching contributors found."
+              lastElementRef={lastElementRef}
+              footerContent={isFetchingNextPage ? "Loading more contributors..." : null}
               rowClassName={(item) => user?.username === item.username ? "bg-accent/20" : ""}
               columns={[
                 {

@@ -13,6 +13,8 @@ interface ResponsiveTableProps<T> {
   keyExtractor: (item: T, index: number) => string;
   rowClassName?: (item: T, index: number) => string;
   emptyMessage?: React.ReactNode;
+  lastElementRef?: (node: HTMLElement | null) => void;
+  footerContent?: React.ReactNode;
 }
 
 export function ResponsiveTable<T>({
@@ -21,6 +23,8 @@ export function ResponsiveTable<T>({
   keyExtractor,
   rowClassName,
   emptyMessage = "No data available",
+  lastElementRef,
+  footerContent,
 }: ResponsiveTableProps<T>) {
   return (
     <div className="w-full">
@@ -31,30 +35,39 @@ export function ResponsiveTable<T>({
             {emptyMessage}
           </div>
         ) : (
-          data.map((item, idx) => (
-            <div
-              key={keyExtractor(item, idx)}
-              className={`rounded-2xl border-4 border-black shadow-card-sm p-4 bg-white dark:bg-[#151411] dark:border-[#2e2924] flex flex-col gap-3 ${rowClassName ? rowClassName(item, idx) : ""}`}
-            >
-              {columns.map((col, colIdx) => {
-                const cellContent =
-                  typeof col.accessor === "function"
-                    ? col.accessor(item, idx)
-                    : (item[col.accessor] as React.ReactNode);
-                
-                return (
-                  <div key={colIdx} className="flex justify-between items-center gap-4 border-b border-dashed border-black/10 dark:border-[#2e2924]/50 pb-2 last:border-0 last:pb-0">
-                    <span className="text-xs uppercase tracking-wider font-black text-muted dark:text-[#c4bbae]">
-                      {col.label || col.header}
-                    </span>
-                    <div className="text-sm font-bold text-right truncate flex-1 flex justify-end">
-                      {cellContent}
+          data.map((item, idx) => {
+            const isLast = idx === data.length - 1;
+            return (
+              <div
+                key={keyExtractor(item, idx)}
+                ref={isLast ? lastElementRef : null}
+                className={`rounded-2xl border-4 border-black shadow-card-sm p-4 bg-white dark:bg-[#151411] dark:border-[#2e2924] flex flex-col gap-3 ${rowClassName ? rowClassName(item, idx) : ""}`}
+              >
+                {columns.map((col, colIdx) => {
+                  const cellContent =
+                    typeof col.accessor === "function"
+                      ? col.accessor(item, idx)
+                      : (item[col.accessor] as React.ReactNode);
+                  
+                  return (
+                    <div key={colIdx} className="flex justify-between items-center gap-4 border-b border-dashed border-black/10 dark:border-[#2e2924]/50 pb-2 last:border-0 last:pb-0">
+                      <span className="text-xs uppercase tracking-wider font-black text-muted dark:text-[#c4bbae]">
+                        {col.label || col.header}
+                      </span>
+                      <div className="text-sm font-bold text-right truncate flex-1 flex justify-end">
+                        {cellContent}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          ))
+                  );
+                })}
+              </div>
+            );
+          })
+        )}
+        {footerContent && (
+          <div className="p-4 text-center text-sm text-muted animate-pulse font-bold bg-white dark:bg-[#151411] border-4 border-black dark:border-[#2e2924] rounded-2xl">
+            {footerContent}
+          </div>
         )}
       </div>
 
@@ -84,23 +97,37 @@ export function ResponsiveTable<T>({
                 </td>
               </tr>
             ) : (
-              data.map((item, idx) => (
-                <tr
-                  key={keyExtractor(item, idx)}
-                  className={`border-b-2 border-black last:border-b-0 hover:bg-surface-lowest transition dark:border-[#2e2924] dark:hover:bg-black/10 ${rowClassName ? rowClassName(item, idx) : ""}`}
+              data.map((item, idx) => {
+                const isLast = idx === data.length - 1;
+                return (
+                  <tr
+                    key={keyExtractor(item, idx)}
+                    ref={isLast ? lastElementRef as any : null}
+                    className={`border-b-2 border-black last:border-b-0 hover:bg-surface-lowest transition dark:border-[#2e2924] dark:hover:bg-black/10 ${rowClassName ? rowClassName(item, idx) : ""}`}
+                  >
+                    {columns.map((col, colIdx) => (
+                      <td
+                        key={colIdx}
+                        className={`px-4 py-3 border-r-2 border-black dark:border-[#2e2924] last:border-r-0 ${col.className || ""}`}
+                      >
+                        {typeof col.accessor === "function"
+                          ? col.accessor(item, idx)
+                          : (item[col.accessor] as React.ReactNode)}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })
+            )}
+            {footerContent && (
+              <tr>
+                <td
+                  colSpan={columns.length}
+                  className="px-4 py-4 text-center text-sm text-muted animate-pulse font-bold border-t-2 border-black dark:border-[#2e2924]"
                 >
-                  {columns.map((col, colIdx) => (
-                    <td
-                      key={colIdx}
-                      className={`px-4 py-3 border-r-2 border-black dark:border-[#2e2924] last:border-r-0 ${col.className || ""}`}
-                    >
-                      {typeof col.accessor === "function"
-                        ? col.accessor(item, idx)
-                        : (item[col.accessor] as React.ReactNode)}
-                    </td>
-                  ))}
-                </tr>
-              ))
+                  {footerContent}
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
