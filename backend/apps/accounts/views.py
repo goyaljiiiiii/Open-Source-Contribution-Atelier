@@ -589,3 +589,37 @@ class OtpVerifyView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+from django.http import HttpResponse, JsonResponse
+from .export import DataExportService
+
+class ExportDataView(APIView):
+    """
+    GET /api/users/me/export/?format=csv|json
+    Generates a GDPR-compliant export of all personal data.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        responses={
+            200: OpenApiResponse(description="Data export file (JSON or ZIP containing CSVs)"),
+            400: OpenApiResponse(description="Unsupported format requested")
+        }
+    )
+    def get(self, request):
+        export_format = request.query_params.get("format", "json").lower()
+        service = DataExportService(request.user)
+        
+        if export_format == "json":
+            json_data = service.generate_json()
+            response = HttpResponse(json_data, content_type='application/json')
+            response['Content-Disposition'] = f'attachment; filename="data_export_{request.user.username}.json"'
+            return response
+            
+        elif export_format == "csv":
+            zip_data = service.generate_csv_zip()
+            response = HttpResponse(zip_data, content_type='application/zip')
+            response['Content-Disposition'] = f'attachment; filename="data_export_{request.user.username}.zip"'
+            return response
+            
+        return Response({"error": "unsupported_format", "message": "Only 'json' and 'csv' formats are supported."}, status=status.HTTP_400_BAD_REQUEST)
