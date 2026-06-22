@@ -103,7 +103,7 @@ export function AppRouter() {
             </ProtectedRoute>
           }
         />
-        <Routex
+        <Route
           path="/community"
           element={
             <ProtectedRoute>
