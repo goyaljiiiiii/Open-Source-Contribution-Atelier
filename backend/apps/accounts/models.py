@@ -1,8 +1,10 @@
-from django.conf import settings
-from django.db import models
 import uuid
 
 from apps.content.models import Lesson
+from django.conf import settings
+from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class MentorProfile(models.Model):
@@ -55,8 +57,9 @@ class PasswordResetToken(models.Model):
 
     def is_expired(self) -> bool:
         """Return True if the token is older than PASSWORD_RESET_TIMEOUT_MINUTES."""
-        from django.utils import timezone
         from datetime import timedelta
+        from django.utils import timezone
+
         timeout = getattr(settings, "PASSWORD_RESET_TIMEOUT_MINUTES", 15)
         return timezone.now() > self.created_at + timedelta(minutes=timeout)
 
@@ -80,6 +83,7 @@ class OTPToken(models.Model):
     def __str__(self) -> str:
         return f"OTPToken(user={self.user.username}, used={self.is_used})"
 
+
 class UserProfile(models.Model):
     """
     Standard user profile linking to the main User model.
@@ -95,13 +99,12 @@ class UserProfile(models.Model):
     def __str__(self):
         return f"UserProfile({self.user.username})"
 
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
         UserProfile.objects.create(user=instance)
+
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def save_user_profile(sender, instance, **kwargs):

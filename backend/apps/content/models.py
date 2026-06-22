@@ -1,4 +1,4 @@
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
@@ -24,7 +24,7 @@ class Lesson(models.Model):
     content = models.TextField()
     learning_objectives = models.JSONField(default=list, blank=True)
     tips = models.JSONField(default=list, blank=True)
-    category = models.CharField(max_length=100, default='general')
+    category = models.CharField(max_length=100, default="general")
     estimated_minutes = models.PositiveIntegerField(
         default=15,
         validators=[
@@ -33,6 +33,9 @@ class Lesson(models.Model):
         ],
     )
     order = models.PositiveIntegerField(default=0)
+    embedding = models.JSONField(
+        null=True, blank=True, help_text="Pre-computed semantic embedding vector"
+    )
 
     class Meta:
         ordering = ["order", "id"]
@@ -45,8 +48,6 @@ class Exercise(models.Model):
     expected_command = models.CharField(max_length=255)
     explanation = models.TextField(blank=True)
     points = models.PositiveIntegerField(default=10)
-
-
 class ActiveCommentManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(is_deleted=False)

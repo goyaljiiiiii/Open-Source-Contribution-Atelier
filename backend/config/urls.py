@@ -1,7 +1,8 @@
+from apps.dashboard.views import LeaderboardView
 from django.contrib import admin
 from django.urls import include, path
-from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView # Add this line
-from apps.dashboard.views import LeaderboardView
+from drf_spectacular.views import (SpectacularAPIView,  # Add this line
+                                   SpectacularSwaggerView)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -16,10 +17,13 @@ urlpatterns = [
     path("api/dashboard/", include("apps.dashboard.urls")),
     path("api/search/", include("apps.search.urls")),
     path("api/webhooks/", include("apps.webhooks.urls")),
-    
     # Add these two paths below:
-    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path(
+        "api/docs/",
+        SpectacularSwaggerView.as_view(url_name="schema"),
+        name="swagger-ui",
+    ),
 ]
 
 from django.conf import settings
