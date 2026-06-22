@@ -44,7 +44,7 @@ jobs:
                 owner: repo.owner,
                 repo: repo.repo,
                 issue_number: pr.number,
-                body: `@${pr.user.login}, kindly mention the issue number (e.g., \`#123\`) in the PR body that you are solving so we can link it correctly.`
+                body: `@${pr.user.login}, kindly mention the issue number (e.g., \`#<issue_number>\`) in the PR body that you are solving so we can link it correctly.`
               });
               return;
             }
