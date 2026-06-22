@@ -8,7 +8,7 @@ from apps.accounts.models import MentorProfile
 from apps.progress.models import LessonProgress, HelpRequest, Certificate, UserBadge, QuizAttempt
 from apps.sandbox.models import SandboxExecutionLog
 from apps.notifications.models import Notification
-from apps.dashboard.models import SimulatedPullRequest, DashboardIssue
+from apps.dashboard.models import PullRequest, Issue
 from apps.webhooks.models import WebhookEndpoint
 
 class DataExportService:
@@ -29,8 +29,8 @@ class DataExportService:
             "quiz_attempts": self._queryset_to_list(QuizAttempt.objects.filter(user=self.user)),
             "sandbox_logs": self._queryset_to_list(SandboxExecutionLog.objects.filter(user=self.user)),
             "notifications": self._queryset_to_list(Notification.objects.filter(recipient=self.user)),
-            "pull_requests": self._queryset_to_list(SimulatedPullRequest.objects.filter(user=self.user)),
-            "assigned_issues": self._queryset_to_list(DashboardIssue.objects.filter(assigned_to=self.user)),
+            "pull_requests": self._queryset_to_list(PullRequest.objects.filter(user=self.user)),
+            "assigned_issues": self._queryset_to_list(Issue.objects.filter(assigned_to=self.user)),
             "webhooks": self._queryset_to_list(WebhookEndpoint.objects.filter(user=self.user)),
         }
         return data

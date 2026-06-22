@@ -1,10 +1,10 @@
+from unittest.mock import Mock, patch
 import pytest
-from django.contrib.auth.models import User
-from rest_framework.test import APIClient, APITestCase
-from rest_framework import status
-from unittest.mock import patch, Mock
 from apps.content.models import Lesson
 from apps.progress.models import LessonProgress
+from django.contrib.auth.models import User
+from rest_framework import status
+from rest_framework.test import APIClient, APITestCase
 
 class UserProfileUpdateTests(APITestCase):
     def setUp(self):
@@ -217,26 +217,22 @@ def test_me_endpoint():
     assert anonymous_response.status_code == 401
 
     user = User.objects.create_user(
-        username="testuser", 
-        email="testuser@example.com", 
-        password="strongpass123"
+        username="testuser", email="testuser@example.com", password="strongpass123"
     )
 
     # hitting a GET request with JWT
     client.force_authenticate(user=user)
-    auth_response = client.get("/api/auth/me/") 
+    auth_response = client.get("/api/auth/me/")
 
     assert auth_response.status_code == 200
     assert auth_response.data["id"] == user.id
     assert auth_response.data["username"] == "testuser"
     assert auth_response.data["email"] == "testuser@example.com"
     assert auth_response.data["is_staff"] is False
+    
 @pytest.mark.django_db
 def test_progress_post_creates_dynamic_lesson_stub():
-    user = User.objects.create_user(
-        username="progress_user",
-        password="strongpass123"
-    )
+    user = User.objects.create_user(username="progress_user", password="strongpass123")
 
     client = APIClient()
     client.force_authenticate(user=user)
@@ -260,10 +256,7 @@ def test_progress_post_creates_dynamic_lesson_stub():
     assert lesson.content == "Dynamic content loaded from local file storage."
     assert lesson.difficulty == "beginner"
 
-    assert LessonProgress.objects.filter(
-        user=user,
-        lesson=lesson
-    ).exists()
+    assert LessonProgress.objects.filter(user=user, lesson=lesson).exists()
 
 
 @pytest.mark.django_db
@@ -318,4 +311,3 @@ def test_signup_duplicate_email_is_case_insensitive():
 
     assert response.status_code == 400
     assert "email" in response.data
-

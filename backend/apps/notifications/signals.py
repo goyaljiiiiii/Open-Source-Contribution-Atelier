@@ -28,11 +28,13 @@ def _push_notification(notification: Notification):
         async_to_sync(channel_layer.group_send)(
             group_name,
             {
-                "type":         "send_notification",   # matches consumer method
+                "type": "send_notification",  # matches consumer method
                 "notification": data,
             },
         )
-        logger.info("Pushed notification id=%s to group=%s", notification.id, group_name)
+        logger.info(
+            "Pushed notification id=%s to group=%s", notification.id, group_name
+        )
     except Exception as exc:
         logger.error("Failed to push notification: %s", exc)
 
@@ -47,34 +49,33 @@ def on_badge_awarded(sender, instance, created, **kwargs):
     if not created:
         return
     notif = Notification.objects.create(
-        recipient  = instance.user,
-        notif_type = "badge",
-        title      = "🏅 New Badge Earned!",
-        message    = f"You earned the '{instance.badge.name}' badge.",
-        meta       = {
+        recipient=instance.user,
+        notif_type="badge",
+        title="🏅 New Badge Earned!",
+        message=f"You earned the '{instance.badge.name}' badge.",
+        meta={
             "badge_id": instance.badge.id,
             "badge_name": instance.badge.name,
-            "badge_slug": instance.badge.slug
+            "badge_slug": instance.badge.slug,
         },
     )
     _push_notification(notif)
-    
+
     # Offload bulk email or notification digest to the independent worker
     from celery import current_app
     current_app.send_task(
-        'tasks.send_bulk_email',
+        "tasks.send_bulk_email",
         kwargs={
-            'payload': {
-                'template_id': 'badge_earned_email',
-                'recipients': [instance.user.email],
-                'data': {
-                    'badge_name': instance.badge.name,
-                    'username': instance.user.username
-                }
+            "payload": {
+                "template_id": "badge_earned_email",
+                "recipients": [instance.user.email],
+                "data": {
+                    "badge_name": instance.badge.name,
+                    "username": instance.user.username,
+                },
             }
-        }
+        },
     )
-
 
 
 # ------------------------------------------------------------------ #
@@ -105,14 +106,16 @@ def on_badge_awarded(sender, instance, created, **kwargs):
 # ------------------------------------------------------------------ #
 # Utility: call this anywhere in your codebase to send a manual notif #
 # ------------------------------------------------------------------ #
-def create_and_push_notification(recipient, notif_type, title, message, sender=None, meta=None):
+def create_and_push_notification(
+    recipient, notif_type, title, message, sender=None, meta=None
+):
     notif = Notification.objects.create(
-        recipient  = recipient,
-        sender     = sender,
-        notif_type = notif_type,
-        title      = title,
-        message    = message,
-        meta       = meta or {},
+        recipient=recipient,
+        sender=sender,
+        notif_type=notif_type,
+        title=title,
+        message=message,
+        meta=meta or {},
     )
     _push_notification(notif)
     return notif

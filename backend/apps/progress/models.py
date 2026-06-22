@@ -1,8 +1,8 @@
+from apps.content.models import Exercise, Lesson
 from django.contrib.auth.models import User
 from django.db import models
 from apps.organizations.models import Organization
 from django.core.exceptions import ObjectDoesNotExist
-from apps.content.models import Exercise, Lesson
 
 class Badge(models.Model):
     class DoesNotExist(ObjectDoesNotExist):
@@ -52,9 +52,13 @@ class LessonProgress(models.Model):
             ),
         ]
         indexes = [
-            models.Index(fields=["user", "completed"], name="idx_progress_user_completed"),
+            models.Index(
+                fields=["user", "completed"], name="idx_progress_user_completed"
+            ),
             models.Index(fields=["user", "score"], name="idx_progress_user_score"),
-            models.Index(fields=["user", "-updated_at"], name="idx_progress_user_updated"),
+            models.Index(
+                fields=["user", "-updated_at"], name="idx_progress_user_updated"
+            ),
         ]
 
 
@@ -74,8 +78,13 @@ class ExerciseAttempt(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=["user", "exercise", "is_correct"], name="idx_ex_attempt_user_correct"),
-            models.Index(fields=["user", "-created_at"], name="idx_ex_attempt_user_time"),
+            models.Index(
+                fields=["user", "exercise", "is_correct"],
+                name="idx_ex_attempt_user_correct",
+            ),
+            models.Index(
+                fields=["user", "-created_at"], name="idx_ex_attempt_user_time"
+            ),
         ]
 
 
@@ -110,8 +119,12 @@ class HelpRequest(models.Model):
     class Meta:
         indexes = [
             models.Index(fields=["user", "status"], name="idx_help_req_user_status"),
-            models.Index(fields=["status", "-created_at"], name="idx_help_req_status_time"),
+            models.Index(
+                fields=["status", "-created_at"], name="idx_help_req_status_time"
+            ),
         ]
+
+
 class QuizAttempt(models.Model):
     class DoesNotExist(ObjectDoesNotExist):
         pass
@@ -153,4 +166,3 @@ class Certificate(models.Model):
 
     def __str__(self):
         return f"Certificate for {self.user.username} - {self.verification_hash}"
-
