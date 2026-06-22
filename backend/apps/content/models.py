@@ -2,7 +2,13 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
 
+from django.core.exceptions import ObjectDoesNotExist
+
 class Lesson(models.Model):
+    class DoesNotExist(ObjectDoesNotExist):
+        pass
+
+    objects = models.Manager()
     difficulty = models.CharField(max_length=32)
     title = models.CharField(max_length=255)
     slug = models.SlugField(unique=True)
@@ -25,6 +31,7 @@ class Lesson(models.Model):
 
 
 class Exercise(models.Model):
+    objects = models.Manager()
     lesson = models.ForeignKey(Lesson, related_name="exercises", on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
     prompt = models.TextField()
