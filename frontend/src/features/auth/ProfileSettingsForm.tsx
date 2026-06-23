@@ -143,7 +143,7 @@ export function ProfileSettingsForm() {
           disabled={loading}
         />
         {errors.email && (
-          <p className="text-red-600 font-bold ml-2 text-sm">
+          <p role="alert" className="text-red-600 font-bold ml-2 text-sm">
             {errors.email.message}
           </p>
         )}
@@ -159,16 +159,10 @@ export function ProfileSettingsForm() {
             errors.timezone ? "border-red-500" : ""
           }`}
           disabled={loading}
-        >
-          {Intl.supportedValuesOf("timeZone").map((tz) => (
-            <option key={tz} value={tz}>
-              {tz}
-            </option>
-          ))}
-        </select>
-        {errors.timezone && (
-          <p className="text-red-600 font-bold ml-2 text-sm">
-            {errors.timezone.message}
+        />
+        {errors.password && (
+          <p role="alert" className="text-red-600 font-bold ml-2 text-sm">
+            {errors.password.message}
           </p>
         )}
       </div>

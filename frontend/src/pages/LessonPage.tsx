@@ -593,12 +593,12 @@ export function LessonPage() {
                 // CONFLICT SANDBOX MODE
                 <div className="mt-8">
                   {feedback === "correct" && (
-                    <div className="mt-6 text-green-700 font-bold bg-green-50 p-4 rounded-lg border-4 border-green-600 animate-bounce">
+                    <div role="status" className="mt-6 text-green-700 font-bold bg-green-50 p-4 rounded-lg border-4 border-green-600 animate-bounce">
                       ✅ Correct! You successfully resolved the merge conflict.
                     </div>
                   )}
                   {feedback === "error" && (
-                    <div className="mt-6 text-red-700 font-bold bg-red-50 p-4 rounded-lg border-4 border-red-600">
+                    <div role="alert" className="mt-6 text-red-700 font-bold bg-red-50 p-4 rounded-lg border-4 border-red-600">
                       ❌ The resolved output doesn't quite match what was
                       expected. Try reviewing your selections.
                     </div>
@@ -677,13 +677,13 @@ export function LessonPage() {
                     )}
 
                     {feedback === "correct" && (
-                      <div className="text-green-700 font-bold bg-green-50 p-4 rounded-lg border-4 border-green-600 animate-bounce">
+                      <div role="status" className="text-green-700 font-bold bg-green-50 p-4 rounded-lg border-4 border-green-600 animate-bounce">
                         ✅ Correct! Progress synchronized to the Atelier server.
                       </div>
                     )}
 
                     {feedback === "error" && (
-                      <div className="text-red-700 font-bold bg-red-50 p-4 rounded-lg border-4 border-red-600">
+                      <div role="alert" className="text-red-700 font-bold bg-red-50 p-4 rounded-lg border-4 border-red-600">
                         ❌ Not quite. Command output did not match sandbox
                         expectations.
                       </div>
@@ -818,13 +818,13 @@ export function LessonPage() {
               />
 
               {helpRequestMutation.isError && (
-                <div className="text-red-700 text-xs font-black bg-red-50 p-2 rounded-lg border-2 border-red-700">
+                <div role="alert" className="text-red-700 text-xs font-black bg-red-50 p-2 rounded-lg border-2 border-red-700">
                   Couldn&apos;t submit request. Re-run backend server checks.
                 </div>
               )}
 
               {helpSuccessMessage && (
-                <div className="text-green-700 text-xs font-black bg-green-50 p-2 rounded-lg border-2 border-green-700">
+                <div role="status" className="text-green-700 text-xs font-black bg-green-50 p-2 rounded-lg border-2 border-green-700">
                   {helpSuccessMessage}
                 </div>
               )}
