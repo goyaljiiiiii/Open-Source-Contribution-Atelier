@@ -121,17 +121,21 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 },
             )
 
-        elif action == "public_key":
-            await self.channel_layer.group_send(
-                self.group_name,
-                {
-                    "type": "public_key_broadcast",
-                    "username": self.user.username,
-                    "user_id": self.user.id,
-                    "public_key": data.get("public_key"),
-                    "sender_channel": self.channel_name,
-                },
-            )
+        elif action == "send_message":
+            content = data.get("message", "")
+            if content:
+                msg = await self.save_message(self.user, self.room_id, content)
+                await self.channel_layer.group_send(
+                    self.group_name,
+                    {
+                        "type": "chat_message",
+                        "username": self.user.username,
+                        "user_id": self.user.id,
+                        "message": content,
+                        "created_at": msg.created_at.isoformat(),
+                        "sender_channel": self.channel_name,
+                    },
+                )
 
         elif action == "send_message":
             content = data.get("message", "")
