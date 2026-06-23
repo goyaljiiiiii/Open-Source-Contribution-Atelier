@@ -16,8 +16,8 @@ import { useUserProgress } from "../hooks/useUserProgress";
 import { fetchApi } from "../lib/api";
 import { Lesson, fetchLessonsApi, fetchLessonContent } from "../lib/lessons";
 import { MarkdownRenderer } from "../components/ui/MarkdownRenderer";
+import { RichTextEditor } from "../components/ui/RichTextEditor";
 import { GitGraph } from "../components/ui/GitGraph";
-import { Textarea } from "../components/ui/Textarea";
 
 import {
   createInitialRepo,
@@ -794,20 +794,14 @@ export function LessonPage() {
               >
                 Describe the conflict or checkout issue:
               </label>
-              <Textarea
+              <RichTextEditor
                 id="help-message"
-                className="w-full rounded-xl border-4 border-black bg-white px-3 py-2 text-xs outline-none min-h-16 dark:bg-[#151411] dark:border-[#2e2924]"
-                placeholder="Type here to see auto-resize..."
+                placeholder="Example: I'm stuck trying to stage feat/add-readme-badges, git status throws pathspec errors."
                 value={helpMessage}
-                onChange={(e) => setHelpMessage(e.target.value)}
+                onChange={setHelpMessage}
                 disabled={helpRequestMutation.isPending}
                 maxLength={MAX_HELP_CHARS}
               />
-              <p
-                className={`text-xs font-black text-right ${helpMessage.length > MAX_HELP_CHARS ? "text-red-600" : "text-muted dark:text-[#c4bbae]"}`}
-              >
-                {helpMessage.length} / {MAX_HELP_CHARS} characters
-              </p>
 
               {helpRequestMutation.isError && (
                 <div className="text-red-700 text-xs font-black bg-red-50 p-2 rounded-lg border-2 border-red-700">
