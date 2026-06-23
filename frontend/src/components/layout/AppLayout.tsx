@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { Navigation } from "./Navigation";
 import { BadgeToastNotifier } from "../ui/BadgeToastNotifier";
+import { ScrollToTop } from "../ui/ScrollToTop";
 
 export function AppLayout() {
   return (
@@ -14,7 +15,7 @@ export function AppLayout() {
         </div>
       </main>
       <BadgeToastNotifier />
+      <ScrollToTop />
     </div>
   );
 }
-

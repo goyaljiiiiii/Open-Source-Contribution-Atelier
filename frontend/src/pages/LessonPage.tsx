@@ -16,9 +16,14 @@ import { useUserProgress } from "../hooks/useUserProgress";
 import { fetchApi } from "../lib/api";
 import { Lesson, fetchLessonsApi, fetchLessonContent } from "../lib/lessons";
 import { MarkdownRenderer } from "../components/ui/MarkdownRenderer";
+import { RichTextEditor } from "../components/ui/RichTextEditor";
 import { GitGraph } from "../components/ui/GitGraph";
 
-import { createInitialRepo, parseGitCommand, RepoState } from "../lib/gitSimulator";
+import {
+  createInitialRepo,
+  parseGitCommand,
+  RepoState,
+} from "../lib/gitSimulator";
 
 function normalizeCommand(value: string) {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
@@ -499,26 +504,8 @@ export function LessonPage() {
                           <button
                             key={idx}
                             onClick={() => {
-                              if (quizFeedback !== null) return; // Already answered
+                              if (quizFeedback !== null) return; // Already submitted — lock selection
                               setSelectedOption(idx);
-                              // Immediately validate the answer
-                              const isCorrect = idx === currentQuiz.answer;
-                              setQuizFeedback(
-                                isCorrect ? "correct" : "incorrect",
-                              );
-                              if (isCorrect) {
-                                if (
-                                  currentQuizIndex ===
-                                  lesson.quizzes!.length - 1
-                                ) {
-                                  setFeedback("correct");
-                                  syncProgress({
-                                    lesson_slug: lesson.slug,
-                                    score: lesson.points || 15,
-                                    completed: true,
-                                  });
-                                }
-                              }
                             }}
                             disabled={quizFeedback !== null}
                             className={`w-full text-left p-4 rounded-xl border-4 border-black font-bold text-sm transition-all flex items-center justify-between ${bgColor}`}
@@ -586,7 +573,7 @@ export function LessonPage() {
                         disabled={selectedOption === null}
                         className="px-5 py-2.5 bg-primary text-black font-black text-sm rounded-xl border-4 border-black shadow-card-sm hover:-translate-y-0.5 disabled:opacity-50 transition-all cursor-pointer"
                       >
-                        Check Answer
+                        Submit Answer
                       </button>
                     )}
                   </div>
@@ -594,7 +581,6 @@ export function LessonPage() {
               ) : hasConflict ? (
                 // CONFLICT SANDBOX MODE
                 <div className="mt-8">
-                  
                   {feedback === "correct" && (
                     <div className="mt-6 text-green-700 font-bold bg-green-50 p-4 rounded-xl border-4 border-green-600 animate-bounce">
                       ✅ Correct! You successfully resolved the merge conflict.
@@ -634,7 +620,7 @@ export function LessonPage() {
                         $
                       </span>
                       <input
-                        className="flex-1 rounded-xl border-4 border-black bg-surface-lowest px-4 py-2.5 text-text font-bold outline-none placeholder:text-muted/40 dark:bg-[#151411] dark:border-[#2e2924]"
+                        className="flex-1 min-w-0 rounded-xl border-4 border-black bg-surface-lowest px-4 py-2.5 text-text font-bold outline-none placeholder:text-muted/40 dark:bg-[#151411] dark:border-[#2e2924]"
                         placeholder={lesson.hint || "Type your git command here"}
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
@@ -709,7 +695,7 @@ export function LessonPage() {
             </div>
 
             {/* Course Navigation Footer */}
-            <div className="flex items-center justify-between pt-10 pb-12">
+            <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between sm:gap-0 pt-10 pb-12">
               {previousLesson ? (
                 <Link
                   to={`/lessons/${previousLesson.slug}`}
@@ -719,7 +705,7 @@ export function LessonPage() {
                   Prev: {previousLesson.title}
                 </Link>
               ) : (
-                <div />
+                <div className="hidden sm:block" />
               )}
 
               {nextLesson ? (
@@ -808,18 +794,14 @@ export function LessonPage() {
               >
                 Describe the conflict or checkout issue:
               </label>
-              <textarea
+              <RichTextEditor
                 id="help-message"
-                className="w-full rounded-xl border-4 border-black bg-white px-3 py-2 text-xs outline-none min-h-36 dark:bg-[#151411] dark:border-[#2e2924]"
                 placeholder="Example: I'm stuck trying to stage feat/add-readme-badges, git status throws pathspec errors."
                 value={helpMessage}
-                onChange={(e) => setHelpMessage(e.target.value)}
+                onChange={setHelpMessage}
                 disabled={helpRequestMutation.isPending}
                 maxLength={MAX_HELP_CHARS}
               />
-              <p className={`text-xs font-black text-right ${helpMessage.length > MAX_HELP_CHARS ? "text-red-600" : "text-muted dark:text-[#c4bbae]"}`}>
-                {helpMessage.length} / {MAX_HELP_CHARS} characters
-              </p>
 
               {helpRequestMutation.isError && (
                 <div className="text-red-700 text-xs font-black bg-red-50 p-2 rounded-lg border-2 border-red-700">

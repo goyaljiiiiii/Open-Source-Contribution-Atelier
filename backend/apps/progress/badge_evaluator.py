@@ -1,4 +1,4 @@
-from apps.progress.models import Badge, UserBadge, LessonProgress
+from apps.progress.models import Badge, LessonProgress, UserBadge
 
 BADGE_RULES = {
     "first-steps": {
@@ -114,6 +114,7 @@ BADGE_RULES = {
     },
 }
 
+
 class BadgeEvaluator:
     @classmethod
     def evaluate(cls, user):
@@ -122,8 +123,9 @@ class BadgeEvaluator:
 
         # Fetch user's completed lesson slugs
         completed_slugs = set(
-            LessonProgress.objects.filter(user=user, completed=True)
-            .values_list("lesson__slug", flat=True)
+            LessonProgress.objects.filter(user=user, completed=True).values_list(
+                "lesson__slug", flat=True
+            )
         )
 
         # Fetch user's already earned badge slugs
@@ -138,16 +140,19 @@ class BadgeEvaluator:
             # Evaluate the rule
             meets_criteria = False
             if "min_lessons" in rule:
-                meets_criteria = len(completed_slugs) >= rule["min_lessons"]
+                min_lessons = rule["min_lessons"]
+                if isinstance(min_lessons, int):
+                    meets_criteria = len(completed_slugs) >= min_lessons
             elif "lessons" in rule:
-                meets_criteria = all(slug in completed_slugs for slug in rule["lessons"])
+                lessons_list = rule["lessons"]
+                if isinstance(lessons_list, list):
+                    meets_criteria = all(
+                        slug in completed_slugs for slug in lessons_list
+                    )
 
             if meets_criteria:
                 badge, _ = Badge.objects.get_or_create(
                     slug=badge_slug,
-                    defaults={
-                        "name": rule["name"],
-                        "description": rule["description"]
-                    }
+                    defaults={"name": rule["name"], "description": rule["description"]},
                 )
                 UserBadge.objects.get_or_create(user=user, badge=badge)

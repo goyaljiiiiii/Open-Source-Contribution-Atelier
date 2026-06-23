@@ -2,6 +2,7 @@ import React from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
 import { AppLayout } from "../components/layout/AppLayout";
 import { ChallengePage } from "../pages/ChallengePage";
+import { ChatPage } from "../pages/ChatPage";
 import { CommunityPage } from "../pages/CommunityPage";
 import { DashboardPage } from "../pages/DashboardPage";
 import { GitHubAuthCallbackPage } from "../pages/GitHubAuthCallbackPage";
@@ -10,6 +11,8 @@ import { LoginPage } from "../pages/LoginPage";
 import { SignupPage } from "../pages/SignupPage";
 import { LessonPage } from "../pages/LessonPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
+import { SandboxPage } from "../pages/SandboxPage";
+import { ProfileSettingsPage } from "../pages/ProfileSettingsPage";
 import { VerifyCertificatePage } from "../pages/VerifyCertificatePage";
 import { useAuth } from "../features/auth/AuthContext";
 import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
@@ -94,6 +97,14 @@ export function AppRouter() {
           }
         />
         <Route
+          path="/chat"
+          element={
+            <ProtectedRoute>
+              <ChatPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/challenges"
           element={
             <ProtectedRoute>
@@ -106,6 +117,22 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <CommunityPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/sandbox"
+          element={
+            <ProtectedRoute>
+              <SandboxPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfileSettingsPage />
             </ProtectedRoute>
           }
         />

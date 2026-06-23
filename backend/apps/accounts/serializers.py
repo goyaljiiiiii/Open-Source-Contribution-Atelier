@@ -7,9 +7,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 def validate_strong_password(value):
     if not re.search(r"\d", value):
-        raise serializers.ValidationError(
-            "Password must contain at least one number."
-        )
+        raise serializers.ValidationError("Password must contain at least one number.")
     if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", value):
         raise serializers.ValidationError(
             "Password must contain at least one special character (!@#$%^&* etc)."
@@ -51,10 +49,11 @@ class SignupSerializer(serializers.ModelSerializer):
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, min_length=8)
+    avatar = serializers.ImageField(required=False)
 
     class Meta:
         model = User
-        fields = ("email", "password")
+        fields = ("email", "password", "avatar")
         extra_kwargs = {
             "email": {"required": False},
         }
@@ -64,18 +63,40 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         password = validated_data.pop("password", None)
+        avatar = validated_data.pop("avatar", None)
+
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         if password:
             instance.set_password(password)
         instance.save()
+
+        if avatar is not None:
+            if hasattr(instance, "profile"):
+                instance.profile.avatar = avatar
+                instance.profile.save()
+            else:
+                from apps.accounts.models import UserProfile
+
+                UserProfile.objects.create(user=instance, avatar=avatar)
+
         return instance
 
 
 class UserListSerializer(serializers.ModelSerializer):
+    avatar_url = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ("id", "username", "email", "is_staff")
+        fields = ("id", "username", "email", "is_staff", "avatar_url")
+
+    def get_avatar_url(self, obj):
+        if hasattr(obj, "profile") and obj.profile.avatar:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.profile.avatar.url)
+            return obj.profile.avatar.url
+        return None
 
 
 class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -97,13 +118,16 @@ class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
 # Password Reset serializers
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class PasswordResetRequestSerializer(serializers.Serializer):
     """Accept an email address to trigger a password reset email."""
+
     email = serializers.EmailField()
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
     """Accept a reset token and the new password to complete the reset."""
+
     token = serializers.UUIDField()
     new_password = serializers.CharField(write_only=True, min_length=8)
 
@@ -115,13 +139,15 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 # OTP (Email Verification) serializers
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class OtpRequestSerializer(serializers.Serializer):
     """Accept an email address to trigger sending a new OTP verification code."""
+
     email = serializers.EmailField()
 
 
 class OtpVerifySerializer(serializers.Serializer):
     """Accept email + OTP token to complete email verification."""
+
     email = serializers.EmailField()
     otp = serializers.UUIDField()
-

@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useAuth } from "../features/auth/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { fetchApi } from "../lib/api";
 import { Link } from "react-router-dom";
 import SkeletonCard from "../components/ui/skeletons/SkeletonCard";
-import { useRef } from 'react';
-import { useElementSize } from '../hooks/useElementSize';
+import { useRef } from "react";
+import { useElementSize } from "../hooks/useElementSize";
 import { fetchLessonsApi, Lesson } from "../lib/lessons";
 import { useUserProgress } from "../hooks/useUserProgress";
 import { BADGES } from "../constants/badges";
@@ -36,6 +36,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { OnboardingTour } from "../components/ui/OnboardingTour";
 
 const FACTS = [
   "Git was created in 2005 by Linus Torvalds because he was frustrated with the commercial tool they were using for Linux development.",
@@ -76,27 +77,26 @@ interface AssignedIssue {
 }
 
 export function DashboardPage() {
-    const taskDistRef = useRef<HTMLDivElement>(null);
-    const { width: taskDistWidth } = useElementSize(taskDistRef as any);
-    const completionRef = useRef<HTMLDivElement>(null);
-    const { width: completionWidth } = useElementSize(completionRef as any);
-
+  const taskDistRef = useRef<HTMLDivElement>(null);
+  const { width: taskDistWidth } = useElementSize(taskDistRef);
+  const completionRef = useRef<HTMLDivElement>(null);
+  const { width: completionWidth } = useElementSize(completionRef);
 
   const { user } = useAuth();
   const { isLessonCompleted } = useUserProgress();
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-useEffect(() => {
-  const handleScroll = () => {
-    setShowScrollTop(window.scrollY > 300);
-  };
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
 
-  window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll);
 
-  return () => {
-    window.removeEventListener("scroll", handleScroll);
-  };
-}, []);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
   // 1. Fetch static modules catalog
   const [curriculumData, setCurriculumData] = useState<ModuleData[]>([]);
   useEffect(() => {
@@ -111,8 +111,6 @@ useEffect(() => {
         console.error("Error loading dashboard curriculum:", err),
       );
   }, []);
-
-
 
   // 2. Fetch Admin Dashboard stats (only queries if user is staff)
   const {
@@ -372,7 +370,7 @@ useEffect(() => {
             <div className="flex items-center gap-3">
               <span className="text-4xl">🚨</span>
               <div>
-                <h3 className="font-mono text-xs uppercase tracking-widest text-muted dark:text-[#c4bbae]">
+                <h3 className=" text-xs uppercase tracking-widest text-muted dark:text-[#c4bbae]">
                   System Issues
                 </h3>
                 <p className="text-4xl font-black text-primary drop-shadow-[2px_2px_0_#000] dark:drop-shadow-none">
@@ -390,7 +388,7 @@ useEffect(() => {
             <div className="flex items-center gap-3">
               <span className="text-4xl">💻</span>
               <div>
-                <h3 className="font-mono text-xs uppercase tracking-widest text-muted dark:text-[#c4bbae]">
+                <h3 className=" text-xs uppercase tracking-widest text-muted dark:text-[#c4bbae]">
                   Pull Requests
                 </h3>
                 <p className="text-4xl font-black text-tertiary drop-shadow-[2px_2px_0_#000] dark:drop-shadow-none">
@@ -408,7 +406,7 @@ useEffect(() => {
             <div className="flex items-center gap-3">
               <span className="text-4xl">👥</span>
               <div>
-                <h3 className="font-mono text-xs uppercase tracking-widest text-muted dark:text-[#c4bbae]">
+                <h3 className=" text-xs uppercase tracking-widest text-muted dark:text-[#c4bbae]">
                   Active Contributors
                 </h3>
                 <p className="text-4xl font-black text-accent drop-shadow-[2px_2px_0_#000] dark:drop-shadow-none">
@@ -622,9 +620,10 @@ useEffect(() => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 pt-24 pb-12 space-y-10">
+      <OnboardingTour run={showOnboarding} onFinish={handleFinishOnboarding} />
       {/* 1. Header Banner */}
       <section className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-        <div className="rounded-[2.5rem] border-4 border-black bg-tertiary p-8 sm:p-10 shadow-card relative overflow-hidden dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none flex flex-col justify-between min-h-[260px]">
+        <div id="tour-welcome" className="rounded-[2.5rem] border-4 border-black bg-tertiary p-8 sm:p-10 shadow-card relative overflow-hidden dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none flex flex-col justify-between min-h-[260px]">
           <div className="relative z-10">
             <span className="font-black text-sm bg-white text-black px-4 py-2 rounded-full border-2 border-black rotate-[-2deg] inline-block shadow-card-sm mb-4 dark:bg-[#151411] dark:text-[#f0ebe2] dark:border-[#2e2924]">
               LEVEL{" "}
@@ -651,7 +650,7 @@ useEffect(() => {
         </div>
 
         {/* Action / Streaks Box */}
-        <div className="grid grid-cols-2 gap-4">
+        <div id="tour-stats" className="grid grid-cols-2 gap-4">
           <div className="rounded-[2rem] border-4 border-black bg-white p-6 shadow-card flex flex-col justify-center items-center text-center dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none hover:-translate-y-0.5 transition-transform">
             <Flame className="w-12 h-12 text-primary animate-pulse mb-2" />
             <span className="text-4xl font-black text-primary drop-shadow-[2px_2px_0_#000] dark:drop-shadow-none">
@@ -696,7 +695,7 @@ useEffect(() => {
 
       {/* 2. Fact of the Day and Certificate Unlock */}
       <section className="grid gap-6 md:grid-cols-[1.3fr_0.7fr]">
-        <div className="rounded-3xl border-4 border-black bg-surface-low p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none flex items-start gap-4">
+        <div id="tour-fact" className="rounded-3xl border-4 border-black bg-surface-low p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none flex items-start gap-4">
           <div className="bg-white p-3 rounded-2xl border-2 border-black flex-shrink-0 text-2xl dark:bg-[#151411] dark:border-[#2e2924]">
             💡
           </div>
@@ -711,7 +710,7 @@ useEffect(() => {
         </div>
 
         {/* Certificate Card */}
-        <div className="rounded-3xl border-4 border-black bg-white p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none flex flex-col justify-between">
+        <div id="tour-certificate" className="rounded-3xl border-4 border-black bg-white p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none flex flex-col justify-between">
           <div className="flex items-center gap-2">
             <span className="text-2xl">🎓</span>
             <div>
@@ -740,7 +739,7 @@ useEffect(() => {
 
       {/* 3. Learning Queue Sidebar & Course Completion Chart */}
       <section className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-        <div className="rounded-3xl border-4 border-black bg-white p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none">
+        <div id="tour-learning-queue" className="rounded-3xl border-4 border-black bg-white p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none">
           <h2 className="text-3xl font-black mb-6 flex items-center gap-3">
             <span className="bg-primary text-white w-10 h-10 rounded-full border-2 border-black flex items-center justify-center text-lg dark:bg-primary/20 dark:text-primary">
               📚
@@ -846,10 +845,11 @@ useEffect(() => {
             return (
               <div
                 key={badge.id}
-                className={`relative rounded-2xl border-4 border-black p-5 flex flex-col items-center text-center shadow-card-sm transition-all ${isEarned
+                className={`relative rounded-2xl border-4 border-black p-5 flex flex-col items-center text-center shadow-card-sm transition-all ${
+                  isEarned
                     ? "bg-white dark:bg-[#1f1c18] hover:-translate-y-1"
                     : "bg-surface-low/30 opacity-60 dark:bg-black/20"
-                  }`}
+                }`}
               >
                 <div className={`text-5xl mb-3 ${isEarned ? "" : "grayscale"}`}>
                   {badge.icon}
@@ -1043,7 +1043,7 @@ useEffect(() => {
             {/* Certificate Contents */}
             <div className="space-y-6 w-full border-4 border-dashed border-black/35 rounded-2xl p-6 sm:p-10 relative">
               <div className="text-6xl mb-2">🎓</div>
-              <h2 className="font-display text-4xl sm:text-5xl font-black uppercase tracking-tight text-text">
+              <h2 className=" text-4xl sm:text-5xl font-black uppercase tracking-tight text-text">
                 Certificate of Completion
               </h2>
               <p className="font-mono text-xs text-primary uppercase tracking-widest font-black">
@@ -1124,7 +1124,7 @@ useEffect(() => {
           </div>
         </div>
       )}
-            {showScrollTop && (
+      {showScrollTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           aria-label="Scroll to top"

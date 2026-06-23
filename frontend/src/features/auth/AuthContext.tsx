@@ -1,5 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import { fetchApi } from "../../lib/api";
 
 type User = {
@@ -7,6 +13,7 @@ type User = {
   username: string;
   email: string;
   is_staff: boolean;
+  avatar_url?: string | null;
 };
 
 type AuthContextType = {
@@ -58,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   };
 
-  const checkUser = async () => {
+  const checkUser = useCallback(async () => {
     try {
       const token = safeGetItem("accessToken");
       if (!token) {
@@ -81,12 +88,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  useEffect(() => {
-    checkUser();
   }, []);
 
+  useEffect(() => {
+    
+    
+   checkUser();
+  }, [checkUser]);
   return (
     <AuthContext.Provider
       value={{

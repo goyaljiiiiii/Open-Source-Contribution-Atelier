@@ -1,7 +1,7 @@
-from rest_framework import viewsets, status
-from rest_framework.views import APIView
-from rest_framework.response import Response
+from rest_framework import status, viewsets
 from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .models import Challenge
 from .serializers import ChallengeSerializer
@@ -10,8 +10,11 @@ from .throttles import SandboxAnonRateThrottle, SandboxUserRateThrottle
 
 class ChallengeViewSet(viewsets.ReadOnlyModelViewSet):
     """Existing view — untouched."""
-    queryset = Challenge.objects.all()
+
     serializer_class = ChallengeSerializer
+
+    def get_queryset(self):
+        return Challenge.objects.filter(organization=self.request.user.organization)
 
 
 class SandboxExecutionView(APIView):
@@ -34,13 +37,13 @@ class SandboxExecutionView(APIView):
         Expected body: { "code": "...", "language": "python" }
         Wire this to your actual sandbox execution logic.
         """
+
         code = request.data.get("code", "")
         language = request.data.get("language", "python")
 
         if not code:
             return Response(
-                {"detail": "No code provided."},
-                status=status.HTTP_400_BAD_REQUEST
+                {"detail": "No code provided."}, status=status.HTTP_400_BAD_REQUEST
             )
 
         # TODO: replace with actual sandbox execution call
@@ -48,6 +51,9 @@ class SandboxExecutionView(APIView):
         # return Response(result, status=status.HTTP_200_OK)
 
         return Response(
-            {"detail": "Sandbox execution triggered.", "language": language},
+            {
+                "detail": "Sandbox execution triggered.",
+                "language": language,
+            },
             status=status.HTTP_200_OK,
         )
