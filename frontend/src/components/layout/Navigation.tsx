@@ -4,6 +4,7 @@ import {
   BookOpen,
   BriefcaseBusiness,
   LayoutGrid,
+  MessageSquare,
   Search,
   Shield,
   TerminalSquare,
@@ -24,6 +25,7 @@ const navItems = [
   { to: "/lessons/what-is-open-source", label: "Lessons", icon: BookOpen },
   { to: "/challenges", label: "Challenges", icon: Trophy },
   { to: "/community", label: "Community", icon: BriefcaseBusiness },
+  { to: "/chat", label: "Chat", icon: MessageSquare },
   { to: "/profile", label: "Profile Settings", icon: Settings },
 ];
 
