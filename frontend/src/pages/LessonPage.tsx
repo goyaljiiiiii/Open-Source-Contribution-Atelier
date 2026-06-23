@@ -15,8 +15,13 @@ import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
 import { useUserProgress } from "../hooks/useUserProgress";
 import { fetchApi } from "../lib/api";
 import { Lesson, fetchLessonsApi, fetchLessonContent } from "../lib/lessons";
-import { MarkdownRenderer } from "../components/ui/MarkdownRenderer";
 import { RichTextEditor } from "../components/ui/RichTextEditor";
+
+const MarkdownRenderer = React.lazy(() =>
+  import("../components/ui/MarkdownRenderer").then((module) => ({
+    default: module.MarkdownRenderer,
+  }))
+);
 import { GitGraph } from "../components/ui/GitGraph";
 
 import {
@@ -447,9 +452,15 @@ export function LessonPage() {
 
             <hr className="border-2 border-black/10 dark:border-[#2e2924]/40" />
 
-            {/* Markdown rendering logic */}
+          {/* Markdown rendering logic */}
             <article className="prose max-w-none">
-              <MarkdownRenderer content={markdownContent} />
+              <React.Suspense 
+                fallback={
+                  <div className="w-full h-64 animate-pulse rounded-2xl border-4 border-black/20 bg-surface-low dark:border-[#2e2924]/50 dark:bg-[#151411]" />
+                }
+              >
+                <MarkdownRenderer content={markdownContent} />
+              </React.Suspense>
             </article>
 
             {/* Exercises & validation section */}
