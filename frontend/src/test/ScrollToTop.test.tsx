@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
 import { ScrollToTop } from '../components/ui/ScrollToTop';
 
 describe('ScrollToTop Component', () => {
@@ -9,8 +9,9 @@ describe('ScrollToTop Component', () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
     cleanup();
+    vi.unstubAllGlobals();
+    vi.clearAllMocks();
   });
 
   it('is initially hidden when scroll position is 0', () => {
@@ -21,9 +22,11 @@ describe('ScrollToTop Component', () => {
 
   it('appears when scrolled past the threshold', () => {
     render(<ScrollToTop />);
-
-    vi.spyOn(window, 'scrollY', 'get').mockReturnValue(350);
-    window.dispatchEvent(new Event('scroll'));
+    
+    act(() => {
+      Object.defineProperty(window, 'scrollY', { value: 350, configurable: true });
+      window.dispatchEvent(new Event('scroll'));
+    });
 
     const button = screen.getByTestId('scroll-to-top');
     expect(button).toBeInTheDocument();
@@ -31,21 +34,29 @@ describe('ScrollToTop Component', () => {
 
   it('disappears when scrolled back up', () => {
     render(<ScrollToTop />);
-
-    vi.spyOn(window, 'scrollY', 'get').mockReturnValue(350);
-    window.dispatchEvent(new Event('scroll'));
+    
+    // Scroll down
+    act(() => {
+      Object.defineProperty(window, 'scrollY', { value: 350, configurable: true });
+      window.dispatchEvent(new Event('scroll'));
+    });
     expect(screen.getByTestId('scroll-to-top')).toBeInTheDocument();
 
-    vi.spyOn(window, 'scrollY', 'get').mockReturnValue(100);
-    window.dispatchEvent(new Event('scroll'));
+    // Scroll up
+    act(() => {
+      Object.defineProperty(window, 'scrollY', { value: 100, configurable: true });
+      window.dispatchEvent(new Event('scroll'));
+    });
     expect(screen.queryByTestId('scroll-to-top')).not.toBeInTheDocument();
   });
 
   it('scrolls to top smoothly when clicked', () => {
     render(<ScrollToTop />);
-
-    vi.spyOn(window, 'scrollY', 'get').mockReturnValue(400);
-    window.dispatchEvent(new Event('scroll'));
+    
+    act(() => {
+      Object.defineProperty(window, 'scrollY', { value: 400, configurable: true });
+      window.dispatchEvent(new Event('scroll'));
+    });
 
     const button = screen.getByTestId('scroll-to-top');
     fireEvent.click(button);
