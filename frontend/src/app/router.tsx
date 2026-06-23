@@ -1,7 +1,9 @@
 import React from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
 import { AppLayout } from "../components/layout/AppLayout";
+import { PublicLayout } from "../components/layout/PublicLayout";
 import { ChallengePage } from "../pages/ChallengePage";
+import { ChatPage } from "../pages/ChatPage";
 import { CommunityPage } from "../pages/CommunityPage";
 import { DashboardPage } from "../pages/DashboardPage";
 import { GitHubAuthCallbackPage } from "../pages/GitHubAuthCallbackPage";
@@ -10,6 +12,7 @@ import { LoginPage } from "../pages/LoginPage";
 import { SignupPage } from "../pages/SignupPage";
 import { LessonPage } from "../pages/LessonPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
+import { ServerErrorPage } from "../pages/ServerErrorPage";
 import { SandboxPage } from "../pages/SandboxPage";
 import { ProfileSettingsPage } from "../pages/ProfileSettingsPage";
 import { VerifyCertificatePage } from "../pages/VerifyCertificatePage";
@@ -63,19 +66,30 @@ function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
 export function AppRouter() {
   return (
     <Routes>
-      {/* Standalone Route without AppLayout (No Navbar) */}
-      <Route
-        path="/"
-        element={
-          <PublicOnlyRoute>
-            <LandingPage />
-          </PublicOnlyRoute>
-        }
-      />
-      <Route
-        path="/auth/github/callback"
-        element={<GitHubAuthCallbackPage />}
-      />
+      {/* Public Routes with Animation Layout */}
+      <Route element={<PublicLayout />}>
+        {/* Standalone Route without AppLayout (No Navbar) */}
+        <Route
+          path="/"
+          element={
+            <PublicOnlyRoute>
+              <LandingPage />
+            </PublicOnlyRoute>
+          }
+        />
+        <Route
+          path="/auth/github/callback"
+          element={<GitHubAuthCallbackPage />}
+        />
+
+        {/* Public auth routes */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/verify" element={<VerifyCertificatePage />} />
+        <Route path="/verify/:hash" element={<VerifyCertificatePage />} />
+
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
 
       {/* Authenticated Routes with Navbar Layout */}
       <Route element={<AppLayout />}>
@@ -92,6 +106,14 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <LessonPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/chat"
+          element={
+            <ProtectedRoute>
+              <ChatPage />
             </ProtectedRoute>
           }
         />
@@ -134,7 +156,7 @@ export function AppRouter() {
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/verify" element={<VerifyCertificatePage />} />
       <Route path="/verify/:hash" element={<VerifyCertificatePage />} />
-
+      <Route path="/500" element={<ServerErrorPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );

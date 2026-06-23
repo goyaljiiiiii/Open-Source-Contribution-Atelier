@@ -1,3 +1,5 @@
+from io import BytesIO
+
 from apps.challenges.models import Challenge
 from apps.challenges.serializers import ChallengeSerializer
 from apps.progress.models import LessonProgress
@@ -7,8 +9,11 @@ from django.contrib.postgres.search import (SearchQuery, SearchRank,
                                             TrigramSimilarity)
 from django.core.cache import cache
 from django.db.models import Q
-from rest_framework import (filters, generics, permissions, response, views,
-                            viewsets)
+from django.http import HttpResponse
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
+from rest_framework import (filters, generics, permissions, response, status,
+                            views, viewsets)
 from rest_framework.permissions import AllowAny
 
 from . import semantic_search
@@ -190,3 +195,64 @@ class OrganizationListView(generics.ListAPIView):
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ["name", "date_added", "popularity_score"]
     ordering = ["-popularity_score"]
+
+
+class LessonPDFView(views.APIView):
+    def get(self, request, pk):
+        try:
+            lesson = Lesson.objects.get(pk=pk)
+        except Lesson.DoesNotExist:
+            return response.Response(
+                {"error": "Lesson not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        buffer = BytesIO()
+
+        doc = SimpleDocTemplate(buffer)
+        styles = getSampleStyleSheet()
+
+        elements = []
+
+        elements.append(Paragraph(lesson.title, styles["Title"]))
+        elements.append(Spacer(1, 12))
+
+        elements.append(Paragraph(f"Difficulty: {lesson.difficulty}", styles["Normal"]))
+        elements.append(
+            Paragraph(
+                f"Estimated Minutes: {lesson.estimated_minutes}", styles["Normal"]
+            )
+        )
+        elements.append(Spacer(1, 12))
+
+        elements.append(Paragraph("Summary", styles["Heading2"]))
+        elements.append(Paragraph(lesson.summary, styles["BodyText"]))
+        elements.append(Spacer(1, 12))
+
+        elements.append(Paragraph("Content", styles["Heading2"]))
+        elements.append(Paragraph(lesson.content, styles["BodyText"]))
+        elements.append(Spacer(1, 12))
+
+        if lesson.learning_objectives:
+            elements.append(Paragraph("Learning Objectives", styles["Heading2"]))
+
+            for item in lesson.learning_objectives:
+                elements.append(Paragraph(f"- {item}", styles["BodyText"]))
+
+        if lesson.tips:
+            elements.append(Paragraph("Tips", styles["Heading2"]))
+
+            for tip in lesson.tips:
+                elements.append(Paragraph(f"- {tip}", styles["BodyText"]))
+
+        doc.build(elements)
+
+        pdf = buffer.getvalue()
+        buffer.close()
+
+        response_obj = HttpResponse(pdf, content_type="application/pdf")
+
+        response_obj["Content-Disposition"] = (
+            f'attachment; filename="{lesson.slug}.pdf"'
+        )
+
+        return response_obj
