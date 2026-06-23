@@ -83,7 +83,7 @@ export function VerifyCertificatePage() {
   // 1. Loading State
   if (loading) {
     return (
-      <div className="min-h-screen bg-bg py-12 px-6 sm:px-12 animate-pulse">
+      <div data-testid="loading-skeleton" className="min-h-screen bg-bg py-12 px-6 sm:px-12 animate-pulse">
         <div className="w-full max-w-3xl mx-auto">
           <div className="h-10 w-48 bg-muted rounded-lg mb-8"></div>
 

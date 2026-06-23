@@ -142,65 +142,43 @@ export const CommandPalette: React.FC = () => {
     }
   }, [isOpen]);
 
-  // Filter navigation items
-  const filteredNavItems = navItems.filter(
-    (item) =>
-      item.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  // Search and score lesson index
-  const scoredLessonResults: SearchIndexEntry[] = React.useMemo(() => {
-    if (!searchQuery.trim() || index.length === 0) {
-      return [];
+  // Debounced search (300ms)
+  useEffect(() => {
+    if (!query.trim()) {
+      setResults([]);
+      return;
     }
 
-    const q = searchQuery.toLowerCase();
+    const timer = setTimeout(() => {
+      const q = query.toLowerCase();
 
-    return index
-      .map((entry) => {
-        let score = 0;
-        const titleLower = entry.title.toLowerCase();
-        const contentLower = entry.content.toLowerCase();
-        const subtitleLower = entry.subtitle.toLowerCase();
+      const scoredResults = index
+        .map((entry) => {
+          let score = 0;
+          const titleLower = entry.title.toLowerCase();
+          const contentLower = entry.content.toLowerCase();
+          const subtitleLower = entry.subtitle.toLowerCase();
 
-        if (titleLower === q) score += 100;
-        else if (titleLower.includes(q)) score += 50;
+          if (titleLower === q) score += 100;
+          else if (titleLower.includes(q)) score += 50;
 
-        if (entry.type === "heading" && contentLower.includes(q)) score += 30;
-        if (entry.type === "content" && contentLower.includes(q)) score += 10;
-        if (subtitleLower.includes(q)) score += 5;
+          if (entry.type === "heading" && contentLower.includes(q)) score += 30;
+          if (entry.type === "content" && contentLower.includes(q)) score += 10;
+          if (subtitleLower.includes(q)) score += 5;
 
-        return { entry, score };
-      })
-      .filter((item) => item.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 8)
-      .map((item) => item.entry);
-  }, [searchQuery, index]);
+          return { entry, score };
+        })
+        .filter((item) => item.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 8)
+        .map((item) => item.entry);
 
-  // Combine results: Navigation matches first, followed by lesson index matches
-  const combinedResults: PaletteItem[] = React.useMemo(() => {
-    const results: PaletteItem[] = [];
+      setResults(scoredResults);
+      setSelectedIndex(0);
+    }, 300);
 
-    // Show nav items
-    filteredNavItems.forEach((item) => results.push(item));
-
-    // Show lesson items
-    scoredLessonResults.forEach((entry) => {
-      results.push({
-        type: entry.type,
-        entry,
-      });
-    });
-
-    return results;
-  }, [filteredNavItems, scoredLessonResults]);
-
-  // Reset selected index when combined results change
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [searchQuery, combinedResults.length]);
+    return () => clearTimeout(timer);
+  }, [query, index]);
 
   // Handle keyboard navigation within results
   const handleKeyDown = (e: React.KeyboardEvent) => {
