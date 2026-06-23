@@ -91,7 +91,7 @@ export function SignupForm() {
       <p className="text-center text-sm font-bold text-black mt-6">
         Already stuck with us?{" "}
         <a
-          href="/login"
+          href="/"
           className="text-primary underline decoration-2 hover:text-black"
         >
           Log in here
