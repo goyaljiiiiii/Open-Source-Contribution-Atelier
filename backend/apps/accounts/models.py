@@ -96,6 +96,7 @@ class UserProfile(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile"
     )
     avatar = models.ImageField(upload_to="avatars/", null=True, blank=True)
+    timezone = models.CharField(max_length=64, default="UTC")
 
     organization = models.ForeignKey(
         "organizations.Organization",
