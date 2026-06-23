@@ -23,6 +23,7 @@ const MarkdownRenderer = React.lazy(() =>
   }))
 );
 import { GitGraph } from "../components/ui/GitGraph";
+import { TextToSpeechControls } from "../components/ui/TextToSpeechControls";
 
 import {
   createInitialRepo,
@@ -452,7 +453,9 @@ export function LessonPage() {
 
             <hr className="border-2 border-black/10 dark:border-[#2e2924]/40" />
 
-          {/* Markdown rendering logic */}
+            <TextToSpeechControls content={markdownContent} />
+
+            {/* Markdown rendering logic */}
             <article className="prose max-w-none">
               <React.Suspense 
                 fallback={

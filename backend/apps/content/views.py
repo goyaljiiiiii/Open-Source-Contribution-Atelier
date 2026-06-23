@@ -9,7 +9,7 @@ from django.contrib.postgres.search import (SearchQuery, SearchRank,
                                             TrigramSimilarity)
 from django.core.cache import cache
 from django.db.models import Q
-from django.http import FileResponse
+from django.http import HttpResponse
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 from rest_framework import (filters, generics, permissions, response, status,
@@ -246,5 +246,13 @@ class LessonPDFView(views.APIView):
 
         doc.build(elements)
 
-        buffer.seek(0)
-        return FileResponse(buffer, as_attachment=True, filename=f"{lesson.slug}.pdf")
+        pdf = buffer.getvalue()
+        buffer.close()
+
+        response_obj = HttpResponse(pdf, content_type="application/pdf")
+
+        response_obj["Content-Disposition"] = (
+            f'attachment; filename="{lesson.slug}.pdf"'
+        )
+
+        return response_obj

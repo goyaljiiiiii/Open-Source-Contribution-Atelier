@@ -1,25 +1,56 @@
-import logging
-
-from celery import shared_task
+from celery import shared_task # type: ignore
 from django.contrib.auth import get_user_model
+from django.utils import timezone
+from datetime import timedelta
+from apps.progress.models import LessonProgress, UserBadge
+from celery import current_app # type: ignore
 
-from .badge_evaluator import BadgeEvaluator
-
-logger = logging.getLogger(__name__)
 User = get_user_model()
 
-
 @shared_task
-def evaluate_user_badges_task(user_id):
+def send_weekly_progress_summary():
     """
-    Asynchronously evaluates and awards badges for a given user.
+    Celery cron task to calculate learning progress over the past 7 days 
+    for each active user, and dispatch an email summary.
     """
-    try:
-        user = User.objects.get(id=user_id)
-        BadgeEvaluator.evaluate(user)
-    except User.DoesNotExist:
-        logger.warning(
-            f"User with id {user_id} does not exist. Badge evaluation skipped."
+    seven_days_ago = timezone.now() - timedelta(days=7)
+
+    # Process active users in chunks
+    users = User.objects.filter(is_active=True).iterator(chunk_size=100)
+
+    for user in users:
+        # Get progress in the last 7 days
+        recent_progress = LessonProgress.objects.filter(
+            user=user, 
+            updated_at__gte=seven_days_ago, 
+            completed=True
         )
-    except Exception as e:
-        logger.error(f"Error evaluating badges for user {user_id}: {e}")
+        
+        recent_badges = UserBadge.objects.filter(
+            user=user, 
+            earned_at__gte=seven_days_ago
+        )
+        
+        lessons_completed = recent_progress.count()
+        xp_earned = sum(progress.score for progress in recent_progress)
+        badges_earned = recent_badges.count()
+        badge_names = [ub.badge.name for ub in recent_badges]
+
+        if lessons_completed > 0 or badges_earned > 0:
+            payload = {
+                "template_id": "weekly_progress_summary",
+                "recipients": [user.email],
+                "data": {
+                    "username": user.username,
+                    "lessons_completed": lessons_completed,
+                    "xp_earned": xp_earned,
+                    "badges_earned": badges_earned,
+                    "badge_names": badge_names,
+                }
+            }
+            
+            # Dispatch email using the existing bulk email worker
+            current_app.send_task(
+                "tasks.send_bulk_email",
+                kwargs={"payload": payload}
+            )

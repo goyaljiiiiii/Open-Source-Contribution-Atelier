@@ -17,6 +17,7 @@ type ChatMessage = {
   user_id: number;
   message: string;
   timestamp: string;
+  created_at?: string;
 };
 
 type UseChatOptions = {
@@ -99,9 +100,10 @@ export function useChat({ roomId, token }: UseChatOptions) {
           {
             id: `msg_${messageIdRef.current}`,
             username: msg.username as string,
-            user_id: senderId,
-            message: plaintext,
-            timestamp: new Date().toLocaleTimeString(),
+            user_id: msg.user_id as number,
+            message: msg.message as string,
+            timestamp: msg.created_at ? new Date(msg.created_at as string).toLocaleTimeString() : new Date().toLocaleTimeString(),
+            created_at: msg.created_at as string | undefined,
           },
         ];
       });
