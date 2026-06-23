@@ -7,14 +7,6 @@ import { Trophy, Award } from "lucide-react";
 import { useAuth } from "../features/auth/AuthContext";
 import { ResponsiveTable } from "../components/ui/ResponsiveTable";
 
-interface LeaderboardItem {
-  rank: number;
-  username: string;
-  avatar_url: string;
-  html_url: string;
-  contributions: number;
-  xp: number;
-}
 
 export function CommunityPage() {
   const { user } = useAuth();
@@ -83,7 +75,7 @@ export function CommunityPage() {
       }
       return [];
     });
-    return flattened.map((item: any, idx: number) => ({
+    return flattened.map((item: { username: string; prs_merged: number; xp: number }, idx: number) => ({
       rank: idx + 1,
       username: item.username,
       avatar_url: `https://github.com/${item.username}.png`,
@@ -156,7 +148,7 @@ export function CommunityPage() {
     return () => {
       socket.close();
     };
-  }, []);
+  }, [queryClient]);
 
   const displayStats = [
     {

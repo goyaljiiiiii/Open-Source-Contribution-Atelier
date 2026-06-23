@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import SkeletonCard from './ui/skeletons/SkeletonCard';
 
 const OrganizationsGrid: React.FC = () => {
-  const [organizations, setOrganizations] = useState<any[]>([]);
+  const [organizations, setOrganizations] = useState<Array<{ slug: string; name: string; logo_url: string | null }>>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

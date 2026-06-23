@@ -4,6 +4,7 @@ import {
   BookOpen,
   BriefcaseBusiness,
   LayoutGrid,
+  MessageSquare,
   Search,
   Shield,
   TerminalSquare,
@@ -13,7 +14,7 @@ import {
   Moon,
   Settings,
 } from "lucide-react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useTheme } from "../../hooks/useTheme";
 import { useAuth } from "../../features/auth/AuthContext";
 import { fetchLessonsApi } from "../../lib/lessons";
@@ -24,6 +25,7 @@ const navItems = [
   { to: "/lessons/what-is-open-source", label: "Lessons", icon: BookOpen },
   { to: "/challenges", label: "Challenges", icon: Trophy },
   { to: "/community", label: "Community", icon: BriefcaseBusiness },
+  { to: "/chat", label: "Chat", icon: MessageSquare },
   { to: "/profile", label: "Profile Settings", icon: Settings },
 ];
 
@@ -31,6 +33,7 @@ export function Navigation() {
   const [isStarting] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<{
     lessons: {
@@ -158,7 +161,7 @@ export function Navigation() {
                 Run guided Git practice without exposing the real shell.
               </p>
               <button
-                disabled={isStarting}
+                onClick={handleStartSandbox}
                 className="w-full mt-4 flex items-center justify-center gap-2 rounded-lg bg-primary text-white border-4 border-black dark:border-[#2e2924] px-4 py-3 text-sm font-black shadow-card hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer disabled:opacity-50"
               >
                 {isStarting ? (

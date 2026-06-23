@@ -15,6 +15,7 @@ from rest_framework.test import APIClient
 
 User = get_user_model()
 
+
 def _client(ip="203.0.113.1"):
     """Return an APIClient pre-configured with a stable test IP."""
     c = APIClient()
@@ -33,6 +34,7 @@ def _hit(client, url, data, n=1):
 # ─────────────────────────────────────────────────────────────────────────────
 # 429 Response Shape
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class RateLimitShapeTests(TestCase):
     """Every throttled endpoint must return our standard 429 body."""
@@ -82,6 +84,7 @@ class RateLimitShapeTests(TestCase):
 
     def test_password_reset_confirm_429_shape(self):
         import uuid
+
         c = _client()
         payload = {"token": str(uuid.uuid4()), "new_password": "Aa1!aaaa"}
         _hit(c, "/api/auth/password-reset/confirm/", payload, n=3)
@@ -99,6 +102,7 @@ class RateLimitShapeTests(TestCase):
 
     def test_otp_verify_429_shape(self):
         import uuid
+
         c = _client()
         # RATE_AUTH_OTP_VERIFY is "5/minute"
         payload = {"email": "test@example.com", "otp": str(uuid.uuid4())}
@@ -119,6 +123,7 @@ class RateLimitShapeTests(TestCase):
 # ─────────────────────────────────────────────────────────────────────────────
 # Below Threshold — must NOT be blocked
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class BelowThresholdTests(TestCase):
     """Requests below the limit must pass through normally."""
@@ -151,6 +156,7 @@ class BelowThresholdTests(TestCase):
 # IP Isolation — each IP has its own counter
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class IpIsolationTests(TestCase):
     """Throttle counters must be isolated per IP address."""
 
@@ -173,6 +179,7 @@ class IpIsolationTests(TestCase):
 
     def test_otp_verify_ips_are_independent(self):
         import uuid
+
         url = "/api/auth/otp/verify/"
         data = {"email": "test@example.com", "otp": str(uuid.uuid4())}
 
@@ -194,11 +201,13 @@ class IpIsolationTests(TestCase):
 # Password Reset & OTP Business Logic (non-throttle)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class PasswordResetFlowTests(TestCase):
     """Verify password reset endpoint logic (valid/invalid/expired tokens)."""
 
     def setUp(self):
         from django.core.cache import cache
+
         cache.clear()
         self.user = User.objects.create_user(
             username="resetuser", email="reset@example.com", password="OldPass1!"
@@ -220,6 +229,7 @@ class PasswordResetFlowTests(TestCase):
 
     def test_reset_confirm_with_invalid_token_returns_400(self):
         import uuid
+
         resp = self.client.post(
             "/api/auth/password-reset/confirm/",
             {"token": str(uuid.uuid4()), "new_password": "NewPass1!"},
@@ -238,6 +248,7 @@ class PasswordResetFlowTests(TestCase):
     def test_full_reset_flow(self):
         """Request → confirm with valid token → password is changed."""
         from apps.accounts.models import PasswordResetToken
+
         # Trigger reset (creates token in DB)
         self.client.post(
             "/api/auth/password-reset/", {"email": "reset@example.com"}, format="json"

@@ -6,7 +6,7 @@ describe('ResponsiveTable Component', () => {
   const columns = [
     { header: 'ID', accessor: 'id' as const, label: 'Identifier' },
     { header: 'Name', accessor: 'name' as const },
-    { header: 'Role', accessor: (item: any) => <span data-testid="role">{item.role}</span> },
+    { header: 'Role', accessor: (item: { id: number; name: string; role: string }) => <span data-testid="role">{item.role}</span> },
   ];
 
   const data = [
@@ -28,8 +28,8 @@ describe('ResponsiveTable Component', () => {
     expect(table).toBeInTheDocument();
     
     // Check if headers are rendered in desktop
-    expect(screen.getByText('ID')).toBeInTheDocument();
-    expect(screen.getByText('Name')).toBeInTheDocument();
+    expect(screen.getAllByText('ID').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Name').length).toBeGreaterThan(0);
 
     // Mobile layout should be present (hidden via sm:hidden class)
     // The mobile view has the label 'Identifier'
@@ -43,11 +43,11 @@ describe('ResponsiveTable Component', () => {
   });
 
   it('renders empty message when no data is provided', () => {
-    const { container } = render(
+    render(
       <ResponsiveTable
         columns={columns}
         data={[]}
-        keyExtractor={(item: any) => item.id.toString()}
+        keyExtractor={(item: { id: number; name: string; role: string }) => item.id.toString()}
         emptyMessage="No records found"
       />
     );

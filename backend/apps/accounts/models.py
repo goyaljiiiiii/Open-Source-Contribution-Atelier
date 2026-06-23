@@ -58,6 +58,7 @@ class PasswordResetToken(models.Model):
     def is_expired(self) -> bool:
         """Return True if the token is older than PASSWORD_RESET_TIMEOUT_MINUTES."""
         from datetime import timedelta
+
         from django.utils import timezone
 
         timeout = getattr(settings, "PASSWORD_RESET_TIMEOUT_MINUTES", 15)
@@ -68,6 +69,7 @@ class OTPToken(models.Model):
     """
     Secure OTP token sent to a user's email for verification.
     """
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -89,12 +91,19 @@ class UserProfile(models.Model):
     Standard user profile linking to the main User model.
     Stores the user's avatar image.
     """
+
     user = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="profile"
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile"
     )
     avatar = models.ImageField(upload_to="avatars/", null=True, blank=True)
+
+    organization = models.ForeignKey(
+        "organizations.Organization",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="users",
+    )
 
     def __str__(self):
         return f"UserProfile({self.user.username})"
@@ -108,7 +117,11 @@ def create_user_profile(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def save_user_profile(sender, instance, **kwargs):
-    if hasattr(instance, 'profile'):
+    if hasattr(instance, "profile"):
         instance.profile.save()
     else:
         UserProfile.objects.create(user=instance)
+
+from django.contrib.auth import get_user_model
+User = get_user_model()
+User.add_to_class("organization", property(lambda u: u.profile.organization if hasattr(u, "profile") else None))

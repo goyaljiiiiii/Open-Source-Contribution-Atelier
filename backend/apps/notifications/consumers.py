@@ -89,6 +89,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def get_unread_count(self, user):
         from .models import Notification
+
         return Notification.objects.filter(recipient=user, is_read=False).count()
 
     @database_sync_to_async

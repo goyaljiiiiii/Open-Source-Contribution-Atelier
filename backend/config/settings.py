@@ -181,8 +181,12 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(os.getenv("ACCESS_TOKEN_LIFETIME_MINUTES", "30"))),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.getenv("REFRESH_TOKEN_LIFETIME_DAYS", "7"))),
+    "ACCESS_TOKEN_LIFETIME": timedelta(
+        minutes=int(os.getenv("ACCESS_TOKEN_LIFETIME_MINUTES", "30"))
+    ),
+    "REFRESH_TOKEN_LIFETIME": timedelta(
+        days=int(os.getenv("REFRESH_TOKEN_LIFETIME_DAYS", "7"))
+    ),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
 }
@@ -195,6 +199,7 @@ INSTALLED_APPS += [
     "apps.notifications.apps.NotificationsConfig",
     "drf_spectacular",
     "apps.dashboard.apps.DashboardConfig",
+    "apps.chat.apps.ChatConfig",
     "django.contrib.postgres",
     "apps.search.apps.SearchConfig",
 ]
@@ -229,6 +234,7 @@ def is_redis_available(url):
         return True
     except Exception:
         return False
+
 
 # Candidates check: use REDIS_URL if set, or default to standard local redis host for check
 ENV_REDIS_URL = os.getenv("REDIS_URL", "")

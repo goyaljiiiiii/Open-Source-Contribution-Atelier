@@ -1,9 +1,10 @@
-from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
 
 User = get_user_model()
+
 
 class Lesson(models.Model):
     class DoesNotExist(ObjectDoesNotExist):
@@ -12,10 +13,7 @@ class Lesson(models.Model):
     objects = models.Manager()
 
     organization = models.ForeignKey(
-        "Organization",
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True
+        "Organization", on_delete=models.CASCADE, null=True, blank=True
     )
     difficulty = models.CharField(max_length=32)
     title = models.CharField(max_length=255)
@@ -40,14 +38,19 @@ class Lesson(models.Model):
     class Meta:
         ordering = ["order", "id"]
 
+
 class Exercise(models.Model):
     objects = models.Manager()
-    lesson = models.ForeignKey(Lesson, related_name="exercises", on_delete=models.CASCADE)
+    lesson = models.ForeignKey(
+        Lesson, related_name="exercises", on_delete=models.CASCADE
+    )
     title = models.CharField(max_length=255)
     prompt = models.TextField()
     expected_command = models.CharField(max_length=255)
     explanation = models.TextField(blank=True)
     points = models.PositiveIntegerField(default=10)
+
+
 class ActiveCommentManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(is_deleted=False)
@@ -55,7 +58,9 @@ class ActiveCommentManager(models.Manager):
 
 class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comments")
-    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="comments", null=True, blank=True)
+    lesson = models.ForeignKey(
+        Lesson, on_delete=models.CASCADE, related_name="comments", null=True, blank=True
+    )
     content = models.TextField(help_text="The main body of the comment")
     is_deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -89,10 +94,12 @@ class Organization(models.Model):
     description = models.TextField(blank=True)
     logo_url = models.URLField(blank=True, help_text="URL to the organization's logo")
     date_added = models.DateTimeField(auto_now_add=True)
-    popularity_score = models.IntegerField(default=0, help_text="Higher score means more popular")
+    popularity_score = models.IntegerField(
+        default=0, help_text="Higher score means more popular"
+    )
 
     class Meta:
-        ordering = ['-popularity_score']
+        ordering = ["-popularity_score"]
 
     def __str__(self):
         return self.name

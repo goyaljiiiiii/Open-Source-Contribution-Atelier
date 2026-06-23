@@ -1,11 +1,13 @@
 import json
 import logging
+
 from django.urls import reverse
 from django.utils.deprecation import MiddlewareMixin
 
 from .models import SandboxExecutionLog
 
 logger = logging.getLogger(__name__)
+
 
 class SandboxExecutionLogMiddleware(MiddlewareMixin):
     def _is_verify_request(self, request):

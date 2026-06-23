@@ -96,6 +96,7 @@ def test_badges_endpoint_returns_only_authenticated_users_stats():
 @pytest.mark.django_db
 def test_lesson_completion_automatically_awards_badges_and_notifies():
     from apps.notifications.models import Notification
+
     user = User.objects.create_user(username="newbie", password="strongpass123")
     client = APIClient()
     client.force_authenticate(user=user)

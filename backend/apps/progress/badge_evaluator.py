@@ -114,6 +114,7 @@ BADGE_RULES = {
     },
 }
 
+
 class BadgeEvaluator:
     @classmethod
     def evaluate(cls, user):
@@ -145,7 +146,9 @@ class BadgeEvaluator:
             elif "lessons" in rule:
                 lessons_list = rule["lessons"]
                 if isinstance(lessons_list, list):
-                    meets_criteria = all(slug in completed_slugs for slug in lessons_list)
+                    meets_criteria = all(
+                        slug in completed_slugs for slug in lessons_list
+                    )
 
             if meets_criteria:
                 badge, _ = Badge.objects.get_or_create(

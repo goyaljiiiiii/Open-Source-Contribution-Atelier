@@ -11,6 +11,7 @@ class SearchDocument(models.Model):
     Enables highly performant Postgres Full-Text Search and Trigram similarity queries
     without needing a heavy external search engine.
     """
+
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey("content_type", "object_id")

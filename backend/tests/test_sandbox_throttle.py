@@ -6,6 +6,7 @@ from rest_framework.test import APIClient
 User = get_user_model()
 SANDBOX_URL = "/api/challenges/sandbox/execute/"
 
+
 class SandboxThrottleTest(TestCase):
     def setUp(self):
         self.client = APIClient()

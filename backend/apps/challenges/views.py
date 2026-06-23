@@ -14,9 +14,7 @@ class ChallengeViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ChallengeSerializer
 
     def get_queryset(self):
-        return Challenge.objects.filter(
-            organization=self.request.user.organization
-        )
+        return Challenge.objects.filter(organization=self.request.user.organization)
 
 
 class SandboxExecutionView(APIView):
