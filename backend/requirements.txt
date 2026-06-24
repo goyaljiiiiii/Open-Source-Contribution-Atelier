@@ -22,3 +22,5 @@ Pillow>=10.0.0
 reportlab>=4.0.0
 Faker>=20.0.0
 graphene-django>=3.0.0
+whitenoise>=6.5.0
+gunicorn>=21.2.0
