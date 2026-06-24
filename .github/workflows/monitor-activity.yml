@@ -139,39 +139,62 @@ jobs:
                 }
               }
 
-              // 2. 2-days inactivity rule for Assigned Issues and all PRs
-              if (diffDays > daysToStale) {
-                // Ensure we don't spam if the latest comment is already our stale warning
+              // 2. Inactivity rules for Assigned Issues and all PRs
+              if (isPR) {
+                if (diffDays > 2) {
+                  const lastComment = comments.length > 0 ? comments[comments.length - 1] : null;
+                  const isLastCommentFromBot = lastComment && lastComment.user.type === 'Bot' && lastComment.body.includes('inactive for 2 days');
+                  
+                  if (!isLastCommentFromBot) {
+                    console.log(`Notifying PR #${item.number} about inactivity...`);
+                    await github.rest.issues.createComment({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number: item.number,
+                      body: `Hello! This pull request has been inactive for 2 days. Just checking in to see if there are any updates or if you need help!`
+                    });
+                  }
+                }
+              } else if (assignees.length > 0) {
+                // Issue rules
                 const lastComment = comments.length > 0 ? comments[comments.length - 1] : null;
-                const isLastCommentFromBot = lastComment && lastComment.user.type === 'Bot' && lastComment.body.includes('inactive for 2 days');
-                
-                if (isLastCommentFromBot) {
-                  continue; // Already handled recently
+                const isLastCommentWarning = lastComment && lastComment.user.type === 'Bot' && lastComment.body.toLowerCase().includes('please submit a pr within 2 days');
+                const isLastCommentUnassign = lastComment && lastComment.user.type === 'Bot' && lastComment.body.includes('automatically unassigning');
+
+                if (isLastCommentUnassign) {
+                  // Already unassigned, do nothing
+                  continue;
                 }
 
-                if (isPR) {
-                  console.log(`Notifying PR #${item.number} about inactivity...`);
-                  await github.rest.issues.createComment({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: item.number,
-                    body: `Hello! This pull request has been inactive for 2 days. Just checking in to see if there are any updates or if you need help!`
-                  });
-                } else if (assignees.length > 0) {
-                  console.log(`Unassigning ${assignees.join(', ')} from issue #${item.number}`);
-                  await github.rest.issues.createComment({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: item.number,
-                    body: `This issue has been inactive for 2 days. I am automatically unassigning the current assignees so someone else can work on it. Feel free to request assignment again if you're ready to continue!`
-                  });
+                if (isLastCommentWarning) {
+                  // It has been warned. Wait for 2 days.
+                  if (diffDays > 2) {
+                    console.log(`Unassigning ${assignees.join(', ')} from issue #${item.number}`);
+                    await github.rest.issues.createComment({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number: item.number,
+                      body: `This issue has been inactive for 2 days since the reminder. I am automatically unassigning the current assignees so someone else can work on it. Feel free to request assignment again if you're ready to continue!`
+                    });
 
-                  await github.rest.issues.removeAssignees({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: item.number,
-                    assignees: assignees
-                  });
+                    await github.rest.issues.removeAssignees({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number: item.number,
+                      assignees: assignees
+                    });
+                  }
+                } else {
+                  // Not warned yet. Check if it's been 2 days.
+                  if (diffDays > 2) {
+                    console.log(`Warning ${assignees.join(', ')} on issue #${item.number}`);
+                    await github.rest.issues.createComment({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number: item.number,
+                      body: `Hello @${assignees.join(', @')}! It has been 2 days since this issue was assigned or updated. Please submit a PR within 2 days, or you will be automatically unassigned.`
+                    });
+                  }
                 }
               }
             }
