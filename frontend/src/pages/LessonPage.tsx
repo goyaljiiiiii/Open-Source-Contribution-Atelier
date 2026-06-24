@@ -19,6 +19,7 @@ import { MarkdownRenderer } from "../components/ui/MarkdownRenderer";
 import { RichTextEditor } from "../components/ui/RichTextEditor";
 import { GitGraph } from "../components/ui/GitGraph";
 import { NotePanel } from "../components/ui/NotePanel";
+import { PythonSandbox } from "../components/ui/PythonSandbox";
 
 import {
   createInitialRepo,
@@ -458,7 +459,20 @@ export function LessonPage() {
 
             {/* Exercises & validation section */}
             <div className="pt-8 space-y-6">
-              {hasQuiz ? (
+              {lesson.pythonExercise ? (
+                <div className="mt-8">
+                  <PythonSandbox 
+                    exercise={lesson.pythonExercise} 
+                    onSuccess={() => {
+                      syncProgress({
+                        lesson_slug: lesson.slug,
+                        score: lesson.points || 20,
+                        completed: true,
+                      });
+                    }} 
+                  />
+                </div>
+              ) : hasQuiz ? (
                 // QUIZ MODE RENDER
                 <div className="rounded-2xl border-4 border-black bg-white p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924]">
                   <div className="flex items-center justify-between mb-4">

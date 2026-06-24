@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, act } from '@testing-library/react';
 import { ScrollToTop } from '../components/ui/ScrollToTop';
 
 describe('ScrollToTop Component', () => {
@@ -11,6 +11,7 @@ describe('ScrollToTop Component', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.clearAllMocks();
+    cleanup();
   });
 
   it('is initially hidden when scroll position is 0', () => {
@@ -23,8 +24,10 @@ describe('ScrollToTop Component', () => {
     render(<ScrollToTop />);
     
     // Simulate scrolling down
-    Object.defineProperty(window, 'scrollY', { value: 350, writable: true });
-    window.dispatchEvent(new Event('scroll'));
+    act(() => {
+      Object.defineProperty(window, 'scrollY', { value: 350, writable: true });
+      window.dispatchEvent(new Event('scroll'));
+    });
 
     const button = screen.getByTestId('scroll-to-top');
     expect(button).toBeInTheDocument();
@@ -34,24 +37,32 @@ describe('ScrollToTop Component', () => {
     render(<ScrollToTop />);
     
     // Scroll down
-    Object.defineProperty(window, 'scrollY', { value: 350, writable: true });
-    window.dispatchEvent(new Event('scroll'));
+    act(() => {
+      Object.defineProperty(window, 'scrollY', { value: 350, writable: true });
+      window.dispatchEvent(new Event('scroll'));
+    });
     expect(screen.getByTestId('scroll-to-top')).toBeInTheDocument();
 
     // Scroll up
-    Object.defineProperty(window, 'scrollY', { value: 100, writable: true });
-    window.dispatchEvent(new Event('scroll'));
+    act(() => {
+      Object.defineProperty(window, 'scrollY', { value: 100, writable: true });
+      window.dispatchEvent(new Event('scroll'));
+    });
     expect(screen.queryByTestId('scroll-to-top')).not.toBeInTheDocument();
   });
 
   it('scrolls to top smoothly when clicked', () => {
     render(<ScrollToTop />);
     
-    Object.defineProperty(window, 'scrollY', { value: 400, writable: true });
-    window.dispatchEvent(new Event('scroll'));
+    act(() => {
+      Object.defineProperty(window, 'scrollY', { value: 400, writable: true });
+      window.dispatchEvent(new Event('scroll'));
+    });
 
     const button = screen.getByTestId('scroll-to-top');
-    fireEvent.click(button);
+    act(() => {
+      fireEvent.click(button);
+    });
 
     expect(window.scrollTo).toHaveBeenCalledWith({
       top: 0,
