@@ -165,3 +165,94 @@ html.dark .editor-statusbar {
   color: #c4bbae !important;
 }
 
+
+/* HIGH CONTRAST MODE OVERRIDES */
+html.high-contrast {
+  --hc-bg: #000000;
+  --hc-text: #ffffff;
+  --hc-accent: #ffff00;
+  --hc-border: #ffffff;
+  
+  color-scheme: dark !important;
+  background-color: var(--hc-bg) !important;
+  color: var(--hc-text) !important;
+}
+
+html.high-contrast body,
+html.high-contrast #root {
+  background-color: var(--hc-bg) !important;
+  background-image: none !important;
+  color: var(--hc-text) !important;
+}
+
+/* Force backgrounds */
+html.high-contrast .bg-white,
+html.high-contrast .bg-black,
+html.high-contrast .bg-surface,
+html.high-contrast .bg-surface-low,
+html.high-contrast .bg-surface-high,
+html.high-contrast .bg-surface-highest,
+html.high-contrast .bg-accent,
+html.high-contrast .bg-primary,
+html.high-contrast .bg-\[\#151411\],
+html.high-contrast .bg-\[\#1f1c18\],
+html.high-contrast .bg-\[\#0f0e0c\],
+html.high-contrast .dark\:bg-\[\#151411\],
+html.high-contrast .dark\:bg-\[\#1f1c18\],
+html.high-contrast .dark\:bg-\[\#0f0e0c\],
+html.high-contrast .bg-\[linear-gradient\(135deg\,\#4f46e5\,\#7c72ff\)\] {
+  background-color: var(--hc-bg) !important;
+  background-image: none !important;
+  color: var(--hc-text) !important;
+}
+
+/* Borders and Shadows */
+html.high-contrast * {
+  border-color: var(--hc-border) !important;
+  box-shadow: none !important;
+}
+
+/* Text Overrides */
+html.high-contrast .text-muted,
+html.high-contrast .text-text,
+html.high-contrast .text-primary,
+html.high-contrast .text-accent,
+html.high-contrast .dark\:text-\[\#c4bbae\],
+html.high-contrast .dark\:text-\[\#f0ebe2\] {
+  color: var(--hc-text) !important;
+}
+
+/* Links and Interactive Elements */
+html.high-contrast a,
+html.high-contrast button,
+html.high-contrast .hover\:text-primary:hover,
+html.high-contrast .hover\:text-accent:hover,
+html.high-contrast .group:hover .group-hover\:text-primary,
+html.high-contrast .group:hover .group-hover\:text-accent {
+  color: var(--hc-accent) !important;
+  border-color: var(--hc-accent) !important;
+}
+
+html.high-contrast a:hover,
+html.high-contrast button:hover {
+  background-color: var(--hc-accent) !important;
+  color: var(--hc-bg) !important;
+}
+
+/* Inputs */
+html.high-contrast input,
+html.high-contrast textarea,
+html.high-contrast select {
+  background-color: var(--hc-bg) !important;
+  color: var(--hc-text) !important;
+  border: 2px solid var(--hc-border) !important;
+}
+
+html.high-contrast input:focus,
+html.high-contrast textarea:focus,
+html.high-contrast select:focus {
+  border-color: var(--hc-accent) !important;
+  outline: 2px solid var(--hc-accent) !important;
+  outline-offset: 2px;
+}
+

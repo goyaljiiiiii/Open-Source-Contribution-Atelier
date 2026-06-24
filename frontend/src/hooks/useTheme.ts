@@ -1,8 +1,17 @@
 import { useState, useEffect } from "react";
 
-function getInitialTheme(): string {
+export type Theme = "light" | "dark" | "high-contrast";
+
+function getInitialTheme(): Theme {
   try {
-    if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    const stored = localStorage.getItem("theme") as Theme | null;
+    if (stored === "light" || stored === "dark" || stored === "high-contrast") {
+      return stored;
+    }
+    if (window.matchMedia('(prefers-contrast: more)').matches) {
+      return "high-contrast";
+    }
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
       return "dark";
     }
     return "light";
@@ -11,7 +20,7 @@ function getInitialTheme(): string {
   }
 }
 
-function persistTheme(theme: string) {
+function persistTheme(theme: Theme) {
   try {
     localStorage.setItem("theme", theme);
   } catch {
@@ -20,21 +29,24 @@ function persistTheme(theme: string) {
 }
 
 export function useTheme() {
-  const [theme, setTheme] = useState(getInitialTheme);
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
   useEffect(() => {
     persistTheme(theme);
+    
+    document.documentElement.classList.remove("dark", "high-contrast");
+    
     if (theme === "dark") {
       document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
+    } else if (theme === "high-contrast") {
+      document.documentElement.classList.add("high-contrast");
     }
   }, [theme]);
 
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
-      if (e.key === "theme" && (e.newValue === "light" || e.newValue === "dark")) {
-        setTheme(e.newValue);
+      if (e.key === "theme" && (e.newValue === "light" || e.newValue === "dark" || e.newValue === "high-contrast")) {
+        setTheme(e.newValue as Theme);
       }
     };
     window.addEventListener("storage", handleStorage);
@@ -42,8 +54,12 @@ export function useTheme() {
   }, []);
 
   const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
+    setTheme((prev) => prev === "light" ? "dark" : "light");
   };
 
-  return { theme, toggleTheme };
+  const setSpecificTheme = (newTheme: Theme) => {
+    setTheme(newTheme);
+  };
+
+  return { theme, toggleTheme, setTheme: setSpecificTheme };
 }
