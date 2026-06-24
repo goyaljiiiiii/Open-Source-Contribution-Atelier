@@ -26,6 +26,7 @@ const navItems = [
   { to: "/challenges", label: "Challenges", icon: Trophy },
   { to: "/community", label: "Community", icon: BriefcaseBusiness },
   { to: "/chat", label: "Chat", icon: MessageSquare },
+  { to: "/peer-review", label: "Peer Review", icon: Shield },
   { to: "/profile", label: "Profile Settings", icon: Settings },
 ];
 

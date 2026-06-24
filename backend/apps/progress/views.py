@@ -672,3 +672,43 @@ class RecommendationsView(APIView):
 
         serializer = LessonSerializer(recommended_lessons, many=True)
         return Response(serializer.data)
+
+from .models import CodeSubmission, PeerReview
+from .serializers import CodeSubmissionSerializer, PeerReviewSerializer
+
+class CodeSubmissionView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        submissions = CodeSubmission.objects.filter(status=CodeSubmission.Status.PENDING).exclude(user=request.user)
+        serializer = CodeSubmissionSerializer(submissions, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = CodeSubmissionSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PeerReviewView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, submission_id):
+        submission = get_object_or_404(CodeSubmission, id=submission_id)
+        
+        if submission.user == request.user:
+            return Response({"error": "Cannot review your own submission"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if PeerReview.objects.filter(submission=submission, reviewer=request.user).exists():
+            return Response({"error": "You have already reviewed this submission"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        serializer = PeerReviewSerializer(data=request.data)
+        if serializer.is_valid():
+            with transaction.atomic():
+                review = serializer.save(submission=submission, reviewer=request.user, points_earned=10)
+                submission.status = CodeSubmission.Status.REVIEWED
+                submission.save(update_fields=["status"])
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

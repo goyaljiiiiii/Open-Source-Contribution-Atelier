@@ -251,7 +251,12 @@ class ContributorDashboardView(APIView):
                 ).aggregate(total=Sum("points"))["total"]
                 or 0
             )
-            total_xp = lesson_xp + issues_xp
+            from apps.progress.models import PeerReview
+            review_xp = (
+                PeerReview.objects.filter(reviewer=user).aggregate(total=Sum("points_earned"))["total"]
+                or 0
+            )
+            total_xp = lesson_xp + issues_xp + review_xp
 
             spent_points = (
                 StreakFreeze.objects.filter(user=user).aggregate(total=Sum("cost"))["total"]
@@ -433,7 +438,9 @@ class BuyStreakFreezeView(APIView):
         with transaction.atomic():
             lesson_xp = LessonProgress.objects.filter(user=user, completed=True).aggregate(total=Sum("score"))["total"] or 0
             issues_xp = Issue.objects.filter(assigned_to=user, status=Issue.Status.SOLVED).aggregate(total=Sum("points"))["total"] or 0
-            total_xp = lesson_xp + issues_xp
+            from apps.progress.models import PeerReview
+            review_xp = PeerReview.objects.filter(reviewer=user).aggregate(total=Sum("points_earned"))["total"] or 0
+            total_xp = lesson_xp + issues_xp + review_xp
             
             spent_points = StreakFreeze.objects.filter(user=user).aggregate(total=Sum("cost"))["total"] or 0
             available_points = total_xp - spent_points
