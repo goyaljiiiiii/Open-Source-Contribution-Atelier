@@ -3,8 +3,7 @@ from apps.dashboard.models import Issue, PullRequest
 from apps.progress.models import ExerciseAttempt, LessonProgress
 from django.contrib.auth.models import User
 from django.core.cache import cache
-from django.db.models import (Count, F, IntegerField, OuterRef, Subquery, Sum,
-                              Value)
+from django.db.models import Count, F, IntegerField, OuterRef, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from datetime import timedelta
@@ -73,6 +72,7 @@ class LeaderboardView(ListAPIView):
         )
 
         from apps.progress.models import DailyTaskRecord
+
         daily_task_filter = {"user": OuterRef("pk")}
         if start_date:
             daily_task_filter["date__gte"] = start_date.date()
@@ -271,10 +271,16 @@ class ContributorDashboardView(APIView):
                 assigned_to=user, status=Issue.Status.SOLVED
             ).aggregate(p_sum=Sum("points"), b_sum=Sum("bonus_points"))
             issues_xp = (issues_agg["p_sum"] or 0) + (issues_agg["b_sum"] or 0)
-            
+
             from apps.progress.models import DailyTaskRecord
-            daily_xp = DailyTaskRecord.objects.filter(user=user).aggregate(total=Sum("xp_earned"))["total"] or 0
-            
+
+            daily_xp = (
+                DailyTaskRecord.objects.filter(user=user).aggregate(
+                    total=Sum("xp_earned")
+                )["total"]
+                or 0
+            )
+
             total_xp = lesson_xp + issues_xp + daily_xp
 
             # Calculate streak based on unique days of activity (attempts or completed lessons)
@@ -306,7 +312,12 @@ class ContributorDashboardView(APIView):
                     assigned_to=u, status=Issue.Status.SOLVED
                 ).aggregate(p_sum=Sum("points"), b_sum=Sum("bonus_points"))
                 u_ixp = (u_ixp_agg["p_sum"] or 0) + (u_ixp_agg["b_sum"] or 0)
-                u_dxp = DailyTaskRecord.objects.filter(user=u).aggregate(total=Sum("xp_earned"))["total"] or 0
+                u_dxp = (
+                    DailyTaskRecord.objects.filter(user=u).aggregate(
+                        total=Sum("xp_earned")
+                    )["total"]
+                    or 0
+                )
                 user_ranks.append((u.id, u_lxp + u_ixp + u_dxp))
 
             user_ranks.sort(key=lambda x: x[1], reverse=True)
@@ -396,6 +407,7 @@ class ContributorDashboardView(APIView):
             cache.set(cache_key, data, 300)
 
         return Response(data)
+
 
 class BuyStreakFreezeView(APIView):
     def post(self, request):

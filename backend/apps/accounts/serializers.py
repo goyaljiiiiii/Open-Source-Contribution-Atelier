@@ -110,7 +110,15 @@ class UserListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ("id", "username", "email", "is_staff", "avatar_url", "cover_image_url", "timezone")
+        fields = (
+            "id",
+            "username",
+            "email",
+            "is_staff",
+            "avatar_url",
+            "cover_image_url",
+            "timezone",
+        )
 
     def get_avatar_url(self, obj):
         if hasattr(obj, "profile") and obj.profile.avatar:

@@ -23,12 +23,19 @@ def handle_issue_pre_save(sender, instance, **kwargs):
     if instance.id:
         try:
             old_instance = Issue.objects.get(id=instance.id)
-            if old_instance.status != Issue.Status.SOLVED and instance.status == Issue.Status.SOLVED:
+            if (
+                old_instance.status != Issue.Status.SOLVED
+                and instance.status == Issue.Status.SOLVED
+            ):
                 from apps.progress.models import XPMultiplierEvent
+
                 multiplier = XPMultiplierEvent.get_active_multiplier()
                 if multiplier > 1.0:
                     instance.bonus_points = int(instance.points * (multiplier - 1.0))
-            elif old_instance.status == Issue.Status.SOLVED and instance.status != Issue.Status.SOLVED:
+            elif (
+                old_instance.status == Issue.Status.SOLVED
+                and instance.status != Issue.Status.SOLVED
+            ):
                 instance.bonus_points = 0
         except Issue.DoesNotExist:
             pass
@@ -69,9 +76,9 @@ def _broadcast_xp_update(user):
         )["total"]
         or 0
     )
-    issues_agg = Issue.objects.filter(assigned_to=user, status=Issue.Status.SOLVED).aggregate(
-        p_sum=Sum("points"), b_sum=Sum("bonus_points")
-    )
+    issues_agg = Issue.objects.filter(
+        assigned_to=user, status=Issue.Status.SOLVED
+    ).aggregate(p_sum=Sum("points"), b_sum=Sum("bonus_points"))
     issues_xp = (issues_agg["p_sum"] or 0) + (issues_agg["b_sum"] or 0)
     total_xp = lesson_xp + issues_xp
 

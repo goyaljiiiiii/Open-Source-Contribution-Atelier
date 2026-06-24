@@ -1,7 +1,13 @@
 from rest_framework import serializers
 
-from .models import (Badge, Certificate, HelpRequest, LessonProgress,
-                     QuizAttempt, UserBadge)
+from .models import (
+    Badge,
+    Certificate,
+    HelpRequest,
+    LessonProgress,
+    QuizAttempt,
+    UserBadge,
+)
 
 
 class BadgeSerializer(serializers.ModelSerializer):
@@ -115,14 +121,21 @@ class QuizAttemptSerializer(serializers.ModelSerializer):
 
 from .models import CodeSubmission, PeerReview
 
+
 class CodeSubmissionSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source="user.username")
 
     class Meta:
         model = CodeSubmission
         fields = [
-            "id", "user", "username", "title", "code_snippet", 
-            "description", "status", "created_at"
+            "id",
+            "user",
+            "username",
+            "title",
+            "code_snippet",
+            "description",
+            "status",
+            "created_at",
         ]
         read_only_fields = ["id", "user", "username", "status", "created_at"]
 
@@ -133,7 +146,20 @@ class PeerReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = PeerReview
         fields = [
-            "id", "submission", "reviewer", "reviewer_username", 
-            "feedback", "rating", "points_earned", "created_at"
+            "id",
+            "submission",
+            "reviewer",
+            "reviewer_username",
+            "feedback",
+            "rating",
+            "points_earned",
+            "created_at",
         ]
-        read_only_fields = ["id", "submission", "reviewer", "reviewer_username", "points_earned", "created_at"]
+        read_only_fields = [
+            "id",
+            "submission",
+            "reviewer",
+            "reviewer_username",
+            "points_earned",
+            "created_at",
+        ]

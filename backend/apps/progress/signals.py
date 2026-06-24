@@ -67,23 +67,26 @@ def on_lesson_completed(sender, instance, created, **kwargs):
     except Exception as exc:
         logger.error("Failed to push leaderboard update: %s", exc)
 
+
 @receiver(post_save, sender=PeerReview)
 def on_peer_review_created(sender, instance, created, **kwargs):
     if created:
         update_daily_task(instance.reviewer, "pr")
+
 
 @receiver(post_save, sender=QuizAttempt)
 def on_quiz_attempt_created(sender, instance, created, **kwargs):
     if created and instance.is_correct:
         update_daily_task(instance.user, "quiz")
 
+
 def update_daily_task(user, task_type):
     today = timezone.localdate()
     record, _ = DailyTaskRecord.objects.get_or_create(user=user, date=today)
-    
+
     updated = False
     new_xp = 0
-    
+
     if task_type == "lesson":
         record.lessons_completed += 1
         if record.lessons_completed >= 2 and not record.lessons_awarded:
@@ -105,9 +108,9 @@ def update_daily_task(user, task_type):
             record.xp_earned += 10
             new_xp = 10
             updated = True
-            
+
     record.save()
-    
+
     if updated:
         # Broadcast XP update for the user
         channel_layer = get_channel_layer()
@@ -115,17 +118,24 @@ def update_daily_task(user, task_type):
             from django.db.models import Sum
             from apps.progress.models import LessonProgress as LP
             from apps.dashboard.models import Issue
-            
+
             # Recalculate total XP including daily tasks
-            lesson_xp = LP.objects.filter(user=user).aggregate(total=Sum("score"))["total"] or 0
-            issues_agg = Issue.objects.filter(assigned_to=user, status=Issue.Status.SOLVED).aggregate(
-                p_sum=Sum("points"), b_sum=Sum("bonus_points")
+            lesson_xp = (
+                LP.objects.filter(user=user).aggregate(total=Sum("score"))["total"] or 0
             )
+            issues_agg = Issue.objects.filter(
+                assigned_to=user, status=Issue.Status.SOLVED
+            ).aggregate(p_sum=Sum("points"), b_sum=Sum("bonus_points"))
             issues_xp = (issues_agg["p_sum"] or 0) + (issues_agg["b_sum"] or 0)
-            daily_xp = DailyTaskRecord.objects.filter(user=user).aggregate(total=Sum("xp_earned"))["total"] or 0
-            
+            daily_xp = (
+                DailyTaskRecord.objects.filter(user=user).aggregate(
+                    total=Sum("xp_earned")
+                )["total"]
+                or 0
+            )
+
             total_xp = lesson_xp + issues_xp + daily_xp
-            
+
             async_to_sync(channel_layer.group_send)(
                 "leaderboard",
                 {
@@ -137,4 +147,3 @@ def update_daily_task(user, task_type):
                     "message": f"User {user.username} earned {new_xp} bonus XP from a daily task!",
                 },
             )
-

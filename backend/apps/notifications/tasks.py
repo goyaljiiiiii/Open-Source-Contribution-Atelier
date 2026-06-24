@@ -1,8 +1,9 @@
 import json
-from celery import shared_task # type: ignore
+from celery import shared_task  # type: ignore
 from django.conf import settings
-from pywebpush import webpush, WebPushException # type: ignore
+from pywebpush import webpush, WebPushException  # type: ignore
 from .models import PushSubscription
+
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def send_web_push_notification(self, user_id, title, message, url=None):
@@ -15,7 +16,7 @@ def send_web_push_notification(self, user_id, title, message, url=None):
 
     vapid_private_key = getattr(settings, "VAPID_PRIVATE_KEY", None)
     vapid_admin_email = getattr(settings, "VAPID_ADMIN_EMAIL", None)
-    
+
     if not vapid_private_key or not vapid_admin_email:
         # VAPID not configured
         return
@@ -34,14 +35,11 @@ def send_web_push_notification(self, user_id, title, message, url=None):
             webpush(
                 subscription_info={
                     "endpoint": sub.endpoint,
-                    "keys": {
-                        "p256dh": sub.p256dh,
-                        "auth": sub.auth
-                    }
+                    "keys": {"p256dh": sub.p256dh, "auth": sub.auth},
                 },
                 data=payload,
                 vapid_private_key=vapid_private_key,
-                vapid_claims={"sub": vapid_admin_email}
+                vapid_claims={"sub": vapid_admin_email},
             )
         except WebPushException as ex:
             # If the endpoint is no longer valid (e.g. 410 Gone, or 404 Not Found),

@@ -131,7 +131,7 @@ class UserProfile(models.Model):
     avatar = models.ImageField(upload_to="avatars/", null=True, blank=True)
     cover_image = models.ImageField(upload_to="covers/", null=True, blank=True)
     last_password_change = models.DateTimeField(auto_now_add=True)
-    timezone = models.CharField(max_length=64, default='UTC')
+    timezone = models.CharField(max_length=64, default="UTC")
 
     organization = models.ForeignKey(
         "organizations.Organization",
@@ -146,24 +146,24 @@ class UserProfile(models.Model):
 
     def _convert_to_webp(self, image_field):
         """Helper method to convert an ImageField to WebP format."""
-        if image_field and not image_field.name.lower().endswith('.webp'):
+        if image_field and not image_field.name.lower().endswith(".webp"):
             from PIL import Image
             from io import BytesIO
             from django.core.files.base import ContentFile
             import os
 
             img = Image.open(image_field)
-            
-            if img.mode != 'RGBA' and img.mode != 'RGB':
-                img = img.convert('RGBA')
-            
+
+            if img.mode != "RGBA" and img.mode != "RGB":
+                img = img.convert("RGBA")
+
             output = BytesIO()
-            img.save(output, format='WEBP', quality=85)
+            img.save(output, format="WEBP", quality=85)
             output.seek(0)
-            
+
             base_name = os.path.splitext(os.path.basename(image_field.name))[0]
             new_filename = f"{base_name}.webp"
-            
+
             image_field.save(new_filename, ContentFile(output.read()), save=False)
 
     def save(self, *args, **kwargs):

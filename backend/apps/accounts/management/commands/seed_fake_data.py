@@ -36,7 +36,9 @@ class Command(BaseCommand):
             users_to_delete = User.objects.filter(username__startswith="fake_")
             count, _ = users_to_delete.delete()
             self.stdout.write(
-                self.style.SUCCESS(f"Deleted {count} fake users and their related data.")
+                self.style.SUCCESS(
+                    f"Deleted {count} fake users and their related data."
+                )
             )
 
         self.stdout.write(f"Generating {num_users} fake users...")
@@ -56,7 +58,7 @@ class Command(BaseCommand):
                 is_superuser=False,
             )
             # Cannot use set_password with bulk_create, so we will not set usable passwords
-            # to keep bulk_create fast. Load testing mostly doesn't require login, or 
+            # to keep bulk_create fast. Load testing mostly doesn't require login, or
             # we can hash one password and assign it to all.
             users_to_create.append(user)
 
@@ -69,7 +71,9 @@ class Command(BaseCommand):
         # Re-fetch users to get IDs for related objects
         # Note: bulk_create doesn't always set PKs (depending on DB). Fetching again is safe.
         fake_users = list(
-            User.objects.filter(username__startswith="fake_").order_by("-id")[:num_users]
+            User.objects.filter(username__startswith="fake_").order_by("-id")[
+                :num_users
+            ]
         )
 
         # Create user profiles because bulk_create bypasses the post_save signal

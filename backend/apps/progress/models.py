@@ -25,12 +25,9 @@ class XPMultiplierEvent(models.Model):
     def get_active_multiplier(cls) -> float:
         now = timezone.now()
         active_event = cls.objects.filter(
-            is_active=True,
-            start_time__lte=now,
-            end_time__gte=now
+            is_active=True, start_time__lte=now, end_time__gte=now
         ).first()
         return active_event.multiplier if active_event else 1.0
-
 
 
 class Badge(models.Model):
@@ -222,11 +219,15 @@ class CodeSubmission(models.Model):
         PENDING = "pending", "Pending"
         REVIEWED = "reviewed", "Reviewed"
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="code_submissions")
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="code_submissions"
+    )
     title = models.CharField(max_length=255)
     code_snippet = models.TextField()
     description = models.TextField(blank=True)
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True)
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -239,8 +240,12 @@ class CodeSubmission(models.Model):
 
 class PeerReview(models.Model):
     objects = models.Manager()
-    submission = models.ForeignKey(CodeSubmission, on_delete=models.CASCADE, related_name="reviews")
-    reviewer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="given_reviews")
+    submission = models.ForeignKey(
+        CodeSubmission, on_delete=models.CASCADE, related_name="reviews"
+    )
+    reviewer = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="given_reviews"
+    )
     feedback = models.TextField()
     rating = models.PositiveIntegerField(default=5)
     points_earned = models.PositiveIntegerField(default=10)
@@ -256,19 +261,21 @@ class PeerReview(models.Model):
 
 class DailyTaskRecord(models.Model):
     objects = models.Manager()
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="daily_task_records")
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="daily_task_records"
+    )
     date = models.DateField(db_index=True)
-    
+
     # Progress tracking
     lessons_completed = models.PositiveIntegerField(default=0)
     prs_reviewed = models.PositiveIntegerField(default=0)
     quizzes_passed = models.PositiveIntegerField(default=0)
-    
+
     # Flags to prevent double-awarding
     lessons_awarded = models.BooleanField(default=False)
     prs_awarded = models.BooleanField(default=False)
     quizzes_awarded = models.BooleanField(default=False)
-    
+
     # Total bonus XP earned from daily tasks on this day
     xp_earned = models.PositiveIntegerField(default=0)
 
