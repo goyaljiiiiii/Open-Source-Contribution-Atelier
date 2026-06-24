@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     "apps.sandbox",
     "apps.organizations",
     "apps.webhooks",
+    "apps.notes",
     "rest_framework_simplejwt.token_blacklist",
 ]
 
