@@ -168,9 +168,9 @@ class RoadmapView(views.APIView):
                     "title": lesson.title,
                     "summary": lesson.summary,
                     "difficulty": lesson.difficulty,
-                    "estimated_minutes": lesson.estimated_minutes,
+                    "estimatedMinutes": lesson.estimated_minutes,
                     "order": lesson.order,
-                    "exercise_count": lesson.exercises.count(),
+                    "exerciseCount": lesson.exercises.count(),
                     "completed": completed,
                     "score": score,
                 }
