@@ -1,7 +1,9 @@
 from apps.dashboard.views import LeaderboardView
 from django.contrib import admin
 from django.urls import include, path
+from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from graphene_django.views import GraphQLView
 
 from .version_view import version_view
 
@@ -26,6 +28,7 @@ urlpatterns = [
         SpectacularSwaggerView.as_view(url_name="schema"),
         name="swagger-ui",
     ),
+    path("api/graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
 ]
 
 from django.conf import settings
