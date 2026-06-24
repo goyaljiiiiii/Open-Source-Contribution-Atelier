@@ -2,7 +2,7 @@ import { useState, useCallback, KeyboardEvent } from "react";
 import { Send } from "lucide-react";
 
 type ChatInputProps = {
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: string) => void | Promise<void>;
   onInputChange?: () => void;
   onInputBlur?: () => void;
   onInputSubmit?: () => void;
@@ -23,7 +23,16 @@ export function ChatInput({
   const handleSend = useCallback(() => {
     const trimmed = text.trim();
     if (!trimmed || disabled) return;
-    onSendMessage(trimmed);
+    
+    try {
+      const result = onSendMessage(trimmed);
+      if (result instanceof Promise) {
+        result.catch((err) => console.error("Failed to send message:", err));
+      }
+    } catch (err) {
+      console.error("Failed to send message:", err);
+    }
+    
     setText("");
     onInputSubmit?.();
   }, [text, disabled, onSendMessage, onInputSubmit]);
