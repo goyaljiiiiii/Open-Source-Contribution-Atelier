@@ -8,11 +8,16 @@ import {
   X,
   BookOpen,
   CheckCircle2,
+  NotebookText,
   Lock,
+  Bookmark,
 } from "lucide-react";
 
 import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
+import { useAuth } from "../features/auth/AuthContext";
 import { useUserProgress } from "../hooks/useUserProgress";
+import { useBookmarks } from "../hooks/useBookmarks";
+import { useLessonNote } from "../hooks/useLessonNote";
 import { fetchApi } from "../lib/api";
 import { Lesson, fetchLessonsApi, fetchLessonContent } from "../lib/lessons";
 import { RichTextEditor } from "../components/ui/RichTextEditor";
@@ -40,7 +45,9 @@ function normalizeCommand(value: string) {
 export function LessonPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { syncProgress, isLessonCompleted, isLoading } = useUserProgress();
+  const { user } = useAuth();
+  const { isLessonCompleted, syncProgress } = useUserProgress();
+  const { isBookmarked, toggleBookmark } = useBookmarks();
   const queryClient = useQueryClient();
 
   const [lesson, setLesson] = useState<Lesson | undefined>(undefined);
@@ -450,6 +457,14 @@ export function LessonPage() {
                   COMPLETED ✅
                 </div>
               )}
+              <button
+                onClick={() => toggleBookmark.mutate({ slug: lesson.slug, isBookmarked: isBookmarked(lesson.slug) })}
+                disabled={toggleBookmark.isPending}
+                className="self-start sm:self-center ml-auto flex items-center justify-center p-2 rounded-xl border-4 border-black bg-surface-low hover:-translate-y-1 hover:shadow-card-sm transition-all"
+                title={isBookmarked(lesson.slug) ? "Remove from Read Later" : "Save for later"}
+              >
+                <Bookmark className={isBookmarked(lesson.slug) ? "fill-primary text-primary" : "text-black dark:text-[#f0ebe2]"} size={24} />
+              </button>
             </div>
 
             <p className="text-xl font-bold text-muted dark:text-[#c4bbae]">

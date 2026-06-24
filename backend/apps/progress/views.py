@@ -14,12 +14,13 @@ from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
 from .models import (Badge, Certificate, ExerciseAttempt, HelpRequest,
-                     LessonProgress, LessonNote, QuizAttempt)
+                     LessonProgress, LessonNote, QuizAttempt, LessonBookmark)
 from .serializers import (BadgeSerializer, BulkSyncSerializer,
                           CertificateVerificationSerializer,
                           HelpRequestSerializer,
                           LessonProgressCreateSerializer,
-                          LessonProgressSerializer, LessonNoteSerializer, QuizAttemptSerializer)
+                          LessonProgressSerializer, LessonNoteSerializer, QuizAttemptSerializer,
+                          LessonBookmarkSerializer)
 from .throttles import HelpRequestRateThrottle
 
 
@@ -28,6 +29,32 @@ class BadgeListView(ListAPIView):
     queryset = Badge.objects.all()
     serializer_class = BadgeSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+
+class LessonBookmarkView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        bookmarks = LessonBookmark.objects.filter(user=request.user).select_related("lesson")
+        serializer = LessonBookmarkSerializer(bookmarks, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, lesson_slug):
+        lesson = get_object_or_404(Lesson, slug=lesson_slug)
+        bookmark, created = LessonBookmark.objects.get_or_create(
+            user=request.user,
+            lesson=lesson
+        )
+        if created:
+            return Response({"status": "bookmarked"}, status=status.HTTP_201_CREATED)
+        return Response({"status": "already bookmarked"}, status=status.HTTP_200_OK)
+
+    def delete(self, request, lesson_slug):
+        lesson = get_object_or_404(Lesson, slug=lesson_slug)
+        deleted, _ = LessonBookmark.objects.filter(user=request.user, lesson=lesson).delete()
+        if deleted:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({"error": "Bookmark not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
 @extend_schema_view(

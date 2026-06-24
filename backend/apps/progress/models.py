@@ -61,6 +61,22 @@ class LessonProgress(models.Model):
             ),
         ]
 
+    def __str__(self):
+        return f"{self.user.username} - {self.lesson.slug} - {'Done' if self.completed else 'In Progress'}"
+
+
+class LessonBookmark(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="bookmarks")
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="bookmarks")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "lesson")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.user.username} bookmarked {self.lesson.slug}"
+
 
 class ExerciseAttempt(models.Model):
     objects = models.Manager()

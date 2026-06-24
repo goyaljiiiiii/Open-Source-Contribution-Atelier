@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from .models import (Badge, Certificate, HelpRequest, LessonProgress,
-                     LessonNote, QuizAttempt, UserBadge)
+                     LessonNote, QuizAttempt, UserBadge, LessonBookmark)
 
 
 class BadgeSerializer(serializers.ModelSerializer):
@@ -40,6 +40,30 @@ class LessonProgressSerializer(serializers.ModelSerializer):
             "score",
             "attempt_count",
             "updated_at",
+        ]
+
+
+class LessonBookmarkSerializer(serializers.ModelSerializer):
+    lesson_slug = serializers.ReadOnlyField(source="lesson.slug")
+    lesson_title = serializers.ReadOnlyField(source="lesson.title")
+    lesson_difficulty = serializers.ReadOnlyField(source="lesson.difficulty")
+    lesson_category = serializers.ReadOnlyField(source="lesson.category")
+    lesson_estimated_minutes = serializers.ReadOnlyField(source="lesson.estimated_minutes")
+    lesson_summary = serializers.ReadOnlyField(source="lesson.summary")
+
+    class Meta:
+        model = LessonBookmark
+        fields = [
+            "id",
+            "user",
+            "lesson",
+            "lesson_slug",
+            "lesson_title",
+            "lesson_difficulty",
+            "lesson_category",
+            "lesson_estimated_minutes",
+            "lesson_summary",
+            "created_at",
         ]
 
 
