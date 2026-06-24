@@ -3,8 +3,7 @@ from apps.dashboard.models import Issue, PullRequest
 from apps.progress.models import ExerciseAttempt, LessonProgress
 from django.contrib.auth.models import User
 from django.core.cache import cache
-from django.db.models import (Count, F, IntegerField, OuterRef, Subquery, Sum,
-                              Value)
+from django.db.models import Count, F, IntegerField, OuterRef, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from datetime import timedelta
@@ -296,12 +295,21 @@ class ContributorDashboardView(APIView):
                     rank = index + 1
                     break
 
+            from apps.progress.models import UserBadge
+
+            earned_badges = list(
+                UserBadge.objects.filter(user=user).values_list(
+                    "badge__slug", flat=True
+                )
+            )
+
             personal_stats = {
                 "issues_solved": issues_solved,
                 "prs_merged": prs_merged,
                 "total_xp": total_xp,
                 "streak_days": streak_days,
                 "rank": rank,
+                "earned_badges": earned_badges,
             }
 
             # 2. Assigned Issues (Open or In Progress)
