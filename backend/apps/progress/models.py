@@ -7,6 +7,7 @@ from django.utils import timezone
 
 
 class XPMultiplierEvent(models.Model):
+    objects = models.Manager()
     name = models.CharField(max_length=255)
     multiplier = models.FloatField(default=1.5)
     start_time = models.DateTimeField()
@@ -60,6 +61,9 @@ class UserBadge(models.Model):
 
 
 class LessonProgress(models.Model):
+    class DoesNotExist(ObjectDoesNotExist):
+        pass
+
     objects = models.Manager()
     organization = models.ForeignKey(
         Organization, on_delete=models.CASCADE, null=True, blank=True
@@ -89,6 +93,14 @@ class LessonProgress(models.Model):
                 fields=["user", "-updated_at"], name="idx_progress_user_updated"
             ),
         ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._original_completed = self.completed
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self._original_completed = self.completed
 
 
 class ExerciseAttempt(models.Model):
@@ -240,3 +252,29 @@ class PeerReview(models.Model):
 
     def __str__(self):
         return f"Review by {self.reviewer.username} for {self.submission.title}"
+
+
+class DailyTaskRecord(models.Model):
+    objects = models.Manager()
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="daily_task_records")
+    date = models.DateField(db_index=True)
+    
+    # Progress tracking
+    lessons_completed = models.PositiveIntegerField(default=0)
+    prs_reviewed = models.PositiveIntegerField(default=0)
+    quizzes_passed = models.PositiveIntegerField(default=0)
+    
+    # Flags to prevent double-awarding
+    lessons_awarded = models.BooleanField(default=False)
+    prs_awarded = models.BooleanField(default=False)
+    quizzes_awarded = models.BooleanField(default=False)
+    
+    # Total bonus XP earned from daily tasks on this day
+    xp_earned = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = ("user", "date")
+        ordering = ["-date"]
+
+    def __str__(self):
+        return f"DailyTasks for {self.user.username} on {self.date}"

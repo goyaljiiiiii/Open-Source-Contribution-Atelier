@@ -749,3 +749,46 @@ class PeerReviewView(APIView):
                 submission.save(update_fields=["status"])
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class DailyTaskProgressView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from django.utils import timezone
+        from .models import DailyTaskRecord
+        
+        today = timezone.localdate()
+        record, _ = DailyTaskRecord.objects.get_or_create(user=request.user, date=today)
+
+        tasks = [
+            {
+                "id": "lessons",
+                "title": "Complete 2 lessons",
+                "target": 2,
+                "current": record.lessons_completed,
+                "completed": record.lessons_awarded,
+                "bonus_xp": 20
+            },
+            {
+                "id": "prs",
+                "title": "Review 1 Code Submission",
+                "target": 1,
+                "current": record.prs_reviewed,
+                "completed": record.prs_awarded,
+                "bonus_xp": 15
+            },
+            {
+                "id": "quizzes",
+                "title": "Pass 1 Quiz",
+                "target": 1,
+                "current": record.quizzes_passed,
+                "completed": record.quizzes_awarded,
+                "bonus_xp": 10
+            }
+        ]
+        
+        return Response({
+            "date": today.isoformat(),
+            "xp_earned_today": record.xp_earned,
+            "tasks": tasks
+        })
