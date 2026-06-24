@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from apps.content.models import Lesson
 from apps.dashboard.models import Issue, PullRequest
 from apps.progress.models import ExerciseAttempt, LessonProgress
@@ -7,7 +9,6 @@ from django.db.models import (Count, F, IntegerField, OuterRef, Subquery, Sum,
                               Value)
 from django.db.models.functions import Coalesce
 from django.utils import timezone
-from datetime import timedelta
 from rest_framework import permissions, serializers
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import PageNumberPagination
@@ -274,20 +275,25 @@ class ContributorDashboardView(APIView):
             streak_days = len(activity_days)
 
             # Determine Rank based on user XP vs others
-            all_users = User.objects.filter(is_staff=False)
-            user_ranks = []
-            for u in all_users:
-                u_lxp = (
-                    LessonProgress.objects.filter(user=u, completed=True).aggregate(
-                        Sum("score")
-                    )["score__sum"]
-                    or 0
-                )
-                u_ixp_agg = Issue.objects.filter(
-                    assigned_to=u, status=Issue.Status.SOLVED
-                ).aggregate(p_sum=Sum("points"), b_sum=Sum("bonus_points"))
-                u_ixp = (u_ixp_agg["p_sum"] or 0) + (u_ixp_agg["b_sum"] or 0)
-                user_ranks.append((u.id, u_lxp + u_ixp))
+            lesson_xp_sub = (
+                LessonProgress.objects.filter(user=OuterRef("pk"), completed=True)
+                .values("user")
+                .annotate(total=Sum("score"))
+                .values("total")
+            )
+            issues_xp_sub = (
+                Issue.objects.filter(assigned_to=OuterRef("pk"), status=Issue.Status.SOLVED)
+                .values("assigned_to")
+                .annotate(total=Sum("points") + Sum("bonus_points"))
+                .values("total")
+            )
+
+            all_users = User.objects.filter(is_staff=False).annotate(
+                u_lxp=Coalesce(Subquery(lesson_xp_sub, output_field=IntegerField()), Value(0)),
+                u_ixp=Coalesce(Subquery(issues_xp_sub, output_field=IntegerField()), Value(0))
+            )
+
+            user_ranks = [(u.id, u.u_lxp + u.u_ixp) for u in all_users]
 
             user_ranks.sort(key=lambda x: x[1], reverse=True)
             rank = 1
