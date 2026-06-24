@@ -4,8 +4,7 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import Count, Min, Sum
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import (OpenApiResponse, extend_schema,
-                                   extend_schema_view)
+from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import permissions, status
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import BasePermission
@@ -13,13 +12,23 @@ from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
-from .models import (Badge, Certificate, ExerciseAttempt, HelpRequest,
-                     LessonProgress, QuizAttempt)
-from .serializers import (BadgeSerializer, BulkSyncSerializer,
-                          CertificateVerificationSerializer,
-                          HelpRequestSerializer,
-                          LessonProgressCreateSerializer,
-                          LessonProgressSerializer, QuizAttemptSerializer)
+from .models import (
+    Badge,
+    Certificate,
+    ExerciseAttempt,
+    HelpRequest,
+    LessonProgress,
+    QuizAttempt,
+)
+from .serializers import (
+    BadgeSerializer,
+    BulkSyncSerializer,
+    CertificateVerificationSerializer,
+    HelpRequestSerializer,
+    LessonProgressCreateSerializer,
+    LessonProgressSerializer,
+    QuizAttemptSerializer,
+)
 from .throttles import HelpRequestRateThrottle
 
 

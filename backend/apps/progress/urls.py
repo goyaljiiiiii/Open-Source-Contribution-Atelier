@@ -1,11 +1,19 @@
 from django.urls import path
 
-from .views import (BadgeListView, BulkProgressUpdateView,
-                    BulkSyncProgressView, CertificateVerificationView,
-                    CommunityStatsView, ContributorTimelineView,
-                    HelpRequestListCreateView, MentorHelpRequestListView,
-                    MyCertificateView, MyProgressView, QuizAttemptView,
-                    RecommendationsView)
+from .views import (
+    BadgeListView,
+    BulkProgressUpdateView,
+    BulkSyncProgressView,
+    CertificateVerificationView,
+    CommunityStatsView,
+    ContributorTimelineView,
+    HelpRequestListCreateView,
+    MentorHelpRequestListView,
+    MyCertificateView,
+    MyProgressView,
+    QuizAttemptView,
+    RecommendationsView,
+)
 
 urlpatterns = [
     path("badges/", BadgeListView.as_view(), name="badges"),

@@ -14,34 +14,47 @@ from django.shortcuts import redirect
 from django.utils import timezone
 from django.utils.text import slugify
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import (OpenApiResponse, extend_schema,
-                                   extend_schema_view)
+from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import filters, generics, permissions, status
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import (TokenObtainPairView,
-                                            TokenRefreshView)
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .models import MagicLinkToken, OTPToken, PasswordResetToken
-from .serializers import (EmailOrUsernameTokenObtainPairSerializer,
-                          MagicLinkRequestSerializer,
-                          MagicLinkVerifySerializer, OtpRequestSerializer,
-                          OtpVerifySerializer, PasswordResetConfirmSerializer,
-                          PasswordResetRequestSerializer, SignupSerializer,
-                          UserListSerializer, UserUpdateSerializer)
-from .tasks import (send_magic_link_email_task, send_otp_email_task,
-                    send_password_reset_email_task)
-from .throttles import (LoginThrottle, MagicLinkRequestThrottle,
-                        MagicLinkVerifyThrottle, OAuthThrottle,
-                        OtpGenerateThrottle, OtpVerifyThrottle,
-                        PasswordResetThrottle, SignupThrottle,
-                        StrictIdentityLoginThrottle,
-                        StrictIdentityMagicLinkThrottle,
-                        StrictIdentityPasswordResetThrottle,
-                        TokenRefreshThrottle)
+from .serializers import (
+    EmailOrUsernameTokenObtainPairSerializer,
+    MagicLinkRequestSerializer,
+    MagicLinkVerifySerializer,
+    OtpRequestSerializer,
+    OtpVerifySerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
+    SignupSerializer,
+    UserListSerializer,
+    UserUpdateSerializer,
+)
+from .tasks import (
+    send_magic_link_email_task,
+    send_otp_email_task,
+    send_password_reset_email_task,
+)
+from .throttles import (
+    LoginThrottle,
+    MagicLinkRequestThrottle,
+    MagicLinkVerifyThrottle,
+    OAuthThrottle,
+    OtpGenerateThrottle,
+    OtpVerifyThrottle,
+    PasswordResetThrottle,
+    SignupThrottle,
+    StrictIdentityLoginThrottle,
+    StrictIdentityMagicLinkThrottle,
+    StrictIdentityPasswordResetThrottle,
+    TokenRefreshThrottle,
+)
 
 
 def unique_username_from_value(value: str) -> str:
@@ -94,9 +107,7 @@ class MeView(APIView):
         instance.refresh_from_db()
         if hasattr(instance, "profile"):
             instance.profile.refresh_from_db()
-        response_serializer = UserListSerializer(
-            instance, context={"request": request}
-        )
+        response_serializer = UserListSerializer(instance, context={"request": request})
         return Response(response_serializer.data)
 
 

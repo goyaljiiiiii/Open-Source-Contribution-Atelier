@@ -1,7 +1,13 @@
 from rest_framework import serializers
 
-from .models import (Badge, Certificate, HelpRequest, LessonProgress,
-                     QuizAttempt, UserBadge)
+from .models import (
+    Badge,
+    Certificate,
+    HelpRequest,
+    LessonProgress,
+    QuizAttempt,
+    UserBadge,
+)
 
 
 class BadgeSerializer(serializers.ModelSerializer):
