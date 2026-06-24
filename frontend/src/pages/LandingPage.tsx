@@ -5,6 +5,8 @@ import { fetchApi } from "../lib/api";
 import { useAuth } from "../features/auth/AuthContext";
 import OrganizationsGrid from "../components/OrganizationsGrid";
 
+import { useTranslation } from "react-i18next";
+
 const githubAuthUrl =
   import.meta.env.VITE_GITHUB_OAUTH_URL ||
   `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api"}/auth/github/`;
@@ -14,6 +16,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 export function LandingPage() {
+  const { t } = useTranslation();
   const { login } = useAuth();
   const [authRole, setAuthRole] = useState<"student" | "admin">("student");
   const [email, setEmail] = useState("");
@@ -42,7 +45,7 @@ export function LandingPage() {
       login(tokens);
       window.location.href = "/dashboard";
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Failed to login"));
+      setError(getErrorMessage(err, t("landing.error_login_failed")));
     }
   };
 
@@ -61,11 +64,11 @@ export function LandingPage() {
         login(tokens);
         window.location.href = "/dashboard";
       } catch (err: unknown) {
-        setError(getErrorMessage(err, "Google Auth Failed. Check Backend."));
+        setError(getErrorMessage(err, t("landing.error_google_auth_backend")));
       }
     },
     onError: () => {
-      setError("Google Login Failed / Cancelled.");
+      setError(t("landing.error_google_login_failed"));
     },
   });
 
@@ -74,7 +77,7 @@ export function LandingPage() {
       <div className="w-full max-w-lg mx-auto">
         <div className="text-center mb-8">
           <span className="font-black text-sm bg-accent text-black px-4 py-2 rounded-full border-2 border-black rotate-[-2deg] inline-block shadow-sm">
-            AUTHORIZED ACCESS ONLY 🔒
+            {t("landing.authorized_access_only")}
           </span>
         </div>
 
@@ -88,7 +91,7 @@ export function LandingPage() {
                   : "border-transparent text-muted hover:text-text"
               }`}
             >
-              Contributor
+              {t("landing.contributor")}
             </button>
             <button
               onClick={() => setAuthRole("admin")}
@@ -98,14 +101,14 @@ export function LandingPage() {
                   : "border-transparent text-muted hover:text-text"
               }`}
             >
-              Maintainer
+              {t("landing.maintainer")}
             </button>
           </div>
 
           <h2 className="text-3xl font-black mb-6 text-center">
             {authRole === "student"
-              ? "Enter the Sandbox."
-              : "Maintainer Login."}
+              ? t("landing.enter_sandbox")
+              : t("landing.maintainer_login")}
           </h2>
 
           {error && (
@@ -138,27 +141,27 @@ export function LandingPage() {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              Sign in with Google
+              {t("landing.sign_in_google")}
             </button>
 
             <button
               type="button"
               onClick={handleGithubSignIn}
               className="group relative w-full overflow-hidden bg-black text-white border-4 border-black rounded-lg p-4 flex items-center justify-center gap-3 font-black shadow-card-sm transition-all duration-300 hover:-translate-y-1 hover:bg-text hover:shadow-card-lg active:translate-y-1 active:shadow-none uppercase before:absolute before:inset-0 before:-translate-x-full before:bg-gradient-to-r before:from-transparent before:via-white/25 before:to-transparent before:transition-transform before:duration-500 hover:before:translate-x-full"
-              aria-label="Sign in with GitHub"
+              aria-label={t("landing.sign_in_github")}
             >
               <GitBranch
                 className="relative h-6 w-6 transition-transform duration-300 group-hover:rotate-[-8deg] group-hover:scale-110"
                 strokeWidth={2.75}
                 aria-hidden="true"
               />
-              <span className="relative">Sign in with GitHub</span>
+              <span className="relative">{t("landing.sign_in_github")}</span>
             </button>
 
             <div className="flex items-center gap-4 my-6">
               <div className="flex-1 h-1 bg-black"></div>
               <span className="font-black text-muted text-sm uppercase">
-                OR
+                {t("landing.or")}
               </span>
               <div className="flex-1 h-1 bg-black"></div>
             </div>
@@ -166,7 +169,7 @@ export function LandingPage() {
             <div>
               <input
                 className="w-full rounded-lg border-4 border-black bg-surface-lowest px-4 py-4 text-text font-bold outline-none placeholder:text-muted/60 focus:bg-surface-low focus:ring-0 transition-colors shadow-sm"
-                placeholder="Username or Email"
+                placeholder={t("landing.username_email_placeholder")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -176,7 +179,7 @@ export function LandingPage() {
               <input
                 className="w-full rounded-lg border-4 border-black bg-surface-lowest px-4 py-4 text-text font-bold outline-none placeholder:text-muted/60 focus:bg-surface-low focus:ring-0 transition-colors shadow-sm"
                 type="password"
-                placeholder="••••••••"
+                placeholder={t("landing.password_placeholder")}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -187,13 +190,13 @@ export function LandingPage() {
               type="submit"
               className="w-full rounded-2xl border-4 border-black bg-primary px-5 py-4 font-black text-black text-xl shadow-card hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-card-sm transition-all uppercase tracking-wide mt-4 cursor-pointer"
             >
-              Assemble & Run!
+              {t("landing.assemble_run")}
             </button>
 
             <div className="flex items-center gap-4 my-6">
               <div className="flex-1 h-1 bg-black"></div>
               <span className="font-black text-muted text-sm uppercase">
-                NEW CONTRIBUTORS
+                {t("landing.new_contributors")}
               </span>
               <div className="flex-1 h-1 bg-black"></div>
             </div>
@@ -202,7 +205,7 @@ export function LandingPage() {
               href="/signup"
               className="block text-center w-full rounded-2xl border-4 border-black bg-[#C3C0FF] px-5 py-4 font-black text-black text-xl shadow-card-sm hover:-translate-y-1 active:translate-y-1 transition-all uppercase tracking-wide mt-4 cursor-pointer"
             >
-              Create Account
+              {t("landing.create_account")}
             </a>
           </form>
         </div>

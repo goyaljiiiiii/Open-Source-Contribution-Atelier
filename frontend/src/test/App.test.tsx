@@ -4,10 +4,16 @@ import { describe, it, expect, vi } from "vitest";
 import { LandingPage } from "../pages/LandingPage";
 import { AuthProvider } from "../features/auth/AuthContext";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import "../lib/i18n";
 
-vi.mock("lucide-react", () => ({
-  Github: () => <div data-testid="github-icon" />,
-}));
+vi.mock("lucide-react", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("lucide-react")>();
+  return {
+    ...actual,
+    Github: () => <div data-testid="github-icon" />,
+    GitBranch: () => <div data-testid="git-branch-icon" />,
+  };
+});
 
 describe("LandingPage", () => {
   it("renders the project headline", () => {

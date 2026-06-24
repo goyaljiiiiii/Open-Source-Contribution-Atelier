@@ -5,6 +5,7 @@ import App from "./app/App";
 import { AuthProvider } from "./features/auth/AuthContext";
 import { ToastProvider } from "./features/ui/ToastContext";
 import { syncOfflineQueue } from "./lib/offlineQueue";
+import "./lib/i18n";
 import "./styles.css";
 
 const GOOGLE_CLIENT_ID =
