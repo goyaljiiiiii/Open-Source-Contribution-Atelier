@@ -98,7 +98,7 @@ jobs:
 
               // 1. Retroactive assignment for unassigned issues
               if (assignees.length === 0 && !isPR) {
-                const assignComments = comments.filter(c => c.body.match(/assign.*me/i));
+                const assignComments = comments.filter(c => c.body.match(/assign.*me/i) && !c.body.toLowerCase().includes('unassign'));
                 
                 if (assignComments.length > 0) {
                   // Find the most recent request
