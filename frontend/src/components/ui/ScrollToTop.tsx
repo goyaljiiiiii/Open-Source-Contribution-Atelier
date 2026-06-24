@@ -14,7 +14,7 @@ export function ScrollToTop() {
     };
 
     window.addEventListener("scroll", toggleVisibility, { passive: true });
-    
+
     // Check initially in case the user reloads while scrolled down
     toggleVisibility();
 

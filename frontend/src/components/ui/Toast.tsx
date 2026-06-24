@@ -46,7 +46,7 @@ const Toast: React.FC<ToastProps> = ({ toast, onClose }) => {
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
       className={`relative flex items-center gap-3 w-full max-w-sm p-4 rounded-2xl border-4 shadow-card ${getToastStyles(
-        toast.type
+        toast.type,
       )}`}
     >
       <div className="flex-shrink-0">{getToastIcon(toast.type)}</div>
@@ -64,10 +64,10 @@ const Toast: React.FC<ToastProps> = ({ toast, onClose }) => {
   );
 };
 
-export const ToastContainer: React.FC<{ toasts: ToastMessage[]; removeToast: (id: string) => void }> = ({
-  toasts,
-  removeToast,
-}) => {
+export const ToastContainer: React.FC<{
+  toasts: ToastMessage[];
+  removeToast: (id: string) => void;
+}> = ({ toasts, removeToast }) => {
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 pointer-events-none">
       <AnimatePresence>

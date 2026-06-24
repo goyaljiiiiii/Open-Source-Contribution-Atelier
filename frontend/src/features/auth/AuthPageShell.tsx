@@ -61,7 +61,9 @@ export function AuthPageShell({
       <button
         className="absolute top-4 right-4 sm:top-8 sm:right-8 rounded-lg bg-surface-low p-3 text-muted hover:text-text border-2 border-black dark:border-[#2e2924] shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all z-50 dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2]"
         onClick={toggleTheme}
-        aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+        aria-label={
+          theme === "light" ? "Switch to dark mode" : "Switch to light mode"
+        }
       >
         {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
       </button>
@@ -118,4 +120,3 @@ export function AuthPageShell({
     </div>
   );
 }
-

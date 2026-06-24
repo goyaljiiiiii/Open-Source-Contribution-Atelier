@@ -621,7 +621,9 @@ export function LessonPage() {
                       </span>
                       <input
                         className="flex-1 min-w-0 rounded-lg border-4 border-black bg-surface-lowest px-4 py-2.5 text-text font-bold outline-none placeholder:text-muted/40 dark:bg-[#151411] dark:border-[#2e2924]"
-                        placeholder={lesson.hint || "Type your git command here"}
+                        placeholder={
+                          lesson.hint || "Type your git command here"
+                        }
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={(e) => {

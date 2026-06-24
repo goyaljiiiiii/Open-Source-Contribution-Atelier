@@ -10,7 +10,7 @@ vi.mock("../../lib/api", () => ({
 }));
 
 beforeAll(() => {
-  global.URL.createObjectURL = vi.fn(() => 'blob:mock-url');
+  global.URL.createObjectURL = vi.fn(() => "blob:mock-url");
   global.URL.revokeObjectURL = vi.fn();
 });
 
@@ -36,9 +36,11 @@ describe("ProfileSettingsForm Edge Cases", () => {
     render(
       <ToastProvider>
         <ProfileSettingsForm />
-      </ToastProvider>
+      </ToastProvider>,
     );
-    const emailInput = screen.getByLabelText(/Email Address/i) as HTMLInputElement;
+    const emailInput = screen.getByLabelText(
+      /Email Address/i,
+    ) as HTMLInputElement;
     expect(emailInput.value).toBe("test@example.com");
   });
 
@@ -46,7 +48,7 @@ describe("ProfileSettingsForm Edge Cases", () => {
     render(
       <ToastProvider>
         <ProfileSettingsForm />
-      </ToastProvider>
+      </ToastProvider>,
     );
     const emailInput = screen.getByLabelText(/Email Address/i);
     const submitBtn = screen.getByRole("button", { name: /Save Settings/i });
@@ -55,9 +57,11 @@ describe("ProfileSettingsForm Edge Cases", () => {
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
-      expect(screen.getByText("Please enter a valid email address")).toBeInTheDocument();
+      expect(
+        screen.getByText("Please enter a valid email address"),
+      ).toBeInTheDocument();
     });
-    
+
     // API should not be called
     expect(fetchApi).not.toHaveBeenCalled();
   });
@@ -66,7 +70,7 @@ describe("ProfileSettingsForm Edge Cases", () => {
     render(
       <ToastProvider>
         <ProfileSettingsForm />
-      </ToastProvider>
+      </ToastProvider>,
     );
     const passwordInput = screen.getByLabelText(/New Password/i);
     const submitBtn = screen.getByRole("button", { name: /Save Settings/i });
@@ -75,7 +79,11 @@ describe("ProfileSettingsForm Edge Cases", () => {
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
-      expect(screen.getByText("Password must be at least 8 characters long if provided")).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          "Password must be at least 8 characters long if provided",
+        ),
+      ).toBeInTheDocument();
     });
 
     expect(fetchApi).not.toHaveBeenCalled();
@@ -85,7 +93,7 @@ describe("ProfileSettingsForm Edge Cases", () => {
     render(
       <ToastProvider>
         <ProfileSettingsForm />
-      </ToastProvider>
+      </ToastProvider>,
     );
     const emailInput = screen.getByLabelText(/Email Address/i);
     const passwordInput = screen.getByLabelText(/New Password/i);
@@ -101,7 +109,9 @@ describe("ProfileSettingsForm Edge Cases", () => {
         requireAuth: true,
         body: JSON.stringify({ email: "new@example.com" }), // no password field
       });
-      expect(screen.getByText("Profile settings updated successfully!")).toBeInTheDocument();
+      expect(
+        screen.getByText("Profile settings updated successfully!"),
+      ).toBeInTheDocument();
     });
   });
 
@@ -109,7 +119,7 @@ describe("ProfileSettingsForm Edge Cases", () => {
     render(
       <ToastProvider>
         <ProfileSettingsForm />
-      </ToastProvider>
+      </ToastProvider>,
     );
     const emailInput = screen.getByLabelText(/Email Address/i);
     const passwordInput = screen.getByLabelText(/New Password/i);
@@ -128,24 +138,30 @@ describe("ProfileSettingsForm Edge Cases", () => {
           password: "validPassword123",
         }),
       });
-      expect(screen.getByText("Profile settings updated successfully!")).toBeInTheDocument();
+      expect(
+        screen.getByText("Profile settings updated successfully!"),
+      ).toBeInTheDocument();
     });
   });
 
   it("displays an error message when the API request fails", async () => {
-    vi.mocked(fetchApi).mockRejectedValueOnce(new Error("Server error, could not update."));
+    vi.mocked(fetchApi).mockRejectedValueOnce(
+      new Error("Server error, could not update."),
+    );
 
     render(
       <ToastProvider>
         <ProfileSettingsForm />
-      </ToastProvider>
+      </ToastProvider>,
     );
     const submitBtn = screen.getByRole("button", { name: /Save Settings/i });
 
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
-      expect(screen.getByText("Server error, could not update.")).toBeInTheDocument();
+      expect(
+        screen.getByText("Server error, could not update."),
+      ).toBeInTheDocument();
     });
   });
 });

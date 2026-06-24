@@ -60,7 +60,7 @@ describe("OnboardingTour Component", () => {
 
   it("calls onFinish when the tour is explicitly finished", () => {
     render(<OnboardingTour run={true} onFinish={mockOnFinish} />);
-    
+
     // Simulate finishing the tour
     fireEvent.click(screen.getByTestId("simulate-finish"));
     expect(mockOnFinish).toHaveBeenCalledTimes(1);
@@ -68,7 +68,7 @@ describe("OnboardingTour Component", () => {
 
   it("calls onFinish when the tour is skipped by the user", () => {
     render(<OnboardingTour run={true} onFinish={mockOnFinish} />);
-    
+
     // Simulate skipping the tour
     fireEvent.click(screen.getByTestId("simulate-skip"));
     expect(mockOnFinish).toHaveBeenCalledTimes(1);
@@ -76,7 +76,7 @@ describe("OnboardingTour Component", () => {
 
   it("does not call onFinish for intermediate tour statuses (e.g., running)", () => {
     render(<OnboardingTour run={true} onFinish={mockOnFinish} />);
-    
+
     // Simulate an intermediate step change
     fireEvent.click(screen.getByTestId("simulate-running"));
     expect(mockOnFinish).not.toHaveBeenCalled();

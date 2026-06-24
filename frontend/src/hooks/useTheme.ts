@@ -2,7 +2,11 @@ import { useState, useEffect } from "react";
 
 function getInitialTheme(): string {
   try {
-    if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    if (
+      localStorage.theme === "dark" ||
+      (!("theme" in localStorage) &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches)
+    ) {
       return "dark";
     }
     return "light";
@@ -33,7 +37,10 @@ export function useTheme() {
 
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
-      if (e.key === "theme" && (e.newValue === "light" || e.newValue === "dark")) {
+      if (
+        e.key === "theme" &&
+        (e.newValue === "light" || e.newValue === "dark")
+      ) {
         setTheme(e.newValue);
       }
     };
