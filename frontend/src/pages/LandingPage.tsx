@@ -189,6 +189,21 @@ export function LandingPage() {
             >
               Assemble & Run!
             </button>
+
+            <div className="flex items-center gap-4 my-6">
+              <div className="flex-1 h-1 bg-black"></div>
+              <span className="font-black text-muted text-sm uppercase">
+                NEW CONTRIBUTORS
+              </span>
+              <div className="flex-1 h-1 bg-black"></div>
+            </div>
+
+            <a
+              href="/signup"
+              className="block text-center w-full rounded-2xl border-4 border-black bg-[#C3C0FF] px-5 py-4 font-black text-black text-xl shadow-card-sm hover:-translate-y-1 active:translate-y-1 transition-all uppercase tracking-wide mt-4 cursor-pointer"
+            >
+              Create Account
+            </a>
           </form>
         </div>
       </div>
