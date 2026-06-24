@@ -16,6 +16,7 @@ jobs:
       - name: Monitor Issues and PRs
         uses: actions/github-script@v6
         with:
+          github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN || github.token }}
           script: |
             const daysToStale = 2;
             const msPerDay = 1000 * 60 * 60 * 24;

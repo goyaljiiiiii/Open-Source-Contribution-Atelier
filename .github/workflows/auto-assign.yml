@@ -16,6 +16,7 @@ jobs:
       - name: Check comment and assign
         uses: actions/github-script@v6
         with:
+          github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN || github.token }}
           script: |
             const commentBody = context.payload.comment.body.toLowerCase();
             // Check if comment contains 'assign to me' or 'assign me'
