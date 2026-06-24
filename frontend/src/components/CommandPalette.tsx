@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -92,6 +92,7 @@ export const CommandPalette: React.FC = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [index, setIndex] = useState<SearchIndexEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [results, setResults] = useState<PaletteItem[]>([]);
 
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -144,13 +145,13 @@ export const CommandPalette: React.FC = () => {
 
   // Debounced search (300ms)
   useEffect(() => {
-    if (!query.trim()) {
+    if (!searchQuery.trim()) {
       setResults([]);
       return;
     }
 
     const timer = setTimeout(() => {
-      const q = query.toLowerCase();
+      const q = searchQuery.toLowerCase();
 
       const scoredResults = index
         .map((entry) => {
@@ -171,14 +172,20 @@ export const CommandPalette: React.FC = () => {
         .filter((item) => item.score > 0)
         .sort((a, b) => b.score - a.score)
         .slice(0, 8)
-        .map((item) => item.entry);
+        .map((item): PaletteItem => ({ type: item.entry.type, entry: item.entry }));
 
       setResults(scoredResults);
       setSelectedIndex(0);
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [query, index]);
+  }, [searchQuery, index]);
+
+  // Combine navigation items with search results
+  const combinedResults: PaletteItem[] = useMemo(() => {
+    if (!searchQuery.trim()) return navItems;
+    return [...navItems, ...results];
+  }, [searchQuery, results]);
 
   // Handle keyboard navigation within results
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -323,7 +330,7 @@ export const CommandPalette: React.FC = () => {
                   let title = "";
                   let description = "";
                   let iconElement: React.ReactNode = null;
-                  let badgeElement: React.ReactNode = getBadgeForType(item.type);
+                  const badgeElement: React.ReactNode = getBadgeForType(item.type);
 
                   if (item.type === "navigation") {
                     title = item.label;
