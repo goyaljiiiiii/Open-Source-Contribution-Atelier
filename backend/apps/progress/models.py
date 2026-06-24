@@ -3,6 +3,33 @@ from apps.organizations.models import Organization
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
+from django.utils import timezone
+
+
+class XPMultiplierEvent(models.Model):
+    name = models.CharField(max_length=255)
+    multiplier = models.FloatField(default=1.5)
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-start_time"]
+
+    def __str__(self):
+        return f"{self.name} ({self.multiplier}x)"
+
+    @classmethod
+    def get_active_multiplier(cls) -> float:
+        now = timezone.now()
+        active_event = cls.objects.filter(
+            is_active=True,
+            start_time__lte=now,
+            end_time__gte=now
+        ).first()
+        return active_event.multiplier if active_event else 1.0
+
 
 
 class Badge(models.Model):
@@ -41,6 +68,8 @@ class LessonProgress(models.Model):
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
     completed = models.BooleanField(default=False)
     score = models.PositiveIntegerField(default=0)
+    base_score = models.PositiveIntegerField(default=0)
+    multiplier_applied = models.FloatField(default=1.0)
     attempt_count = models.PositiveIntegerField(default=0)
     updated_at = models.DateTimeField(auto_now=True)
 

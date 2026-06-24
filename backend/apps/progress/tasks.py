@@ -54,3 +54,7 @@ def send_weekly_progress_summary():
                 "tasks.send_bulk_email",
                 kwargs={"payload": payload}
             )
+
+@shared_task
+def evaluate_user_badges_task(user_id):
+    pass
