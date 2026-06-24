@@ -42,12 +42,13 @@ export function CommunityPage() {
     isLoading: loadingLeaderboard,
   } = useInfiniteQuery({
     queryKey: ["leaderboard"],
-    queryFn: async ({ pageParam = 1 }) => {
+    queryFn: async ({ pageParam }) => {
       try {
-        const data = await fetchApi(`/leaderboard/?page=${pageParam}`);
+        const url = pageParam ? `/leaderboard/?cursor=${pageParam}` : `/leaderboard/`;
+        const data = await fetchApi(url);
         return data;
       } catch (err) {
-        if (pageParam === 1) {
+        if (!pageParam) {
           return {
             results: [
               { username: "goyaljiiiiii", prs_merged: 42, xp: 2220 },
@@ -61,13 +62,13 @@ export function CommunityPage() {
         throw err;
       }
     },
-    initialPageParam: 1,
+    initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => {
       if (lastPage && lastPage.next) {
         const url = new URL(lastPage.next);
-        return Number(url.searchParams.get("page")) || undefined;
+        return url.searchParams.get("cursor") || null;
       }
-      return undefined;
+      return null;
     },
   });
 
