@@ -9,13 +9,15 @@ from django.db.models.functions import Coalesce
 from django.utils import timezone
 from rest_framework import permissions, serializers
 from rest_framework.generics import ListAPIView
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 
-class LeaderboardPagination(PageNumberPagination):
+from rest_framework.pagination import CursorPagination
+
+class LeaderboardPagination(CursorPagination):
     page_size = 20
+    ordering = ("-xp", "username", "id")
 
 
 class LeaderboardSerializer(serializers.ModelSerializer):
