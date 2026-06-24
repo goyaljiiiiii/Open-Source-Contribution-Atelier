@@ -1,6 +1,7 @@
 import { precacheAndRoute, cleanupOutdatedCaches } from "workbox-precaching";
 import { registerRoute } from "workbox-routing";
-import { NetworkFirst } from "workbox-strategies";
+import { StaleWhileRevalidate } from "workbox-strategies";
+import { ExpirationPlugin } from "workbox-expiration";
 
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
@@ -8,8 +9,14 @@ precacheAndRoute(self.__WB_MANIFEST);
 // Cache curriculum content dynamically if not precached
 registerRoute(
   ({ url }) => url.pathname.startsWith("/content/"),
-  new NetworkFirst({
+  new StaleWhileRevalidate({
     cacheName: "content-runtime-cache",
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 100,
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+      }),
+    ],
   }),
 );
 
@@ -53,8 +60,8 @@ self.addEventListener("push", (event) => {
       icon: "/vite.svg", // Fallback icon
       badge: "/vite.svg",
       data: {
-        url: data.url || "/"
-      }
+        url: data.url || "/",
+      },
     };
 
     event.waitUntil(self.registration.showNotification(title, options));
@@ -70,19 +77,21 @@ self.addEventListener("notificationclick", (event) => {
   const urlToOpen = event.notification.data?.url || "/";
 
   event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
-      // Check if there is already a window/tab open with the target URL
-      for (let i = 0; i < windowClients.length; i++) {
-        const client = windowClients[i];
-        if (client.url.includes(urlToOpen) && "focus" in client) {
-          return client.focus();
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((windowClients) => {
+        // Check if there is already a window/tab open with the target URL
+        for (let i = 0; i < windowClients.length; i++) {
+          const client = windowClients[i];
+          if (client.url.includes(urlToOpen) && "focus" in client) {
+            return client.focus();
+          }
         }
-      }
-      // If not, open a new window
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(urlToOpen);
-      }
-    })
+        // If not, open a new window
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(urlToOpen);
+        }
+      }),
   );
 });
 
