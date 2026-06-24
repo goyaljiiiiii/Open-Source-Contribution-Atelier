@@ -24,6 +24,7 @@ const MarkdownRenderer = React.lazy(() =>
 );
 import { GitGraph } from "../components/ui/GitGraph";
 import { NotePanel } from "../components/ui/NotePanel";
+import { PythonSandbox } from "../components/ui/PythonSandbox";
 import { TextToSpeechControls } from "../components/ui/TextToSpeechControls";
 
 import {
@@ -80,9 +81,7 @@ export function LessonPage() {
   const [isExecuting, setIsExecuting] = useState(false);
   const [input, setInput] = useState("");
   const [feedback, setFeedback] = useState<string>("");
-  const [hintRevealed, setHintRevealed] = useState(false);
-  const [isConfirmingHint, setIsConfirmingHint] = useState(false);
-  const [showPenaltyAnimation, setShowPenaltyAnimation] = useState(false);
+  const [showHint, setShowHint] = useState(false);
   const [terminalOutput, setTerminalOutput] = useState("");
   const [repoState, setRepoState] = useState<RepoState>(createInitialRepo());
 
@@ -158,9 +157,7 @@ export function LessonPage() {
 
     setFeedback("");
     setInput("");
-    setHintRevealed(false);
-    setIsConfirmingHint(false);
-    setShowPenaltyAnimation(false);
+    setShowHint(false);
     setTerminalOutput("");
     setRepoState(createInitialRepo());
 
@@ -239,11 +236,9 @@ export function LessonPage() {
 
     if (isCorrect) {
       setFeedback("correct");
-      const basePoints = lesson.points || 20;
-      const finalPoints = hintRevealed ? Math.floor(basePoints * 0.5) : basePoints;
       syncProgress({
         lesson_slug: lesson.slug,
-        score: finalPoints,
+        score: lesson.points || 20,
         completed: true,
       });
     } else {
@@ -329,16 +324,9 @@ export function LessonPage() {
           {isSidebarOpen ? <X size={16} /> : <Menu size={16} />}
           {isSidebarOpen ? "Close Outline" : "Course Directory"}
         </button>
-        <div className="relative">
-          <span className="font-mono text-xs font-black bg-black text-white px-3 py-1 rounded-full dark:bg-[#2e2924] transition-colors duration-500">
-            XP Bounties: {hintRevealed ? Math.floor((lesson.points || 15) * 0.5) : (lesson.points || 15)} {hintRevealed && "(-50%)"}
-          </span>
-          {showPenaltyAnimation && (
-            <span className="absolute -top-6 right-0 text-red-500 font-black animate-out fade-out slide-out-to-top-4 duration-1000 z-50">
-              -{Math.floor((lesson.points || 15) * 0.5)} XP
-            </span>
-          )}
-        </div>
+        <span className="font-mono text-xs font-black bg-black text-white px-3 py-1 rounded-full dark:bg-[#2e2924]">
+          XP Bounties: {lesson.points || 15}
+        </span>
       </div>
 
       {/* Backdrop overlay — closes drawer on click-outside on mobile */}
@@ -485,7 +473,20 @@ export function LessonPage() {
 
             {/* Exercises & validation section */}
             <div className="pt-8 space-y-6">
-              {hasQuiz ? (
+              {lesson.pythonExercise ? (
+                <div className="mt-8">
+                  <PythonSandbox 
+                    exercise={lesson.pythonExercise} 
+                    onSuccess={() => {
+                      syncProgress({
+                        lesson_slug: lesson.slug,
+                        score: lesson.points || 20,
+                        completed: true,
+                      });
+                    }} 
+                  />
+                </div>
+              ) : hasQuiz ? (
                 // QUIZ MODE RENDER
                 <div className="rounded-2xl border-4 border-black bg-white p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924]">
                   <div className="flex items-center justify-between mb-4">
@@ -709,78 +710,19 @@ export function LessonPage() {
                       </div>
                     )}
 
-                    {/* NEXT LEVEL HINT UNLOCKER */}
-                    <div className="mt-8 relative overflow-hidden rounded-2xl border-4 border-black bg-white dark:bg-[#151411] dark:border-[#2e2924] shadow-card-sm group transition-all duration-500">
-                      {!hintRevealed ? (
-                        <div className="relative p-6 min-h-[140px] flex items-center justify-center">
-                          {/* Blurred fake hint */}
-                          <div className="absolute inset-0 p-6 blur-[6px] opacity-40 pointer-events-none select-none font-mono text-sm overflow-hidden flex items-center text-center">
-                            💡 {lesson.hint.replace(/./g, (c, i) => i % 5 === 0 ? "█" : c)} This is a highly encrypted hint that will guide you to victory! Just type the right git command and...
-                          </div>
-                          
-                          {/* Overlay */}
-                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/5 dark:bg-white/5 backdrop-blur-[2px]">
-                            {!isConfirmingHint ? (
-                              <button
-                                type="button"
-                                onClick={() => setIsConfirmingHint(true)}
-                                className="flex items-center gap-2 bg-black text-white px-6 py-3 rounded-xl border-4 border-transparent font-black shadow-card hover:-translate-y-1 transition-all hover:border-primary active:translate-y-0 active:shadow-card-sm"
-                              >
-                                <Lock size={18} className="animate-pulse text-yellow-400" />
-                                Decrypt Hint
-                                <span className="bg-red-500 text-white px-2 py-0.5 rounded-md text-xs ml-2 border-2 border-black flex items-center gap-1">
-                                  -{Math.floor((lesson.points || 15) * 0.5)} XP
-                                </span>
-                              </button>
-                            ) : (
-                              <div className="flex flex-col items-center animate-in fade-in zoom-in duration-200">
-                                <span className="font-black text-sm bg-black text-white px-3 py-1.5 rounded-lg mb-3 shadow-card-sm border-2 border-red-500 uppercase tracking-wider text-red-100">
-                                  Confirm Decryption?
-                                </span>
-                                <div className="flex gap-3">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setHintRevealed(true);
-                                      setIsConfirmingHint(false);
-                                      setShowPenaltyAnimation(true);
-                                      setTimeout(() => setShowPenaltyAnimation(false), 2000);
-                                    }}
-                                    className="bg-red-500 text-white px-5 py-2.5 rounded-xl border-4 border-black font-black shadow-card-sm hover:-translate-y-1 transition-all flex items-center gap-2"
-                                  >
-                                    Pay {Math.floor((lesson.points || 15) * 0.5)} XP
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setIsConfirmingHint(false)}
-                                    className="bg-white text-black px-5 py-2.5 rounded-xl border-4 border-black font-black shadow-card-sm hover:-translate-y-1 transition-all"
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="p-6 bg-yellow-50 dark:bg-yellow-900/20 animate-in fade-in slide-in-from-top-4 duration-500 relative">
-                          <div className="absolute top-0 right-0 w-24 h-24 bg-yellow-400 opacity-20 rounded-bl-full pointer-events-none" />
-                          <div className="flex items-start gap-4 relative z-10">
-                            <div className="w-12 h-12 rounded-full bg-yellow-300 border-4 border-black flex items-center justify-center flex-shrink-0 shadow-card-sm animate-bounce text-xl">
-                              💡
-                            </div>
-                            <div className="flex-1">
-                              <h4 className="font-black text-xs uppercase tracking-widest text-yellow-800 dark:text-yellow-500 mb-2 flex items-center gap-2">
-                                Decrypted Transmission <CheckCircle2 size={14} className="text-green-600" />
-                              </h4>
-                              <p className="font-bold text-text dark:text-[#f0ebe2] leading-relaxed text-base">
-                                {lesson.hint}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowHint(!showHint)}
+                      className="text-xs underline text-muted font-black dark:text-[#c4bbae] block"
+                    >
+                      {showHint ? "Hide Hints" : "Need a hint?"}
+                    </button>
+
+                    {showHint && (
+                      <div className="p-4 bg-white rounded-lg border-4 border-black italic text-xs font-bold dark:bg-[#151411] dark:border-[#2e2924] shadow-card-sm">
+                        💡 {lesson.hint}
+                      </div>
+                    )}
                   </form>
                 </div>
               )}

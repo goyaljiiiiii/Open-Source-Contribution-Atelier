@@ -30,7 +30,7 @@ const navItems = [
 ];
 
 export function Navigation() {
-  const [isStarting, setIsStarting] = useState(false);
+
   const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -48,6 +48,7 @@ export function Navigation() {
   const [lessonsCatalog, setLessonsCatalog] = useState<
     { slug: string; title: string; description: string }[]
   >([]);
+  const [isStarting, setIsStarting] = useState(false);
   const badgeCount = 0;
 
   const handleStartSandbox = () => {
