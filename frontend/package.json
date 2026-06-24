@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
+    "@monaco-editor/react": "^4.7.0",
     "@react-oauth/google": "^0.13.4",
     "@tanstack/react-query": "^5.101.1",
     "@types/zxcvbn": "^4.4.5",

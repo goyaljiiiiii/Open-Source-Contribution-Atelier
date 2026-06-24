@@ -48,9 +48,12 @@ export function ResponsiveTable<T>({
                     typeof col.accessor === "function"
                       ? col.accessor(item, idx)
                       : (item[col.accessor] as React.ReactNode);
-                  
+
                   return (
-                    <div key={colIdx} className="flex justify-between items-center gap-4 border-b border-dashed border-black/10 dark:border-[#2e2924]/50 pb-2 last:border-0 last:pb-0">
+                    <div
+                      key={colIdx}
+                      className="flex justify-between items-center gap-4 border-b border-dashed border-black/10 dark:border-[#2e2924]/50 pb-2 last:border-0 last:pb-0"
+                    >
                       <span className="text-xs uppercase tracking-wider font-black text-muted dark:text-[#c4bbae]">
                         {col.label || col.header}
                       </span>
@@ -102,7 +105,11 @@ export function ResponsiveTable<T>({
                 return (
                   <tr
                     key={keyExtractor(item, idx)}
-                    ref={isLast ? (lastElementRef as React.RefCallback<HTMLTableRowElement>) : null}
+                    ref={
+                      isLast
+                        ? (lastElementRef as React.RefCallback<HTMLTableRowElement>)
+                        : null
+                    }
                     className={`border-b-2 border-black last:border-b-0 hover:bg-surface-lowest transition dark:border-[#2e2924] dark:hover:bg-black/10 ${rowClassName ? rowClassName(item, idx) : ""}`}
                   >
                     {columns.map((col, colIdx) => (

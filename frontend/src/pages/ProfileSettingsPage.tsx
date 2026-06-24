@@ -23,7 +23,7 @@ export function ProfileSettingsPage() {
           </h2>
           <ProfileSettingsForm />
         </div>
-        
+
         {/* Additional information card or future settings */}
         <div className="rounded-2xl border-4 border-black bg-[#FFF0E5] p-8 shadow-card flex flex-col justify-center items-center text-center">
           <div className="text-6xl mb-6">🔒</div>
@@ -31,7 +31,8 @@ export function ProfileSettingsPage() {
             Security & Privacy
           </h2>
           <p className="text-lg font-medium text-black/80 max-w-md">
-            Your data is stored securely. Passwords are cryptographically hashed and never stored in plain text.
+            Your data is stored securely. Passwords are cryptographically hashed
+            and never stored in plain text.
           </p>
         </div>
       </div>

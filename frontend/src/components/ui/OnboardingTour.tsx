@@ -10,28 +10,33 @@ export function OnboardingTour({ run, onFinish }: OnboardingTourProps) {
   const steps: Step[] = [
     {
       target: "#tour-welcome",
-      content: "Welcome to the Atelier! This is your personal dashboard where you can track your journey through the open-source curriculum.",
+      content:
+        "Welcome to the Atelier! This is your personal dashboard where you can track your journey through the open-source curriculum.",
       placement: "bottom",
       skipBeacon: true,
     },
     {
       target: "#tour-stats",
-      content: "Here you can track your progress. Keep your streak alive, merge PRs, and watch your rank climb!",
+      content:
+        "Here you can track your progress. Keep your streak alive, merge PRs, and watch your rank climb!",
       placement: "bottom",
     },
     {
       target: "#tour-fact",
-      content: "Learn something new every day! We share daily facts about the history and impact of the open-source movement.",
+      content:
+        "Learn something new every day! We share daily facts about the history and impact of the open-source movement.",
       placement: "top",
     },
     {
       target: "#tour-certificate",
-      content: "Your ultimate goal. Complete 100% of the curriculum to unlock your graduation certificate.",
+      content:
+        "Your ultimate goal. Complete 100% of the curriculum to unlock your graduation certificate.",
       placement: "top",
     },
     {
       target: "#tour-learning-queue",
-      content: "Ready to learn? Jump right back into your next module from this queue. Happy coding!",
+      content:
+        "Ready to learn? Jump right back into your next module from this queue. Happy coding!",
       placement: "top",
     },
   ];

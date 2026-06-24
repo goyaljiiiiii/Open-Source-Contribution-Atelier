@@ -9,7 +9,8 @@ export function SandboxPage() {
           Interactive Sandbox
         </h1>
         <p className="mt-2 text-muted dark:text-[#c4bbae]">
-          Write and execute code safely in the browser. Test logic before integrating it into your workflow.
+          Write and execute code safely in the browser. Test logic before
+          integrating it into your workflow.
         </p>
       </div>
       <div className="h-[600px]">

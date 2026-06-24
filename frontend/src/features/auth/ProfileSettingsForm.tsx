@@ -94,8 +94,10 @@ export function ProfileSettingsForm() {
       reset({ email: data.email, password: "", timezone: data.timezone });
     } catch (err: unknown) {
       addToast(
-        err instanceof Error ? err.message : "Failed to update profile settings.",
-        "error"
+        err instanceof Error
+          ? err.message
+          : "Failed to update profile settings.",
+        "error",
       );
     } finally {
       setLoading(false);
@@ -170,7 +172,7 @@ export function ProfileSettingsForm() {
         )}
       </div>
 
-    <div className="space-y-4 mt-8">
+      <div className="space-y-4 mt-8">
         <button
           className="w-full rounded-2xl border-4 border-black bg-accent px-5 py-5 font-black text-black text-xl shadow-card hover:bg-tertiary transition-colors cursor-pointer uppercase disabled:opacity-50"
           disabled={loading}

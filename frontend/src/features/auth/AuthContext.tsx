@@ -114,9 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    
-    
-   checkUser();
+    checkUser();
   }, [checkUser]);
   return (
     <AuthContext.Provider
