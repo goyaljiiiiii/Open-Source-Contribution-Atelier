@@ -4,6 +4,7 @@ import { useAuth } from "../features/auth/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { fetchApi } from "../lib/api";
 import { Link } from "react-router-dom";
+import { SocialShareButtons } from "../components/ui/SocialShareButtons";
 import SkeletonCard from "../components/ui/skeletons/SkeletonCard";
 import { useRef } from "react";
 import { useElementSize } from "../hooks/useElementSize";
@@ -1167,6 +1168,12 @@ export function DashboardPage() {
               >
                 <Printer size={16} /> Print Certificate
               </button>
+              {certificateData?.certificate?.verification_hash && (
+                <SocialShareButtons
+                  url={`${window.location.origin}/verify/${certificateData.certificate.verification_hash}`}
+                  title="I just earned my Open Source Contribution Certificate from the Open Source Contribution Atelier!"
+                />
+              )}
               <button
                 onClick={() => setShowCertificate(false)}
                 className="rounded-lg bg-white border-4 border-black px-6 py-3 font-black text-sm shadow-card-sm hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-card-sm cursor-pointer"
