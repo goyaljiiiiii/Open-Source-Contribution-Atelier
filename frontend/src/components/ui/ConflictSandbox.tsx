@@ -39,6 +39,7 @@ function parseConflicts(text: string): Block[] {
 
     if (line.startsWith("<<<<<<<")) {
       if (currentNormal) {
+        if (currentNormal.endsWith("\n")) currentNormal = currentNormal.slice(0, -1);
         blocks.push({ type: "normal", content: currentNormal });
         currentNormal = "";
       }
@@ -93,6 +94,14 @@ function parseConflicts(text: string): Block[] {
       }
     } else {
       currentNormal += line + "\n";
+    }
+  }
+
+  if (inConflict) {
+    // EOF reached before ending marker. Treat as normal text to avoid dropping data.
+    currentNormal += "<<<<<<<\n" + (currentConflict.currentContent || "");
+    if (conflictStage === "incoming") {
+      currentNormal += "=======\n" + (currentConflict.incomingContent || "");
     }
   }
 
