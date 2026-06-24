@@ -31,10 +31,29 @@ class LeaderboardSerializer(serializers.ModelSerializer):
 class LeaderboardView(ListAPIView):
     """
     Paginated contributor leaderboard ordered by total XP.
+
+    Results are cached per-page in Redis for 5 minutes, since the
+    underlying query involves several correlated subqueries across
+    LessonProgress, Issue, and PullRequest and is expensive to
+    recompute on every request.
     """
 
     serializer_class = LeaderboardSerializer
     pagination_class = LeaderboardPagination
+
+    def list(self, request, *args, **kwargs):
+        page_number = request.query_params.get("page", "1")
+        cache_key = f"leaderboard_page_{page_number}"
+        data = cache.get(cache_key)
+
+        if data is None:
+            response = super().list(request, *args, **kwargs)
+            data = response.data
+            # Cache for 5 minutes
+            cache.set(cache_key, data, 300)
+            return Response(data)
+
+        return Response(data)
 
     def get_queryset(self):
         lesson_xp = (
