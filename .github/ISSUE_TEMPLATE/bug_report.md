@@ -7,10 +7,6 @@ assignees: ''
 
 ---
 
-> Please checkmark ssoc26 if you are contributing under that.
-- [ ] ssoc26
-
-
 ## Summary
 
 Describe the bug in one or two sentences.
