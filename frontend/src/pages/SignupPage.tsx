@@ -3,7 +3,7 @@ import { AuthPageShell } from "../features/auth/AuthPageShell";
 import { fetchApi } from "../lib/api";
 import { useAuth } from "../features/auth/AuthContext";
 import { useGoogleLogin } from "@react-oauth/google";
-import { Github } from "lucide-react";
+import { GitBranch } from "lucide-react";
 import PasswordStrengthMeter from "../components/PasswordStrengthMeter";
 
 const githubAuthUrl =
@@ -91,7 +91,7 @@ export function SignupPage() {
           onClick={() => googleLoginHandler()}
           className="w-full bg-white border-4 border-black rounded-2xl p-4 flex items-center justify-center gap-3 font-bold hover:bg-surface-low transition-colors shadow-card-sm active:translate-y-1 active:shadow-none"
         >
-          <svg className="w-6 h-6" viewBox="0 0 24 24">
+          <svg className="w-6 h-6" viewBox="0 0 24 24" aria-hidden="true">
             <path
               fill="#4285F4"
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -118,8 +118,9 @@ export function SignupPage() {
           className="group relative w-full overflow-hidden bg-black text-white border-4 border-black rounded-lg p-4 flex items-center justify-center gap-3 font-black shadow-card-sm transition-all duration-300 hover:-translate-y-1 hover:bg-text hover:shadow-card-lg active:translate-y-1 active:shadow-none uppercase before:absolute before:inset-0 before:-translate-x-full before:bg-gradient-to-r before:from-transparent before:via-white/25 before:to-transparent before:transition-transform before:duration-500 hover:before:translate-x-full"
           aria-label="Sign up with GitHub"
         >
-          <Github
-            className="relative h-6 w-6 transition-transform duration-300 group-hover:rotate-[-8deg] group-hover:scale-110"
+          <GitBranch
+            className="mr-2 inline-block relative transition-transform duration-300 group-hover:rotate-[-8deg] group-hover:scale-110"
+            size={20}
             strokeWidth={2.75}
             aria-hidden="true"
           />
@@ -194,7 +195,7 @@ export function SignupPage() {
         <p className="text-center text-sm font-bold text-black mt-6">
           Already stuck with us?{" "}
           <a
-            href="/login"
+            href="/"
             className="text-primary underline decoration-2 hover:text-black"
           >
             Log in here

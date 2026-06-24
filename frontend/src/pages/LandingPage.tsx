@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useGoogleLogin } from "@react-oauth/google";
-import { Github } from "lucide-react";
+import { GitBranch } from "lucide-react";
 import { fetchApi } from "../lib/api";
 import { useAuth } from "../features/auth/AuthContext";
 import OrganizationsGrid from "../components/OrganizationsGrid";
@@ -120,7 +120,7 @@ export function LandingPage() {
               onClick={() => googleLoginHandler()}
               className="w-full bg-white border-4 border-black rounded-2xl p-4 flex items-center justify-center gap-3 font-bold hover:bg-surface-low transition-colors shadow-card-sm active:translate-y-1 active:shadow-none"
             >
-              <svg className="w-6 h-6" viewBox="0 0 24 24">
+              <svg className="w-6 h-6" viewBox="0 0 24 24" aria-hidden="true">
                 <path
                   fill="#4285F4"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -147,7 +147,7 @@ export function LandingPage() {
               className="group relative w-full overflow-hidden bg-black text-white border-4 border-black rounded-lg p-4 flex items-center justify-center gap-3 font-black shadow-card-sm transition-all duration-300 hover:-translate-y-1 hover:bg-text hover:shadow-card-lg active:translate-y-1 active:shadow-none uppercase before:absolute before:inset-0 before:-translate-x-full before:bg-gradient-to-r before:from-transparent before:via-white/25 before:to-transparent before:transition-transform before:duration-500 hover:before:translate-x-full"
               aria-label="Sign in with GitHub"
             >
-              <Github
+              <GitBranch
                 className="relative h-6 w-6 transition-transform duration-300 group-hover:rotate-[-8deg] group-hover:scale-110"
                 strokeWidth={2.75}
                 aria-hidden="true"
@@ -189,6 +189,21 @@ export function LandingPage() {
             >
               Assemble & Run!
             </button>
+
+            <div className="flex items-center gap-4 my-6">
+              <div className="flex-1 h-1 bg-black"></div>
+              <span className="font-black text-muted text-sm uppercase">
+                NEW CONTRIBUTORS
+              </span>
+              <div className="flex-1 h-1 bg-black"></div>
+            </div>
+
+            <a
+              href="/signup"
+              className="block text-center w-full rounded-2xl border-4 border-black bg-[#C3C0FF] px-5 py-4 font-black text-black text-xl shadow-card-sm hover:-translate-y-1 active:translate-y-1 transition-all uppercase tracking-wide mt-4 cursor-pointer"
+            >
+              Create Account
+            </a>
           </form>
         </div>
       </div>

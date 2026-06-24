@@ -1,5 +1,5 @@
 import React from "react";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, Eye } from "lucide-react";
 import { useTheme } from "../../hooks/useTheme";
 
 type AuthPageShellProps = {
@@ -15,7 +15,7 @@ export function AuthPageShell({
   mode,
   children,
 }: AuthPageShellProps) {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, setTheme } = useTheme();
 
   const highlightBox1 =
     mode === "login"
@@ -57,14 +57,28 @@ export function AuthPageShell({
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 sm:p-8 font-display bg-surface text-text overflow-hidden dark:bg-[#0f0e0c] dark:text-[#f0ebe2]">
-      {/* Theme Toggle Button */}
-      <button
-        className="absolute top-4 right-4 sm:top-8 sm:right-8 rounded-lg bg-surface-low p-3 text-muted hover:text-text border-2 border-black dark:border-[#2e2924] shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all z-50 dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2]"
-        onClick={toggleTheme}
-        aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
-      >
-        {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
-      </button>
+      {/* Theme Toggle Buttons */}
+      <div className="absolute top-4 right-4 sm:top-8 sm:right-8 flex gap-3 z-50">
+        <button
+          className="rounded-lg bg-surface-low p-3 text-muted hover:text-text border-2 border-black dark:border-[#2e2924] shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2]"
+          onClick={toggleTheme}
+          aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+        >
+          {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
+        </button>
+        <button
+          className={`rounded-lg p-3 border-2 border-black dark:border-[#2e2924] shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all ${
+            theme === "high-contrast"
+              ? "bg-primary text-white"
+              : "bg-surface-low text-muted hover:text-text dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2]"
+          }`}
+          onClick={() => setTheme(theme === "high-contrast" ? "light" : "high-contrast")}
+          aria-label="Toggle High Contrast Mode"
+          title="High Contrast Mode"
+        >
+          <Eye size={20} />
+        </button>
+      </div>
 
       <div className="mx-auto flex w-full max-w-6xl flex-col lg:flex-row gap-12 lg:gap-16 items-center relative z-10 py-12">
         {/* LEFT SIDE: Description */}

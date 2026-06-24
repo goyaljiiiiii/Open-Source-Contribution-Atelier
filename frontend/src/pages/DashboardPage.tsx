@@ -4,11 +4,13 @@ import { useAuth } from "../features/auth/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { fetchApi } from "../lib/api";
 import { Link } from "react-router-dom";
+import { SocialShareButtons } from "../components/ui/SocialShareButtons";
 import SkeletonCard from "../components/ui/skeletons/SkeletonCard";
 import { useRef } from "react";
 import { useElementSize } from "../hooks/useElementSize";
 import { fetchLessonsApi, Lesson } from "../lib/lessons";
 import { useUserProgress } from "../hooks/useUserProgress";
+import { useBookmarks } from "../hooks/useBookmarks";
 import { BADGES } from "../constants/badges";
 import {
   Award,
@@ -22,6 +24,7 @@ import {
   Code,
   X,
   Lock,
+  Bookmark,
 } from "lucide-react";
 import {
   BarChart,
@@ -37,6 +40,7 @@ import {
   Cell,
 } from "recharts";
 import { OnboardingTour } from "../components/ui/OnboardingTour";
+import { NotesWidget } from "../components/ui/NotesWidget";
 
 const FACTS = [
   "Git was created in 2005 by Linus Torvalds because he was frustrated with the commercial tool they were using for Linux development.",
@@ -83,7 +87,10 @@ export function DashboardPage() {
   const { width: completionWidth } = useElementSize(completionRef);
 
   const { user } = useAuth();
-  const { isLessonCompleted } = useUserProgress();
+  const { progress, isLessonCompleted } = useUserProgress();
+  const { bookmarks, isLoading: isLoadingBookmarks } = useBookmarks();
+
+  const [tourKey, setTourKey] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
@@ -621,6 +628,7 @@ export function DashboardPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 pt-24 pb-12 space-y-10">
       <OnboardingTour run={showOnboarding} onFinish={handleFinishOnboarding} />
+      <NotesWidget />
       {/* 1. Header Banner */}
       <section className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
         <div
@@ -845,8 +853,44 @@ export function DashboardPage() {
         </div>
       </section>
 
+      {/* Read Later / Bookmarks */}
+      {bookmarks.length > 0 && (
+        <section className="rounded-[2.5rem] border-4 border-black bg-surface-low p-6 sm:p-8 shadow-card dark:bg-[#151411] dark:border-[#2e2924] dark:shadow-none mt-6">
+          <h2 className="text-3xl font-black mb-6 flex items-center gap-3">
+            <span className="bg-[#c3c0ff] text-black w-10 h-10 rounded-full border-2 border-black flex items-center justify-center text-lg">
+              <Bookmark className="fill-black" size={20} />
+            </span>
+            Read Later
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {bookmarks.map((bookmark) => (
+              <Link
+                key={bookmark.lesson_slug}
+                to={`/lessons/${bookmark.lesson_slug}`}
+                className="flex flex-col gap-2 p-5 rounded-lg border-4 border-black bg-white shadow-card-sm hover:shadow-card hover:-translate-y-1 transition-all cursor-pointer dark:bg-[#1f1c18] dark:border-[#2e2924]"
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-black text-lg leading-tight dark:text-[#f0ebe2] pr-4">
+                    {bookmark.lesson_title}
+                  </h3>
+                  <Bookmark className="fill-primary text-primary shrink-0" size={20} />
+                </div>
+                <div className="flex justify-between items-center mt-auto pt-4">
+                  <span className="font-black text-[10px] bg-black text-white px-2 py-0.5 rounded-full uppercase dark:bg-[#2e2924]">
+                    {bookmark.lesson_category}
+                  </span>
+                  <span className="text-xs font-bold text-muted dark:text-[#c4bbae]">
+                    {bookmark.lesson_estimated_minutes} min
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* 4. Badges / Achievements Shelf */}
-      <section className="rounded-[2.5rem] border-4 border-black bg-white p-6 sm:p-8 shadow-card dark:bg-[#151411] dark:border-[#2e2924] dark:shadow-none">
+      <section className="mt-6 rounded-[2.5rem] border-4 border-black bg-white p-6 sm:p-8 shadow-card dark:bg-[#151411] dark:border-[#2e2924] dark:shadow-none">
         <h2 className="text-3xl font-black mb-6 flex items-center gap-3">
           <Award className="w-8 h-8 text-primary" />
           Achievements & Badges Drawer
@@ -1126,6 +1170,12 @@ export function DashboardPage() {
               >
                 <Printer size={16} /> Print Certificate
               </button>
+              {certificateData?.certificate?.verification_hash && (
+                <SocialShareButtons
+                  url={`${window.location.origin}/verify/${certificateData.certificate.verification_hash}`}
+                  title="I just earned my Open Source Contribution Certificate from the Open Source Contribution Atelier!"
+                />
+              )}
               <button
                 onClick={() => setShowCertificate(false)}
                 className="rounded-lg bg-white border-4 border-black px-6 py-3 font-black text-sm shadow-card-sm hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-card-sm cursor-pointer"

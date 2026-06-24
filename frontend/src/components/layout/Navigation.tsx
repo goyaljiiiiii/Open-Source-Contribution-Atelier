@@ -8,11 +8,13 @@ import {
   Search,
   Shield,
   TerminalSquare,
+  TrendingUp,
   Trophy,
   X,
   Sun,
   Moon,
   Settings,
+  Eye,
 } from "lucide-react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useTheme } from "../../hooks/useTheme";
@@ -24,14 +26,16 @@ const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
   { to: "/lessons/what-is-open-source", label: "Lessons", icon: BookOpen },
   { to: "/challenges", label: "Challenges", icon: Trophy },
+  { to: "/leaderboard", label: "Leaderboard", icon: TrendingUp },
   { to: "/community", label: "Community", icon: BriefcaseBusiness },
   { to: "/chat", label: "Chat", icon: MessageSquare },
+  { to: "/peer-review", label: "Peer Review", icon: Shield },
   { to: "/profile", label: "Profile Settings", icon: Settings },
 ];
 
 export function Navigation() {
-  const [isStarting, setIsStarting] = useState(false);
-  const { theme, toggleTheme } = useTheme();
+
+  const { theme, toggleTheme, setTheme } = useTheme();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
@@ -48,6 +52,7 @@ export function Navigation() {
   const [lessonsCatalog, setLessonsCatalog] = useState<
     { slug: string; title: string; description: string }[]
   >([]);
+  const [isStarting, setIsStarting] = useState(false);
   const badgeCount = 0;
 
   const handleStartSandbox = () => {
@@ -299,6 +304,18 @@ export function Navigation() {
             >
               {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
             </button>
+            <button
+              className={`rounded-lg p-2 border-2 border-black dark:border-[#2e2924] shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all ${
+                theme === "high-contrast"
+                  ? "bg-primary text-white"
+                  : "bg-surface-low text-muted hover:text-text dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2]"
+              }`}
+              onClick={() => setTheme(theme === "high-contrast" ? "light" : "high-contrast")}
+              aria-label="Toggle High Contrast Mode"
+              title="High Contrast Mode"
+            >
+              <Eye size={16} />
+            </button>
             <button className="relative rounded-lg bg-surface-low p-2 text-muted hover:text-text dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2]">
               <Bell size={16} />
               {badgeCount > 0 && (
@@ -326,12 +343,20 @@ export function Navigation() {
                 <LogoutButtonWithConfirm />
               </div>
             ) : (
-              <Link
-                to="/login"
-                className="rounded-lg bg-[linear-gradient(135deg,#4f46e5,#7c72ff)] px-4 py-2 text-sm font-semibold text-white shadow-card"
-              >
-                Admin Login
-              </Link>
+              <div className="flex items-center gap-3">
+                <Link
+                  to="/login"
+                  className="rounded-xl bg-white border-2 border-black px-4 py-2 text-sm font-bold text-text shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all dark:bg-[#151411] dark:text-[#f0ebe2] dark:border-[#2e2924]"
+                >
+                  Log In
+                </Link>
+                <Link
+                  to="/signup"
+                  className="rounded-xl bg-[#C3C0FF] border-2 border-black px-4 py-2 text-sm font-black text-black shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all dark:bg-[#C3C0FF] dark:border-white"
+                >
+                  Sign Up
+                </Link>
+              </div>
             )}
           </div>
         </div>

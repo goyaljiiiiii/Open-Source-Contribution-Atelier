@@ -12,6 +12,7 @@ describe('ScrollToTop Component', () => {
     cleanup();
     vi.unstubAllGlobals();
     vi.clearAllMocks();
+    cleanup();
   });
 
   it('is initially hidden when scroll position is 0', () => {
@@ -22,7 +23,6 @@ describe('ScrollToTop Component', () => {
 
   it('appears when scrolled past the threshold', () => {
     render(<ScrollToTop />);
-    
     act(() => {
       Object.defineProperty(window, 'scrollY', { value: 350, configurable: true });
       window.dispatchEvent(new Event('scroll'));
@@ -59,7 +59,9 @@ describe('ScrollToTop Component', () => {
     });
 
     const button = screen.getByTestId('scroll-to-top');
-    fireEvent.click(button);
+    act(() => {
+      fireEvent.click(button);
+    });
 
     expect(window.scrollTo).toHaveBeenCalledWith({
       top: 0,

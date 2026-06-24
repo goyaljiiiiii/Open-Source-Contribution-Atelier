@@ -1,13 +1,16 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { SectionCard } from "../components/ui/SectionCard";
-import { useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useInfiniteQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { fetchApi } from "../lib/api";
 import SkeletonStatGrid from "../components/ui/skeletons/SkeletonStatGrid";
 import { Trophy, Award } from "lucide-react";
 import { useAuth } from "../features/auth/AuthContext";
 import { ResponsiveTable } from "../components/ui/ResponsiveTable";
 import { ChatContainer } from "../components/chat/ChatContainer";
-
 
 export function CommunityPage() {
   const { user } = useAuth();
@@ -39,12 +42,13 @@ export function CommunityPage() {
     isLoading: loadingLeaderboard,
   } = useInfiniteQuery({
     queryKey: ["leaderboard"],
-    queryFn: async ({ pageParam = 1 }) => {
+    queryFn: async ({ pageParam }) => {
       try {
-        const data = await fetchApi(`/leaderboard/?page=${pageParam}`);
+        const url = pageParam ? `/leaderboard/?cursor=${pageParam}` : `/leaderboard/`;
+        const data = await fetchApi(url);
         return data;
       } catch (err) {
-        if (pageParam === 1) {
+        if (!pageParam) {
           return {
             results: [
               { username: "goyaljiiiiii", prs_merged: 42, xp: 2220 },
@@ -58,13 +62,13 @@ export function CommunityPage() {
         throw err;
       }
     },
-    initialPageParam: 1,
+    initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => {
       if (lastPage && lastPage.next) {
         const url = new URL(lastPage.next);
-        return Number(url.searchParams.get("page")) || undefined;
+        return url.searchParams.get("cursor") || null;
       }
-      return undefined;
+      return null;
     },
   });
 
@@ -76,14 +80,19 @@ export function CommunityPage() {
       }
       return [];
     });
-    return flattened.map((item: { username: string; prs_merged: number; xp: number }, idx: number) => ({
-      rank: idx + 1,
-      username: item.username,
-      avatar_url: `https://github.com/${item.username}.png`,
-      html_url: `https://github.com/${item.username}`,
-      contributions: item.prs_merged,
-      xp: item.xp,
-    }));
+    return flattened.map(
+      (
+        item: { username: string; prs_merged: number; xp: number },
+        idx: number,
+      ) => ({
+        rank: idx + 1,
+        username: item.username,
+        avatar_url: `https://github.com/${item.username}.png`,
+        html_url: `https://github.com/${item.username}`,
+        contributions: item.prs_merged,
+        xp: item.xp,
+      }),
+    );
   }, [leaderboardData]);
 
   const filteredLeaderboard = useMemo(() => {
@@ -105,7 +114,7 @@ export function CommunityPage() {
     (node: Element | null) => {
       if (isFetchingNextPage || loadingLeaderboard) return;
       if (observerRef.current) observerRef.current.disconnect();
-      
+
       observerRef.current = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting && hasNextPage) {
           fetchNextPage();
@@ -113,11 +122,10 @@ export function CommunityPage() {
       });
       if (node) observerRef.current.observe(node);
     },
-    [isFetchingNextPage, loadingLeaderboard, hasNextPage, fetchNextPage]
+    [isFetchingNextPage, loadingLeaderboard, hasNextPage, fetchNextPage],
   );
 
   useEffect(() => {
-
     const apiBase =
       import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
     const wsHost = apiBase.replace(/^https?:\/\//, "").replace(/\/api$/, "");
@@ -230,8 +238,12 @@ export function CommunityPage() {
               keyExtractor={(item) => item.username}
               emptyMessage="No matching contributors found."
               lastElementRef={lastElementRef}
-              footerContent={isFetchingNextPage ? "Loading more contributors..." : null}
-              rowClassName={(item) => user?.username === item.username ? "bg-accent/20" : ""}
+              footerContent={
+                isFetchingNextPage ? "Loading more contributors..." : null
+              }
+              rowClassName={(item) =>
+                user?.username === item.username ? "bg-accent/20" : ""
+              }
               columns={[
                 {
                   header: "Rank",
@@ -274,7 +286,11 @@ export function CommunityPage() {
                 },
                 {
                   header: "Estimated XP",
-                  accessor: (item) => <span className="text-primary font-black">{item.xp} XP</span>,
+                  accessor: (item) => (
+                    <span className="text-primary font-black">
+                      {item.xp} XP
+                    </span>
+                  ),
                 },
               ]}
             />

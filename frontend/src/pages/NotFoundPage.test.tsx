@@ -16,7 +16,7 @@ describe("NotFoundPage edge cases and rendering", () => {
     render(
       <MemoryRouter>
         <NotFoundPage />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     const indicator = screen.getByText("ROUTE MISSING");
@@ -27,7 +27,7 @@ describe("NotFoundPage edge cases and rendering", () => {
     render(
       <MemoryRouter>
         <NotFoundPage />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     const heading = screen.getByText("This corridor doesn't exist.");
@@ -38,7 +38,7 @@ describe("NotFoundPage edge cases and rendering", () => {
     render(
       <MemoryRouter>
         <NotFoundPage />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     const link = screen.getByRole("link", { name: /Back to Home/i });

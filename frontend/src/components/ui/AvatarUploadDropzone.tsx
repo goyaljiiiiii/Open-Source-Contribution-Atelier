@@ -1,15 +1,20 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { UploadCloud, X } from 'lucide-react';
-import { useToast } from '../../features/ui/ToastContext';
+import React, { useState, useRef, useEffect } from "react";
+import { UploadCloud, X } from "lucide-react";
+import { useToast } from "../../features/ui/ToastContext";
 
 interface AvatarUploadDropzoneProps {
   currentAvatarUrl?: string | null;
   onFileSelect: (file: File | null) => void;
 }
 
-export function AvatarUploadDropzone({ currentAvatarUrl, onFileSelect }: AvatarUploadDropzoneProps) {
+export function AvatarUploadDropzone({
+  currentAvatarUrl,
+  onFileSelect,
+}: AvatarUploadDropzoneProps) {
   const [dragActive, setDragActive] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(currentAvatarUrl || null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(
+    currentAvatarUrl || null,
+  );
   const inputRef = useRef<HTMLInputElement>(null);
   const { addToast } = useToast();
 
@@ -22,9 +27,9 @@ export function AvatarUploadDropzone({ currentAvatarUrl, onFileSelect }: AvatarU
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
+    if (e.type === "dragenter" || e.type === "dragover") {
       setDragActive(true);
-    } else if (e.type === 'dragleave') {
+    } else if (e.type === "dragleave") {
       setDragActive(false);
     }
   };
@@ -48,14 +53,14 @@ export function AvatarUploadDropzone({ currentAvatarUrl, onFileSelect }: AvatarU
 
   const handleFile = (file: File) => {
     // Validate file type
-    if (!file.type.startsWith('image/')) {
-      addToast('Please upload an image file (JPEG, PNG, WebP).', 'error');
+    if (!file.type.startsWith("image/")) {
+      addToast("Please upload an image file (JPEG, PNG, WebP).", "error");
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      addToast('File is too large. Maximum size is 5MB.', 'error');
+      addToast("File is too large. Maximum size is 5MB.", "error");
       return;
     }
 
@@ -70,18 +75,20 @@ export function AvatarUploadDropzone({ currentAvatarUrl, onFileSelect }: AvatarU
     setPreviewUrl(null);
     onFileSelect(null);
     if (inputRef.current) {
-      inputRef.current.value = '';
+      inputRef.current.value = "";
     }
   };
 
   return (
     <div className="w-full mb-8">
-      <label className="block text-sm font-medium text-gray-200 mb-2">Profile Picture</label>
+      <label className="block text-sm font-medium text-gray-200 mb-2">
+        Profile Picture
+      </label>
       <div
         className={`relative w-full h-48 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-200 ${
-          dragActive 
-            ? 'border-indigo-500 bg-indigo-500/10 scale-[1.02]' 
-            : 'border-gray-700 hover:border-gray-500 hover:bg-gray-800/50'
+          dragActive
+            ? "border-indigo-500 bg-indigo-500/10 scale-[1.02]"
+            : "border-gray-700 hover:border-gray-500 hover:bg-gray-800/50"
         }`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -106,7 +113,9 @@ export function AvatarUploadDropzone({ currentAvatarUrl, onFileSelect }: AvatarU
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                 <span className="text-white text-xs font-semibold drop-shadow-md">Change</span>
+                <span className="text-white text-xs font-semibold drop-shadow-md">
+                  Change
+                </span>
               </div>
             </div>
             <button
@@ -123,8 +132,12 @@ export function AvatarUploadDropzone({ currentAvatarUrl, onFileSelect }: AvatarU
             <div className="w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center mb-4 shadow-inner">
               <UploadCloud size={32} className="text-indigo-400" />
             </div>
-            <p className="text-base font-semibold text-gray-300">Click or drag image to upload</p>
-            <p className="text-sm text-gray-500 mt-2">Supports JPG, PNG, and WebP (max. 5MB)</p>
+            <p className="text-base font-semibold text-gray-300">
+              Click or drag image to upload
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              Supports JPG, PNG, and WebP (max. 5MB)
+            </p>
           </div>
         )}
       </div>

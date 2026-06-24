@@ -6,13 +6,8 @@ import zipfile
 from apps.accounts.models import MentorProfile
 from apps.dashboard.models import Issue, PullRequest
 from apps.notifications.models import Notification
-from apps.progress.models import (
-    Certificate,
-    HelpRequest,
-    LessonProgress,
-    QuizAttempt,
-    UserBadge,
-)
+from apps.progress.models import (Certificate, HelpRequest, LessonProgress,
+                                  QuizAttempt, UserBadge)
 from apps.sandbox.models import SandboxExecutionLog
 from apps.webhooks.models import WebhookEndpoint
 from django.core.serializers.json import DjangoJSONEncoder

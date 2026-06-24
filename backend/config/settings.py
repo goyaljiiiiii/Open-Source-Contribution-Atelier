@@ -30,6 +30,7 @@ ALLOWED_HOSTS = [
     for host in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
     if host.strip()
 ]
+ALLOWED_HOSTS.append(".vercel.app")
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
     for origin in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
@@ -58,7 +59,9 @@ INSTALLED_APPS = [
     "apps.sandbox",
     "apps.organizations",
     "apps.webhooks",
+    "apps.notes",
     "rest_framework_simplejwt.token_blacklist",
+    "graphene_django",
 ]
 
 MIDDLEWARE = [
@@ -333,3 +336,5 @@ LOGGING = {
         "level": "INFO",
     },
 }
+
+GRAPHENE = {"SCHEMA": "config.schema.schema"}

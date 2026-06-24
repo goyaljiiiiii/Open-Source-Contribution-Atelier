@@ -1,8 +1,5 @@
-from apps.accounts.permissions import (
-    IsAdminOrModeratorRole,
-    IsAdminRole,
-    IsModeratorRole,
-)
+from apps.accounts.permissions import (IsAdminOrModeratorRole, IsAdminRole,
+                                       IsModeratorRole)
 from django.contrib.auth.models import AnonymousUser, Group, User
 from django.test import TestCase
 from rest_framework.test import APIRequestFactory

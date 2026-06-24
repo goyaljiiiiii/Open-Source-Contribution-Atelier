@@ -15,6 +15,7 @@ jobs:
       - name: Assign Author and Copy Labels from Issue
         uses: actions/github-script@v6
         with:
+          github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN || github.token }}
           script: |
             const pr = context.payload.pull_request;
             const author = pr.user.login;

@@ -14,6 +14,7 @@ type User = {
   email: string;
   is_staff: boolean;
   avatar_url?: string | null;
+  cover_image_url?: string | null;
   timezone?: string;
 };
 
@@ -114,9 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    
-    
-   checkUser();
+    checkUser();
   }, [checkUser]);
   return (
     <AuthContext.Provider

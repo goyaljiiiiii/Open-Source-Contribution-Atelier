@@ -1,19 +1,12 @@
 from django.urls import path
 
-from .views import (
-    BadgeListView,
-    BulkProgressUpdateView,
-    BulkSyncProgressView,
-    CertificateVerificationView,
-    CommunityStatsView,
-    ContributorTimelineView,
-    HelpRequestListCreateView,
-    MentorHelpRequestListView,
-    MyCertificateView,
-    MyProgressView,
-    QuizAttemptView,
-    RecommendationsView,
-)
+from .views import (BadgeListView, BulkProgressUpdateView,
+                    BulkSyncProgressView, CertificateVerificationView,
+                    CodeSubmissionView, CommunityStatsView,
+                    ContributorTimelineView, HelpRequestListCreateView,
+                    MentorHelpRequestListView, MyCertificateView,
+                    MyProgressView, PeerReviewView, QuizAttemptView,
+                    RecommendationsView)
 
 urlpatterns = [
     path("badges/", BadgeListView.as_view(), name="badges"),
@@ -40,5 +33,11 @@ urlpatterns = [
         "verify/<str:hash>/",
         CertificateVerificationView.as_view(),
         name="verify-certificate",
+    ),
+    path("code-submissions/", CodeSubmissionView.as_view(), name="code-submissions"),
+    path(
+        "code-submissions/<int:submission_id>/reviews/",
+        PeerReviewView.as_view(),
+        name="peer-reviews",
     ),
 ]

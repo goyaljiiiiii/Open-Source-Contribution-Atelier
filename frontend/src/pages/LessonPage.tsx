@@ -8,11 +8,16 @@ import {
   X,
   BookOpen,
   CheckCircle2,
+  NotebookText,
   Lock,
+  Bookmark,
 } from "lucide-react";
 
 import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
+import { useAuth } from "../features/auth/AuthContext";
 import { useUserProgress } from "../hooks/useUserProgress";
+import { useBookmarks } from "../hooks/useBookmarks";
+import { useLessonNote } from "../hooks/useLessonNote";
 import { fetchApi } from "../lib/api";
 import { Lesson, fetchLessonsApi, fetchLessonContent } from "../lib/lessons";
 import { RichTextEditor } from "../components/ui/RichTextEditor";
@@ -23,6 +28,8 @@ const MarkdownRenderer = React.lazy(() =>
   }))
 );
 import { GitGraph } from "../components/ui/GitGraph";
+import { NotePanel } from "../components/ui/NotePanel";
+import { PythonSandbox } from "../components/ui/PythonSandbox";
 import { TextToSpeechControls } from "../components/ui/TextToSpeechControls";
 
 import {
@@ -38,7 +45,9 @@ function normalizeCommand(value: string) {
 export function LessonPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { syncProgress, isLessonCompleted, isLoading } = useUserProgress();
+  const { user } = useAuth();
+  const { isLessonCompleted, syncProgress } = useUserProgress();
+  const { isBookmarked, toggleBookmark } = useBookmarks();
   const queryClient = useQueryClient();
 
   const [lesson, setLesson] = useState<Lesson | undefined>(undefined);
@@ -95,6 +104,9 @@ export function LessonPage() {
   const [helpMessage, setHelpMessage] = useState("");
   const [helpSuccessMessage, setHelpSuccessMessage] = useState("");
   const MAX_HELP_CHARS = 500;
+
+  // Note Panel
+  const [isNotePanelOpen, setIsNotePanelOpen] = useState(false);
 
   // Reading progress scroll ref
   const mainContentRef = useRef<HTMLDivElement>(null);
@@ -445,6 +457,14 @@ export function LessonPage() {
                   COMPLETED ✅
                 </div>
               )}
+              <button
+                onClick={() => toggleBookmark.mutate({ slug: lesson.slug, isBookmarked: isBookmarked(lesson.slug) })}
+                disabled={toggleBookmark.isPending}
+                className="self-start sm:self-center ml-auto flex items-center justify-center p-2 rounded-xl border-4 border-black bg-surface-low hover:-translate-y-1 hover:shadow-card-sm transition-all"
+                title={isBookmarked(lesson.slug) ? "Remove from Read Later" : "Save for later"}
+              >
+                <Bookmark className={isBookmarked(lesson.slug) ? "fill-primary text-primary" : "text-black dark:text-[#f0ebe2]"} size={24} />
+              </button>
             </div>
 
             <p className="text-xl font-bold text-muted dark:text-[#c4bbae]">
@@ -468,7 +488,20 @@ export function LessonPage() {
 
             {/* Exercises & validation section */}
             <div className="pt-8 space-y-6">
-              {hasQuiz ? (
+              {lesson.pythonExercise ? (
+                <div className="mt-8">
+                  <PythonSandbox 
+                    exercise={lesson.pythonExercise} 
+                    onSuccess={() => {
+                      syncProgress({
+                        lesson_slug: lesson.slug,
+                        score: lesson.points || 20,
+                        completed: true,
+                      });
+                    }} 
+                  />
+                </div>
+              ) : hasQuiz ? (
                 // QUIZ MODE RENDER
                 <div className="rounded-2xl border-4 border-black bg-white p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924]">
                   <div className="flex items-center justify-between mb-4">
@@ -761,7 +794,13 @@ export function LessonPage() {
         </div>
 
         {/* Mentor Help Trigger Row */}
-        <div className="border-t-4 border-black p-4 bg-white dark:bg-[#151411] dark:border-[#2e2924] flex justify-end flex-shrink-0">
+        <div className="border-t-4 border-black p-4 bg-white dark:bg-[#151411] dark:border-[#2e2924] flex justify-end gap-4 flex-shrink-0">
+          <button
+            onClick={() => setIsNotePanelOpen(!isNotePanelOpen)}
+            className="px-4 py-2 bg-white text-text dark:bg-[#151411] dark:text-[#f0ebe2] font-black text-xs rounded-lg border-4 border-black shadow-card-sm hover:-translate-y-0.5 cursor-pointer"
+          >
+            {isNotePanelOpen ? "Close Notes 📝" : "Notes 📝"}
+          </button>
           <button
             onClick={() => {
               setIsHelpPanelOpen(true);
@@ -773,6 +812,11 @@ export function LessonPage() {
           </button>
         </div>
       </div>
+
+      {/* Note Panel */}
+      {isNotePanelOpen && lesson && (
+        <NotePanel lessonSlug={lesson.slug} onClose={() => setIsNotePanelOpen(false)} />
+      )}
 
       {/* Help support request Panel */}
       {isHelpPanelOpen && (

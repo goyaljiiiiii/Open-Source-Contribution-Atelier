@@ -14,47 +14,34 @@ from django.shortcuts import redirect
 from django.utils import timezone
 from django.utils.text import slugify
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
+from drf_spectacular.utils import (OpenApiResponse, extend_schema,
+                                   extend_schema_view)
 from rest_framework import filters, generics, permissions, status
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import (TokenObtainPairView,
+                                            TokenRefreshView)
 
 from .models import MagicLinkToken, OTPToken, PasswordResetToken
-from .serializers import (
-    EmailOrUsernameTokenObtainPairSerializer,
-    MagicLinkRequestSerializer,
-    MagicLinkVerifySerializer,
-    OtpRequestSerializer,
-    OtpVerifySerializer,
-    PasswordResetConfirmSerializer,
-    PasswordResetRequestSerializer,
-    SignupSerializer,
-    UserListSerializer,
-    UserUpdateSerializer,
-)
-from .tasks import (
-    send_magic_link_email_task,
-    send_otp_email_task,
-    send_password_reset_email_task,
-)
-from .throttles import (
-    LoginThrottle,
-    MagicLinkRequestThrottle,
-    MagicLinkVerifyThrottle,
-    OAuthThrottle,
-    OtpGenerateThrottle,
-    OtpVerifyThrottle,
-    PasswordResetThrottle,
-    SignupThrottle,
-    StrictIdentityLoginThrottle,
-    StrictIdentityMagicLinkThrottle,
-    StrictIdentityPasswordResetThrottle,
-    TokenRefreshThrottle,
-)
+from .serializers import (EmailOrUsernameTokenObtainPairSerializer,
+                          MagicLinkRequestSerializer,
+                          MagicLinkVerifySerializer, OtpRequestSerializer,
+                          OtpVerifySerializer, PasswordResetConfirmSerializer,
+                          PasswordResetRequestSerializer, SignupSerializer,
+                          UserListSerializer, UserUpdateSerializer)
+from .tasks import (send_magic_link_email_task, send_otp_email_task,
+                    send_password_reset_email_task)
+from .throttles import (LoginThrottle, MagicLinkRequestThrottle,
+                        MagicLinkVerifyThrottle, OAuthThrottle,
+                        OtpGenerateThrottle, OtpVerifyThrottle,
+                        PasswordResetThrottle, SignupThrottle,
+                        StrictIdentityLoginThrottle,
+                        StrictIdentityMagicLinkThrottle,
+                        StrictIdentityPasswordResetThrottle,
+                        TokenRefreshThrottle)
 
 
 def unique_username_from_value(value: str) -> str:
@@ -771,3 +758,52 @@ class ExportDataView(APIView):
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+
+from apps.chat.models import Message
+from apps.content.models import Comment
+
+
+class SecureAccountDeleteView(APIView):
+    """
+    DELETE /api/users/me/delete/
+    Securely deletes the user's PII while anonymizing public contributions.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        responses={
+            204: OpenApiResponse(description="Account securely deleted"),
+        }
+    )
+    def delete(self, request):
+        user = request.user
+
+        # If the user is already deleted (e.g. from a repeated request)
+        if not user or not user.pk:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        # 1. Fetch or create Anonymous user
+        anonymous_user, _ = User.objects.get_or_create(
+            username="anonymous_contributor",
+            defaults={
+                "email": "anonymous@example.com",
+                "first_name": "Anonymous",
+                "last_name": "Contributor",
+                "is_active": False,
+            },
+        )
+        if anonymous_user.password == "":
+            anonymous_user.set_unusable_password()
+            anonymous_user.save()
+
+        # 2. Re-assign public contributions to preserve context without PII
+        Comment.objects.filter(user=user).update(user=anonymous_user)
+        Message.objects.filter(user=user).update(user=anonymous_user)
+
+        # 3. Delete the user
+        # This will CASCADE and delete: UserProfile, Certificates, LessonProgress, Notes, Tokens, etc.
+        user.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)

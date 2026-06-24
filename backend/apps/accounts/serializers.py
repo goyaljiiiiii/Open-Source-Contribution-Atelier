@@ -53,11 +53,12 @@ class SignupSerializer(serializers.ModelSerializer):
 class UserUpdateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, min_length=8)
     avatar = serializers.ImageField(required=False)
+    cover_image = serializers.ImageField(required=False)
     timezone = serializers.CharField(required=False)
 
     class Meta:
         model = User
-        fields = ("email", "password", "avatar", "timezone")
+        fields = ("email", "password", "avatar", "cover_image", "timezone")
         extra_kwargs = {
             "email": {"required": False},
         }
@@ -75,6 +76,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         password = validated_data.pop("password", None)
         avatar = validated_data.pop("avatar", None)
+        cover_image = validated_data.pop("cover_image", None)
         tz = validated_data.pop("timezone", None)
 
         for attr, value in validated_data.items():
@@ -86,12 +88,14 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                 instance.profile.save(update_fields=["last_password_change"])
         instance.save()
 
-        if avatar is not None or tz is not None:
+        if avatar is not None or cover_image is not None or tz is not None:
             from apps.accounts.models import UserProfile
 
             profile, _ = UserProfile.objects.get_or_create(user=instance)
             if avatar is not None:
                 profile.avatar = avatar
+            if cover_image is not None:
+                profile.cover_image = cover_image
             if tz is not None:
                 profile.timezone = tz
             profile.save()
@@ -101,11 +105,20 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
 class UserListSerializer(serializers.ModelSerializer):
     avatar_url = serializers.SerializerMethodField()
+    cover_image_url = serializers.SerializerMethodField()
     timezone = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ("id", "username", "email", "is_staff", "avatar_url", "timezone")
+        fields = (
+            "id",
+            "username",
+            "email",
+            "is_staff",
+            "avatar_url",
+            "cover_image_url",
+            "timezone",
+        )
 
     def get_avatar_url(self, obj):
         if hasattr(obj, "profile") and obj.profile.avatar:
@@ -113,6 +126,14 @@ class UserListSerializer(serializers.ModelSerializer):
             if request:
                 return request.build_absolute_uri(obj.profile.avatar.url)
             return obj.profile.avatar.url
+        return None
+
+    def get_cover_image_url(self, obj):
+        if hasattr(obj, "profile") and obj.profile.cover_image:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.profile.cover_image.url)
+            return obj.profile.cover_image.url
         return None
 
     def get_timezone(self, obj):

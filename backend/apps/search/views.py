@@ -1,4 +1,5 @@
-from django.contrib.postgres.search import SearchQuery, SearchRank, TrigramSimilarity
+from django.contrib.postgres.search import (SearchQuery, SearchRank,
+                                            TrigramSimilarity)
 from rest_framework import generics
 from rest_framework.response import Response
 

@@ -1,23 +1,12 @@
 from django.urls import path
 
-from .views import (
-    ExportDataView,
-    GitHubOAuthCallbackView,
-    GitHubOAuthStartView,
-    GoogleLoginView,
-    LoginView,
-    MagicLinkRequestView,
-    MagicLinkVerifyView,
-    MeView,
-    OtpRequestView,
-    OtpVerifyView,
-    PasswordResetConfirmView,
-    PasswordResetRequestView,
-    RefreshView,
-    SignupView,
-    UserListView,
-    UserStatisticsView,
-)
+from .views import (ExportDataView, GitHubOAuthCallbackView,
+                    GitHubOAuthStartView, GoogleLoginView, LoginView,
+                    MagicLinkRequestView, MagicLinkVerifyView, MeView,
+                    OtpRequestView, OtpVerifyView, PasswordResetConfirmView,
+                    PasswordResetRequestView, RefreshView,
+                    SecureAccountDeleteView, SignupView, UserListView,
+                    UserStatisticsView)
 
 urlpatterns = [
     # ── Core Auth ──────────────────────────────────────────────────────────────
@@ -25,6 +14,7 @@ urlpatterns = [
     path("login/", LoginView.as_view(), name="login"),
     path("refresh/", RefreshView.as_view(), name="refresh"),
     path("me/", MeView.as_view(), name="me"),
+    path("me/delete/", SecureAccountDeleteView.as_view(), name="me-delete"),
     path("me/export/", ExportDataView.as_view(), name="me-export"),
     path("stats/", UserStatisticsView.as_view(), name="user-stats"),
     path("users/", UserListView.as_view(), name="user-list"),

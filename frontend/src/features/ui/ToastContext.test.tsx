@@ -1,6 +1,13 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, act, renderHook, cleanup, fireEvent } from "@testing-library/react";
+import {
+  render,
+  screen,
+  act,
+  renderHook,
+  cleanup,
+  fireEvent,
+} from "@testing-library/react";
 import { ToastProvider, useToast } from "./ToastContext";
 
 // Mock framer-motion to avoid animation delays in tests
@@ -8,15 +15,29 @@ vi.mock("framer-motion", async () => {
   const actual = await vi.importActual("framer-motion");
   return {
     ...actual,
-    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => (
+      <>{children}</>
+    ),
     motion: {
-      div: ({ children, className }: { children: React.ReactNode, className?: string }) => <div className={className}>{children}</div>,
+      div: ({
+        children,
+        className,
+      }: {
+        children: React.ReactNode;
+        className?: string;
+      }) => <div className={className}>{children}</div>,
     },
   };
 });
 
 // A simple test component to trigger toasts
-const TestComponent = ({ duration, type = "success" }: { duration?: number; type?: "success" | "error" | "info" | "warning" }) => {
+const TestComponent = ({
+  duration,
+  type = "success",
+}: {
+  duration?: number;
+  type?: "success" | "error" | "info" | "warning";
+}) => {
   const { addToast } = useToast();
 
   return (
@@ -40,11 +61,11 @@ describe("ToastContext Edge Cases", () => {
   it("throws an error if useToast is used outside of ToastProvider", () => {
     // Suppress console.error for expected thrown error
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    
+
     expect(() => renderHook(() => useToast())).toThrow(
-      "useToast must be used within a ToastProvider"
+      "useToast must be used within a ToastProvider",
     );
-    
+
     consoleSpy.mockRestore();
   });
 
@@ -52,7 +73,7 @@ describe("ToastContext Edge Cases", () => {
     render(
       <ToastProvider>
         <TestComponent />
-      </ToastProvider>
+      </ToastProvider>,
     );
 
     const button = screen.getByText("Trigger Toast");
@@ -65,7 +86,7 @@ describe("ToastContext Edge Cases", () => {
     render(
       <ToastProvider>
         <TestComponent />
-      </ToastProvider>
+      </ToastProvider>,
     );
 
     const button = screen.getByText("Trigger Toast");
@@ -90,7 +111,7 @@ describe("ToastContext Edge Cases", () => {
     render(
       <ToastProvider>
         <TestComponent duration={2000} />
-      </ToastProvider>
+      </ToastProvider>,
     );
 
     const button = screen.getByText("Trigger Toast");
@@ -101,7 +122,7 @@ describe("ToastContext Edge Cases", () => {
     act(() => {
       vi.advanceTimersByTime(2000);
     });
-    
+
     expect(screen.queryByText("Test Message")).not.toBeInTheDocument();
   });
 
@@ -109,7 +130,7 @@ describe("ToastContext Edge Cases", () => {
     render(
       <ToastProvider>
         <TestComponent duration={0} />
-      </ToastProvider>
+      </ToastProvider>,
     );
 
     const button = screen.getByText("Trigger Toast");
@@ -120,7 +141,7 @@ describe("ToastContext Edge Cases", () => {
     act(() => {
       vi.advanceTimersByTime(100000); // Wait a long time
     });
-    
+
     // Still there
     expect(screen.getByText("Test Message")).toBeInTheDocument();
   });
@@ -129,13 +150,15 @@ describe("ToastContext Edge Cases", () => {
     render(
       <ToastProvider>
         <TestComponent duration={0} />
-      </ToastProvider>
+      </ToastProvider>,
     );
 
     fireEvent.click(screen.getByText("Trigger Toast"));
     expect(screen.getByText("Test Message")).toBeInTheDocument();
 
-    const closeButton = screen.getByRole("button", { name: /Close notification/i });
+    const closeButton = screen.getByRole("button", {
+      name: /Close notification/i,
+    });
     fireEvent.click(closeButton);
 
     expect(screen.queryByText("Test Message")).not.toBeInTheDocument();
@@ -145,11 +168,13 @@ describe("ToastContext Edge Cases", () => {
     const MultiToastComponent = () => {
       const { addToast } = useToast();
       return (
-        <button onClick={() => {
-          addToast("Toast 1", "success", 0);
-          addToast("Toast 2", "error", 0);
-          addToast("Toast 3", "info", 0);
-        }}>
+        <button
+          onClick={() => {
+            addToast("Toast 1", "success", 0);
+            addToast("Toast 2", "error", 0);
+            addToast("Toast 3", "info", 0);
+          }}
+        >
           Trigger Multiple
         </button>
       );
@@ -158,7 +183,7 @@ describe("ToastContext Edge Cases", () => {
     render(
       <ToastProvider>
         <MultiToastComponent />
-      </ToastProvider>
+      </ToastProvider>,
     );
 
     fireEvent.click(screen.getByText("Trigger Multiple"));
@@ -168,7 +193,9 @@ describe("ToastContext Edge Cases", () => {
     expect(screen.getByText("Toast 3")).toBeInTheDocument();
 
     // Close Toast 2
-    const closeButtons = screen.getAllByRole("button", { name: /Close notification/i });
+    const closeButtons = screen.getAllByRole("button", {
+      name: /Close notification/i,
+    });
     fireEvent.click(closeButtons[1]); // Assuming order is kept
 
     expect(screen.getByText("Toast 1")).toBeInTheDocument();

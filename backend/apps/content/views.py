@@ -5,30 +5,21 @@ from apps.challenges.serializers import ChallengeSerializer
 from apps.progress.models import LessonProgress
 from apps.search.models import SearchDocument
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.postgres.search import SearchQuery, SearchRank, TrigramSimilarity
+from django.contrib.postgres.search import (SearchQuery, SearchRank,
+                                            TrigramSimilarity)
 from django.core.cache import cache
 from django.db.models import Q
 from django.http import HttpResponse
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
-from rest_framework import (
-    filters,
-    generics,
-    permissions,
-    response,
-    status,
-    views,
-    viewsets,
-)
+from rest_framework import (filters, generics, permissions, response, status,
+                            views, viewsets)
 from rest_framework.permissions import AllowAny
 
 from . import semantic_search
 from .models import Lesson, Organization
-from .serializers import (
-    LessonSearchSerializer,
-    LessonSerializer,
-    OrganizationSerializer,
-)
+from .serializers import (LessonSearchSerializer, LessonSerializer,
+                          OrganizationSerializer)
 
 
 # --- Helper Functions ---

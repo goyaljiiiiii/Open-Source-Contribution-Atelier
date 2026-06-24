@@ -1,7 +1,9 @@
 from apps.dashboard.views import LeaderboardView
 from django.contrib import admin
 from django.urls import include, path
+from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from graphene_django.views import GraphQLView
 
 from .version_view import version_view
 
@@ -19,12 +21,14 @@ urlpatterns = [
     path("api/dashboard/", include("apps.dashboard.urls")),
     path("api/search/", include("apps.search.urls")),
     path("api/webhooks/", include("apps.webhooks.urls")),
+    path("api/notes/", include("apps.notes.urls")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
         "api/docs/",
         SpectacularSwaggerView.as_view(url_name="schema"),
         name="swagger-ui",
     ),
+    path("api/graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
 ]
 
 from django.conf import settings

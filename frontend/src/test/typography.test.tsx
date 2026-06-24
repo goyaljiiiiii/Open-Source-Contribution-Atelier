@@ -1,19 +1,19 @@
-import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/react';
+import { describe, it, expect } from "vitest";
+import { render } from "@testing-library/react";
 
-describe('Typography Standardization', () => {
-  it('renders H1, H2, and H3 elements correctly', () => {
+describe("Typography Standardization", () => {
+  it("renders H1, H2, and H3 elements correctly", () => {
     const { container } = render(
       <div>
         <h1>Heading 1</h1>
         <h2>Heading 2</h2>
         <h3>Heading 3</h3>
-      </div>
+      </div>,
     );
 
-    const h1 = container.querySelector('h1');
-    const h2 = container.querySelector('h2');
-    const h3 = container.querySelector('h3');
+    const h1 = container.querySelector("h1");
+    const h2 = container.querySelector("h2");
+    const h3 = container.querySelector("h3");
 
     expect(h1).toBeInTheDocument();
     expect(h2).toBeInTheDocument();

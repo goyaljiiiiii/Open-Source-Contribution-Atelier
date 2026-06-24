@@ -50,3 +50,8 @@ def send_weekly_progress_summary():
 
             # Dispatch email using the existing bulk email worker
             current_app.send_task("tasks.send_bulk_email", kwargs={"payload": payload})
+
+
+@shared_task
+def evaluate_user_badges_task(user_id):
+    pass

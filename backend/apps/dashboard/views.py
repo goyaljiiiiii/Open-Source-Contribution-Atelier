@@ -1,9 +1,12 @@
+from datetime import timedelta
+
 from apps.content.models import Lesson
 from apps.dashboard.models import Issue, PullRequest
 from apps.progress.models import ExerciseAttempt, LessonProgress
 from django.contrib.auth.models import User
 from django.core.cache import cache
-from django.db.models import Count, F, IntegerField, OuterRef, Subquery, Sum, Value
+from django.db.models import (Count, F, IntegerField, OuterRef, Subquery, Sum,
+                              Value)
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from rest_framework import permissions, serializers
@@ -36,41 +39,49 @@ class LeaderboardView(ListAPIView):
     pagination_class = LeaderboardPagination
 
     def get_queryset(self):
+        timeframe = self.request.query_params.get("timeframe", "all")
+        now = timezone.now()
+        start_date = None
+
+        if timeframe == "daily":
+            start_date = now - timedelta(days=1)
+        elif timeframe == "weekly":
+            start_date = now - timedelta(days=7)
+        elif timeframe == "monthly":
+            start_date = now - timedelta(days=30)
+
+        lesson_progress_filter = {"user": OuterRef("pk"), "completed": True}
+        issue_filter = {"assigned_to": OuterRef("pk"), "status": Issue.Status.SOLVED}
+        pr_filter = {"user": OuterRef("pk"), "status": PullRequest.Status.MERGED}
+
+        if start_date:
+            lesson_progress_filter["updated_at__gte"] = start_date
+            issue_filter["updated_at__gte"] = start_date
+            pr_filter["updated_at__gte"] = start_date
+
         lesson_xp = (
-            LessonProgress.objects.filter(
-                user=OuterRef("pk"),
-                completed=True,
-            )
+            LessonProgress.objects.filter(**lesson_progress_filter)
             .values("user")
             .annotate(total=Sum("score"))
             .values("total")
         )
 
         issues_xp = (
-            Issue.objects.filter(
-                assigned_to=OuterRef("pk"),
-                status=Issue.Status.SOLVED,
-            )
+            Issue.objects.filter(**issue_filter)
             .values("assigned_to")
-            .annotate(total=Sum("points"))
+            .annotate(total=Sum("points") + Sum("bonus_points"))
             .values("total")
         )
 
         prs_merged = (
-            PullRequest.objects.filter(
-                user=OuterRef("pk"),
-                status=PullRequest.Status.MERGED,
-            )
+            PullRequest.objects.filter(**pr_filter)
             .values("user")
             .annotate(total=Count("id"))
             .values("total")
         )
 
         issues_solved = (
-            Issue.objects.filter(
-                assigned_to=OuterRef("pk"),
-                status=Issue.Status.SOLVED,
-            )
+            Issue.objects.filter(**issue_filter)
             .values("assigned_to")
             .annotate(total=Count("id"))
             .values("total")
@@ -242,12 +253,10 @@ class ContributorDashboardView(APIView):
                 )["total"]
                 or 0
             )
-            issues_xp = (
-                Issue.objects.filter(
-                    assigned_to=user, status=Issue.Status.SOLVED
-                ).aggregate(total=Sum("points"))["total"]
-                or 0
-            )
+            issues_agg = Issue.objects.filter(
+                assigned_to=user, status=Issue.Status.SOLVED
+            ).aggregate(p_sum=Sum("points"), b_sum=Sum("bonus_points"))
+            issues_xp = (issues_agg["p_sum"] or 0) + (issues_agg["b_sum"] or 0)
             total_xp = lesson_xp + issues_xp
 
             # Calculate streak based on unique days of activity (attempts or completed lessons)
@@ -275,12 +284,10 @@ class ContributorDashboardView(APIView):
                     )["score__sum"]
                     or 0
                 )
-                u_ixp = (
-                    Issue.objects.filter(
-                        assigned_to=u, status=Issue.Status.SOLVED
-                    ).aggregate(Sum("points"))["points__sum"]
-                    or 0
-                )
+                u_ixp_agg = Issue.objects.filter(
+                    assigned_to=u, status=Issue.Status.SOLVED
+                ).aggregate(p_sum=Sum("points"), b_sum=Sum("bonus_points"))
+                u_ixp = (u_ixp_agg["p_sum"] or 0) + (u_ixp_agg["b_sum"] or 0)
                 user_ranks.append((u.id, u_lxp + u_ixp))
 
             user_ranks.sort(key=lambda x: x[1], reverse=True)

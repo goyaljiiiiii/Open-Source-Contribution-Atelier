@@ -5,17 +5,39 @@ interface PasswordStrengthMeterProps {
   password: string;
 }
 
-const PasswordStrengthMeter: React.FC<PasswordStrengthMeterProps> = ({ password }) => {
+const PasswordStrengthMeter: React.FC<PasswordStrengthMeterProps> = ({
+  password,
+}) => {
   if (!password) return null;
 
   const { score } = zxcvbn(password);
 
   const tiers = [
-    { label: 'Weak password',      barColor: 'bg-red-500',    textColor: 'text-red-500'    },
-    { label: 'Weak password',      barColor: 'bg-red-400',    textColor: 'text-red-400'    },
-    { label: 'Medium password',    barColor: 'bg-yellow-400', textColor: 'text-yellow-600' },
-    { label: 'Strong password',    barColor: 'bg-green-500',  textColor: 'text-green-600'  },
-    { label: 'Strong password 💪', barColor: 'bg-green-600',  textColor: 'text-green-600'  },
+    {
+      label: "Weak password",
+      barColor: "bg-red-500",
+      textColor: "text-red-500",
+    },
+    {
+      label: "Weak password",
+      barColor: "bg-red-400",
+      textColor: "text-red-400",
+    },
+    {
+      label: "Medium password",
+      barColor: "bg-yellow-400",
+      textColor: "text-yellow-600",
+    },
+    {
+      label: "Strong password",
+      barColor: "bg-green-500",
+      textColor: "text-green-600",
+    },
+    {
+      label: "Strong password 💪",
+      barColor: "bg-green-600",
+      textColor: "text-green-600",
+    },
   ];
 
   const { label, barColor, textColor } = tiers[score];
@@ -28,9 +50,9 @@ const PasswordStrengthMeter: React.FC<PasswordStrengthMeterProps> = ({ password 
           <div
             key={i}
             className={[
-              'h-2 flex-1 rounded-full border-2 border-black transition-all duration-300',
-              i < filledBars ? barColor : 'bg-gray-200',
-            ].join(' ')}
+              "h-2 flex-1 rounded-full border-2 border-black transition-all duration-300",
+              i < filledBars ? barColor : "bg-gray-200",
+            ].join(" ")}
           />
         ))}
       </div>
