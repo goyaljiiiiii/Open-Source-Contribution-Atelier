@@ -760,3 +760,49 @@ class ExportDataView(APIView):
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+from apps.content.models import Comment
+from apps.chat.models import Message
+
+class SecureAccountDeleteView(APIView):
+    """
+    DELETE /api/users/me/delete/
+    Securely deletes the user's PII while anonymizing public contributions.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        responses={
+            204: OpenApiResponse(description="Account securely deleted"),
+        }
+    )
+    def delete(self, request):
+        user = request.user
+        
+        # If the user is already deleted (e.g. from a repeated request)
+        if not user or not user.pk:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        # 1. Fetch or create Anonymous user
+        anonymous_user, _ = User.objects.get_or_create(
+            username="anonymous_contributor",
+            defaults={
+                "email": "anonymous@example.com",
+                "first_name": "Anonymous",
+                "last_name": "Contributor",
+                "is_active": False,
+            },
+        )
+        if anonymous_user.password == "":
+            anonymous_user.set_unusable_password()
+            anonymous_user.save()
+
+        # 2. Re-assign public contributions to preserve context without PII
+        Comment.objects.filter(user=user).update(user=anonymous_user)
+        Message.objects.filter(user=user).update(user=anonymous_user)
+
+        # 3. Delete the user
+        # This will CASCADE and delete: UserProfile, Certificates, LessonProgress, Notes, Tokens, etc.
+        user.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
