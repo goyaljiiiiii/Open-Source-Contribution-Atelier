@@ -23,7 +23,7 @@ describe('ScrollToTop Component', () => {
 
   it('appears when scrolled past the threshold', () => {
     render(<ScrollToTop />);
-    
+    act(() => {
       Object.defineProperty(window, 'scrollY', { value: 350, configurable: true });
       window.dispatchEvent(new Event('scroll'));
     });
