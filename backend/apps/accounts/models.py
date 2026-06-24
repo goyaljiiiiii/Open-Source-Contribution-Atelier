@@ -130,6 +130,7 @@ class UserProfile(models.Model):
     )
     avatar = models.ImageField(upload_to="avatars/", null=True, blank=True)
     last_password_change = models.DateTimeField(auto_now_add=True)
+    timezone = models.CharField(max_length=50, default='UTC')
 
     organization = models.ForeignKey(
         "organizations.Organization",

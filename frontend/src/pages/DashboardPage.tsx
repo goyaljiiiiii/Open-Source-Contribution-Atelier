@@ -37,6 +37,7 @@ import {
   Cell,
 } from "recharts";
 import { OnboardingTour } from "../components/ui/OnboardingTour";
+import { NotesWidget } from "../components/ui/NotesWidget";
 
 const FACTS = [
   "Git was created in 2005 by Linus Torvalds because he was frustrated with the commercial tool they were using for Linux development.",
@@ -621,6 +622,7 @@ export function DashboardPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 pt-24 pb-12 space-y-10">
       <OnboardingTour run={showOnboarding} onFinish={handleFinishOnboarding} />
+      <NotesWidget />
       {/* 1. Header Banner */}
       <section className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
         <div
