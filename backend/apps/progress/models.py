@@ -172,3 +172,20 @@ class Certificate(models.Model):
 
     def __str__(self):
         return f"Certificate for {self.user.username} - {self.verification_hash}"
+
+
+class LessonNote(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="lesson_notes")
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="notes")
+    content = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("user", "lesson")
+        indexes = [
+            models.Index(fields=["user", "lesson"]),
+        ]
+
+    def __str__(self):
+        return f"Note by {self.user.username} for {self.lesson.slug}"

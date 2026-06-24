@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from .models import (Badge, Certificate, HelpRequest, LessonProgress,
-                     QuizAttempt, UserBadge)
+                     LessonNote, QuizAttempt, UserBadge)
 
 
 class BadgeSerializer(serializers.ModelSerializer):
@@ -111,3 +111,10 @@ class QuizAttemptSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = ["id", "user", "created_at"]
+
+
+class LessonNoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LessonNote
+        fields = ["id", "user", "lesson", "content", "created_at", "updated_at"]
+        read_only_fields = ["id", "user", "lesson", "created_at", "updated_at"]
