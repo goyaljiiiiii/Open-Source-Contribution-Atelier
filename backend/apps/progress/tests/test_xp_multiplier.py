@@ -22,7 +22,8 @@ def issue(user):
 @pytest.mark.django_db
 class TestXPMultiplier:
     
-    def test_no_active_event(self, user, lesson, issue):
+    def test_no_active_event(self, settings, user, lesson, issue):
+        settings.CELERY_TASK_ALWAYS_EAGER = True
         client = APIClient()
         # 1. Lesson Progress creation without active event
         client.force_authenticate(user=user)
@@ -43,7 +44,8 @@ class TestXPMultiplier:
         issue.refresh_from_db()
         assert issue.bonus_points == 0
 
-    def test_active_event_multiplier(self, user, lesson, issue):
+    def test_active_event_multiplier(self, settings, user, lesson, issue):
+        settings.CELERY_TASK_ALWAYS_EAGER = True
         client = APIClient()
         now = timezone.now()
         XPMultiplierEvent.objects.create(
