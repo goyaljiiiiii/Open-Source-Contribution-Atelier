@@ -1,0 +1,129 @@
+name: Monitor Activity
+
+on:
+  schedule:
+    - cron: '0 * * * *' # Run hourly to catch up on missed assignments and stale items
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Monitor Issues and PRs
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const daysToStale = 2;
+            const msPerDay = 1000 * 60 * 60 * 24;
+            const now = new Date();
+            
+            console.log(`Checking for open issues and PRs...`);
+            
+            // Get all open issues and PRs
+            const items = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open'
+            });
+
+            for (const item of items) {
+              const isPR = !!item.pull_request;
+              const updatedAt = new Date(item.updated_at);
+              const diffMs = now - updatedAt;
+              const diffDays = diffMs / msPerDay;
+              const assignees = item.assignees.map(a => a.login);
+
+              let comments = [];
+              
+              // Only fetch comments if we might need them (to save API calls)
+              if ((assignees.length === 0 && !isPR) || diffDays > daysToStale) {
+                comments = await github.paginate(github.rest.issues.listComments, {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: item.number
+                });
+              }
+
+              // 1. Retroactive assignment for unassigned issues
+              if (assignees.length === 0 && !isPR) {
+                const assignComments = comments.filter(c => c.body.toLowerCase().includes('assign to me'));
+                
+                if (assignComments.length > 0) {
+                  // Find the most recent request
+                  const latestAssignComment = assignComments[assignComments.length - 1];
+                  
+                  // Make sure a bot hasn't already unassigned this user/issue AFTER their comment
+                  const botUnassignComments = comments.filter(c => 
+                    c.user.type === 'Bot' && c.body.includes('automatically unassigning')
+                  );
+                  
+                  let shouldAssign = true;
+                  if (botUnassignComments.length > 0) {
+                    const latestBotComment = botUnassignComments[botUnassignComments.length - 1];
+                    if (new Date(latestBotComment.created_at) > new Date(latestAssignComment.created_at)) {
+                      shouldAssign = false; // Bot unassigned after their request, don't re-assign
+                    }
+                  }
+
+                  if (shouldAssign) {
+                    const commenter = latestAssignComment.user.login;
+                    console.log(`Retroactively assigning issue #${item.number} to ${commenter}`);
+                    
+                    await github.rest.issues.addAssignees({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number: item.number,
+                      assignees: [commenter]
+                    });
+                    
+                    await github.rest.issues.createComment({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number: item.number,
+                      body: `Assigned to @${commenter} retroactively based on your earlier comment! Thanks for contributing.`
+                    });
+                    continue; // Done with this item for now
+                  }
+                }
+              }
+
+              // 2. 2-days inactivity rule for Assigned Issues and all PRs
+              if (diffDays > daysToStale) {
+                // Ensure we don't spam if the latest comment is already our stale warning
+                const lastComment = comments.length > 0 ? comments[comments.length - 1] : null;
+                const isLastCommentFromBot = lastComment && lastComment.user.type === 'Bot' && lastComment.body.includes('inactive for 2 days');
+                
+                if (isLastCommentFromBot) {
+                  continue; // Already handled recently
+                }
+
+                if (isPR) {
+                  console.log(`Notifying PR #${item.number} about inactivity...`);
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: item.number,
+                    body: `Hello! This pull request has been inactive for 2 days. Just checking in to see if there are any updates or if you need help!`
+                  });
+                } else if (assignees.length > 0) {
+                  console.log(`Unassigning ${assignees.join(', ')} from issue #${item.number}`);
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: item.number,
+                    body: `This issue has been inactive for 2 days. I am automatically unassigning the current assignees so someone else can work on it. Feel free to request assignment again if you're ready to continue!`
+                  });
+
+                  await github.rest.issues.removeAssignees({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: item.number,
+                    assignees: assignees
+                  });
+                }
+              }
+            }
