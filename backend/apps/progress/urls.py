@@ -5,7 +5,7 @@ from .views import (BadgeListView, BulkProgressUpdateView,
                     CommunityStatsView, ContributorTimelineView,
                     HelpRequestListCreateView, MentorHelpRequestListView,
                     MyCertificateView, MyProgressView, QuizAttemptView,
-                    RecommendationsView, LessonNoteView)
+                    RecommendationsView, LessonNoteView, LessonBookmarkView)
 
 urlpatterns = [
     path("badges/", BadgeListView.as_view(), name="badges"),
@@ -38,4 +38,6 @@ urlpatterns = [
         LessonNoteView.as_view(),
         name="lesson-note",
     ),
+    path("bookmarks/", LessonBookmarkView.as_view(), name="lesson-bookmarks-list"),
+    path("bookmarks/<slug:lesson_slug>/", LessonBookmarkView.as_view(), name="lesson-bookmarks-detail"),
 ]
