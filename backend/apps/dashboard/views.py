@@ -3,6 +3,7 @@ from apps.dashboard.models import Issue, PullRequest
 from apps.progress.models import ExerciseAttempt, LessonProgress
 from django.contrib.auth.models import User
 from django.core.cache import cache
+from django.db import models
 from django.db.models import (Count, F, IntegerField, OuterRef, Subquery, Sum,
                               Value)
 from django.db.models.functions import Coalesce
@@ -238,63 +239,87 @@ class ContributorDashboardView(APIView):
         data = cache.get(cache_key)
 
         if data is None:
-            # 1. Personal stats
-            issues_solved = Issue.objects.filter(
+            # ── 1. Personal stats ─────────────────────────────────────────────
+            # Consolidate LessonProgress into a single aggregate query
+            lp_agg = LessonProgress.objects.filter(user=user).aggregate(
+                total_xp=Coalesce(
+                    Sum("score", filter=models.Q(completed=True)),
+                    Value(0),
+                    output_field=IntegerField(),
+                ),
+                completed_lessons=Count(
+                    "id", filter=models.Q(completed=True)
+                ),
+            )
+            lesson_xp = lp_agg["total_xp"]
+            completed_lessons = lp_agg["completed_lessons"]
+
+            # Consolidate Issue queries into a single aggregate query
+            issues_agg = Issue.objects.filter(
                 assigned_to=user, status=Issue.Status.SOLVED
-            ).count()
+            ).aggregate(
+                issues_solved=Count("id"),
+                p_sum=Coalesce(Sum("points"), Value(0), output_field=IntegerField()),
+                b_sum=Coalesce(Sum("bonus_points"), Value(0), output_field=IntegerField()),
+            )
+            issues_solved = issues_agg["issues_solved"]
+            issues_xp = issues_agg["p_sum"] + issues_agg["b_sum"]
+            total_xp = lesson_xp + issues_xp
+
             prs_merged = PullRequest.objects.filter(
                 user=user, status=PullRequest.Status.MERGED
             ).count()
 
-            lesson_xp = (
-                LessonProgress.objects.filter(user=user, completed=True).aggregate(
-                    total=Sum("score")
-                )["total"]
-                or 0
+            # ── Streak ────────────────────────────────────────────────────────
+            # Fetch both date sets in one query each; no per-record ORM calls.
+            attempt_dates = set(
+                ExerciseAttempt.objects.filter(user=user)
+                .values_list("created_at", flat=True)
             )
-            issues_agg = Issue.objects.filter(
-                assigned_to=user, status=Issue.Status.SOLVED
-            ).aggregate(p_sum=Sum("points"), b_sum=Sum("bonus_points"))
-            issues_xp = (issues_agg["p_sum"] or 0) + (issues_agg["b_sum"] or 0)
-            total_xp = lesson_xp + issues_xp
-
-            # Calculate streak based on unique days of activity (attempts or completed lessons)
-            activity_days = set()
-            attempts = ExerciseAttempt.objects.filter(user=user).values_list(
-                "created_at", flat=True
+            progress_dates = set(
+                LessonProgress.objects.filter(user=user)
+                .values_list("updated_at", flat=True)
             )
-            for dt in attempts:
-                activity_days.add(timezone.localdate(dt))
-            progress_entries = LessonProgress.objects.filter(user=user).values_list(
-                "updated_at", flat=True
-            )
-            for dt in progress_entries:
-                activity_days.add(timezone.localdate(dt))
-
+            activity_days = {timezone.localdate(dt) for dt in attempt_dates} | {
+                timezone.localdate(dt) for dt in progress_dates
+            }
             streak_days = len(activity_days)
 
-            # Determine Rank based on user XP vs others
-            all_users = User.objects.filter(is_staff=False)
-            user_ranks = []
-            for u in all_users:
-                u_lxp = (
-                    LessonProgress.objects.filter(user=u, completed=True).aggregate(
-                        Sum("score")
-                    )["score__sum"]
-                    or 0
+            # ── Rank — single annotated queryset (was N+1 loop) ───────────────
+            # Two subqueries executed once by the database; no Python loop.
+            lesson_xp_sub = (
+                LessonProgress.objects.filter(
+                    user=OuterRef("pk"), completed=True
                 )
-                u_ixp_agg = Issue.objects.filter(
-                    assigned_to=u, status=Issue.Status.SOLVED
-                ).aggregate(p_sum=Sum("points"), b_sum=Sum("bonus_points"))
-                u_ixp = (u_ixp_agg["p_sum"] or 0) + (u_ixp_agg["b_sum"] or 0)
-                user_ranks.append((u.id, u_lxp + u_ixp))
-
-            user_ranks.sort(key=lambda x: x[1], reverse=True)
-            rank = 1
-            for index, (uid, u_xp) in enumerate(user_ranks):
-                if uid == user.id:
-                    rank = index + 1
-                    break
+                .values("user")
+                .annotate(total=Sum("score"))
+                .values("total")
+            )
+            issues_xp_sub = (
+                Issue.objects.filter(
+                    assigned_to=OuterRef("pk"), status=Issue.Status.SOLVED
+                )
+                .values("assigned_to")
+                .annotate(total=Sum("points") + Sum("bonus_points"))
+                .values("total")
+            )
+            ranked_ids = list(
+                User.objects.filter(is_staff=False)
+                .annotate(
+                    l_xp=Coalesce(
+                        Subquery(lesson_xp_sub, output_field=IntegerField()),
+                        Value(0),
+                    ),
+                    i_xp=Coalesce(
+                        Subquery(issues_xp_sub, output_field=IntegerField()),
+                        Value(0),
+                    ),
+                )
+                .annotate(total_xp=F("l_xp") + F("i_xp"))
+                .order_by("-total_xp", "id")
+                .values_list("id", flat=True)
+            )
+            rank = ranked_ids.index(user.id) + 1 if user.id in ranked_ids else len(ranked_ids) + 1
 
             personal_stats = {
                 "issues_solved": issues_solved,
@@ -304,54 +329,55 @@ class ContributorDashboardView(APIView):
                 "rank": rank,
             }
 
-            # 2. Assigned Issues (Open or In Progress)
+            # ── 2. Assigned Issues (Open or In Progress) ──────────────────────
             assigned_issues_qs = (
                 Issue.objects.filter(assigned_to=user)
                 .exclude(status=Issue.Status.SOLVED)
+                .only("id", "title", "description", "status", "points", "created_at")
                 .order_by("-created_at")
             )
 
-            assigned_issues = []
-            for issue in assigned_issues_qs:
-                assigned_issues.append(
-                    {
-                        "id": issue.id,
-                        "title": issue.title,
-                        "description": issue.description,
-                        "status": issue.status,
-                        "points": issue.points,
-                        "created_at": issue.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                    }
-                )
+            assigned_issues = [
+                {
+                    "id": issue.id,
+                    "title": issue.title,
+                    "description": issue.description,
+                    "status": issue.status,
+                    "points": issue.points,
+                    "created_at": issue.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                }
+                for issue in assigned_issues_qs
+            ]
 
-            # 3. Recent PRs
+            # ── 3. Recent PRs ─────────────────────────────────────────────────
             recent_prs_qs = (
                 PullRequest.objects.filter(user=user)
                 .select_related("issue")
+                .only(
+                    "id", "title", "status", "created_at", "merged_at",
+                    "issue__title",
+                )
                 .order_by("-created_at")[:10]
             )
 
-            recent_prs = []
-            for pr in recent_prs_qs:
-                recent_prs.append(
-                    {
-                        "id": pr.id,
-                        "title": pr.title,
-                        "status": pr.status,
-                        "issue_title": pr.issue.title if pr.issue else "No Issue Link",
-                        "created_at": pr.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                        "merged_at": (
-                            pr.merged_at.strftime("%Y-%m-%dT%H:%M:%SZ")
-                            if pr.merged_at
-                            else None
-                        ),
-                    }
-                )
+            recent_prs = [
+                {
+                    "id": pr.id,
+                    "title": pr.title,
+                    "status": pr.status,
+                    "issue_title": pr.issue.title if pr.issue else "No Issue Link",
+                    "created_at": pr.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "merged_at": (
+                        pr.merged_at.strftime("%Y-%m-%dT%H:%M:%SZ")
+                        if pr.merged_at
+                        else None
+                    ),
+                }
+                for pr in recent_prs_qs
+            ]
 
-            # 4. Progress tracker
-            completed_lessons = LessonProgress.objects.filter(
-                user=user, completed=True
-            ).count()
+            # ── 4. Progress tracker ───────────────────────────────────────────
+            # `completed_lessons` was already computed above — no extra query.
             total_lessons = Lesson.objects.count()
             completion_percentage = (
                 int((completed_lessons / total_lessons) * 100)
