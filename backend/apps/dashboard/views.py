@@ -7,6 +7,7 @@ from django.db.models import (Count, F, IntegerField, OuterRef, Subquery, Sum,
                               Value)
 from django.db.models.functions import Coalesce
 from django.utils import timezone
+from datetime import timedelta
 from rest_framework import permissions, serializers
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
@@ -58,41 +59,49 @@ class LeaderboardView(ListAPIView):
         return Response(data)
 
     def get_queryset(self):
+        timeframe = self.request.query_params.get("timeframe", "all")
+        now = timezone.now()
+        start_date = None
+
+        if timeframe == "daily":
+            start_date = now - timedelta(days=1)
+        elif timeframe == "weekly":
+            start_date = now - timedelta(days=7)
+        elif timeframe == "monthly":
+            start_date = now - timedelta(days=30)
+
+        lesson_progress_filter = {"user": OuterRef("pk"), "completed": True}
+        issue_filter = {"assigned_to": OuterRef("pk"), "status": Issue.Status.SOLVED}
+        pr_filter = {"user": OuterRef("pk"), "status": PullRequest.Status.MERGED}
+
+        if start_date:
+            lesson_progress_filter["updated_at__gte"] = start_date
+            issue_filter["updated_at__gte"] = start_date
+            pr_filter["updated_at__gte"] = start_date
+
         lesson_xp = (
-            LessonProgress.objects.filter(
-                user=OuterRef("pk"),
-                completed=True,
-            )
+            LessonProgress.objects.filter(**lesson_progress_filter)
             .values("user")
             .annotate(total=Sum("score"))
             .values("total")
         )
 
         issues_xp = (
-            Issue.objects.filter(
-                assigned_to=OuterRef("pk"),
-                status=Issue.Status.SOLVED,
-            )
+            Issue.objects.filter(**issue_filter)
             .values("assigned_to")
             .annotate(total=Sum("points"))
             .values("total")
         )
 
         prs_merged = (
-            PullRequest.objects.filter(
-                user=OuterRef("pk"),
-                status=PullRequest.Status.MERGED,
-            )
+            PullRequest.objects.filter(**pr_filter)
             .values("user")
             .annotate(total=Count("id"))
             .values("total")
         )
 
         issues_solved = (
-            Issue.objects.filter(
-                assigned_to=OuterRef("pk"),
-                status=Issue.Status.SOLVED,
-            )
+            Issue.objects.filter(**issue_filter)
             .values("assigned_to")
             .annotate(total=Count("id"))
             .values("total")

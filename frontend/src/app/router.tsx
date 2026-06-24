@@ -15,6 +15,7 @@ import { NotFoundPage } from "../pages/NotFoundPage";
 import { ServerErrorPage } from "../pages/ServerErrorPage";
 import { SandboxPage } from "../pages/SandboxPage";
 import { ProfileSettingsPage } from "../pages/ProfileSettingsPage";
+import { LeaderboardPage } from "../pages/LeaderboardPage";
 import { VerifyCertificatePage } from "../pages/VerifyCertificatePage";
 import { useAuth } from "../features/auth/AuthContext";
 import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
@@ -98,6 +99,14 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/leaderboard"
+          element={
+            <ProtectedRoute>
+              <LeaderboardPage />
             </ProtectedRoute>
           }
         />
