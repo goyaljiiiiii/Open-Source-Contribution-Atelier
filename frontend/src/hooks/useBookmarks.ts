@@ -51,18 +51,14 @@ export function useBookmarks() {
       if (context?.previousBookmarks) {
         queryClient.setQueryData(["bookmarks"], context.previousBookmarks);
       }
-      addToast({
-        title: "Error",
-        message: "Failed to update bookmark.",
-        type: "error"
-      });
+      addToast("Failed to update bookmark.", "error");
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["bookmarks"] });
-      addToast({
-        title: data.action === "added" ? "Saved to Read Later" : "Removed from Read Later",
-        type: "success"
-      });
+      addToast(
+        data.action === "added" ? "Saved to Read Later" : "Removed from Read Later",
+        "success"
+      );
     },
   });
 
