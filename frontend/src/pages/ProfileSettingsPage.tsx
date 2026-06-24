@@ -1,5 +1,6 @@
 import React from "react";
 import { ProfileSettingsForm } from "../features/auth/ProfileSettingsForm";
+import { ActivityHeatmap } from "../components/ui/ActivityHeatmap";
 
 export function ProfileSettingsPage() {
   return (
@@ -34,6 +35,11 @@ export function ProfileSettingsPage() {
             Your data is stored securely. Passwords are cryptographically hashed and never stored in plain text.
           </p>
         </div>
+      </div>
+
+      {/* ACTIVITY HEATMAP SECTION */}
+      <div className="mt-8 rounded-2xl border-4 border-black bg-white dark:bg-[#151411] p-8 shadow-card overflow-hidden">
+        <ActivityHeatmap />
       </div>
     </div>
   );
