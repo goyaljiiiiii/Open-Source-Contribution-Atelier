@@ -48,6 +48,53 @@ jobs:
                 });
               }
 
+              // 0. Retroactive PR Setup
+              if (isPR) {
+                // Assign PR to author if unassigned
+                if (assignees.length === 0) {
+                  const author = item.user.login;
+                  console.log(`Retroactively assigning PR #${item.number} to @${author}`);
+                  await github.rest.issues.addAssignees({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: item.number,
+                    assignees: [author]
+                  });
+                }
+
+                // Extract issue number and copy labels
+                const body = item.body || '';
+                const issueRegex = /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)/i;
+                const match = body.match(issueRegex);
+
+                if (match && match[1]) {
+                  const issueNumber = parseInt(match[1], 10);
+                  try {
+                    const linkedIssue = await github.rest.issues.get({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number: issueNumber
+                    });
+                    
+                    const labelsToCopy = linkedIssue.data.labels.map(l => l.name);
+                    const currentPRLabels = item.labels.map(l => l.name);
+                    const missingLabels = labelsToCopy.filter(l => !currentPRLabels.includes(l));
+
+                    if (missingLabels.length > 0) {
+                      console.log(`Retroactively copying labels from issue #${issueNumber} to PR #${item.number}: ${missingLabels.join(', ')}`);
+                      await github.rest.issues.addLabels({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        issue_number: item.number,
+                        labels: missingLabels
+                      });
+                    }
+                  } catch (error) {
+                    // Ignore errors if issue doesn't exist
+                  }
+                }
+              }
+
               // 1. Retroactive assignment for unassigned issues
               if (assignees.length === 0 && !isPR) {
                 const assignComments = comments.filter(c => c.body.toLowerCase().includes('assign to me'));
