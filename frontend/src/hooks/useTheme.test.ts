@@ -71,4 +71,26 @@ describe("useTheme", () => {
     expect(document.documentElement.classList.contains("high-contrast")).toBe(true);
     expect(localStorage.getItem("theme")).toBe("high-contrast");
   });
+
+  it("should handle custom edge case: corrupted/invalid theme in localStorage falls back safely", () => {
+    localStorage.setItem("theme", "purple-haze-custom-theme"); // Invalid theme
+    const { result } = renderHook(() => useTheme());
+    
+    // Should fallback to light (or system pref, which is mocked to false here)
+    expect(result.current.theme).toBe("light");
+  });
+
+  it("should handle custom edge case: storage events sync properly across tabs", () => {
+    const { result } = renderHook(() => useTheme());
+    
+    act(() => {
+      // Simulate another tab changing the theme to dark
+      window.dispatchEvent(new StorageEvent("storage", {
+        key: "theme",
+        newValue: "dark"
+      }));
+    });
+    
+    expect(result.current.theme).toBe("dark");
+  });
 });
