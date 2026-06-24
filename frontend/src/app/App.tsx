@@ -4,8 +4,8 @@ import { AppRouter } from "./router";
 import ScrollToTop from "../components/ScrollToTop";
 import { queryClient } from "../lib/queryClient";
 import { CommandPalette } from "../components/CommandPalette";
-import { KeyboardShortcutsModal } from "../components/KeyboardShortcutsModal";
 import { ErrorBoundary } from "../components/ui/ErrorBoundary";
+import { CookieConsentBanner } from "../components/ui/CookieConsentBanner";
 
 export function App() {
   return (
@@ -15,7 +15,7 @@ export function App() {
           <AppRouter />
           <ScrollToTop />
           <CommandPalette />
-          <KeyboardShortcutsModal />
+          <CookieConsentBanner />
         </BrowserRouter>
       </QueryClientProvider>
     </ErrorBoundary>

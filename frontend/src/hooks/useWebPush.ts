@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { api } from "@/services/api";
+import { fetchApi } from "../lib/api";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -68,10 +68,13 @@ export function useWebPush() {
       const subJson = subscription.toJSON();
 
       // Send to backend
-      await api.post("/notifications/push/subscribe/", {
-        endpoint: subJson.endpoint,
-        p256dh: subJson.keys?.p256dh,
-        auth: subJson.keys?.auth,
+      await fetchApi("/notifications/push/subscribe/", {
+        method: "POST",
+        body: JSON.stringify({
+          endpoint: subJson.endpoint,
+          p256dh: subJson.keys?.p256dh,
+          auth: subJson.keys?.auth,
+        }),
       });
 
       setIsSubscribed(true);
@@ -94,8 +97,11 @@ export function useWebPush() {
 
         // Notify backend
         const subJson = subscription.toJSON();
-        await api.post("/notifications/push/unsubscribe/", {
-          endpoint: subJson.endpoint,
+        await fetchApi("/notifications/push/unsubscribe/", {
+          method: "POST",
+          body: JSON.stringify({
+            endpoint: subJson.endpoint,
+          }),
         });
       }
 
