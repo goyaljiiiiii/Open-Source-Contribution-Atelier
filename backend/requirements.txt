@@ -21,3 +21,4 @@ celery==5.4.0
 Pillow>=12.2.0
 reportlab>=4.0.0
 Faker>=25.0.0
+graphene-django==3.2.3

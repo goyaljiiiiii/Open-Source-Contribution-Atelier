@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "apps.organizations",
     "apps.webhooks",
     "rest_framework_simplejwt.token_blacklist",
+    "graphene_django",
 ]
 
 MIDDLEWARE = [
@@ -332,5 +333,9 @@ LOGGING = {
         "handlers": ["console"],
         "level": "INFO",
     },
+}
+
+GRAPHENE = {
+    "SCHEMA": "config.schema.schema"
 }
 
