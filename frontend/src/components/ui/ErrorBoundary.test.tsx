@@ -34,7 +34,7 @@ describe("ErrorBoundary", () => {
   });
 
   afterEach(() => {
-    window.location = originalLocation;
+    window.location = originalLocation as any;
   });
 
   it("renders children normally when there is no error", () => {

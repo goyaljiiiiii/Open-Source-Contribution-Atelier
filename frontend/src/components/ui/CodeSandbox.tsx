@@ -9,7 +9,7 @@ export function CodeSandbox() {
   const [output, setOutput] = useState<string[]>([]);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const isRemoteUpdate = useRef(false);
-  const { token } = useAuth();
+  const token = localStorage.getItem("accessToken");
 
   const wsUrl = import.meta.env.VITE_API_URL
     ? import.meta.env.VITE_API_URL.replace("http", "ws") + "ws/sandbox/"

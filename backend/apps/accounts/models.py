@@ -132,6 +132,9 @@ class UserProfile(models.Model):
     cover_image = models.ImageField(upload_to="covers/", null=True, blank=True)
     last_password_change = models.DateTimeField(auto_now_add=True)
     timezone = models.CharField(max_length=64, default='UTC')
+    twitter_url = models.URLField(max_length=500, blank=True, default="")
+    linkedin_url = models.URLField(max_length=500, blank=True, default="")
+    github_url = models.URLField(max_length=500, blank=True, default="")
 
     organization = models.ForeignKey(
         "organizations.Organization",
