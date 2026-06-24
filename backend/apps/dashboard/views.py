@@ -68,7 +68,7 @@ class LeaderboardView(ListAPIView):
         issues_xp = (
             Issue.objects.filter(**issue_filter)
             .values("assigned_to")
-            .annotate(total=Sum("points"))
+            .annotate(total=Sum("points") + Sum("bonus_points"))
             .values("total")
         )
 
@@ -252,12 +252,10 @@ class ContributorDashboardView(APIView):
                 )["total"]
                 or 0
             )
-            issues_xp = (
-                Issue.objects.filter(
-                    assigned_to=user, status=Issue.Status.SOLVED
-                ).aggregate(total=Sum("points"))["total"]
-                or 0
-            )
+            issues_agg = Issue.objects.filter(
+                assigned_to=user, status=Issue.Status.SOLVED
+            ).aggregate(p_sum=Sum("points"), b_sum=Sum("bonus_points"))
+            issues_xp = (issues_agg["p_sum"] or 0) + (issues_agg["b_sum"] or 0)
             total_xp = lesson_xp + issues_xp
 
             # Calculate streak based on unique days of activity (attempts or completed lessons)
@@ -285,12 +283,10 @@ class ContributorDashboardView(APIView):
                     )["score__sum"]
                     or 0
                 )
-                u_ixp = (
-                    Issue.objects.filter(
-                        assigned_to=u, status=Issue.Status.SOLVED
-                    ).aggregate(Sum("points"))["points__sum"]
-                    or 0
-                )
+                u_ixp_agg = Issue.objects.filter(
+                    assigned_to=u, status=Issue.Status.SOLVED
+                ).aggregate(p_sum=Sum("points"), b_sum=Sum("bonus_points"))
+                u_ixp = (u_ixp_agg["p_sum"] or 0) + (u_ixp_agg["b_sum"] or 0)
                 user_ranks.append((u.id, u_lxp + u_ixp))
 
             user_ranks.sort(key=lambda x: x[1], reverse=True)

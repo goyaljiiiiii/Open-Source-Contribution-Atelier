@@ -14,6 +14,7 @@ class Issue(models.Model):
         max_length=20, choices=Status.choices, default=Status.OPEN, db_index=True
     )
     points = models.PositiveIntegerField(default=50)
+    bonus_points = models.PositiveIntegerField(default=0, help_text="Bonus points awarded during a multiplier event.")
     assigned_to = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,

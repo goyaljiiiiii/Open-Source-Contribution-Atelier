@@ -5,7 +5,7 @@ from channels.layers import get_channel_layer
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.db.models import Sum
-from django.db.models.signals import post_delete, post_save
+from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 
 
@@ -16,6 +16,22 @@ def clear_dashboard_caches(user_id=None):
     # If a specific user is affected, clear their specific contributor stats cache
     if user_id:
         cache.delete(f"dashboard_contributor_stats_{user_id}")
+
+
+@receiver(pre_save, sender=Issue)
+def handle_issue_pre_save(sender, instance, **kwargs):
+    if instance.id:
+        try:
+            old_instance = Issue.objects.get(id=instance.id)
+            if old_instance.status != Issue.Status.SOLVED and instance.status == Issue.Status.SOLVED:
+                from apps.progress.models import XPMultiplierEvent
+                multiplier = XPMultiplierEvent.get_active_multiplier()
+                if multiplier > 1.0:
+                    instance.bonus_points = int(instance.points * (multiplier - 1.0))
+            elif old_instance.status == Issue.Status.SOLVED and instance.status != Issue.Status.SOLVED:
+                instance.bonus_points = 0
+        except Issue.DoesNotExist:
+            pass
 
 
 @receiver([post_save, post_delete], sender=Issue)
@@ -53,12 +69,10 @@ def _broadcast_xp_update(user):
         )["total"]
         or 0
     )
-    issues_xp = (
-        Issue.objects.filter(assigned_to=user, status=Issue.Status.SOLVED).aggregate(
-            total=Sum("points")
-        )["total"]
-        or 0
+    issues_agg = Issue.objects.filter(assigned_to=user, status=Issue.Status.SOLVED).aggregate(
+        p_sum=Sum("points"), b_sum=Sum("bonus_points")
     )
+    issues_xp = (issues_agg["p_sum"] or 0) + (issues_agg["b_sum"] or 0)
     total_xp = lesson_xp + issues_xp
 
     channel_layer = get_channel_layer()
