@@ -5,7 +5,7 @@ from .views import (BadgeListView, BulkProgressUpdateView,
                     CommunityStatsView, ContributorTimelineView,
                     HelpRequestListCreateView, MentorHelpRequestListView,
                     MyCertificateView, MyProgressView, QuizAttemptView,
-                    RecommendationsView)
+                    RecommendationsView, LessonNoteView)
 
 urlpatterns = [
     path("badges/", BadgeListView.as_view(), name="badges"),
@@ -32,5 +32,10 @@ urlpatterns = [
         "verify/<str:hash>/",
         CertificateVerificationView.as_view(),
         name="verify-certificate",
+    ),
+    path(
+        "notes/<slug:lesson_slug>/",
+        LessonNoteView.as_view(),
+        name="lesson-note",
     ),
 ]

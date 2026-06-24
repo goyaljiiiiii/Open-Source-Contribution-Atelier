@@ -14,12 +14,12 @@ from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
 from .models import (Badge, Certificate, ExerciseAttempt, HelpRequest,
-                     LessonProgress, QuizAttempt)
+                     LessonProgress, LessonNote, QuizAttempt)
 from .serializers import (BadgeSerializer, BulkSyncSerializer,
                           CertificateVerificationSerializer,
                           HelpRequestSerializer,
                           LessonProgressCreateSerializer,
-                          LessonProgressSerializer, QuizAttemptSerializer)
+                          LessonProgressSerializer, LessonNoteSerializer, QuizAttemptSerializer)
 from .throttles import HelpRequestRateThrottle
 
 
@@ -671,4 +671,47 @@ class RecommendationsView(APIView):
         )
 
         serializer = LessonSerializer(recommended_lessons, many=True)
+        return Response(serializer.data)
+
+
+@extend_schema_view(
+    get=extend_schema(responses=LessonNoteSerializer),
+    post=extend_schema(responses=LessonNoteSerializer),
+)
+class LessonNoteView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, lesson_slug):
+        try:
+            lesson = Lesson.objects.get(
+                slug=lesson_slug, organization=request.user.organization
+            )
+        except Lesson.DoesNotExist:
+            return Response(
+                {"error": "Lesson not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        note, created = LessonNote.objects.get_or_create(
+            user=request.user, lesson=lesson
+        )
+        serializer = LessonNoteSerializer(note)
+        return Response(serializer.data)
+
+    def post(self, request, lesson_slug):
+        try:
+            lesson = Lesson.objects.get(
+                slug=lesson_slug, organization=request.user.organization
+            )
+        except Lesson.DoesNotExist:
+            return Response(
+                {"error": "Lesson not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        note, created = LessonNote.objects.get_or_create(
+            user=request.user, lesson=lesson
+        )
+        note.content = request.data.get("content", "")
+        note.save()
+
+        serializer = LessonNoteSerializer(note)
         return Response(serializer.data)

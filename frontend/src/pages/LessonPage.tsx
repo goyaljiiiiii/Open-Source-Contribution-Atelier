@@ -23,6 +23,7 @@ const MarkdownRenderer = React.lazy(() =>
   }))
 );
 import { GitGraph } from "../components/ui/GitGraph";
+import { NotePanel } from "../components/ui/NotePanel";
 import { TextToSpeechControls } from "../components/ui/TextToSpeechControls";
 
 import {
@@ -95,6 +96,9 @@ export function LessonPage() {
   const [helpMessage, setHelpMessage] = useState("");
   const [helpSuccessMessage, setHelpSuccessMessage] = useState("");
   const MAX_HELP_CHARS = 500;
+
+  // Note Panel
+  const [isNotePanelOpen, setIsNotePanelOpen] = useState(false);
 
   // Reading progress scroll ref
   const mainContentRef = useRef<HTMLDivElement>(null);
@@ -761,7 +765,13 @@ export function LessonPage() {
         </div>
 
         {/* Mentor Help Trigger Row */}
-        <div className="border-t-4 border-black p-4 bg-white dark:bg-[#151411] dark:border-[#2e2924] flex justify-end flex-shrink-0">
+        <div className="border-t-4 border-black p-4 bg-white dark:bg-[#151411] dark:border-[#2e2924] flex justify-end gap-4 flex-shrink-0">
+          <button
+            onClick={() => setIsNotePanelOpen(!isNotePanelOpen)}
+            className="px-4 py-2 bg-white text-text dark:bg-[#151411] dark:text-[#f0ebe2] font-black text-xs rounded-lg border-4 border-black shadow-card-sm hover:-translate-y-0.5 cursor-pointer"
+          >
+            {isNotePanelOpen ? "Close Notes 📝" : "Notes 📝"}
+          </button>
           <button
             onClick={() => {
               setIsHelpPanelOpen(true);
@@ -773,6 +783,11 @@ export function LessonPage() {
           </button>
         </div>
       </div>
+
+      {/* Note Panel */}
+      {isNotePanelOpen && lesson && (
+        <NotePanel lessonSlug={lesson.slug} onClose={() => setIsNotePanelOpen(false)} />
+      )}
 
       {/* Help support request Panel */}
       {isHelpPanelOpen && (
