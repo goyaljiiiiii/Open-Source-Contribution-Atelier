@@ -61,22 +61,6 @@ class LessonProgress(models.Model):
             ),
         ]
 
-    def __str__(self):
-        return f"{self.user.username} - {self.lesson.slug} - {'Done' if self.completed else 'In Progress'}"
-
-
-class LessonBookmark(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="bookmarks")
-    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="bookmarks")
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ("user", "lesson")
-        ordering = ["-created_at"]
-
-    def __str__(self):
-        return f"{self.user.username} bookmarked {self.lesson.slug}"
-
 
 class ExerciseAttempt(models.Model):
     objects = models.Manager()
@@ -190,18 +174,40 @@ class Certificate(models.Model):
         return f"Certificate for {self.user.username} - {self.verification_hash}"
 
 
-class LessonNote(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="lesson_notes")
-    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="notes")
-    content = models.TextField(blank=True, default="")
+class CodeSubmission(models.Model):
+    objects = models.Manager()
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        REVIEWED = "reviewed", "Reviewed"
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="code_submissions")
+    title = models.CharField(max_length=255)
+    code_snippet = models.TextField()
+    description = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ("user", "lesson")
-        indexes = [
-            models.Index(fields=["user", "lesson"]),
-        ]
+        ordering = ["-created_at"]
 
     def __str__(self):
-        return f"Note by {self.user.username} for {self.lesson.slug}"
+        return f"{self.title} by {self.user.username}"
+
+
+class PeerReview(models.Model):
+    objects = models.Manager()
+    submission = models.ForeignKey(CodeSubmission, on_delete=models.CASCADE, related_name="reviews")
+    reviewer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="given_reviews")
+    feedback = models.TextField()
+    rating = models.PositiveIntegerField(default=5)
+    points_earned = models.PositiveIntegerField(default=10)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("submission", "reviewer")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Review by {self.reviewer.username} for {self.submission.title}"

@@ -5,8 +5,7 @@ from .views import (BadgeListView, BulkProgressUpdateView,
                     CommunityStatsView, ContributorTimelineView,
                     HelpRequestListCreateView, MentorHelpRequestListView,
                     MyCertificateView, MyProgressView, QuizAttemptView,
-                    RecommendationsView, LessonNoteView, LessonBookmarkView,
-                    ActivityHeatmapView)
+                    RecommendationsView, CodeSubmissionView, PeerReviewView)
 
 urlpatterns = [
     path("badges/", BadgeListView.as_view(), name="badges"),
@@ -34,12 +33,6 @@ urlpatterns = [
         CertificateVerificationView.as_view(),
         name="verify-certificate",
     ),
-    path(
-        "notes/<slug:lesson_slug>/",
-        LessonNoteView.as_view(),
-        name="lesson-note",
-    ),
-    path("bookmarks/", LessonBookmarkView.as_view(), name="lesson-bookmarks-list"),
-    path("bookmarks/<slug:lesson_slug>/", LessonBookmarkView.as_view(), name="lesson-bookmarks-detail"),
-    path("heatmap/", ActivityHeatmapView.as_view(), name="activity-heatmap"),
+    path("code-submissions/", CodeSubmissionView.as_view(), name="code-submissions"),
+    path("code-submissions/<int:submission_id>/reviews/", PeerReviewView.as_view(), name="peer-reviews"),
 ]

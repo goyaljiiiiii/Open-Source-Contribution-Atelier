@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from .models import (Badge, Certificate, HelpRequest, LessonProgress,
-                     LessonNote, QuizAttempt, UserBadge, LessonBookmark)
+                     QuizAttempt, UserBadge)
 
 
 class BadgeSerializer(serializers.ModelSerializer):
@@ -40,30 +40,6 @@ class LessonProgressSerializer(serializers.ModelSerializer):
             "score",
             "attempt_count",
             "updated_at",
-        ]
-
-
-class LessonBookmarkSerializer(serializers.ModelSerializer):
-    lesson_slug = serializers.ReadOnlyField(source="lesson.slug")
-    lesson_title = serializers.ReadOnlyField(source="lesson.title")
-    lesson_difficulty = serializers.ReadOnlyField(source="lesson.difficulty")
-    lesson_category = serializers.ReadOnlyField(source="lesson.category")
-    lesson_estimated_minutes = serializers.ReadOnlyField(source="lesson.estimated_minutes")
-    lesson_summary = serializers.ReadOnlyField(source="lesson.summary")
-
-    class Meta:
-        model = LessonBookmark
-        fields = [
-            "id",
-            "user",
-            "lesson",
-            "lesson_slug",
-            "lesson_title",
-            "lesson_difficulty",
-            "lesson_category",
-            "lesson_estimated_minutes",
-            "lesson_summary",
-            "created_at",
         ]
 
 
@@ -137,8 +113,27 @@ class QuizAttemptSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "user", "created_at"]
 
 
-class LessonNoteSerializer(serializers.ModelSerializer):
+from .models import CodeSubmission, PeerReview
+
+class CodeSubmissionSerializer(serializers.ModelSerializer):
+    username = serializers.ReadOnlyField(source="user.username")
+
     class Meta:
-        model = LessonNote
-        fields = ["id", "user", "lesson", "content", "created_at", "updated_at"]
-        read_only_fields = ["id", "user", "lesson", "created_at", "updated_at"]
+        model = CodeSubmission
+        fields = [
+            "id", "user", "username", "title", "code_snippet", 
+            "description", "status", "created_at"
+        ]
+        read_only_fields = ["id", "user", "username", "status", "created_at"]
+
+
+class PeerReviewSerializer(serializers.ModelSerializer):
+    reviewer_username = serializers.ReadOnlyField(source="reviewer.username")
+
+    class Meta:
+        model = PeerReview
+        fields = [
+            "id", "submission", "reviewer", "reviewer_username", 
+            "feedback", "rating", "points_earned", "created_at"
+        ]
+        read_only_fields = ["id", "submission", "reviewer", "reviewer_username", "points_earned", "created_at"]

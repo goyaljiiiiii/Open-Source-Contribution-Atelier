@@ -3,9 +3,6 @@ from apps.content.serializers import LessonSerializer
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import Count, Min, Sum
-from django.db.models.functions import TruncDate
-from django.utils import timezone
-from datetime import timedelta
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import (OpenApiResponse, extend_schema,
                                    extend_schema_view)
@@ -17,13 +14,12 @@ from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
 from .models import (Badge, Certificate, ExerciseAttempt, HelpRequest,
-                     LessonProgress, LessonNote, QuizAttempt, LessonBookmark)
+                     LessonProgress, QuizAttempt)
 from .serializers import (BadgeSerializer, BulkSyncSerializer,
                           CertificateVerificationSerializer,
                           HelpRequestSerializer,
                           LessonProgressCreateSerializer,
-                          LessonProgressSerializer, LessonNoteSerializer, QuizAttemptSerializer,
-                          LessonBookmarkSerializer)
+                          LessonProgressSerializer, QuizAttemptSerializer)
 from .throttles import HelpRequestRateThrottle
 
 
@@ -32,32 +28,6 @@ class BadgeListView(ListAPIView):
     queryset = Badge.objects.all()
     serializer_class = BadgeSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-
-class LessonBookmarkView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request):
-        bookmarks = LessonBookmark.objects.filter(user=request.user).select_related("lesson")
-        serializer = LessonBookmarkSerializer(bookmarks, many=True)
-        return Response(serializer.data)
-
-    def post(self, request, lesson_slug):
-        lesson = get_object_or_404(Lesson, slug=lesson_slug)
-        bookmark, created = LessonBookmark.objects.get_or_create(
-            user=request.user,
-            lesson=lesson
-        )
-        if created:
-            return Response({"status": "bookmarked"}, status=status.HTTP_201_CREATED)
-        return Response({"status": "already bookmarked"}, status=status.HTTP_200_OK)
-
-    def delete(self, request, lesson_slug):
-        lesson = get_object_or_404(Lesson, slug=lesson_slug)
-        deleted, _ = LessonBookmark.objects.filter(user=request.user, lesson=lesson).delete()
-        if deleted:
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response({"error": "Bookmark not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
 @extend_schema_view(
@@ -703,107 +673,42 @@ class RecommendationsView(APIView):
         serializer = LessonSerializer(recommended_lessons, many=True)
         return Response(serializer.data)
 
+from .models import CodeSubmission, PeerReview
+from .serializers import CodeSubmissionSerializer, PeerReviewSerializer
 
-@extend_schema_view(
-    get=extend_schema(responses=LessonNoteSerializer),
-    post=extend_schema(responses=LessonNoteSerializer),
-)
-class LessonNoteView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request, lesson_slug):
-        try:
-            lesson = Lesson.objects.get(
-                slug=lesson_slug, organization=request.user.organization
-            )
-        except Lesson.DoesNotExist:
-            return Response(
-                {"error": "Lesson not found"}, status=status.HTTP_404_NOT_FOUND
-            )
-
-        note, created = LessonNote.objects.get_or_create(
-            user=request.user, lesson=lesson
-        )
-        serializer = LessonNoteSerializer(note)
-        return Response(serializer.data)
-
-    def post(self, request, lesson_slug):
-        try:
-            lesson = Lesson.objects.get(
-                slug=lesson_slug, organization=request.user.organization
-            )
-        except Lesson.DoesNotExist:
-            return Response(
-                {"error": "Lesson not found"}, status=status.HTTP_404_NOT_FOUND
-            )
-
-        note, created = LessonNote.objects.get_or_create(
-            user=request.user, lesson=lesson
-        )
-        note.content = request.data.get("content", "")
-        note.save()
-
-        serializer = LessonNoteSerializer(note)
-        return Response(serializer.data)
-
-class ActivityHeatmapView(APIView):
+class CodeSubmissionView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        end_date = timezone.now().date()
-        start_date = end_date - timedelta(days=365)
+        submissions = CodeSubmission.objects.filter(status=CodeSubmission.Status.PENDING).exclude(user=request.user)
+        serializer = CodeSubmissionSerializer(submissions, many=True)
+        return Response(serializer.data)
 
-        # Aggregate lesson completions
-        lesson_counts = (
-            LessonProgress.objects.filter(
-                user=request.user, 
-                completed=True, 
-                updated_at__date__gte=start_date
-            )
-            .annotate(date=TruncDate('updated_at'))
-            .values('date')
-            .annotate(count=Count('id'))
-        )
+    def post(self, request):
+        serializer = CodeSubmissionSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        # Aggregate exercise attempts
-        exercise_counts = (
-            ExerciseAttempt.objects.filter(
-                user=request.user, 
-                created_at__date__gte=start_date
-            )
-            .annotate(date=TruncDate('created_at'))
-            .values('date')
-            .annotate(count=Count('id'))
-        )
 
-        # Aggregate quiz attempts
-        quiz_counts = (
-            QuizAttempt.objects.filter(
-                user=request.user, 
-                created_at__date__gte=start_date
-            )
-            .annotate(date=TruncDate('created_at'))
-            .values('date')
-            .annotate(count=Count('id'))
-        )
+class PeerReviewView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
-        # Combine
-        activity_map = {}
+    def post(self, request, submission_id):
+        submission = get_object_or_404(CodeSubmission, id=submission_id)
         
-        for qset in [lesson_counts, exercise_counts, quiz_counts]:
-            for item in qset:
-                if not item['date']:
-                    continue
-                date_str = item['date'].strftime('%Y-%m-%d')
-                activity_map[date_str] = activity_map.get(date_str, 0) + item['count']
-
-        # Format output
-        heatmap_data = [
-            {"date": date_str, "count": count}
-            for date_str, count in activity_map.items()
-        ]
+        if submission.user == request.user:
+            return Response({"error": "Cannot review your own submission"}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Sort by date
-        heatmap_data.sort(key=lambda x: x["date"])
-
-        return Response(heatmap_data)
+        if PeerReview.objects.filter(submission=submission, reviewer=request.user).exists():
+            return Response({"error": "You have already reviewed this submission"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        serializer = PeerReviewSerializer(data=request.data)
+        if serializer.is_valid():
+            with transaction.atomic():
+                review = serializer.save(submission=submission, reviewer=request.user, points_earned=10)
+                submission.status = CodeSubmission.Status.REVIEWED
+                submission.save(update_fields=["status"])
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

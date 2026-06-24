@@ -17,6 +17,7 @@ import { SandboxPage } from "../pages/SandboxPage";
 import { ProfileSettingsPage } from "../pages/ProfileSettingsPage";
 import { LeaderboardPage } from "../pages/LeaderboardPage";
 import { VerifyCertificatePage } from "../pages/VerifyCertificatePage";
+import { PeerReviewPage } from "../pages/PeerReviewPage";
 import { useAuth } from "../features/auth/AuthContext";
 import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
 
@@ -147,6 +148,14 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <SandboxPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/peer-review"
+          element={
+            <ProtectedRoute>
+              <PeerReviewPage />
             </ProtectedRoute>
           }
         />
