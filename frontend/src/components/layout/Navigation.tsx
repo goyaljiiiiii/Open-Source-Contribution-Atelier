@@ -14,6 +14,7 @@ import {
   Sun,
   Moon,
   Settings,
+  Eye,
 } from "lucide-react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useTheme } from "../../hooks/useTheme";
@@ -33,7 +34,7 @@ const navItems = [
 
 export function Navigation() {
 
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, setTheme } = useTheme();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
@@ -301,6 +302,18 @@ export function Navigation() {
               }
             >
               {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
+            </button>
+            <button
+              className={`rounded-lg p-2 border-2 border-black dark:border-[#2e2924] shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all ${
+                theme === "high-contrast"
+                  ? "bg-primary text-white"
+                  : "bg-surface-low text-muted hover:text-text dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2]"
+              }`}
+              onClick={() => setTheme(theme === "high-contrast" ? "light" : "high-contrast")}
+              aria-label="Toggle High Contrast Mode"
+              title="High Contrast Mode"
+            >
+              <Eye size={16} />
             </button>
             <button className="relative rounded-lg bg-surface-low p-2 text-muted hover:text-text dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2]">
               <Bell size={16} />
