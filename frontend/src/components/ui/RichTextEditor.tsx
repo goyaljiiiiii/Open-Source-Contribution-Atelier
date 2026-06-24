@@ -45,6 +45,7 @@ export function RichTextEditor({
         "|",
         "guide",
       ],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
   }, [placeholder]);
 

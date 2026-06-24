@@ -1,14 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act, cleanup } from "@testing-library/react";
 import { ScrollToTop } from "../components/ui/ScrollToTop";
 
 describe("ScrollToTop Component", () => {
   beforeEach(() => {
-    // Mock window.scrollTo
+    vi.spyOn(window, "scrollY", "get").mockReturnValue(0);
     vi.stubGlobal("scrollTo", vi.fn());
   });
 
   afterEach(() => {
+    cleanup();
     vi.unstubAllGlobals();
     vi.clearAllMocks();
   });
@@ -21,6 +22,10 @@ describe("ScrollToTop Component", () => {
 
   it("appears when scrolled past the threshold", () => {
     render(<ScrollToTop />);
+    act(() => {
+      Object.defineProperty(window, "scrollY", { value: 350, configurable: true, writable: true });
+      window.dispatchEvent(new Event("scroll"));
+    });
 
     // Simulate scrolling down
     Object.defineProperty(window, "scrollY", { value: 350, writable: true });
@@ -34,18 +39,26 @@ describe("ScrollToTop Component", () => {
     render(<ScrollToTop />);
 
     // Scroll down
-    Object.defineProperty(window, "scrollY", { value: 350, writable: true });
-    window.dispatchEvent(new Event("scroll"));
+    act(() => {
+      Object.defineProperty(window, "scrollY", { value: 350, configurable: true, writable: true });
+      window.dispatchEvent(new Event("scroll"));
+    });
     expect(screen.getByTestId("scroll-to-top")).toBeInTheDocument();
 
     // Scroll up
-    Object.defineProperty(window, "scrollY", { value: 100, writable: true });
-    window.dispatchEvent(new Event("scroll"));
+    act(() => {
+      Object.defineProperty(window, "scrollY", { value: 100, configurable: true, writable: true });
+      window.dispatchEvent(new Event("scroll"));
+    });
     expect(screen.queryByTestId("scroll-to-top")).not.toBeInTheDocument();
   });
 
   it("scrolls to top smoothly when clicked", () => {
     render(<ScrollToTop />);
+    act(() => {
+      Object.defineProperty(window, "scrollY", { value: 400, configurable: true, writable: true });
+      window.dispatchEvent(new Event("scroll"));
+    });
 
     Object.defineProperty(window, "scrollY", { value: 400, writable: true });
     window.dispatchEvent(new Event("scroll"));
