@@ -1,9 +1,8 @@
-import React, { useState } from "react";
+import React from "react";
 import { ProfileSettingsForm } from "../features/auth/ProfileSettingsForm";
-import { DeleteAccountModal } from "../components/ui/DeleteAccountModal";
+import { ActivityHeatmap } from "../components/ui/ActivityHeatmap";
 
 export function ProfileSettingsPage() {
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       {/* HEADER SECTION */}
@@ -25,34 +24,23 @@ export function ProfileSettingsPage() {
           </h2>
           <ProfileSettingsForm />
         </div>
-
+        
         {/* Additional information card or future settings */}
         <div className="rounded-2xl border-4 border-black bg-[#FFF0E5] p-8 shadow-card flex flex-col justify-center items-center text-center">
           <div className="text-6xl mb-6">🔒</div>
           <h2 className="text-2xl font-bold uppercase tracking-tight text-black mb-4">
             Security & Privacy
           </h2>
-          <p className="text-lg font-medium text-black/80 max-w-md mb-8">
-            Your data is stored securely. Passwords are cryptographically hashed
-            and never stored in plain text.
+          <p className="text-lg font-medium text-black/80 max-w-md">
+            Your data is stored securely. Passwords are cryptographically hashed and never stored in plain text.
           </p>
-          
-          <div className="w-full pt-6 border-t-4 border-black/10 flex flex-col items-center">
-            <h3 className="font-bold text-red-600 uppercase mb-4">Danger Zone</h3>
-            <button
-              onClick={() => setIsDeleteModalOpen(true)}
-              className="px-6 py-3 bg-red-50 text-red-600 border-2 border-red-200 rounded-xl font-bold hover:bg-red-100 hover:border-red-300 transition-colors"
-            >
-              Delete Account Permanently
-            </button>
-          </div>
         </div>
       </div>
-      
-      <DeleteAccountModal 
-        isOpen={isDeleteModalOpen} 
-        onClose={() => setIsDeleteModalOpen(false)} 
-      />
+
+      {/* ACTIVITY HEATMAP SECTION */}
+      <div className="mt-8 rounded-2xl border-4 border-black bg-white dark:bg-[#151411] p-8 shadow-card overflow-hidden">
+        <ActivityHeatmap />
+      </div>
     </div>
   );
 }

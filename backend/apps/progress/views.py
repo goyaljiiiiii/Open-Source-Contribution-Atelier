@@ -3,6 +3,9 @@ from apps.content.serializers import LessonSerializer
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import Count, Min, Sum
+from django.db.models.functions import TruncDate
+from django.utils import timezone
+from datetime import timedelta
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import (OpenApiResponse, extend_schema,
                                    extend_schema_view)
@@ -742,3 +745,65 @@ class LessonNoteView(APIView):
 
         serializer = LessonNoteSerializer(note)
         return Response(serializer.data)
+
+class ActivityHeatmapView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        end_date = timezone.now().date()
+        start_date = end_date - timedelta(days=365)
+
+        # Aggregate lesson completions
+        lesson_counts = (
+            LessonProgress.objects.filter(
+                user=request.user, 
+                completed=True, 
+                updated_at__date__gte=start_date
+            )
+            .annotate(date=TruncDate('updated_at'))
+            .values('date')
+            .annotate(count=Count('id'))
+        )
+
+        # Aggregate exercise attempts
+        exercise_counts = (
+            ExerciseAttempt.objects.filter(
+                user=request.user, 
+                created_at__date__gte=start_date
+            )
+            .annotate(date=TruncDate('created_at'))
+            .values('date')
+            .annotate(count=Count('id'))
+        )
+
+        # Aggregate quiz attempts
+        quiz_counts = (
+            QuizAttempt.objects.filter(
+                user=request.user, 
+                created_at__date__gte=start_date
+            )
+            .annotate(date=TruncDate('created_at'))
+            .values('date')
+            .annotate(count=Count('id'))
+        )
+
+        # Combine
+        activity_map = {}
+        
+        for qset in [lesson_counts, exercise_counts, quiz_counts]:
+            for item in qset:
+                if not item['date']:
+                    continue
+                date_str = item['date'].strftime('%Y-%m-%d')
+                activity_map[date_str] = activity_map.get(date_str, 0) + item['count']
+
+        # Format output
+        heatmap_data = [
+            {"date": date_str, "count": count}
+            for date_str, count in activity_map.items()
+        ]
+        
+        # Sort by date
+        heatmap_data.sort(key=lambda x: x["date"])
+
+        return Response(heatmap_data)
