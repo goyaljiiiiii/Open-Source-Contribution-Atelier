@@ -20,6 +20,7 @@ export function AvatarUploadDropzone({
 
   useEffect(() => {
     if (currentAvatarUrl && !previewUrl) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPreviewUrl(currentAvatarUrl);
     }
   }, [currentAvatarUrl, previewUrl]);
@@ -81,7 +82,7 @@ export function AvatarUploadDropzone({
 
   return (
     <div className="w-full mb-8">
-      <label className="block text-sm font-medium text-gray-200 mb-2">
+      <label className="block text-sm font-medium text-gray-700 mb-2">
         Profile Picture
       </label>
       <div
@@ -132,10 +133,10 @@ export function AvatarUploadDropzone({
             <div className="w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center mb-4 shadow-inner">
               <UploadCloud size={32} className="text-indigo-400" />
             </div>
-            <p className="text-base font-semibold text-gray-300">
+            <p className="text-base font-semibold text-gray-600">
               Click or drag image to upload
             </p>
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-sm text-gray-600 mt-2">
               Supports JPG, PNG, and WebP (max. 5MB)
             </p>
           </div>

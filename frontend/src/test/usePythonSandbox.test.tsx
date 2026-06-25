@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { usePythonSandbox } from "../hooks/usePythonSandbox";
 
 describe("usePythonSandbox", () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockWorker: any;
 
   beforeEach(() => {
@@ -13,14 +14,14 @@ describe("usePythonSandbox", () => {
       removeEventListener: vi.fn(),
       terminate: vi.fn(),
     };
-    
+
     // Mock the global Worker as a class
     class MockWorker {
       constructor() {
         return mockWorker;
       }
     }
-    
+
     vi.stubGlobal("Worker", MockWorker);
   });
 
@@ -31,15 +32,16 @@ describe("usePythonSandbox", () => {
 
   it("initializes worker on mount", () => {
     const { result } = renderHook(() => usePythonSandbox());
-    
+
     expect(result.current.isReady).toBe(true);
   });
 
   it("handles successful code execution", async () => {
     const { result } = renderHook(() => usePythonSandbox());
-    
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let promise: any;
-    
+
     act(() => {
       promise = result.current.runPythonCode("print('Hello')");
     });
@@ -47,13 +49,14 @@ describe("usePythonSandbox", () => {
     expect(result.current.isExecuting).toBe(true);
     expect(mockWorker.postMessage).toHaveBeenCalledWith(
       expect.objectContaining({
-        pythonCode: "print('Hello')"
-      })
+        pythonCode: "print('Hello')",
+      }),
     );
 
     // Simulate worker responding
     const messageHandler = mockWorker.addEventListener.mock.calls.find(
-      (call: any[]) => call[0] === "message"
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (call: any[]) => call[0] === "message",
     )[1];
 
     // Find the ID that was sent to the worker
@@ -64,13 +67,13 @@ describe("usePythonSandbox", () => {
         data: {
           id: sentId,
           results: "Hello\n",
-          error: null
-        }
+          error: null,
+        },
       } as MessageEvent);
     });
 
     const executionResult = await promise;
-    
+
     expect(executionResult.output).toBe("Hello\n");
     expect(executionResult.error).toBeNull();
     expect(result.current.isExecuting).toBe(false);
@@ -79,9 +82,10 @@ describe("usePythonSandbox", () => {
   it("handles worker timeout", async () => {
     vi.useFakeTimers();
     const { result } = renderHook(() => usePythonSandbox());
-    
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let promise: any;
-    
+
     act(() => {
       promise = result.current.runPythonCode("while True: pass", 1000);
     });
@@ -94,7 +98,7 @@ describe("usePythonSandbox", () => {
     });
 
     const executionResult = await promise;
-    
+
     expect(executionResult.error).toMatch(/Timeout/i);
     expect(mockWorker.terminate).toHaveBeenCalled();
     expect(result.current.isExecuting).toBe(false);

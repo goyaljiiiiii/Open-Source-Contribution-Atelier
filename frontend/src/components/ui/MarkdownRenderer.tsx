@@ -173,7 +173,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
       }
 
       // Map alert styling
-      let bgClass = "bg-blue-50 border-blue-500 text-blue-800";
+      let bgClass: string;
       let icon = "ℹ️";
       if (alertType === "TIP") {
         bgClass =

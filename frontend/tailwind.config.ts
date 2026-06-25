@@ -6,6 +6,9 @@ export default {
   theme: {
     extend: {
       colors: {
+        blue: {
+          500: "#2D6FE0",
+        },
         surface: "#FFF9F0",
         "surface-lowest": "#FFFFFF",
         "surface-low": "#FFEBC2",

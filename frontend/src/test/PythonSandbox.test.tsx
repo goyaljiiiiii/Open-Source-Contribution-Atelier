@@ -1,5 +1,11 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  cleanup,
+} from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { PythonSandbox } from "../components/ui/PythonSandbox";
 import { usePythonSandbox } from "../hooks/usePythonSandbox";
@@ -22,6 +28,7 @@ describe("PythonSandbox UI", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (usePythonSandbox as any).mockReturnValue({
       isReady: true,
       isExecuting: false,
@@ -34,43 +41,59 @@ describe("PythonSandbox UI", () => {
   });
 
   it("renders correctly with starter code", () => {
-    render(<PythonSandbox exercise={defaultExercise} onSuccess={mockOnSuccess} />);
+    render(
+      <PythonSandbox exercise={defaultExercise} onSuccess={mockOnSuccess} />,
+    );
     expect(screen.getByText("Print hello")).toBeInTheDocument();
     expect(screen.getByText("Run")).toBeInTheDocument();
   });
 
   it("displays execution output", async () => {
     mockRunPythonCode.mockResolvedValueOnce({ output: "hello", error: null });
-    
-    render(<PythonSandbox exercise={defaultExercise} onSuccess={mockOnSuccess} />);
-    
+
+    render(
+      <PythonSandbox exercise={defaultExercise} onSuccess={mockOnSuccess} />,
+    );
+
     fireEvent.click(screen.getByText("Run"));
-    
+
     await waitFor(() => {
       expect(screen.getByText("hello")).toBeInTheDocument();
     });
   });
 
   it("displays syntax errors properly", async () => {
-    mockRunPythonCode.mockResolvedValueOnce({ output: "", error: "SyntaxError: invalid syntax" });
-    
-    render(<PythonSandbox exercise={defaultExercise} onSuccess={mockOnSuccess} />);
-    
+    mockRunPythonCode.mockResolvedValueOnce({
+      output: "",
+      error: "SyntaxError: invalid syntax",
+    });
+
+    render(
+      <PythonSandbox exercise={defaultExercise} onSuccess={mockOnSuccess} />,
+    );
+
     fireEvent.click(screen.getByText("Run"));
-    
+
     await waitFor(() => {
-      expect(screen.getByText("SyntaxError: invalid syntax")).toBeInTheDocument();
+      expect(
+        screen.getByText("SyntaxError: invalid syntax"),
+      ).toBeInTheDocument();
     });
   });
 
   it("handles testCode assertions and calls onSuccess", async () => {
     // Both user code and test code succeed
-    mockRunPythonCode.mockResolvedValueOnce({ output: "tests passed", error: null });
-    
-    render(<PythonSandbox exercise={defaultExercise} onSuccess={mockOnSuccess} />);
-    
+    mockRunPythonCode.mockResolvedValueOnce({
+      output: "tests passed",
+      error: null,
+    });
+
+    render(
+      <PythonSandbox exercise={defaultExercise} onSuccess={mockOnSuccess} />,
+    );
+
     fireEvent.click(screen.getByText("Run"));
-    
+
     await waitFor(() => {
       expect(mockOnSuccess).toHaveBeenCalled();
     });

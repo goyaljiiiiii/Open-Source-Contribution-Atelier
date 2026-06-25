@@ -3,9 +3,7 @@ import { fetchApi } from "../lib/api";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, "+")
-    .replace(/_/g, "/");
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
 
   const rawData = window.atob(base64);
   const outputArray = new Uint8Array(rawData.length);
@@ -19,17 +17,10 @@ function urlBase64ToUint8Array(base64String: string) {
 export function useWebPush() {
   const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [permission, setPermission] = useState<NotificationPermission>("default");
+  const [permission, setPermission] =
+    useState<NotificationPermission>("default");
 
-  useEffect(() => {
-    if ("serviceWorker" in navigator && "PushManager" in window) {
-      setIsSupported(true);
-      setPermission(Notification.permission);
-      checkSubscription();
-    }
-  }, []);
-
-  const checkSubscription = async () => {
+  const checkSubscription = useCallback(async () => {
     try {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
@@ -37,7 +28,16 @@ export function useWebPush() {
     } catch (err) {
       console.error("Error checking push subscription:", err);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if ("serviceWorker" in navigator && "PushManager" in window) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsSupported(true);
+      setPermission(Notification.permission);
+      checkSubscription();
+    }
+  }, [checkSubscription]);
 
   const subscribe = useCallback(async () => {
     if (!isSupported) return;
@@ -52,7 +52,7 @@ export function useWebPush() {
       }
 
       const registration = await navigator.serviceWorker.ready;
-      
+
       const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
       if (!vapidPublicKey) {
         throw new Error("VITE_VAPID_PUBLIC_KEY is not configured.");
@@ -67,7 +67,6 @@ export function useWebPush() {
 
       const subJson = subscription.toJSON();
 
-      // Send to backend
       await fetchApi("/notifications/push/subscribe/", {
         method: "POST",
         body: JSON.stringify({
@@ -95,7 +94,6 @@ export function useWebPush() {
       if (subscription) {
         await subscription.unsubscribe();
 
-        // Notify backend
         const subJson = subscription.toJSON();
         await fetchApi("/notifications/push/unsubscribe/", {
           method: "POST",

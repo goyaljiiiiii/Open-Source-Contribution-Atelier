@@ -29,6 +29,7 @@ export function useLocalSync() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadPending();
 
     const handleStorageChange = (e: StorageEvent) => {
