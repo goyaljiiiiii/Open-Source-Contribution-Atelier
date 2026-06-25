@@ -37,9 +37,9 @@ interface NavItem {
 type PaletteItem =
   | NavItem
   | {
-      type: "lesson" | "heading" | "content";
-      entry: SearchIndexEntry;
-    };
+    type: "lesson" | "heading" | "content";
+    entry: SearchIndexEntry;
+  };
 
 const navItems: NavItem[] = [
   {
@@ -93,10 +93,23 @@ export const CommandPalette: React.FC = () => {
   const [index, setIndex] = useState<SearchIndexEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<SearchIndexEntry[]>([]);
+  const [results, setResults] = useState<SearchIndexEntry[]>([]);
 
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+
+  const combinedResults: PaletteItem[] = [
+    ...navItems.filter(
+      (item) =>
+        item.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.description.toLowerCase().includes(searchQuery.toLowerCase())
+    ),
+    ...results.map((entry) => ({
+      type: entry.type,
+      entry: entry,
+    })),
+  ];
 
   // Toggle palette with Cmd+K or Ctrl+K globally
   useEffect(() => {
@@ -146,7 +159,6 @@ export const CommandPalette: React.FC = () => {
   // Debounced search (300ms)
   useEffect(() => {
     if (!searchQuery.trim()) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults([]);
       return;
     }
@@ -357,9 +369,8 @@ export const CommandPalette: React.FC = () => {
                     const NavIcon = item.icon;
                     iconElement = (
                       <div
-                        className={`p-2 rounded-lg border-2 border-black flex-shrink-0 ${
-                          isSelected ? "bg-[#FF3B30] text-white" : "bg-[#0f0e0c] text-[#FFCC00]"
-                        }`}
+                        className={`p-2 rounded-lg border-2 border-black flex-shrink-0 ${isSelected ? "bg-[#FF3B30] text-white" : "bg-[#0f0e0c] text-[#FFCC00]"
+                          }`}
                       >
                         <NavIcon size={20} />
                       </div>
@@ -378,11 +389,10 @@ export const CommandPalette: React.FC = () => {
                       key={item.type === "navigation" ? item.to : item.entry.id}
                       onClick={() => handleSelect(item)}
                       onMouseEnter={() => setSelectedIndex(i)}
-                      className={`w-full flex items-center justify-between p-4 rounded-xl text-left transition-all ${
-                        isSelected
+                      className={`w-full flex items-center justify-between p-4 rounded-xl text-left transition-all ${isSelected
                           ? "bg-[#FFCC00] text-black border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -translate-y-1"
                           : "bg-[#151411] text-[#f0ebe2] border-4 border-transparent hover:border-black hover:bg-[#1f1c18]"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center space-x-4 overflow-hidden">
                         {iconElement}
@@ -394,18 +404,16 @@ export const CommandPalette: React.FC = () => {
                             {badgeElement}
                           </div>
                           <p
-                            className={`text-sm truncate ${
-                              isSelected ? "text-zinc-800" : "text-[#6b5a49]"
-                            }`}
+                            className={`text-sm truncate ${isSelected ? "text-zinc-800" : "text-[#6b5a49]"
+                              }`}
                           >
                             {description}
                           </p>
                         </div>
                       </div>
                       <ChevronRight
-                        className={`w-5 h-5 flex-shrink-0 transition-transform ${
-                          isSelected ? "text-black translate-x-1" : "text-[#6b5a49]"
-                        }`}
+                        className={`w-5 h-5 flex-shrink-0 transition-transform ${isSelected ? "text-black translate-x-1" : "text-[#6b5a49]"
+                          }`}
                       />
                     </button>
                   );
