@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:update": "playwright test --update-snapshots",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report",
+    "check:css": "node scripts/find-unused-css.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
