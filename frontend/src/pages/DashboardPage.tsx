@@ -280,18 +280,18 @@ export function DashboardPage() {
     const queue = lessons.filter((l) => !isLessonCompleted(l.slug)).slice(0, 3);
 
     // Calculate which badges are earned
-    const earned: string[] = [];
+    const earned = new Set<string>(contributorData?.personal_stats?.earned_badges || []);
     curriculumData.forEach((mod, index) => {
       const allCompleted = mod.lessons.every((les: { slug: string }) =>
         isLessonCompleted(les.slug),
       );
       if (allCompleted) {
-        earned.push(`mod-${index + 1}`);
+        earned.add(`mod-${index + 1}`);
       }
     });
 
     if (percentage === 100) {
-      earned.push("grad");
+      earned.add("grad");
     }
 
     return {
@@ -299,9 +299,9 @@ export function DashboardPage() {
       totalLessonsCount: total,
       completionPercentage: percentage,
       activeLessonsQueue: queue,
-      earnedBadges: earned,
+      earnedBadges: Array.from(earned),
     };
-  }, [lessons, curriculumData, isLessonCompleted, user]);
+  }, [lessons, curriculumData, isLessonCompleted, user, contributorData]);
 
   // Fetch user certificate if course is completed
   const { data: certificateData } = useQuery({
