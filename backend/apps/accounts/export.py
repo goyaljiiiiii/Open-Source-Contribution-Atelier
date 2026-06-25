@@ -6,9 +6,16 @@ import zipfile
 from apps.accounts.models import MentorProfile
 from apps.dashboard.models import Issue, PullRequest, StreakFreeze
 from apps.notifications.models import Notification
-from apps.progress.models import (Certificate, HelpRequest, LessonProgress,
-                                  QuizAttempt, UserBadge, ExerciseAttempt,
-                                  CodeSubmission, PeerReview)
+from apps.progress.models import (
+    Certificate,
+    HelpRequest,
+    LessonProgress,
+    QuizAttempt,
+    UserBadge,
+    ExerciseAttempt,
+    CodeSubmission,
+    PeerReview,
+)
 from apps.sandbox.models import SandboxExecutionLog
 from apps.content.models import Comment
 from apps.chat.models import Message
@@ -73,9 +80,7 @@ class DataExportService:
             "comments": self._queryset_to_list(
                 Comment.all_objects.filter(user=self.user)
             ),
-            "messages": self._queryset_to_list(
-                Message.objects.filter(user=self.user)
-            ),
+            "messages": self._queryset_to_list(Message.objects.filter(user=self.user)),
         }
         return data
 

@@ -3,8 +3,6 @@ import uuid
 from apps.content.models import Lesson
 from django.conf import settings
 from django.db import models
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 
 
 class MentorProfile(models.Model):
@@ -157,50 +155,27 @@ class UserProfile(models.Model):
 
     def _convert_to_webp(self, image_field):
         """Helper method to convert an ImageField to WebP format."""
-        if image_field and not image_field.name.lower().endswith('.webp'):
+        if image_field and not image_field.name.lower().endswith(".webp"):
             from PIL import Image
             from io import BytesIO
             from django.core.files.base import ContentFile
             import os
 
             img = Image.open(image_field)
-            
-            if img.mode != 'RGBA' and img.mode != 'RGB':
-                img = img.convert('RGBA')
-            
+
+            if img.mode != "RGBA" and img.mode != "RGB":
+                img = img.convert("RGBA")
+
             output = BytesIO()
-            img.save(output, format='WEBP', quality=85)
+            img.save(output, format="WEBP", quality=85)
             output.seek(0)
-            
+
             base_name = os.path.splitext(os.path.basename(image_field.name))[0]
             new_filename = f"{base_name}.webp"
-            
+
             image_field.save(new_filename, ContentFile(output.read()), save=False)
 
     def save(self, *args, **kwargs):
         self._convert_to_webp(self.avatar)
         self._convert_to_webp(self.cover_image)
         super().save(*args, **kwargs)
-
-
-@receiver(post_save, sender=settings.AUTH_USER_MODEL)
-def create_user_profile(sender, instance, created, **kwargs):
-    if created:
-        UserProfile.objects.create(user=instance)
-
-
-@receiver(post_save, sender=settings.AUTH_USER_MODEL)
-def save_user_profile(sender, instance, **kwargs):
-    if hasattr(instance, "profile"):
-        instance.profile.save()
-    else:
-        UserProfile.objects.create(user=instance)
-
-
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
-User.add_to_class(
-    "organization",
-    property(lambda u: u.profile.organization if hasattr(u, "profile") else None),
-)
