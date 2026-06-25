@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, Link } from "react-router-dom";
+import confetti from "canvas-confetti";
 import {
   ChevronLeft,
   ChevronRight,
@@ -108,6 +109,7 @@ export function LessonPage() {
 
   // Note Panel
   const [isNotePanelOpen, setIsNotePanelOpen] = useState(false);
+  const hasConfettiFired = useRef(false);
 
   // Reading progress scroll ref
   const mainContentRef = useRef<HTMLDivElement>(null);
@@ -319,6 +321,18 @@ export function LessonPage() {
   const hasQuiz = lesson.quizzes && lesson.quizzes.length > 0;
   const hasConflict = !!lesson.conflictScenario;
   const isCompleted = isLessonCompleted(lesson.slug);
+  // Confetti on lesson completion
+useEffect(() => {
+  if (isCompleted && !hasConfettiFired.current) {
+    hasConfettiFired.current = true;
+    confetti({
+      particleCount: 180,
+      spread: 80,
+      origin: { y: 0.6 },
+      colors: ["#ff3b30", "#ffcc00", "#c3c0ff", "#34c759", "#ff9500"],
+    });
+  }
+}, [isCompleted]);
   const activeModuleId = modules.find((mod) =>
     mod.lessons.some((les) => les.slug === lesson.slug),
   )?.id;
