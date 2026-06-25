@@ -9,7 +9,7 @@ import SkeletonAdminDashboard from "../components/ui/skeletons/SkeletonAdminDash
 import SkeletonContributorDashboard from "../components/ui/skeletons/SkeletonContributorDashboard";
 import { useRef } from "react";
 import { useElementSize } from "../hooks/useElementSize";
-import { fetchLessonsApi, Lesson } from "../lib/lessons";
+import { fetchLessonsApi, Lesson, buildModulesFromLessons } from "../lib/lessons";
 import { useUserProgress } from "../hooks/useUserProgress";
 import { useBookmarks } from "../hooks/useBookmarks";
 import { BADGES } from "../constants/badges";
@@ -105,20 +105,8 @@ export function DashboardPage() {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
-  // 1. Fetch static modules catalog
+  // 1. Curriculum data is now derived dynamically from the lessons query below.
   const [curriculumData, setCurriculumData] = useState<ModuleData[]>([]);
-  useEffect(() => {
-    fetch("/content/curriculum.json")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.modules) {
-          setCurriculumData(data.modules);
-        }
-      })
-      .catch((err) =>
-        console.error("Error loading dashboard curriculum:", err),
-      );
-  }, []);
 
   // 2. Fetch Admin Dashboard stats (only queries if user is staff)
   const {
@@ -157,6 +145,12 @@ export function DashboardPage() {
     queryFn: fetchLessonsApi,
     enabled: !user?.is_staff,
   });
+
+  useEffect(() => {
+    if (lessons.length > 0) {
+      setCurriculumData(buildModulesFromLessons(lessons) as any);
+    }
+  }, [lessons]);
 
   const isLoading = isAdminLoading || isContributorLoading || isLessonsLoading;
 

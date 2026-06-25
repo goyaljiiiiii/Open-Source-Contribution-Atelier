@@ -19,7 +19,7 @@ import { useUserProgress } from "../hooks/useUserProgress";
 import { useBookmarks } from "../hooks/useBookmarks";
 import { useLessonNote } from "../hooks/useLessonNote";
 import { fetchApi } from "../lib/api";
-import { Lesson, fetchLessonsApi, fetchLessonContent } from "../lib/lessons";
+import { Lesson, fetchLessonsApi, fetchLessonContent, buildModulesFromLessons } from "../lib/lessons";
 import { RichTextEditor } from "../components/ui/RichTextEditor";
 
 const MarkdownRenderer = React.lazy(() =>
@@ -136,14 +136,6 @@ export function LessonPage() {
   // 1. Fetch modules catalog & lessons
   useEffect(() => {
     setIsLoading(true);
-    fetch("/content/curriculum.json")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.modules) {
-          setModules(data.modules);
-        }
-      })
-      .catch((err) => console.error("Error fetching curriculum catalog:", err));
 
     fetchLessonsApi()
       .then((data) => {
@@ -154,6 +146,7 @@ export function LessonPage() {
           return;
         }
         setLesson(found);
+        setModules(buildModulesFromLessons(data) as any);
       })
       .catch(() => {
         navigate("/dashboard", { replace: true });
@@ -178,12 +171,14 @@ export function LessonPage() {
     setSelectedOption(null);
     setQuizFeedback(null);
 
-    if (lesson.filePath) {
+    if (lesson.explanation) {
+      setMarkdownContent(lesson.explanation);
+    } else if (lesson.filePath) {
       fetchLessonContent(lesson.filePath).then((content) => {
         setMarkdownContent(content);
       });
     } else {
-      setMarkdownContent(`# ${lesson.title}\n\n${lesson.explanation}`);
+      setMarkdownContent(`# ${lesson.title}\n\n`);
     }
   }, [lesson]);
 
