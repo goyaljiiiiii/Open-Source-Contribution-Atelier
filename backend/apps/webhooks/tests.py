@@ -133,5 +133,43 @@ class TestWebhookDelivery:
         deliver_webhook(delivery.id)
 
         delivery.refresh_from_db()
+        assert delivery.status == "pending"
+        mock_retry.assert_called_once()
+
+    @patch("requests.post")
+    def test_retry_on_429(self, mock_post, endpoint):
+        from celery.exceptions import Retry
+
+        mock_response = MagicMock()
+        mock_response.status_code = 429
+        mock_response.text = "Too Many Requests"
+        mock_post.return_value = mock_response
+
+        delivery = WebhookDelivery.objects.create(
+            endpoint=endpoint, event_type="test.event", payload={"foo": "bar"}
+        )
+
+        with pytest.raises(Retry):
+            deliver_webhook(delivery.id)
+
+        delivery.refresh_from_db()
+        assert delivery.status == "pending"
+        assert delivery.status_code == 429
+
+    @patch("requests.post")
+    @patch("apps.webhooks.tasks.deliver_webhook.retry")
+    def test_max_retries_exceeded(self, mock_retry, mock_post, endpoint):
+        import requests
+        from celery.exceptions import MaxRetriesExceededError
+
+        mock_post.side_effect = requests.exceptions.RequestException("Timeout")
+        mock_retry.side_effect = MaxRetriesExceededError()
+
+        delivery = WebhookDelivery.objects.create(
+            endpoint=endpoint, event_type="test.event", payload={"foo": "bar"}
+        )
+        deliver_webhook(delivery.id)
+
+        delivery.refresh_from_db()
         assert delivery.status == "failed"
         mock_retry.assert_called_once()
