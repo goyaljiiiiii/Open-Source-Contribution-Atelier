@@ -5,7 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchApi } from "../lib/api";
 import { Link } from "react-router-dom";
 import { SocialShareButtons } from "../components/ui/SocialShareButtons";
-import SkeletonCard from "../components/ui/skeletons/SkeletonCard";
+import SkeletonAdminDashboard from "../components/ui/skeletons/SkeletonAdminDashboard";
+import SkeletonContributorDashboard from "../components/ui/skeletons/SkeletonContributorDashboard";
 import { useRef } from "react";
 import { useElementSize } from "../hooks/useElementSize";
 import { fetchLessonsApi, Lesson } from "../lib/lessons";
@@ -156,6 +157,19 @@ export function DashboardPage() {
     queryFn: fetchLessonsApi,
     enabled: !user?.is_staff,
   });
+
+  const isLoading = isAdminLoading || isContributorLoading || isLessonsLoading;
+
+  const [showSkeleton, setShowSkeleton] = useState(isLoading);
+
+  useEffect(() => {
+    if (isLoading) {
+      setShowSkeleton(true);
+      return;
+    }
+    const timer = setTimeout(() => setShowSkeleton(false), 400);
+    return () => clearTimeout(timer);
+  }, [isLoading]);
 
   // Random Fact of the Day
   const factOfDay = useMemo(() => {
@@ -311,19 +325,19 @@ export function DashboardPage() {
     retry: false,
   });
 
-  if (isAdminLoading || isContributorLoading || isLessonsLoading) {
+  if (showSkeleton) {
+    if (user?.is_staff) {
+      return (
+        <div aria-busy="true" role="status">
+          <SkeletonAdminDashboard />
+          <span className="sr-only">Loading admin dashboard...</span>
+        </div>
+      );
+    }
     return (
-      <div
-        className="grid gap-6 xl:grid-cols-[1fr_0.8fr] pt-24 max-w-7xl mx-auto px-4"
-        aria-busy="true"
-      >
-        <div className="space-y-6">
-          <SkeletonCard />
-          <SkeletonCard />
-        </div>
-        <div className="space-y-6">
-          <SkeletonCard />
-        </div>
+      <div aria-busy="true" role="status">
+        <SkeletonContributorDashboard />
+        <span className="sr-only">Loading dashboard...</span>
       </div>
     );
   }
