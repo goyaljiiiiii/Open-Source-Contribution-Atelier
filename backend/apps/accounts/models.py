@@ -140,6 +140,9 @@ class UserProfile(models.Model):
     timezone = models.CharField(
         max_length=64, choices=get_timezone_choices, default="UTC"
     )
+    twitter_url = models.URLField(max_length=500, blank=True, default="")
+    linkedin_url = models.URLField(max_length=500, blank=True, default="")
+    github_url = models.URLField(max_length=500, blank=True, default="")
 
     organization = models.ForeignKey(
         "organizations.Organization",

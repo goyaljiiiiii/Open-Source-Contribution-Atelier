@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from apps.content.models import Lesson
-from apps.dashboard.models import Issue, PullRequest
+from apps.dashboard.models import Issue, PullRequest, StreakFreeze
 from apps.progress.models import ExerciseAttempt, LessonProgress
 from django.contrib.auth.models import User
 from django.core.cache import cache
@@ -10,13 +10,14 @@ from django.db.models.functions import Coalesce
 from django.utils import timezone
 from rest_framework import permissions, serializers
 from rest_framework.generics import ListAPIView
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.pagination import CursorPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 
-class LeaderboardPagination(PageNumberPagination):
+class LeaderboardPagination(CursorPagination):
     page_size = 20
+    ordering = ("-xp", "username", "id")
 
 
 class LeaderboardSerializer(serializers.ModelSerializer):
@@ -258,20 +259,51 @@ class ContributorDashboardView(APIView):
             issues_xp = (issues_agg["p_sum"] or 0) + (issues_agg["b_sum"] or 0)
             total_xp = lesson_xp + issues_xp
 
-            # Calculate streak based on unique days of activity (attempts or completed lessons)
+            # Calculate streak based on unique days of activity (attempts or completed lessons) and active/used freezes
             activity_days = set()
             attempts = ExerciseAttempt.objects.filter(user=user).values_list(
                 "created_at", flat=True
             )
             for dt in attempts:
                 activity_days.add(timezone.localdate(dt))
-            progress_entries = LessonProgress.objects.filter(user=user).values_list(
+            progress_entries = LessonProgress.objects.filter(user=user, completed=True).values_list(
                 "updated_at", flat=True
             )
             for dt in progress_entries:
                 activity_days.add(timezone.localdate(dt))
 
-            streak_days = len(activity_days)
+            # Apply streak freezes to calculate streak days
+            today = timezone.localdate(timezone.now())
+            join_date = timezone.localdate(user.date_joined)
+            streak_days = 0
+            current_day = today
+            
+            with transaction.atomic():
+                while True:
+                    if current_day < join_date:
+                        break
+                    
+                    if current_day in activity_days:
+                        streak_days += 1
+                    elif current_day == today:
+                        # If today has no activity, we just skip it (does not break the streak and does not count towards it)
+                        pass
+                    else:
+                        # Check if there is already a consumed freeze for this date
+                        consumed_freeze = StreakFreeze.objects.filter(user=user, used_on_date=current_day).exists()
+                        if consumed_freeze:
+                            streak_days += 1
+                        else:
+                            # Check if there is an unused freeze to consume
+                            unused_freeze = StreakFreeze.objects.filter(user=user, used_on_date__isnull=True).order_by("purchased_at").first()
+                            if unused_freeze:
+                                unused_freeze.used_on_date = current_day
+                                unused_freeze.save()
+                                streak_days += 1
+                            else:
+                                # No activity and no freeze available, the streak is broken
+                                break
+                    current_day -= timedelta(days=1)
 
             # Determine Rank based on user XP vs others
             lesson_xp_sub = (
@@ -308,6 +340,9 @@ class ContributorDashboardView(APIView):
                     "badge__slug", flat=True
                 )
             )
+            spent_points = StreakFreeze.objects.filter(user=user).aggregate(total=Sum("cost"))["total"] or 0
+            available_points = total_xp - spent_points
+            unused_freezes = StreakFreeze.objects.filter(user=user, used_on_date__isnull=True).count()
 
             personal_stats = {
                 "issues_solved": issues_solved,
@@ -316,6 +351,8 @@ class ContributorDashboardView(APIView):
                 "streak_days": streak_days,
                 "rank": rank,
                 "earned_badges": earned_badges,
+                "available_points": available_points,
+                "unused_freezes": unused_freezes,
             }
 
             # 2. Assigned Issues (Open or In Progress)
@@ -390,3 +427,43 @@ class ContributorDashboardView(APIView):
             cache.set(cache_key, data, 300)
 
         return Response(data)
+
+
+from drf_spectacular.utils import extend_schema
+from rest_framework import status
+from django.db import transaction
+
+class BuyStreakFreezeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(responses={201: {"type": "object", "properties": {"success": {"type": "boolean"}, "message": {"type": "string"}, "available_points": {"type": "integer"}}}})
+    def post(self, request):
+        user = request.user
+        
+        with transaction.atomic():
+            lesson_xp = LessonProgress.objects.filter(user=user, completed=True).aggregate(total=Sum("score"))["total"] or 0
+            issues_agg = Issue.objects.filter(
+                assigned_to=user, status=Issue.Status.SOLVED
+            ).aggregate(p_sum=Sum("points"), b_sum=Sum("bonus_points"))
+            issues_xp = (issues_agg["p_sum"] or 0) + (issues_agg["b_sum"] or 0)
+            total_xp = lesson_xp + issues_xp
+            
+            spent_points = StreakFreeze.objects.filter(user=user).aggregate(total=Sum("cost"))["total"] or 0
+            available_points = total_xp - spent_points
+            
+            FREEZE_COST = 100
+            
+            if available_points < FREEZE_COST:
+                return Response({"success": False, "message": "Not enough points to buy a streak freeze."}, status=status.HTTP_400_BAD_REQUEST)
+                
+            unused_freezes = StreakFreeze.objects.filter(user=user, used_on_date__isnull=True).count()
+            if unused_freezes >= 3:
+                return Response({"success": False, "message": "You can only have up to 3 unused streak freezes at a time."}, status=status.HTTP_400_BAD_REQUEST)
+                
+            StreakFreeze.objects.create(user=user, cost=FREEZE_COST)
+            
+            # Invalidate cache for dashboard
+            cache.delete(f"dashboard_contributor_stats_{user.id}")
+            
+            return Response({"success": True, "message": "Streak freeze purchased successfully.", "available_points": available_points - FREEZE_COST}, status=status.HTTP_201_CREATED)
+

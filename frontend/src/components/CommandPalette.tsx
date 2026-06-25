@@ -92,6 +92,7 @@ export const CommandPalette: React.FC = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [index, setIndex] = useState<SearchIndexEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [results, setResults] = useState<SearchIndexEntry[]>([]);
 
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -146,6 +147,7 @@ export const CommandPalette: React.FC = () => {
   const [results, setResults] = useState<SearchIndexEntry[]>([]);
   useEffect(() => {
     if (!searchQuery.trim()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults([]);
       return;
     }
@@ -181,13 +183,28 @@ export const CommandPalette: React.FC = () => {
     return () => clearTimeout(timer);
   }, [searchQuery, index]);
 
-  const combinedResults = useMemo<PaletteItem[]>(() => {
-    const nav: PaletteItem[] = searchQuery
-      ? navItems.filter((item) =>
-          item.label.toLowerCase().includes(searchQuery.toLowerCase()),
-        )
-      : navItems;
-    return [...nav, ...results.map((entry): PaletteItem => ({ type: entry.type, entry }))];
+  // Combine results: Navigation matches first, followed by lesson index matches
+  const combinedResults: PaletteItem[] = useMemo(() => {
+    const combined: PaletteItem[] = [];
+
+    // Filter nav items based on the active (immediate) searchQuery
+    const q = searchQuery.toLowerCase();
+    const filteredNavItems = navItems.filter(
+      (item) =>
+        item.label.toLowerCase().includes(q) ||
+        item.description.toLowerCase().includes(q)
+    );
+
+    filteredNavItems.forEach((item) => combined.push(item));
+
+    results.forEach((entry) => {
+      combined.push({
+        type: entry.type,
+        entry,
+      });
+    });
+
+    return combined;
   }, [searchQuery, results]);
 
   // Handle keyboard navigation within results
@@ -330,10 +347,10 @@ export const CommandPalette: React.FC = () => {
               ) : (
                 combinedResults.map((item, i) => {
                   const isSelected = i === selectedIndex;
-                  let title = "";
-                  let description = "";
-                  let iconElement: React.ReactNode = null;
-                  let badgeElement: React.ReactNode = getBadgeForType(item.type);
+                  let title: string;
+                  let description: string;
+                  let iconElement: React.ReactNode;
+                  const badgeElement: React.ReactNode = getBadgeForType(item.type);
 
                   if (item.type === "navigation") {
                     title = item.label;
