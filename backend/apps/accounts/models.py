@@ -119,6 +119,12 @@ class MagicLinkToken(models.Model):
         return timezone.now() > self.created_at + timedelta(minutes=timeout)
 
 
+def get_timezone_choices():
+    from zoneinfo import available_timezones
+
+    return sorted((tz, tz) for tz in available_timezones())
+
+
 class UserProfile(models.Model):
     """
     Standard user profile linking to the main User model.
@@ -131,7 +137,9 @@ class UserProfile(models.Model):
     avatar = models.ImageField(upload_to="avatars/", null=True, blank=True)
     cover_image = models.ImageField(upload_to="covers/", null=True, blank=True)
     last_password_change = models.DateTimeField(auto_now_add=True)
-    timezone = models.CharField(max_length=64, default='UTC')
+    timezone = models.CharField(
+        max_length=64, choices=get_timezone_choices, default="UTC"
+    )
 
     organization = models.ForeignKey(
         "organizations.Organization",
