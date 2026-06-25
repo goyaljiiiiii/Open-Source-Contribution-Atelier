@@ -76,7 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await fetchApi("/notifications/push/unsubscribe/", {
               method: "POST",
               requireAuth: true,
-              body: JSON.stringify({ endpoint })
+              body: JSON.stringify({ endpoint }),
             });
           } catch (e) {
             console.error("Failed to notify backend of push unsubscribe", e);
@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.error("Error unsubscribing push on logout", e);
     }
-    
+
     safeRemoveItem("accessToken");
     safeRemoveItem("refreshToken");
     setUser(null);
@@ -100,15 +100,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Some setups can temporarily fail right after login (network hiccup / token not yet accepted).
-      // Avoid logging the user out on the first failure.
       try {
         const data = await fetchApi("/auth/me/");
         setUser(data);
-        return;
       } catch {
-        const data = await fetchApi("/auth/me/");
-        setUser(data);
+        setUser(null);
       }
     } catch {
       setUser(null);
