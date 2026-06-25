@@ -1,5 +1,6 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
 
 type Props = {
   open: boolean;
@@ -16,6 +17,9 @@ export default function LogoutConfirmModal({
   onConfirm,
   onCancel,
 }: Props) {
+  const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, open);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -34,6 +38,7 @@ export default function LogoutConfirmModal({
       aria-hidden={!open}
     >
       <div
+        ref={modalRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="logout-modal-title"
