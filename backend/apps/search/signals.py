@@ -60,6 +60,16 @@ def remove_lesson_index(sender, instance, **kwargs):
 def index_user(sender, instance, **kwargs):
     if "test" in sys.argv or any("pytest" in arg for arg in sys.argv):
         return
+
+    if getattr(instance, "is_deleted", False):
+        _safe_delay(
+            remove_model_from_search,
+            app_label=sender._meta.app_label,
+            model_name=sender._meta.model_name,
+            object_id=instance.pk,
+        )
+        return
+
     title = instance.username
     body_text = instance.email
     _safe_delay(

@@ -14,34 +14,47 @@ from django.shortcuts import redirect
 from django.utils import timezone
 from django.utils.text import slugify
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import (OpenApiResponse, extend_schema,
-                                   extend_schema_view)
+from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import filters, generics, permissions, status
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import (TokenObtainPairView,
-                                            TokenRefreshView)
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .models import MagicLinkToken, OTPToken, PasswordResetToken
-from .serializers import (EmailOrUsernameTokenObtainPairSerializer,
-                          MagicLinkRequestSerializer,
-                          MagicLinkVerifySerializer, OtpRequestSerializer,
-                          OtpVerifySerializer, PasswordResetConfirmSerializer,
-                          PasswordResetRequestSerializer, SignupSerializer,
-                          UserListSerializer, UserUpdateSerializer)
-from .tasks import (send_magic_link_email_task, send_otp_email_task,
-                    send_password_reset_email_task)
-from .throttles import (LoginThrottle, MagicLinkRequestThrottle,
-                        MagicLinkVerifyThrottle, OAuthThrottle,
-                        OtpGenerateThrottle, OtpVerifyThrottle,
-                        PasswordResetThrottle, SignupThrottle,
-                        StrictIdentityLoginThrottle,
-                        StrictIdentityMagicLinkThrottle,
-                        StrictIdentityPasswordResetThrottle,
-                        TokenRefreshThrottle)
+from .serializers import (
+    EmailOrUsernameTokenObtainPairSerializer,
+    MagicLinkRequestSerializer,
+    MagicLinkVerifySerializer,
+    OtpRequestSerializer,
+    OtpVerifySerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
+    SignupSerializer,
+    UserListSerializer,
+    UserUpdateSerializer,
+)
+from .tasks import (
+    send_magic_link_email_task,
+    send_otp_email_task,
+    send_password_reset_email_task,
+)
+from .throttles import (
+    LoginThrottle,
+    MagicLinkRequestThrottle,
+    MagicLinkVerifyThrottle,
+    OAuthThrottle,
+    OtpGenerateThrottle,
+    OtpVerifyThrottle,
+    PasswordResetThrottle,
+    SignupThrottle,
+    StrictIdentityLoginThrottle,
+    StrictIdentityMagicLinkThrottle,
+    StrictIdentityPasswordResetThrottle,
+    TokenRefreshThrottle,
+)
 
 
 def unique_username_from_value(value: str) -> str:
@@ -94,9 +107,7 @@ class MeView(APIView):
         instance.refresh_from_db()
         if hasattr(instance, "profile"):
             instance.profile.refresh_from_db()
-        response_serializer = UserListSerializer(
-            instance, context={"request": request}
-        )
+        response_serializer = UserListSerializer(instance, context={"request": request})
         return Response(response_serializer.data)
 
 
@@ -210,6 +221,13 @@ class GoogleLoginView(APIView):
                 )
 
             user = User.objects.filter(email__iexact=email).first()
+            if user and user.is_deleted:
+                return Response(
+                    {
+                        "detail": "This account has been deleted and cannot be used to log in."
+                    },
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
             if not user:
                 username = self._unique_username_from_email(email)
                 user = User.objects.create_user(
@@ -338,6 +356,10 @@ class GitHubOAuthCallbackView(APIView):
                 )
 
             user = User.objects.filter(email__iexact=email).first()
+            if user and user.is_deleted:
+                return redirect(
+                    frontend_url("/", {"auth_error": "This account has been deleted."})
+                )
             if not user:
                 username_source = github_user.get("login") or email
                 user = User.objects.create_user(
@@ -367,7 +389,7 @@ from .permissions import IsAdminOrModeratorRole
 
 @extend_schema(responses=UserListSerializer(many=True))
 class UserListView(generics.ListAPIView):
-    queryset = User.objects.all().order_by("id")
+    queryset = User.objects.filter(profile__is_deleted=False).order_by("id")
     permission_classes = [permissions.IsAuthenticated, IsAdminOrModeratorRole]
     serializer_class = UserListSerializer
     pagination_class = LimitOffsetPagination
@@ -409,7 +431,7 @@ class PasswordResetRequestView(APIView):
         email = serializer.validated_data["email"].lower()  # type: ignore
         user = User.objects.filter(email__iexact=email).first()
 
-        if user:
+        if user and not user.is_deleted:
             # Invalidate any existing unused tokens for this user
             PasswordResetToken.objects.filter(user=user, is_used=False).update(
                 is_used=True
@@ -528,7 +550,7 @@ class OtpRequestView(APIView):
         email = serializer.validated_data["email"].lower()  # type: ignore
         user = User.objects.filter(email__iexact=email).first()
 
-        if user:
+        if user and not user.is_deleted:
             # Invalidate previous unused OTP tokens
             OTPToken.objects.filter(user=user, is_used=False).update(is_used=True)
             otp_obj = OTPToken.objects.create(user=user)
@@ -568,7 +590,7 @@ class OtpVerifyView(APIView):
         otp = serializer.validated_data["otp"]  # type: ignore
 
         user = User.objects.filter(email__iexact=email).first()
-        if not user:
+        if not user or user.is_deleted:
             return Response(
                 {"error": "invalid_otp"}, status=status.HTTP_400_BAD_REQUEST
             )
@@ -623,7 +645,7 @@ class MagicLinkRequestView(APIView):
         email = serializer.validated_data["email"].lower()  # type: ignore
         user = User.objects.filter(email__iexact=email).first()
 
-        if user:
+        if user and not user.is_deleted:
             # Invalidate any existing unused tokens for this user
             MagicLinkToken.objects.filter(user=user, is_used=False).update(is_used=True)
             magic_token = MagicLinkToken.objects.create(user=user)
@@ -761,14 +783,19 @@ class ExportDataView(APIView):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-from apps.content.models import Comment
+
 from apps.chat.models import Message
+from apps.content.models import Comment
+
 
 class SecureAccountDeleteView(APIView):
     """
     DELETE /api/users/me/delete/
-    Securely deletes the user's PII while anonymizing public contributions.
+    Soft-deletes the user account by marking it as deleted and deactivating it.
+    Public contributions (comments, messages) are anonymized; all other data
+    is preserved in the database for potential account restoration.
     """
+
     permission_classes = [permissions.IsAuthenticated]
 
     @extend_schema(
@@ -778,9 +805,8 @@ class SecureAccountDeleteView(APIView):
     )
     def delete(self, request):
         user = request.user
-        
-        # If the user is already deleted (e.g. from a repeated request)
-        if not user or not user.pk:
+
+        if user.is_deleted:
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         # 1. Fetch or create Anonymous user
@@ -801,8 +827,7 @@ class SecureAccountDeleteView(APIView):
         Comment.objects.filter(user=user).update(user=anonymous_user)
         Message.objects.filter(user=user).update(user=anonymous_user)
 
-        # 3. Delete the user
-        # This will CASCADE and delete: UserProfile, Certificates, LessonProgress, Notes, Tokens, etc.
-        user.delete()
+        # 3. Soft-delete the user (marks is_deleted, deactivates, revokes tokens)
+        user.soft_delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)

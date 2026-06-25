@@ -5,6 +5,7 @@ from django.conf import settings
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
 
 
 class MentorProfile(models.Model):
@@ -152,29 +153,55 @@ class UserProfile(models.Model):
         related_name="users",
     )
 
+    is_deleted = models.BooleanField(default=False, db_index=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
+    def soft_delete(self):
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        self.save(update_fields=["is_deleted", "deleted_at"])
+
+        user = self.user
+        user.is_active = False
+        user.save(update_fields=["is_active"])
+
+        PasswordResetToken.objects.filter(user=user, is_used=False).update(is_used=True)
+        OTPToken.objects.filter(user=user, is_used=False).update(is_used=True)
+        MagicLinkToken.objects.filter(user=user, is_used=False).update(is_used=True)
+
+    def restore(self):
+        self.is_deleted = False
+        self.deleted_at = None
+        self.save(update_fields=["is_deleted", "deleted_at"])
+
+        user = self.user
+        user.is_active = True
+        user.save(update_fields=["is_active"])
+
     def __str__(self):
         return f"UserProfile({self.user.username})"
 
     def _convert_to_webp(self, image_field):
         """Helper method to convert an ImageField to WebP format."""
-        if image_field and not image_field.name.lower().endswith('.webp'):
-            from PIL import Image
-            from io import BytesIO
-            from django.core.files.base import ContentFile
+        if image_field and not image_field.name.lower().endswith(".webp"):
             import os
+            from io import BytesIO
+
+            from django.core.files.base import ContentFile
+            from PIL import Image
 
             img = Image.open(image_field)
-            
-            if img.mode != 'RGBA' and img.mode != 'RGB':
-                img = img.convert('RGBA')
-            
+
+            if img.mode != "RGBA" and img.mode != "RGB":
+                img = img.convert("RGBA")
+
             output = BytesIO()
-            img.save(output, format='WEBP', quality=85)
+            img.save(output, format="WEBP", quality=85)
             output.seek(0)
-            
+
             base_name = os.path.splitext(os.path.basename(image_field.name))[0]
             new_filename = f"{base_name}.webp"
-            
+
             image_field.save(new_filename, ContentFile(output.read()), save=False)
 
     def save(self, *args, **kwargs):
@@ -203,4 +230,22 @@ User = get_user_model()
 User.add_to_class(
     "organization",
     property(lambda u: u.profile.organization if hasattr(u, "profile") else None),
+)
+
+
+def _user_soft_delete(self):
+    if hasattr(self, "profile"):
+        self.profile.soft_delete()
+
+
+def _user_restore(self):
+    if hasattr(self, "profile"):
+        self.profile.restore()
+
+
+User.add_to_class("soft_delete", _user_soft_delete)
+User.add_to_class("restore", _user_restore)
+User.add_to_class(
+    "is_deleted",
+    property(lambda u: hasattr(u, "profile") and u.profile.is_deleted),
 )
