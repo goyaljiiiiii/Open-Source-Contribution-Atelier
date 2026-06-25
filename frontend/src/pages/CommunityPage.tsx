@@ -237,6 +237,8 @@ export function CommunityPage() {
               data={filteredLeaderboard}
               keyExtractor={(item) => item.username}
               emptyMessage="No matching contributors found."
+              virtualized={true}
+              containerHeight="600px"
               lastElementRef={lastElementRef}
               footerContent={
                 isFetchingNextPage ? "Loading more contributors..." : null
