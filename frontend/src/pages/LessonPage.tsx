@@ -8,16 +8,14 @@ import {
   X,
   BookOpen,
   CheckCircle2,
-  NotebookText,
   Lock,
   Bookmark,
 } from "lucide-react";
 
 import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
-import { useAuth } from "../features/auth/AuthContext";
 import { useUserProgress } from "../hooks/useUserProgress";
 import { useBookmarks } from "../hooks/useBookmarks";
-import { useLessonNote } from "../hooks/useLessonNote";
+
 import { fetchApi } from "../lib/api";
 import { Lesson, fetchLessonsApi, fetchLessonContent } from "../lib/lessons";
 import { RichTextEditor } from "../components/ui/RichTextEditor";
@@ -25,11 +23,12 @@ import { RichTextEditor } from "../components/ui/RichTextEditor";
 const MarkdownRenderer = React.lazy(() =>
   import("../components/ui/MarkdownRenderer").then((module) => ({
     default: module.MarkdownRenderer,
-  }))
+  })),
 );
 import { GitGraph } from "../components/ui/GitGraph";
 import { NotePanel } from "../components/ui/NotePanel";
 import { PythonSandbox } from "../components/ui/PythonSandbox";
+import { RustSandbox } from "../components/ui/RustSandbox";
 import { TextToSpeechControls } from "../components/ui/TextToSpeechControls";
 
 import {
@@ -45,8 +44,7 @@ function normalizeCommand(value: string) {
 export function LessonPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { isLessonCompleted, syncProgress, isLoading: isSyncingProgress } = useUserProgress();
+  const { isLessonCompleted, syncProgress } = useUserProgress();
   const { isBookmarked, toggleBookmark } = useBookmarks();
   const queryClient = useQueryClient();
 
@@ -133,9 +131,7 @@ export function LessonPage() {
     },
   });
 
-  // 1. Fetch modules catalog & lessons
   useEffect(() => {
-    setIsLoading(true);
     fetch("/content/curriculum.json")
       .then((res) => res.json())
       .then((data) => {
@@ -151,9 +147,32 @@ export function LessonPage() {
         const found = data.find((l) => l.slug === slug);
         if (!found) {
           navigate("/dashboard", { replace: true });
-          return;
+          return null;
         }
+        return found;
+      })
+      .then((found) => {
+        if (!found) return;
+
         setLesson(found);
+
+        // Reset interactive state when lesson changes
+        setFeedback("");
+        setInput("");
+        setShowHint(false);
+        setTerminalOutput("");
+        setRepoState(createInitialRepo());
+        setCurrentQuizIndex(0);
+        setSelectedOption(null);
+        setQuizFeedback(null);
+
+        if (found.filePath) {
+          return fetchLessonContent(found.filePath).then((content) => {
+            setMarkdownContent(content);
+          });
+        } else {
+          setMarkdownContent(`# ${found.title}\n\n${found.explanation}`);
+        }
       })
       .catch(() => {
         navigate("/dashboard", { replace: true });
@@ -163,31 +182,7 @@ export function LessonPage() {
       });
   }, [slug, navigate]);
 
-  // 2. Fetch markdown content and reset interactive state when lesson changes
-  useEffect(() => {
-    if (!lesson) return;
-
-    setFeedback("");
-    setInput("");
-    setShowHint(false);
-    setTerminalOutput("");
-    setRepoState(createInitialRepo());
-
-    // Reset Quiz state
-    setCurrentQuizIndex(0);
-    setSelectedOption(null);
-    setQuizFeedback(null);
-
-    if (lesson.filePath) {
-      fetchLessonContent(lesson.filePath).then((content) => {
-        setMarkdownContent(content);
-      });
-    } else {
-      setMarkdownContent(`# ${lesson.title}\n\n${lesson.explanation}`);
-    }
-  }, [lesson]);
-
-  // 3. Scroll tracking for reading progress
+  // 2. Scroll tracking for reading progress
   useEffect(() => {
     const handleScroll = () => {
       if (!mainContentRef.current) return;
@@ -463,12 +458,28 @@ export function LessonPage() {
                 </div>
               )}
               <button
-                onClick={() => toggleBookmark.mutate({ slug: lesson.slug, isBookmarked: isBookmarked(lesson.slug) })}
+                onClick={() =>
+                  toggleBookmark.mutate({
+                    slug: lesson.slug,
+                    isBookmarked: isBookmarked(lesson.slug),
+                  })
+                }
                 disabled={toggleBookmark.isPending}
                 className="self-start sm:self-center ml-auto flex items-center justify-center p-2 rounded-xl border-4 border-black bg-surface-low hover:-translate-y-1 hover:shadow-card-sm transition-all"
-                title={isBookmarked(lesson.slug) ? "Remove from Read Later" : "Save for later"}
+                title={
+                  isBookmarked(lesson.slug)
+                    ? "Remove from Read Later"
+                    : "Save for later"
+                }
               >
-                <Bookmark className={isBookmarked(lesson.slug) ? "fill-primary text-primary" : "text-black dark:text-[#f0ebe2]"} size={24} />
+                <Bookmark
+                  className={
+                    isBookmarked(lesson.slug)
+                      ? "fill-primary text-primary"
+                      : "text-black dark:text-[#f0ebe2]"
+                  }
+                  size={24}
+                />
               </button>
             </div>
 
@@ -482,7 +493,7 @@ export function LessonPage() {
 
             {/* Markdown rendering logic */}
             <article className="prose max-w-none">
-              <React.Suspense 
+              <React.Suspense
                 fallback={
                   <div className="w-full h-64 animate-pulse rounded-2xl border-4 border-black/20 bg-surface-low dark:border-[#2e2924]/50 dark:bg-[#151411]" />
                 }
@@ -493,17 +504,32 @@ export function LessonPage() {
 
             {/* Exercises & validation section */}
             <div className="pt-8 space-y-6">
-              {lesson.pythonExercise ? (
+              {lesson.rustExercise ? (
                 <div className="mt-8">
-                  <PythonSandbox 
-                    exercise={lesson.pythonExercise} 
+                  <RustSandbox
+                    key={lesson.slug}
+                    exercise={lesson.rustExercise}
                     onSuccess={() => {
                       syncProgress({
                         lesson_slug: lesson.slug,
                         score: lesson.points || 20,
                         completed: true,
                       });
-                    }} 
+                    }}
+                  />
+                </div>
+              ) : lesson.pythonExercise ? (
+                <div className="mt-8">
+                  <PythonSandbox
+                    key={lesson.slug}
+                    exercise={lesson.pythonExercise}
+                    onSuccess={() => {
+                      syncProgress({
+                        lesson_slug: lesson.slug,
+                        score: lesson.points || 20,
+                        completed: true,
+                      });
+                    }}
                   />
                 </div>
               ) : hasQuiz ? (
@@ -634,12 +660,18 @@ export function LessonPage() {
                 // CONFLICT SANDBOX MODE
                 <div className="mt-8">
                   {feedback === "correct" && (
-                    <div role="status" className="mt-6 text-green-700 font-bold bg-green-50 p-4 rounded-lg border-4 border-green-600 animate-bounce">
+                    <div
+                      role="status"
+                      className="mt-6 text-green-700 font-bold bg-green-50 p-4 rounded-lg border-4 border-green-600 animate-bounce"
+                    >
                       ✅ Correct! You successfully resolved the merge conflict.
                     </div>
                   )}
                   {feedback === "error" && (
-                    <div role="alert" className="mt-6 text-red-700 font-bold bg-red-50 p-4 rounded-lg border-4 border-red-600">
+                    <div
+                      role="alert"
+                      className="mt-6 text-red-700 font-bold bg-red-50 p-4 rounded-lg border-4 border-red-600"
+                    >
                       ❌ The resolved output doesn't quite match what was
                       expected. Try reviewing your selections.
                     </div>
@@ -718,13 +750,19 @@ export function LessonPage() {
                     )}
 
                     {feedback === "correct" && (
-                      <div role="status" className="text-green-700 font-bold bg-green-50 p-4 rounded-lg border-4 border-green-600 animate-bounce">
+                      <div
+                        role="status"
+                        className="text-green-700 font-bold bg-green-50 p-4 rounded-lg border-4 border-green-600 animate-bounce"
+                      >
                         ✅ Correct! Progress synchronized to the Atelier server.
                       </div>
                     )}
 
                     {feedback === "error" && (
-                      <div role="alert" className="text-red-700 font-bold bg-red-50 p-4 rounded-lg border-4 border-red-600">
+                      <div
+                        role="alert"
+                        className="text-red-700 font-bold bg-red-50 p-4 rounded-lg border-4 border-red-600"
+                      >
                         ❌ Not quite. Command output did not match sandbox
                         expectations.
                       </div>
@@ -820,7 +858,10 @@ export function LessonPage() {
 
       {/* Note Panel */}
       {isNotePanelOpen && lesson && (
-        <NotePanel lessonSlug={lesson.slug} onClose={() => setIsNotePanelOpen(false)} />
+        <NotePanel
+          lessonSlug={lesson.slug}
+          onClose={() => setIsNotePanelOpen(false)}
+        />
       )}
 
       {/* Help support request Panel */}
@@ -870,13 +911,19 @@ export function LessonPage() {
               />
 
               {helpRequestMutation.isError && (
-                <div role="alert" className="text-red-700 text-xs font-black bg-red-50 p-2 rounded-lg border-2 border-red-700">
+                <div
+                  role="alert"
+                  className="text-red-700 text-xs font-black bg-red-50 p-2 rounded-lg border-2 border-red-700"
+                >
                   Couldn&apos;t submit request. Re-run backend server checks.
                 </div>
               )}
 
               {helpSuccessMessage && (
-                <div role="status" className="text-green-700 text-xs font-black bg-green-50 p-2 rounded-lg border-2 border-green-700">
+                <div
+                  role="status"
+                  className="text-green-700 text-xs font-black bg-green-50 p-2 rounded-lg border-2 border-green-700"
+                >
                   {helpSuccessMessage}
                 </div>
               )}
