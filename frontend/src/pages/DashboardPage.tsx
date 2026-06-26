@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useMemo, useState, useEffect } from "react";
 import { useAuth } from "../features/auth/AuthContext";

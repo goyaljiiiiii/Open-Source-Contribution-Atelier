@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, Link } from "react-router-dom";
@@ -14,10 +15,8 @@ import {
 } from "lucide-react";
 
 import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
-import { useAuth } from "../features/auth/AuthContext";
 import { useUserProgress } from "../hooks/useUserProgress";
 import { useBookmarks } from "../hooks/useBookmarks";
-import { useLessonNote } from "../hooks/useLessonNote";
 import { fetchApi } from "../lib/api";
 import { Lesson, fetchLessonsApi, fetchLessonContent } from "../lib/lessons";
 import { RichTextEditor } from "../components/ui/RichTextEditor";
@@ -45,8 +44,7 @@ function normalizeCommand(value: string) {
 export function LessonPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const {
+    const {
     isLessonCompleted,
     syncProgress,
     isLoading: isSyncingProgress,

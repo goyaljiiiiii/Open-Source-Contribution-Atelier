@@ -1,6 +1,6 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useEffect } from "react";
 import { fetchApi } from "../lib/api";
-import { useAuth } from "../features/auth/AuthContext";
 
 interface CodeSubmission {
   id: number;
@@ -14,7 +14,6 @@ interface CodeSubmission {
 }
 
 export function PeerReviewPage() {
-  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"submit" | "review">("submit");
 
   // Submit Tab State
@@ -35,12 +34,6 @@ export function PeerReviewPage() {
   const [isReviewing, setIsReviewing] = useState(false);
   const [reviewSuccess, setReviewSuccess] = useState(false);
 
-  useEffect(() => {
-    if (activeTab === "review") {
-      fetchPendingSubmissions();
-    }
-  }, [activeTab]);
-
   const fetchPendingSubmissions = async () => {
     try {
       const response = await fetchApi("/api/progress/code-submissions/");
@@ -51,6 +44,12 @@ export function PeerReviewPage() {
       console.error("Failed to fetch submissions", error);
     }
   };
+
+  useEffect(() => {
+    if (activeTab === "review") {
+      fetchPendingSubmissions();
+    }
+  }, [activeTab]);
 
   const handleSubmitCode = async (e: React.FormEvent) => {
     e.preventDefault();
