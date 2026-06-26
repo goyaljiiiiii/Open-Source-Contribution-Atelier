@@ -292,6 +292,8 @@ export function LeaderboardPage() {
             data={top3.length > 0 ? restOfLeaderboard : filteredLeaderboard}
             keyExtractor={(item) => item.username}
             emptyMessage="No matching contributors found."
+            virtualized={true}
+            containerHeight="600px"
             lastElementRef={lastElementRef}
             footerContent={isFetchingNextPage ? "Loading more contributors..." : null}
             rowClassName={(item) =>

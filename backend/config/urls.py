@@ -5,10 +5,12 @@ from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from graphene_django.views import GraphQLView
 
+from .health_view import health_view
 from .version_view import version_view
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("health/", health_view, name="health"),
     path("api/version/", version_view, name="version"),
     path("api/leaderboard/", LeaderboardView.as_view(), name="leaderboard"),
     path("api/auth/", include("apps.accounts.urls")),

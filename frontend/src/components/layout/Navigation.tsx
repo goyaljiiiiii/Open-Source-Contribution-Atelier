@@ -143,6 +143,7 @@ export function Navigation() {
                 <NavLink
                   key={item.to}
                   to={item.to}
+                  title={item.label}
                   className={({ isActive }) =>
                     [
                       "flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ease-in-out hover:scale-102 hover:shadow-card",

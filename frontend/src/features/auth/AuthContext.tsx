@@ -16,6 +16,9 @@ type User = {
   avatar_url?: string | null;
   cover_image_url?: string | null;
   timezone?: string;
+  twitter_url?: string;
+  linkedin_url?: string;
+  github_url?: string;
 };
 
 type AuthContextType = {

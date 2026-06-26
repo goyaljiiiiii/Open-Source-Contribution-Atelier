@@ -1,5 +1,6 @@
 from apps.dashboard.models import Issue, PullRequest
-from apps.progress.models import LessonProgress
+from apps.progress.models import LessonProgress, ExerciseAttempt
+from apps.progress.badge_evaluator import BadgeEvaluator
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.contrib.auth.models import User
@@ -23,12 +24,19 @@ def handle_issue_pre_save(sender, instance, **kwargs):
     if instance.id:
         try:
             old_instance = Issue.objects.get(id=instance.id)
-            if old_instance.status != Issue.Status.SOLVED and instance.status == Issue.Status.SOLVED:
+            if (
+                old_instance.status != Issue.Status.SOLVED
+                and instance.status == Issue.Status.SOLVED
+            ):
                 from apps.progress.models import XPMultiplierEvent
+
                 multiplier = XPMultiplierEvent.get_active_multiplier()
                 if multiplier > 1.0:
                     instance.bonus_points = int(instance.points * (multiplier - 1.0))
-            elif old_instance.status == Issue.Status.SOLVED and instance.status != Issue.Status.SOLVED:
+            elif (
+                old_instance.status == Issue.Status.SOLVED
+                and instance.status != Issue.Status.SOLVED
+            ):
                 instance.bonus_points = 0
         except Issue.DoesNotExist:
             pass
@@ -51,6 +59,7 @@ def handle_issue_change(sender, instance, **kwargs):
 def handle_pr_change(sender, instance, **kwargs):
     # Clear cache for the contributor who created the PR
     clear_dashboard_caches(user_id=instance.user.id)
+    BadgeEvaluator.evaluate(instance.user)
 
 
 @receiver([post_save, post_delete], sender=LessonProgress)
@@ -61,6 +70,14 @@ def handle_progress_change(sender, instance, **kwargs):
     if getattr(instance, "completed", False):
         _broadcast_xp_update(instance.user)
 
+    BadgeEvaluator.evaluate(instance.user)
+
+
+@receiver([post_save, post_delete], sender=ExerciseAttempt)
+def handle_exercise_attempt_change(sender, instance, **kwargs):
+    clear_dashboard_caches(user_id=instance.user.id)
+    BadgeEvaluator.evaluate(instance.user)
+
 
 def _broadcast_xp_update(user):
     lesson_xp = (
@@ -69,9 +86,9 @@ def _broadcast_xp_update(user):
         )["total"]
         or 0
     )
-    issues_agg = Issue.objects.filter(assigned_to=user, status=Issue.Status.SOLVED).aggregate(
-        p_sum=Sum("points"), b_sum=Sum("bonus_points")
-    )
+    issues_agg = Issue.objects.filter(
+        assigned_to=user, status=Issue.Status.SOLVED
+    ).aggregate(p_sum=Sum("points"), b_sum=Sum("bonus_points"))
     issues_xp = (issues_agg["p_sum"] or 0) + (issues_agg["b_sum"] or 0)
     total_xp = lesson_xp + issues_xp
 

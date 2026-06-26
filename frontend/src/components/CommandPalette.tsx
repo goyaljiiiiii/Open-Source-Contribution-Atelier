@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -92,6 +92,7 @@ export const CommandPalette: React.FC = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [index, setIndex] = useState<SearchIndexEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [results, setResults] = useState<SearchIndexEntry[]>([]);
 
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -144,13 +145,14 @@ export const CommandPalette: React.FC = () => {
 
   // Debounced search (300ms)
   useEffect(() => {
-    if (!query.trim()) {
+    if (!searchQuery.trim()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults([]);
       return;
     }
 
     const timer = setTimeout(() => {
-      const q = query.toLowerCase();
+      const q = searchQuery.toLowerCase();
 
       const scoredResults = index
         .map((entry) => {
@@ -178,7 +180,31 @@ export const CommandPalette: React.FC = () => {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [query, index]);
+  }, [searchQuery, index]);
+
+  // Combine results: Navigation matches first, followed by lesson index matches
+  const combinedResults: PaletteItem[] = useMemo(() => {
+    const combined: PaletteItem[] = [];
+
+    // Filter nav items based on the active (immediate) searchQuery
+    const q = searchQuery.toLowerCase();
+    const filteredNavItems = navItems.filter(
+      (item) =>
+        item.label.toLowerCase().includes(q) ||
+        item.description.toLowerCase().includes(q)
+    );
+
+    filteredNavItems.forEach((item) => combined.push(item));
+
+    results.forEach((entry) => {
+      combined.push({
+        type: entry.type,
+        entry,
+      });
+    });
+
+    return combined;
+  }, [searchQuery, results]);
 
   // Handle keyboard navigation within results
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -320,10 +346,10 @@ export const CommandPalette: React.FC = () => {
               ) : (
                 combinedResults.map((item, i) => {
                   const isSelected = i === selectedIndex;
-                  let title = "";
-                  let description = "";
-                  let iconElement: React.ReactNode = null;
-                  let badgeElement: React.ReactNode = getBadgeForType(item.type);
+                  let title: string;
+                  let description: string;
+                  let iconElement: React.ReactNode;
+                  const badgeElement: React.ReactNode = getBadgeForType(item.type);
 
                   if (item.type === "navigation") {
                     title = item.label;

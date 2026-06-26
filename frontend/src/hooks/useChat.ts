@@ -44,69 +44,73 @@ export function useChat({ roomId, token }: UseChatOptions) {
   const knownUsersRef = useRef<Set<number>>(new Set());
 
   const onMessage = useCallback(async (data: unknown) => {
-    const msg = data as Record<string, unknown>;
-    if (msg.type === "new_message") {
-      let plaintext = msg.message as string;
-      const senderId = msg.user_id as number;
-      const myId = localUserIdRef.current;
-      let matchedLocalId: string | null = null;
+    try {
+      const msg = data as Record<string, unknown>;
+      if (msg.type === "new_message") {
+        let plaintext = msg.message as string;
+        const senderId = msg.user_id as number;
+        const myId = localUserIdRef.current;
+        let matchedLocalId: string | null = null;
 
-      if (plaintext.startsWith("{")) {
-        try {
-          const payload = JSON.parse(plaintext);
-          if (payload.ciphertexts) {
-            matchedLocalId = payload.local_id;
-            if (senderId === myId) {
-              setMessages((prev) => {
-                const last = prev[prev.length - 1];
-                if (last && last.id === matchedLocalId) {
-                  return prev.map((m) =>
-                    m.id === matchedLocalId
-                      ? {
-                          ...m,
-                          id: `msg_${messageIdRef.current + 1}`,
-                          username: msg.username as string,
-                        }
-                      : m,
-                  );
-                }
-                return prev;
-              });
-              return;
-            } else if (
-              myId &&
-              payload.ciphertexts[myId] &&
-              sharedKeysRef.current[senderId]
-            ) {
-              const { ciphertext, iv } = payload.ciphertexts[myId];
-              plaintext = await decryptMessage(
-                ciphertext,
-                iv,
-                sharedKeysRef.current[senderId],
-              );
-            } else {
-              plaintext = "[Encrypted message - key not found]";
+        if (plaintext.startsWith("{")) {
+          try {
+            const payload = JSON.parse(plaintext);
+            if (payload.ciphertexts) {
+              matchedLocalId = payload.local_id;
+              if (senderId === myId) {
+                setMessages((prev) => {
+                  const last = prev[prev.length - 1];
+                  if (last && last.id === matchedLocalId) {
+                    return prev.map((m) =>
+                      m.id === matchedLocalId
+                        ? {
+                            ...m,
+                            id: `msg_${messageIdRef.current + 1}`,
+                            username: msg.username as string,
+                          }
+                        : m,
+                    );
+                  }
+                  return prev;
+                });
+                return;
+              } else if (
+                myId &&
+                payload.ciphertexts[myId] &&
+                sharedKeysRef.current[senderId]
+              ) {
+                const { ciphertext, iv } = payload.ciphertexts[myId];
+                plaintext = await decryptMessage(
+                  ciphertext,
+                  iv,
+                  sharedKeysRef.current[senderId],
+                );
+              } else {
+                plaintext = "[Encrypted message - key not found]";
+              }
             }
+          } catch {
+            // Fallback to plaintext if JSON parse fails
           }
-        } catch {
-          // Fallback to plaintext if JSON parse fails
         }
-      }
 
-      setMessages((prev) => {
-        messageIdRef.current += 1;
-        return [
-          ...prev,
-          {
-            id: `msg_${messageIdRef.current}`,
-            username: msg.username as string,
-            user_id: msg.user_id as number,
-            message: msg.message as string,
-            timestamp: msg.created_at ? new Date(msg.created_at as string).toLocaleTimeString() : new Date().toLocaleTimeString(),
-            created_at: msg.created_at as string | undefined,
-          },
-        ];
-      });
+        setMessages((prev) => {
+          messageIdRef.current += 1;
+          return [
+            ...prev,
+            {
+              id: `msg_${messageIdRef.current}`,
+              username: msg.username as string,
+              user_id: msg.user_id as number,
+              message: plaintext,
+              timestamp: msg.created_at ? new Date(msg.created_at as string).toLocaleTimeString() : new Date().toLocaleTimeString(),
+              created_at: msg.created_at as string | undefined,
+            },
+          ];
+        });
+      }
+    } catch (err) {
+      console.error("Error processing incoming message", err);
     }
   }, []);
 
@@ -166,7 +170,7 @@ export function useChat({ roomId, token }: UseChatOptions) {
         }
       };
       
-      handleMsg();
+      handleMsg().catch((err) => console.error("Error handling websocket message:", err));
     }
   }, [ws.lastMessage, typing, ws]);
 

@@ -30,7 +30,7 @@ class TestXPMultiplier:
         response = client.post(
             "/api/progress/me/",
             {"lesson_slug": lesson.slug, "score": 100, "completed": True},
-            content_type="application/json"
+            format="json"
         )
         assert response.status_code == 201
         prog = LessonProgress.objects.get(user=user, lesson=lesson)
@@ -61,7 +61,7 @@ class TestXPMultiplier:
         response = client.post(
             "/api/progress/me/",
             {"lesson_slug": lesson.slug, "score": 100, "completed": True},
-            content_type="application/json"
+            format="json"
         )
         assert response.status_code == 201
         prog = LessonProgress.objects.get(user=user, lesson=lesson)

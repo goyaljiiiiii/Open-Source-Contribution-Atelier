@@ -19,6 +19,24 @@ const profileSchema = z.object({
       message: "Password must be at least 8 characters long if provided",
     }),
   timezone: z.string(),
+  twitter_url: z
+    .string()
+    .optional()
+    .refine((val) => !val || val.startsWith("http://") || val.startsWith("https://") || val === "", {
+      message: "Please enter a valid URL (starting with http:// or https://)",
+    }),
+  linkedin_url: z
+    .string()
+    .optional()
+    .refine((val) => !val || val.startsWith("http://") || val.startsWith("https://") || val === "", {
+      message: "Please enter a valid URL (starting with http:// or https://)",
+    }),
+  github_url: z
+    .string()
+    .optional()
+    .refine((val) => !val || val.startsWith("http://") || val.startsWith("https://") || val === "", {
+      message: "Please enter a valid URL (starting with http:// or https://)",
+    }),
 });
 
 type ProfileFormValues = z.input<typeof profileSchema>;
@@ -44,6 +62,9 @@ export function ProfileSettingsForm() {
       email: user?.email || "",
       password: "",
       timezone: user?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+      twitter_url: user?.twitter_url || "",
+      linkedin_url: user?.linkedin_url || "",
+      github_url: user?.github_url || "",
     },
   });
 
@@ -53,6 +74,9 @@ export function ProfileSettingsForm() {
         email: user.email,
         password: "",
         timezone: user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+        twitter_url: user.twitter_url || "",
+        linkedin_url: user.linkedin_url || "",
+        github_url: user.github_url || "",
       });
     }
   }, [user, reset]);
@@ -71,11 +95,14 @@ export function ProfileSettingsForm() {
           formData.append("password", data.password);
         }
         formData.append("timezone", data.timezone);
+        formData.append("twitter_url", data.twitter_url || "");
+        formData.append("linkedin_url", data.linkedin_url || "");
+        formData.append("github_url", data.github_url || "");
         if (selectedAvatar) {
-            formData.append("avatar", selectedAvatar);
+          formData.append("avatar", selectedAvatar);
         }
         if (selectedCover) {
-            formData.append("cover_image", selectedCover);
+          formData.append("cover_image", selectedCover);
         }
         body = formData;
       } else {
@@ -83,6 +110,9 @@ export function ProfileSettingsForm() {
         const payload: Record<string, string> = {
           email: data.email,
           timezone: data.timezone,
+          twitter_url: data.twitter_url || "",
+          linkedin_url: data.linkedin_url || "",
+          github_url: data.github_url || "",
         };
         if (data.password) {
           payload.password = data.password;
@@ -98,7 +128,14 @@ export function ProfileSettingsForm() {
 
       await checkUser(); // Refresh global user context to show new avatar instantly
       addToast("Profile settings updated successfully!", "success");
-      reset({ email: data.email, password: "", timezone: data.timezone });
+      reset({
+        email: data.email,
+        password: "",
+        timezone: data.timezone,
+        twitter_url: data.twitter_url || "",
+        linkedin_url: data.linkedin_url || "",
+        github_url: data.github_url || "",
+      });
     } catch (err: unknown) {
       addToast(
         err instanceof Error
@@ -147,13 +184,15 @@ export function ProfileSettingsForm() {
       />
 
       <div className="space-y-2">
-        <label className="font-bold text-black ml-2 uppercase tracking-wide text-sm">
+        <label htmlFor="email" className="font-bold text-black ml-2 uppercase tracking-wide text-sm">
           Email Address
         </label>
         <input
+          id="email"
           {...register("email")}
-          className={`w-full rounded-2xl border-4 border-black bg-white px-5 py-4 text-black font-bold outline-none placeholder:text-muted/60 focus:bg-accent shadow-card-sm transition-all focus:-translate-y-1 focus:shadow-card ${errors.email ? "border-red-500" : ""
-            }`}
+          className={`w-full rounded-2xl border-4 border-black bg-white px-5 py-4 text-black font-bold outline-none placeholder:text-muted/60 focus:bg-accent shadow-card-sm transition-all focus:-translate-y-1 focus:shadow-card ${
+            errors.email ? "border-red-500" : ""
+          }`}
           type="email"
           placeholder="nerd@homework.com"
           disabled={loading}
@@ -166,19 +205,110 @@ export function ProfileSettingsForm() {
       </div>
 
       <div className="space-y-2">
-        <label className="font-bold text-black ml-2 uppercase tracking-wide text-sm">
-          Timezone
+        <label htmlFor="password" className="font-bold text-black ml-2 uppercase tracking-wide text-sm">
+          New Password (leave blank to keep current)
         </label>
-        <select
-          {...register("timezone")}
-          className={`w-full rounded-2xl border-4 border-black bg-white px-5 py-4 text-black font-bold outline-none shadow-card-sm transition-all focus:-translate-y-1 focus:shadow-card focus:bg-accent ${
-            errors.timezone ? "border-red-500" : ""
+        <input
+          id="password"
+          {...register("password")}
+          className={`w-full rounded-2xl border-4 border-black bg-white px-5 py-4 text-black font-bold outline-none placeholder:text-muted/60 focus:bg-tertiary shadow-card-sm transition-all focus:-translate-y-1 focus:shadow-card ${
+            errors.password ? "border-red-500" : ""
           }`}
+          type="password"
+          placeholder="••••••••"
           disabled={loading}
         />
         {errors.password && (
           <p role="alert" className="text-red-600 font-bold ml-2 text-sm">
             {errors.password.message}
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <label htmlFor="timezone" className="font-bold text-black ml-2 uppercase tracking-wide text-sm">
+          Timezone
+        </label>
+        <select
+          id="timezone"
+          {...register("timezone")}
+          className={`w-full rounded-2xl border-4 border-black bg-white px-5 py-4 text-black font-bold outline-none shadow-card-sm transition-all focus:-translate-y-1 focus:shadow-card focus:bg-accent ${
+            errors.timezone ? "border-red-500" : ""
+          }`}
+          disabled={loading}
+        >
+          {(Intl as any).supportedValuesOf("timeZone").map((tz: string) => (
+            <option key={tz} value={tz}>
+              {tz}
+            </option>
+          ))}
+        </select>
+        {errors.timezone && (
+          <p role="alert" className="text-red-600 font-bold ml-2 text-sm">
+            {errors.timezone.message}
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <label htmlFor="github_url" className="font-bold text-black ml-2 uppercase tracking-wide text-sm">
+          GitHub URL
+        </label>
+        <input
+          id="github_url"
+          {...register("github_url")}
+          className={`w-full rounded-2xl border-4 border-black bg-white px-5 py-4 text-black font-bold outline-none placeholder:text-muted/60 focus:bg-accent shadow-card-sm transition-all focus:-translate-y-1 focus:shadow-card ${
+            errors.github_url ? "border-red-500" : ""
+          }`}
+          type="url"
+          placeholder="https://github.com/username"
+          disabled={loading}
+        />
+        {errors.github_url && (
+          <p role="alert" className="text-red-600 font-bold ml-2 text-sm">
+            {errors.github_url.message}
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <label htmlFor="linkedin_url" className="font-bold text-black ml-2 uppercase tracking-wide text-sm">
+          LinkedIn URL
+        </label>
+        <input
+          id="linkedin_url"
+          {...register("linkedin_url")}
+          className={`w-full rounded-2xl border-4 border-black bg-white px-5 py-4 text-black font-bold outline-none placeholder:text-muted/60 focus:bg-accent shadow-card-sm transition-all focus:-translate-y-1 focus:shadow-card ${
+            errors.linkedin_url ? "border-red-500" : ""
+          }`}
+          type="url"
+          placeholder="https://linkedin.com/in/username"
+          disabled={loading}
+        />
+        {errors.linkedin_url && (
+          <p role="alert" className="text-red-600 font-bold ml-2 text-sm">
+            {errors.linkedin_url.message}
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <label htmlFor="twitter_url" className="font-bold text-black ml-2 uppercase tracking-wide text-sm">
+          Twitter URL
+        </label>
+        <input
+          id="twitter_url"
+          {...register("twitter_url")}
+          className={`w-full rounded-2xl border-4 border-black bg-white px-5 py-4 text-black font-bold outline-none placeholder:text-muted/60 focus:bg-accent shadow-card-sm transition-all focus:-translate-y-1 focus:shadow-card ${
+            errors.twitter_url ? "border-red-500" : ""
+          }`}
+          type="url"
+          placeholder="https://twitter.com/username"
+          disabled={loading}
+        />
+        {errors.twitter_url && (
+          <p role="alert" className="text-red-600 font-bold ml-2 text-sm">
+            {errors.twitter_url.message}
           </p>
         )}
       </div>

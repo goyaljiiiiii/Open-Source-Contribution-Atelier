@@ -25,9 +25,9 @@ channel_layer = get_channel_layer()
 def _push_notification(notification: Notification):
     """Send a notification object to the user's WebSocket group."""
     data = NotificationSerializer(notification).data
-    group_name = f"notifications_{notification.recipient_id}" # type: ignore
+    group_name = f"notifications_{notification.recipient_id}"  # type: ignore
     try:
-        async_to_sync(channel_layer.group_send)( # type: ignore
+        async_to_sync(channel_layer.group_send)(  # type: ignore
             group_name,
             {
                 "type": "send_notification",  # matches consumer method
@@ -35,7 +35,7 @@ def _push_notification(notification: Notification):
             },
         )
         logger.info(
-            "Pushed notification id=%s to group=%s", notification.id, group_name # type: ignore
+            "Pushed notification id=%s to group=%s", notification.id, group_name  # type: ignore
         )
     except Exception as exc:
         logger.error("Failed to push notification: %s", exc)
@@ -45,14 +45,14 @@ def _push_notification(notification: Notification):
         url = "/"
         if notification.notif_type == "badge":
             url = "/profile"
-        elif notification.meta and "contribution_id" in notification.meta: # type: ignore
-            url = f"/contributions/{notification.meta['contribution_id']}" # type: ignore
-            
-        send_web_push_notification.delay( # type: ignore
-            user_id=notification.recipient_id, # type: ignore
+        elif notification.meta and "contribution_id" in notification.meta:  # type: ignore
+            url = f"/contributions/{notification.meta['contribution_id']}"  # type: ignore
+
+        send_web_push_notification.delay(  # type: ignore
+            user_id=notification.recipient_id,  # type: ignore
             title=notification.title,
             message=notification.message,
-            url=url
+            url=url,
         )
     except Exception as exc:
         logger.error("Failed to enqueue web push notification: %s", exc)
@@ -64,7 +64,7 @@ def _push_notification(notification: Notification):
 from apps.progress.models import UserBadge
 
 
-@receiver(post_save, sender=UserBadge)
+@receiver(post_save, sender=UserBadge, dispatch_uid="on_badge_awarded_notification")
 def on_badge_awarded(sender, instance, created, **kwargs):
     if not created:
         return
@@ -90,7 +90,7 @@ def on_badge_awarded(sender, instance, created, **kwargs):
     from celery import current_app
 
     current_app.send_task(
-        "tasks.send_bulk_email",
+        "apps.notifications.tasks.send_bulk_email",
         kwargs={
             "payload": {
                 "template_id": "badge_earned_email",

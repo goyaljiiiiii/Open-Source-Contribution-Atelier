@@ -98,7 +98,7 @@ jobs:
 
               // 1. Retroactive assignment for unassigned issues
               if (assignees.length === 0 && !isPR) {
-                const assignComments = comments.filter(c => c.body.match(/assign.*me/i));
+                const assignComments = comments.filter(c => c.body.match(/assign.*me/i) && !c.body.toLowerCase().includes('unassign'));
                 
                 if (assignComments.length > 0) {
                   // Find the most recent request
@@ -186,7 +186,7 @@ jobs:
                   }
                 } else {
                   // Not warned yet. Check if it's been 2 days.
-                  if (diffDays >= 0) {
+                  if (diffDays >= 2) {
                     console.log(`Warning ${assignees.join(', ')} on issue #${item.number}`);
                     await github.rest.issues.createComment({
                       owner: context.repo.owner,

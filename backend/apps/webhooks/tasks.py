@@ -62,23 +62,23 @@ def deliver_webhook(self, delivery_id):
 
         if 200 <= response.status_code < 300:
             delivery.status = "success"
+        elif response.status_code == 429 or response.status_code >= 500:
+            # Trigger retry for rate limits and server errors
+            raise requests.exceptions.RequestException(
+                f"Recoverable error: {response.status_code}"
+            )
         else:
+            # 4xx errors (except 429) are client errors, do not retry
             delivery.status = "failed"
-            # We can decide if we want to retry on 5xx errors
-            if response.status_code >= 500:
-                raise requests.exceptions.RequestException(
-                    f"Server error: {response.status_code}"
-                )
 
     except requests.exceptions.RequestException as e:
-        delivery.status = "failed"
         delivery.response_body = str(e)[:2000]
-        delivery.save()
 
         # Retry with exponential backoff
         try:
-            self.retry(countdown=2**self.request.retries * 60)
+            self.retry(exc=e, countdown=2**self.request.retries * 60)
         except self.MaxRetriesExceededError:
+            delivery.status = "failed"
             logger.error(f"Max retries exceeded for webhook delivery {delivery.id}")
     finally:
         delivery.save()

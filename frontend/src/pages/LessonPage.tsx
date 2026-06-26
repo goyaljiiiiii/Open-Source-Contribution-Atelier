@@ -46,13 +46,14 @@ export function LessonPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isLessonCompleted, syncProgress } = useUserProgress();
+  const { isLessonCompleted, syncProgress, isLoading: isSyncingProgress } = useUserProgress();
   const { isBookmarked, toggleBookmark } = useBookmarks();
   const queryClient = useQueryClient();
 
   const [lesson, setLesson] = useState<Lesson | undefined>(undefined);
   const [lessonsList, setLessonsList] = useState<Lesson[]>([]);
   const [markdownContent, setMarkdownContent] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   // Curriculum modules list for sidebar
   const [modules, setModules] = useState<
@@ -134,6 +135,7 @@ export function LessonPage() {
 
   // 1. Fetch modules catalog & lessons
   useEffect(() => {
+    setIsLoading(true);
     fetch("/content/curriculum.json")
       .then((res) => res.json())
       .then((data) => {
@@ -155,6 +157,9 @@ export function LessonPage() {
       })
       .catch(() => {
         navigate("/dashboard", { replace: true });
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   }, [slug, navigate]);
 
