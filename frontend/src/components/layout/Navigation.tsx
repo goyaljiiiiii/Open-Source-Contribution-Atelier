@@ -21,6 +21,7 @@ import { useTheme } from "../../hooks/useTheme";
 import { useAuth } from "../../features/auth/AuthContext";
 import { fetchLessonsApi } from "../../lib/lessons";
 import LogoutButtonWithConfirm from "./LogoutButtonWithConfirm";
+import { ThemeToggle } from "../ui/ThemeToggle";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
@@ -293,29 +294,7 @@ export function Navigation() {
             >
               Dashboard
             </Link>
-            <button
-              className="rounded-lg bg-surface-low p-2 text-muted hover:text-text border-2 border-black dark:border-[#2e2924] shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2]"
-              onClick={toggleTheme}
-              aria-label={
-                theme === "light"
-                  ? "Switch to dark mode"
-                  : "Switch to light mode"
-              }
-            >
-              {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
-            </button>
-            <button
-              className={`rounded-lg p-2 border-2 border-black dark:border-[#2e2924] shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all ${
-                theme === "high-contrast"
-                  ? "bg-primary text-white"
-                  : "bg-surface-low text-muted hover:text-text dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2]"
-              }`}
-              onClick={() => setTheme(theme === "high-contrast" ? "light" : "high-contrast")}
-              aria-label="Toggle High Contrast Mode"
-              title="High Contrast Mode"
-            >
-              <Eye size={16} />
-            </button>
+            <ThemeToggle />
             <button className="relative rounded-lg bg-surface-low p-2 text-muted hover:text-text dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2]">
               <Bell size={16} />
               {badgeCount > 0 && (

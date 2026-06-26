@@ -3,17 +3,28 @@ import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { useTheme } from "./useTheme";
 
 describe("useTheme", () => {
+  let mediaQueryCallbacks: Record<string, ((e: any) => void)[]> = {};
+
   beforeEach(() => {
     localStorage.clear();
     document.documentElement.className = "";
+    mediaQueryCallbacks = {};
+    
     vi.stubGlobal("matchMedia", vi.fn().mockImplementation((query) => ({
       matches: false,
       media: query,
       onchange: null,
       addListener: vi.fn(),
       removeListener: vi.fn(),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
+      addEventListener: vi.fn((event, cb) => {
+        if (!mediaQueryCallbacks[query]) mediaQueryCallbacks[query] = [];
+        mediaQueryCallbacks[query].push(cb);
+      }),
+      removeEventListener: vi.fn((event, cb) => {
+        if (mediaQueryCallbacks[query]) {
+          mediaQueryCallbacks[query] = mediaQueryCallbacks[query].filter(fn => fn !== cb);
+        }
+      }),
       dispatchEvent: vi.fn(),
     })));
   });
@@ -22,9 +33,9 @@ describe("useTheme", () => {
     vi.restoreAllMocks();
   });
 
-  it("should initialize with light theme by default", () => {
+  it("should initialize with system theme by default", () => {
     const { result } = renderHook(() => useTheme());
-    expect(result.current.theme).toBe("light");
+    expect(result.current.theme).toBe("system");
     expect(document.documentElement.classList.contains("dark")).toBe(false);
     expect(document.documentElement.classList.contains("high-contrast")).toBe(false);
   });
@@ -37,7 +48,24 @@ describe("useTheme", () => {
     expect(document.documentElement.classList.contains("dark")).toBe(false);
   });
 
-  it("should respect system preference for high contrast", () => {
+  it("should apply dark class when system preference is dark", () => {
+    vi.stubGlobal("matchMedia", vi.fn().mockImplementation((query) => ({
+      matches: query === '(prefers-color-scheme: dark)',
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })));
+
+    const { result } = renderHook(() => useTheme());
+    expect(result.current.theme).toBe("system");
+    expect(document.documentElement.classList.contains("dark")).toBe(true);
+  });
+
+  it("should apply high-contrast class when system preference is high contrast", () => {
     vi.stubGlobal("matchMedia", vi.fn().mockImplementation((query) => ({
       matches: query === '(prefers-contrast: more)',
       media: query,
@@ -50,16 +78,29 @@ describe("useTheme", () => {
     })));
 
     const { result } = renderHook(() => useTheme());
-    expect(result.current.theme).toBe("high-contrast");
+    expect(result.current.theme).toBe("system");
+    expect(document.documentElement.classList.contains("high-contrast")).toBe(true);
   });
 
-  it("should toggle from light to dark", () => {
+  it("should toggle from system to light to dark", () => {
     const { result } = renderHook(() => useTheme());
+    expect(result.current.theme).toBe("system");
+    
+    act(() => {
+      result.current.toggleTheme();
+    });
+    expect(result.current.theme).toBe("light");
+    
     act(() => {
       result.current.toggleTheme();
     });
     expect(result.current.theme).toBe("dark");
     expect(document.documentElement.classList.contains("dark")).toBe(true);
+    
+    act(() => {
+      result.current.toggleTheme();
+    });
+    expect(result.current.theme).toBe("system");
   });
 
   it("should set specific theme to high-contrast", () => {
