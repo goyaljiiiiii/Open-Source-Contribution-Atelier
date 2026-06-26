@@ -2,7 +2,8 @@
 <!-- Briefly describe what this Pull-request does -->
 
 ## Related Issue
-<!--What are the issues it solves  -->
+<!-- What are the issues it solves? -->
+<!-- ⚠️ IMPORTANT: The check-linked-issue.yml workflow will fail your PR if you do not link an issue below! -->
 Closes #[Issue_Number]
 
 ## Changes Made
