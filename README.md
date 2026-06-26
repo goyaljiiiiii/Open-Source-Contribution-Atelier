@@ -87,7 +87,7 @@ This project is fully configured to be deployed on **Vercel** as a monorepo.
 ## 🧑‍💻 Contributing
 
 We welcome contributions of all levels suitable for **SSOC 2026** and long-term participation! Please review our guides:
-- **[CONTRIBUTING.md](CONTRIBUTING.md)**: Forking, branching guidelines, commit conventions, and review cycles.
-- **[SUPPORT.md](SUPPORT.md)**: How to get help, community channels, and asking questions.
-- **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)**: Community participation guidelines.
-- **[SECURITY.md](SECURITY.md)**: Responsible vulnerability disclosure rules.
+- **[CONTRIBUTING.md](.github/CONTRIBUTING.md)**: Forking, branching guidelines, commit conventions, and review cycles.
+- **[SUPPORT.md](.github/SUPPORT.md)**: How to get help, community channels, and asking questions.
+- **[CODE_OF_CONDUCT.md](.github/CODE_OF_CONDUCT.md)**: Community participation guidelines.
+- **[SECURITY.md](.github/SECURITY.md)**: Responsible vulnerability disclosure rules.
