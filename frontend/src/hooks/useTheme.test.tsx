@@ -84,7 +84,7 @@ describe("useTheme", () => {
     );
   });
 
-  it("should respect system preference for high contrast", () => {
+it("should apply high-contrast class when system preference is high contrast", () => {
     vi.stubGlobal("matchMedia", vi.fn().mockImplementation((query) => ({
       matches: query === "(prefers-contrast: more)",
       media: query,
