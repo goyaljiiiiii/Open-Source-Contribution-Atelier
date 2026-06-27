@@ -7,33 +7,50 @@ assignees: ''
 
 ---
 
-> Please checkmark ssoc26 if you are contributing under that.
-- [ ] ssoc26
+> Please checkmark if you are contributing under SSoC 2026:
+- [ ] I am a SSoC26 contributor
+
+<!--
+  IMPORTANT: Feature requests must propose a concrete improvement with clear acceptance criteria.
+  Vague suggestions or "ideas" without technical context will be closed.
+-->
+
+## 🎯 Problem Statement
+<!-- 
+  Describe the concrete problem this feature solves. 
+  What is the current friction or pain point for learners, contributors, or maintainers?
+-->
 
 
-## Problem
+## 🛠️ Proposed Solution
+<!-- 
+  Describe your proposed implementation. 
+  Include details about components (frontend, backend API, verifier, sandbox, docs) affected.
+-->
 
-What learner or maintainer problem does this solve?
 
-## Proposed Solution
+## 📈 Learning / Maintainer Impact
+- [ ] Beginner contributor onboarding (simplifies setup/guides)
+- [ ] Intermediate contributor workflow (improves CLI, local verifier, tests)
+- [ ] Advanced maintainer operations (dashboard, automations, monitoring)
+- [ ] Platform security / sandboxing / performance
 
-Describe your proposed change.
+## ✅ Strict Acceptance Criteria
+<!-- 
+  What must be true for this feature to be considered complete? 
+  List the exact conditions/test cases.
+-->
+- [ ] 
+- [ ] 
+- [ ] 
 
-## Learning Impact
+## 🔄 Alternatives Considered
+<!-- What alternative workarounds or designs did you consider? Why were they rejected? -->
 
-- [ ] Beginner contributor onboarding
-- [ ] Intermediate contributor workflow
-- [ ] Advanced maintainer workflow
-- [ ] Community/operations improvements
 
-## Acceptance Criteria
-
-List what must be true for this feature to be complete.
-
-## Alternatives Considered
-
-What options did you reject and why?
-
-## Additional Context
-
-Links, mockups, examples, or references.
+## 📐 Design & Visuals (Mockups / Diagrams)
+<!-- 
+  If this change affects the UI or application state flow:
+  Attach a layout mockup, wireframe, or sequence diagram.
+  PRs implementing UI changes must match these approved visuals.
+-->

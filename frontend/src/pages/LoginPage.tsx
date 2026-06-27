@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Github } from "lucide-react";
+import { GitBranch } from "lucide-react";
 import { AuthPageShell } from "../features/auth/AuthPageShell";
 import { fetchApi } from "../lib/api";
 import { useAuth } from "../features/auth/AuthContext";
@@ -47,7 +47,10 @@ export function LoginPage() {
     >
       <form className="space-y-6 pt-2" onSubmit={handleSubmit}>
         {error && (
-          <div role="alert" className="text-black font-bold text-sm bg-primary p-4 rounded-lg border-4 border-black shadow-card-sm">
+          <div
+            role="alert"
+            className="text-black font-bold text-sm bg-primary p-4 rounded-lg border-4 border-black shadow-card-sm"
+          >
             {error}
           </div>
         )}
@@ -58,8 +61,9 @@ export function LoginPage() {
           className="group relative w-full overflow-hidden rounded-lg border-4 border-black bg-black px-5 py-4 font-black text-white text-lg shadow-card transition-all duration-300 hover:-translate-y-1 hover:bg-text hover:shadow-card-lg cursor-pointer uppercase flex items-center justify-center gap-3 before:absolute before:inset-0 before:-translate-x-full before:bg-gradient-to-r before:from-transparent before:via-white/25 before:to-transparent before:transition-transform before:duration-500 hover:before:translate-x-full"
           aria-label="Sign in with GitHub"
         >
-          <Github
-            className="relative h-6 w-6 transition-transform duration-300 group-hover:rotate-[-8deg] group-hover:scale-110"
+          <GitBranch
+            className="mr-2 inline-block relative transition-transform duration-300 group-hover:rotate-[-8deg] group-hover:scale-110"
+            size={20}
             strokeWidth={2.75}
             aria-hidden="true"
           />

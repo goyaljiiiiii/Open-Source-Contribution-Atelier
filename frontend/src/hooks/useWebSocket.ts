@@ -31,7 +31,10 @@ export function useWebSocket({
   const reconnectCountRef = useRef(0);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onMessageRef = useRef(onMessage);
-  onMessageRef.current = onMessage;
+
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
 
   const buildUrl = useCallback(() => {
     if (!token) return url;
@@ -54,6 +57,8 @@ export function useWebSocket({
     }
   }, []);
 
+  const connectRef = useRef<() => void>(() => {});
+
   const connect = useCallback(() => {
     cleanup();
 
@@ -74,7 +79,10 @@ export function useWebSocket({
       setState((s) => ({ ...s, isConnected: false }));
       if (reconnectCountRef.current < maxReconnectAttempts) {
         reconnectCountRef.current += 1;
-        reconnectTimerRef.current = setTimeout(connect, reconnectInterval);
+        reconnectTimerRef.current = setTimeout(
+          () => connectRef.current(),
+          reconnectInterval,
+        );
       }
     };
 
@@ -95,6 +103,10 @@ export function useWebSocket({
     wsRef.current = ws;
   }, [buildUrl, cleanup, reconnectInterval, maxReconnectAttempts, token]);
 
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
+
   const disconnect = useCallback(() => {
     reconnectCountRef.current = maxReconnectAttempts;
     cleanup();
@@ -108,6 +120,7 @@ export function useWebSocket({
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     connect();
     return cleanup;
   }, [connect, cleanup]);

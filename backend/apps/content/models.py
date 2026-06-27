@@ -34,6 +34,9 @@ class Lesson(models.Model):
     embedding = models.JSONField(
         null=True, blank=True, help_text="Pre-computed semantic embedding vector"
     )
+    prerequisites = models.ManyToManyField(
+        "self", symmetrical=False, related_name="dependents", blank=True
+    )
 
     class Meta:
         ordering = ["order", "id"]
@@ -51,9 +54,16 @@ class Exercise(models.Model):
     points = models.PositiveIntegerField(default=10)
 
 
-class ActiveCommentManager(models.Manager):
+class SoftDeleteQuerySet(models.QuerySet):
+    def delete(self, hard=False):
+        if hard:
+            return super().delete()  # type: ignore
+        return self.update(is_deleted=True)
+
+
+class SoftDeleteManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().filter(is_deleted=False)
+        return SoftDeleteQuerySet(self.model, using=self._db).filter(is_deleted=False)
 
 
 class Comment(models.Model):
@@ -66,8 +76,8 @@ class Comment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    objects = models.Manager()
-    active_objects = ActiveCommentManager()
+    objects = SoftDeleteManager()
+    all_objects = models.Manager()
 
     class Meta:
         ordering = ["-created_at"]
@@ -75,9 +85,12 @@ class Comment(models.Model):
             models.Index(fields=["is_deleted"], name="idx_comment_is_deleted"),
         ]
 
-    def soft_delete(self):
+    def delete(self, using=None, keep_parents=False, hard=False):
+        if hard:
+            return super().delete(using=using, keep_parents=keep_parents)  # type: ignore
         self.is_deleted = True
         self.save(update_fields=["is_deleted"])
+        return (1, {self._meta.label: 1})  # type: ignore
 
     def restore(self):
         self.is_deleted = False
@@ -85,7 +98,7 @@ class Comment(models.Model):
 
     def __str__(self):
         status = "[DELETED] " if self.is_deleted else ""
-        return f"{status}Comment by {self.user.username}"
+        return f"{status}Comment by {self.user.username}"  # type: ignore
 
 
 class Organization(models.Model):
@@ -96,10 +109,10 @@ class Organization(models.Model):
     date_added = models.DateTimeField(auto_now_add=True)
     popularity_score = models.IntegerField(
         default=0, help_text="Higher score means more popular"
-    )
+    )  # type: ignore
 
     class Meta:
         ordering = ["-popularity_score"]
 
-    def __str__(self):
-        return self.name
+    def __str__(self) -> str:
+        return str(self.name)

@@ -7,45 +7,67 @@ assignees: ''
 
 ---
 
-> Please checkmark ssoc26 if you are contributing under that.
-- [ ] ssoc26
+> Please checkmark if you are contributing under SSoC 2026:
+- [ ] I am a SSoC26 contributor
+
+<!--
+  IMPORTANT: Bug reports that do not include steps to reproduce, environment information,
+  and proof/evidence of the issue (such as logs or screenshots) will be closed.
+-->
+
+## 🐞 Bug Description
+<!-- A clear and concise description of what the bug is. -->
 
 
-## Summary
+## 🚀 Steps to Reproduce
+<!-- 
+  Provide exact steps to reproduce the behavior. 
+  Issues that cannot be reproduced by maintainers will be marked as 'can't reproduce' or closed.
+-->
+1. Go to '...'
+2. Click on '...'
+3. Scroll down to '...'
+4. See error
 
-Describe the bug in one or two sentences.
+## 🎯 Expected Behavior
+<!-- A clear and concise description of what you expected to happen. -->
 
-## Steps To Reproduce
 
-1. 
-2. 
-3. 
+## ⚠️ Actual Behavior
+<!-- A clear and concise description of what actually happened. -->
 
-## Expected Behavior
 
-What should have happened?
+## 📂 Location / Code Reference
+<!-- 
+  If you have identified the location of the bug:
+  Include the exact file path and line number range.
+  Example: `backend/challenges/views.py#L34-L40`
+-->
 
-## Actual Behavior
 
-What happened instead?
+## 💻 Environment Details
+<!-- Please provide details about your configuration. -->
+- **OS**: [e.g. macOS, Windows, Linux]
+- **Browser (if applicable)**: [e.g. Chrome, Firefox, Safari]
+- **Node.js/Python version**: [e.g. Node 20, Python 3.9]
+- **API/Frontend Commit Hash (optional)**: 
 
-## Scope
+## 📸 Evidence & Logs (MANDATORY)
+<!-- 
+  You MUST provide proof of the bug. 
+  - Attach screenshots, GIFs, or video recordings showing the issue.
+  - Paste any relevant stack traces, console logs, or network tab requests below.
+-->
 
-- [ ] Frontend
-- [ ] Backend API
-- [ ] Sandbox / verifier
-- [ ] Documentation
+<details>
+<summary><b>Screenshots / Recordings</b></summary>
+<!-- Paste visual evidence here -->
+</details>
 
-## Environment
+<details>
+<summary><b>Error Logs / Stack Traces</b></summary>
 
-- OS:
-- Browser:
-- API/Frontend commit (optional):
-
-## Evidence
-
-Logs, screenshots, or terminal output.
-
-## Suggested Fix (Optional)
-
-If you know where the issue might be, add file paths or a short proposal.
+```text
+# Paste error output, stack trace, or terminal logs here
+```
+</details>

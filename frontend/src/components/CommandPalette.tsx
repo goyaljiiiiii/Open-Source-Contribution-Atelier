@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+/* eslint-disable react-hooks/set-state-in-effect */
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import {
   LayoutGrid,
   BookOpen,
@@ -92,10 +94,12 @@ export const CommandPalette: React.FC = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [index, setIndex] = useState<SearchIndexEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [results, setResults] = useState<SearchIndexEntry[]>([]);
 
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, isOpen);
 
   // Toggle palette with Cmd+K or Ctrl+K globally
   useEffect(() => {
@@ -144,13 +148,13 @@ export const CommandPalette: React.FC = () => {
 
   // Debounced search (300ms)
   useEffect(() => {
-    if (!query.trim()) {
+    if (!searchQuery.trim()) {
       setResults([]);
       return;
     }
 
     const timer = setTimeout(() => {
-      const q = query.toLowerCase();
+      const q = searchQuery.toLowerCase();
 
       const scoredResults = index
         .map((entry) => {
@@ -178,7 +182,31 @@ export const CommandPalette: React.FC = () => {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [query, index]);
+  }, [searchQuery, index]);
+
+  // Combine results: Navigation matches first, followed by lesson index matches
+  const combinedResults: PaletteItem[] = useMemo(() => {
+    const combined: PaletteItem[] = [];
+
+    // Filter nav items based on the active (immediate) searchQuery
+    const q = searchQuery.toLowerCase();
+    const filteredNavItems = navItems.filter(
+      (item) =>
+        item.label.toLowerCase().includes(q) ||
+        item.description.toLowerCase().includes(q),
+    );
+
+    filteredNavItems.forEach((item) => combined.push(item));
+
+    results.forEach((entry) => {
+      combined.push({
+        type: entry.type,
+        entry,
+      });
+    });
+
+    return combined;
+  }, [searchQuery, results]);
 
   // Handle keyboard navigation within results
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -189,7 +217,9 @@ export const CommandPalette: React.FC = () => {
       setSelectedIndex((prev) => (prev + 1) % combinedResults.length);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev - 1 + combinedResults.length) % combinedResults.length);
+      setSelectedIndex(
+        (prev) => (prev - 1 + combinedResults.length) % combinedResults.length,
+      );
     } else if (e.key === "Enter") {
       e.preventDefault();
       handleSelect(combinedResults[selectedIndex]);
@@ -211,20 +241,26 @@ export const CommandPalette: React.FC = () => {
     const iconClass = "w-5 h-5 flex-shrink-0";
     if (type === "lesson") {
       return (
-        <div className={`p-2 rounded-lg border-2 border-black flex-shrink-0 ${isSelected ? "bg-white text-blue-600" : "bg-blue-600/20 text-blue-400"}`}>
+        <div
+          className={`p-2 rounded-lg border-2 border-black flex-shrink-0 ${isSelected ? "bg-white text-blue-600" : "bg-blue-600/20 text-blue-400"}`}
+        >
           <FileText className={iconClass} />
         </div>
       );
     }
     if (type === "heading") {
       return (
-        <div className={`p-2 rounded-lg border-2 border-black flex-shrink-0 ${isSelected ? "bg-white text-purple-600" : "bg-purple-600/20 text-purple-400"}`}>
+        <div
+          className={`p-2 rounded-lg border-2 border-black flex-shrink-0 ${isSelected ? "bg-white text-purple-600" : "bg-purple-600/20 text-purple-400"}`}
+        >
           <HeadingIcon className={iconClass} />
         </div>
       );
     }
     return (
-      <div className={`p-2 rounded-lg border-2 border-black flex-shrink-0 ${isSelected ? "bg-white text-zinc-600" : "bg-zinc-800 text-zinc-400"}`}>
+      <div
+        className={`p-2 rounded-lg border-2 border-black flex-shrink-0 ${isSelected ? "bg-white text-zinc-600" : "bg-zinc-800 text-zinc-400"}`}
+      >
         <AlignLeft className={iconClass} />
       </div>
     );
@@ -320,10 +356,12 @@ export const CommandPalette: React.FC = () => {
               ) : (
                 combinedResults.map((item, i) => {
                   const isSelected = i === selectedIndex;
-                  let title = "";
-                  let description = "";
-                  let iconElement: React.ReactNode = null;
-                  let badgeElement: React.ReactNode = getBadgeForType(item.type);
+                  let title: string;
+                  let description: string;
+                  let iconElement: React.ReactNode;
+                  const badgeElement: React.ReactNode = getBadgeForType(
+                    item.type,
+                  );
 
                   if (item.type === "navigation") {
                     title = item.label;
@@ -332,7 +370,9 @@ export const CommandPalette: React.FC = () => {
                     iconElement = (
                       <div
                         className={`p-2 rounded-lg border-2 border-black flex-shrink-0 ${
-                          isSelected ? "bg-[#FF3B30] text-white" : "bg-[#0f0e0c] text-[#FFCC00]"
+                          isSelected
+                            ? "bg-[#FF3B30] text-white"
+                            : "bg-[#0f0e0c] text-[#FFCC00]"
                         }`}
                       >
                         <NavIcon size={20} />
@@ -378,7 +418,9 @@ export const CommandPalette: React.FC = () => {
                       </div>
                       <ChevronRight
                         className={`w-5 h-5 flex-shrink-0 transition-transform ${
-                          isSelected ? "text-black translate-x-1" : "text-[#6b5a49]"
+                          isSelected
+                            ? "text-black translate-x-1"
+                            : "text-[#6b5a49]"
                         }`}
                       />
                     </button>
@@ -410,7 +452,15 @@ export const CommandPalette: React.FC = () => {
                 </span>
               </div>
               <div className="hidden sm:block text-right">
-                Press <kbd className="bg-black rounded px-1.5 py-0.5 text-[#f0ebe2] border border-[#2e2924]">⌘K</kbd> / <kbd className="bg-black rounded px-1.5 py-0.5 text-[#f0ebe2] border border-[#2e2924]">Ctrl K</kbd> anywhere
+                Press{" "}
+                <kbd className="bg-black rounded px-1.5 py-0.5 text-[#f0ebe2] border border-[#2e2924]">
+                  ⌘K
+                </kbd>{" "}
+                /{" "}
+                <kbd className="bg-black rounded px-1.5 py-0.5 text-[#f0ebe2] border border-[#2e2924]">
+                  Ctrl K
+                </kbd>{" "}
+                anywhere
               </div>
             </div>
           </motion.div>

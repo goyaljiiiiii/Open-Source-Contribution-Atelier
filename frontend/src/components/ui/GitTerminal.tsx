@@ -79,6 +79,7 @@ export function GitTerminal({
 
   useEffect(() => {
     if (shellState.editorState) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEditorVal(shellState.editorState.content);
     }
   }, [shellState.editorState]);

@@ -5,9 +5,13 @@ Custom DRF exception handler that produces user-friendly API responses.
 import logging
 
 from rest_framework import status
-from rest_framework.exceptions import (AuthenticationFailed, NotAuthenticated,
-                                       PermissionDenied, Throttled,
-                                       ValidationError)
+from rest_framework.exceptions import (
+    AuthenticationFailed,
+    NotAuthenticated,
+    PermissionDenied,
+    Throttled,
+    ValidationError,
+)
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
@@ -22,6 +26,8 @@ _THROTTLE_MESSAGES = {
     "auth_otp_verify": "Too many OTP verification attempts. Please wait before trying again.",
     "auth_password_reset": "Too many password reset requests. Please wait an hour before requesting another reset.",
     "auth_oauth": "Too many OAuth requests. Please wait a moment and try again.",
+    "auth_magic_link_request": "Too many magic link requests. Please wait a few minutes before requesting a new link.",
+    "auth_magic_link_verify": "Too many magic link verification attempts. Please wait before trying again.",
 }
 
 _DEFAULT_MESSAGE = "Request limit exceeded. Please wait before retrying."
@@ -124,7 +130,6 @@ def throttle_exception_handler(exc, context):
         )
 
     # Rate limiting
-    # Rate limiting
     if isinstance(exc, Throttled):
         view = context.get("view")
         scope = None
@@ -138,12 +143,16 @@ def throttle_exception_handler(exc, context):
         message = _THROTTLE_MESSAGES.get(scope, _DEFAULT_MESSAGE)
         retry_after = getattr(exc, "wait", None)
 
+        response_data = {
+            "error": "rate_limited",
+            "code": "rate_limited",
+            "message": message,
+        }
+        if retry_after is not None:
+            response_data["retry_after"] = int(retry_after) + 1
+
         return Response(
-            {
-                "error": True,
-                "code": "rate_limited",
-                "message": message,
-            },
+            response_data,
             status=status.HTTP_429_TOO_MANY_REQUESTS,
         )
 

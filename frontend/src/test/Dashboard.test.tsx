@@ -44,6 +44,16 @@ vi.mock("../features/auth/AuthContext", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
+// Mock useBookmarks hook
+vi.mock("../hooks/useBookmarks", () => ({
+  useBookmarks: () => ({
+    bookmarks: [],
+    isLoading: false,
+    toggleBookmark: { mutate: vi.fn(), isPending: false },
+    isBookmarked: vi.fn(),
+  }),
+}));
+
 // Helper function to render component with fresh React Query Client
 function renderWithQueryClient(ui: React.ReactElement) {
   const queryClient = new QueryClient({
@@ -75,7 +85,7 @@ describe("DashboardPage Dual-Role Views", () => {
       },
     });
 
-    // MSW handlers in src/mocks/handlers.ts already provide the default mock responses 
+    // MSW handlers in src/mocks/handlers.ts already provide the default mock responses
     // for admin analytics and leaderboard.
 
     renderWithQueryClient(<DashboardPage />);

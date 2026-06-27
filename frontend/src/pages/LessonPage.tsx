@@ -9,10 +9,12 @@ import {
   BookOpen,
   CheckCircle2,
   Lock,
+  Bookmark,
 } from "lucide-react";
 
 import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
 import { useUserProgress } from "../hooks/useUserProgress";
+import { useBookmarks } from "../hooks/useBookmarks";
 import { fetchApi } from "../lib/api";
 import { Lesson, fetchLessonsApi, fetchLessonContent } from "../lib/lessons";
 import { RichTextEditor } from "../components/ui/RichTextEditor";
@@ -20,9 +22,11 @@ import { RichTextEditor } from "../components/ui/RichTextEditor";
 const MarkdownRenderer = React.lazy(() =>
   import("../components/ui/MarkdownRenderer").then((module) => ({
     default: module.MarkdownRenderer,
-  }))
+  })),
 );
 import { GitGraph } from "../components/ui/GitGraph";
+import { NotePanel } from "../components/ui/NotePanel";
+import { PythonSandbox } from "../components/ui/PythonSandbox";
 import { TextToSpeechControls } from "../components/ui/TextToSpeechControls";
 
 import {
@@ -38,12 +42,14 @@ function normalizeCommand(value: string) {
 export function LessonPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { syncProgress, isLessonCompleted, isLoading } = useUserProgress();
+  const { isLessonCompleted, syncProgress } = useUserProgress();
+  const { isBookmarked, toggleBookmark } = useBookmarks();
   const queryClient = useQueryClient();
 
   const [lesson, setLesson] = useState<Lesson | undefined>(undefined);
   const [lessonsList, setLessonsList] = useState<Lesson[]>([]);
   const [markdownContent, setMarkdownContent] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   // Curriculum modules list for sidebar
   const [modules, setModules] = useState<
@@ -96,6 +102,9 @@ export function LessonPage() {
   const [helpSuccessMessage, setHelpSuccessMessage] = useState("");
   const MAX_HELP_CHARS = 500;
 
+  // Note Panel
+  const [isNotePanelOpen, setIsNotePanelOpen] = useState(false);
+
   // Reading progress scroll ref
   const mainContentRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -122,6 +131,8 @@ export function LessonPage() {
 
   // 1. Fetch modules catalog & lessons
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setIsLoading(true);
     fetch("/content/curriculum.json")
       .then((res) => res.json())
       .then((data) => {
@@ -143,18 +154,24 @@ export function LessonPage() {
       })
       .catch(() => {
         navigate("/dashboard", { replace: true });
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [slug, navigate]);
 
   // 2. Fetch markdown content and reset interactive state when lesson changes
   useEffect(() => {
     if (!lesson) return;
 
+    /* eslint-disable react-hooks/set-state-in-effect */
     setFeedback("");
     setInput("");
     setShowHint(false);
     setTerminalOutput("");
     setRepoState(createInitialRepo());
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     // Reset Quiz state
     setCurrentQuizIndex(0);
@@ -217,7 +234,7 @@ export function LessonPage() {
     }
 
     const expected = lesson.expected;
-    let isCorrect = false;
+    let isCorrect;
 
     if (typeof expected === "string") {
       isCorrect = normalizeCommand(input) === normalizeCommand(expected);
@@ -445,6 +462,30 @@ export function LessonPage() {
                   COMPLETED ✅
                 </div>
               )}
+              <button
+                onClick={() =>
+                  toggleBookmark.mutate({
+                    slug: lesson.slug,
+                    isBookmarked: isBookmarked(lesson.slug),
+                  })
+                }
+                disabled={toggleBookmark.isPending}
+                className="self-start sm:self-center ml-auto flex items-center justify-center p-2 rounded-xl border-4 border-black bg-surface-low hover:-translate-y-1 hover:shadow-card-sm transition-all"
+                title={
+                  isBookmarked(lesson.slug)
+                    ? "Remove from Read Later"
+                    : "Save for later"
+                }
+              >
+                <Bookmark
+                  className={
+                    isBookmarked(lesson.slug)
+                      ? "fill-primary text-primary"
+                      : "text-black dark:text-[#f0ebe2]"
+                  }
+                  size={24}
+                />
+              </button>
             </div>
 
             <p className="text-xl font-bold text-muted dark:text-[#c4bbae]">
@@ -457,7 +498,7 @@ export function LessonPage() {
 
             {/* Markdown rendering logic */}
             <article className="prose max-w-none">
-              <React.Suspense 
+              <React.Suspense
                 fallback={
                   <div className="w-full h-64 animate-pulse rounded-2xl border-4 border-black/20 bg-surface-low dark:border-[#2e2924]/50 dark:bg-[#151411]" />
                 }
@@ -468,7 +509,20 @@ export function LessonPage() {
 
             {/* Exercises & validation section */}
             <div className="pt-8 space-y-6">
-              {hasQuiz ? (
+              {lesson.pythonExercise ? (
+                <div className="mt-8">
+                  <PythonSandbox
+                    exercise={lesson.pythonExercise}
+                    onSuccess={() => {
+                      syncProgress({
+                        lesson_slug: lesson.slug,
+                        score: lesson.points || 20,
+                        completed: true,
+                      });
+                    }}
+                  />
+                </div>
+              ) : hasQuiz ? (
                 // QUIZ MODE RENDER
                 <div className="rounded-2xl border-4 border-black bg-white p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924]">
                   <div className="flex items-center justify-between mb-4">
@@ -596,12 +650,18 @@ export function LessonPage() {
                 // CONFLICT SANDBOX MODE
                 <div className="mt-8">
                   {feedback === "correct" && (
-                    <div role="status" className="mt-6 text-green-700 font-bold bg-green-50 p-4 rounded-lg border-4 border-green-600 animate-bounce">
+                    <div
+                      role="status"
+                      className="mt-6 text-green-700 font-bold bg-green-50 p-4 rounded-lg border-4 border-green-600 animate-bounce"
+                    >
                       ✅ Correct! You successfully resolved the merge conflict.
                     </div>
                   )}
                   {feedback === "error" && (
-                    <div role="alert" className="mt-6 text-red-700 font-bold bg-red-50 p-4 rounded-lg border-4 border-red-600">
+                    <div
+                      role="alert"
+                      className="mt-6 text-red-700 font-bold bg-red-50 p-4 rounded-lg border-4 border-red-600"
+                    >
                       ❌ The resolved output doesn't quite match what was
                       expected. Try reviewing your selections.
                     </div>
@@ -680,13 +740,19 @@ export function LessonPage() {
                     )}
 
                     {feedback === "correct" && (
-                      <div role="status" className="text-green-700 font-bold bg-green-50 p-4 rounded-lg border-4 border-green-600 animate-bounce">
+                      <div
+                        role="status"
+                        className="text-green-700 font-bold bg-green-50 p-4 rounded-lg border-4 border-green-600 animate-bounce"
+                      >
                         ✅ Correct! Progress synchronized to the Atelier server.
                       </div>
                     )}
 
                     {feedback === "error" && (
-                      <div role="alert" className="text-red-700 font-bold bg-red-50 p-4 rounded-lg border-4 border-red-600">
+                      <div
+                        role="alert"
+                        className="text-red-700 font-bold bg-red-50 p-4 rounded-lg border-4 border-red-600"
+                      >
                         ❌ Not quite. Command output did not match sandbox
                         expectations.
                       </div>
@@ -761,7 +827,13 @@ export function LessonPage() {
         </div>
 
         {/* Mentor Help Trigger Row */}
-        <div className="border-t-4 border-black p-4 bg-white dark:bg-[#151411] dark:border-[#2e2924] flex justify-end flex-shrink-0">
+        <div className="border-t-4 border-black p-4 bg-white dark:bg-[#151411] dark:border-[#2e2924] flex justify-end gap-4 flex-shrink-0">
+          <button
+            onClick={() => setIsNotePanelOpen(!isNotePanelOpen)}
+            className="px-4 py-2 bg-white text-text dark:bg-[#151411] dark:text-[#f0ebe2] font-black text-xs rounded-lg border-4 border-black shadow-card-sm hover:-translate-y-0.5 cursor-pointer"
+          >
+            {isNotePanelOpen ? "Close Notes 📝" : "Notes 📝"}
+          </button>
           <button
             onClick={() => {
               setIsHelpPanelOpen(true);
@@ -773,6 +845,14 @@ export function LessonPage() {
           </button>
         </div>
       </div>
+
+      {/* Note Panel */}
+      {isNotePanelOpen && lesson && (
+        <NotePanel
+          lessonSlug={lesson.slug}
+          onClose={() => setIsNotePanelOpen(false)}
+        />
+      )}
 
       {/* Help support request Panel */}
       {isHelpPanelOpen && (
@@ -821,13 +901,19 @@ export function LessonPage() {
               />
 
               {helpRequestMutation.isError && (
-                <div role="alert" className="text-red-700 text-xs font-black bg-red-50 p-2 rounded-lg border-2 border-red-700">
+                <div
+                  role="alert"
+                  className="text-red-700 text-xs font-black bg-red-50 p-2 rounded-lg border-2 border-red-700"
+                >
                   Couldn&apos;t submit request. Re-run backend server checks.
                 </div>
               )}
 
               {helpSuccessMessage && (
-                <div role="status" className="text-green-700 text-xs font-black bg-green-50 p-2 rounded-lg border-2 border-green-700">
+                <div
+                  role="status"
+                  className="text-green-700 text-xs font-black bg-green-50 p-2 rounded-lg border-2 border-green-700"
+                >
                   {helpSuccessMessage}
                 </div>
               )}

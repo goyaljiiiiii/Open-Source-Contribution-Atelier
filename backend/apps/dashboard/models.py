@@ -3,6 +3,8 @@ from django.db import models
 
 
 class Issue(models.Model):
+    objects = models.Manager()
+
     class Status(models.TextChoices):
         OPEN = "open", "Open"
         IN_PROGRESS = "in_progress", "In Progress"
@@ -14,6 +16,9 @@ class Issue(models.Model):
         max_length=20, choices=Status.choices, default=Status.OPEN, db_index=True
     )
     points = models.PositiveIntegerField(default=50)
+    bonus_points = models.PositiveIntegerField(
+        default=0, help_text="Bonus points awarded during a multiplier event."
+    )
     assigned_to = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -39,6 +44,8 @@ class Issue(models.Model):
 
 
 class PullRequest(models.Model):
+    objects = models.Manager()
+
     class Status(models.TextChoices):
         OPEN = "open", "Open"
         MERGED = "merged", "Merged"
@@ -71,3 +78,23 @@ class PullRequest(models.Model):
             models.Index(fields=["issue", "status"], name="idx_pr_issue_status"),
             models.Index(fields=["status", "-created_at"], name="idx_pr_status_time"),
         ]
+
+
+class StreakFreeze(models.Model):
+    objects = models.Manager()
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="streak_freezes"
+    )
+    purchased_at = models.DateTimeField(auto_now_add=True)
+    used_on_date = models.DateField(null=True, blank=True)
+    cost = models.PositiveIntegerField(default=100)
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=["user", "used_on_date"], name="idx_streak_freeze_user_date"
+            ),
+        ]
+
+    def __str__(self):
+        return f"StreakFreeze({self.user.username}, used={self.used_on_date})"

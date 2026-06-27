@@ -71,4 +71,16 @@ export const BADGES: BadgeDefinition[] = [
     icon: "🎓",
     isGraduation: true,
   },
+  {
+    id: "first-pr",
+    name: "First PR",
+    desc: "Merged your first Pull Request.",
+    icon: "🎯",
+  },
+  {
+    id: "streak-7",
+    name: "7 Day Streak",
+    desc: "Contributed for 7 days.",
+    icon: "🔥",
+  },
 ];

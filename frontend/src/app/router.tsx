@@ -15,9 +15,12 @@ import { NotFoundPage } from "../pages/NotFoundPage";
 import { ServerErrorPage } from "../pages/ServerErrorPage";
 import { SandboxPage } from "../pages/SandboxPage";
 import { ProfileSettingsPage } from "../pages/ProfileSettingsPage";
+import { LeaderboardPage } from "../pages/LeaderboardPage";
 import { VerifyCertificatePage } from "../pages/VerifyCertificatePage";
+import { PeerReviewPage } from "../pages/PeerReviewPage";
 import { useAuth } from "../features/auth/AuthContext";
 import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
+import { PathwayPage } from "../pages/PathwayPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -102,6 +105,22 @@ export function AppRouter() {
           }
         />
         <Route
+          path="/leaderboard"
+          element={
+            <ProtectedRoute>
+              <LeaderboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pathway"
+          element={
+            <ProtectedRoute>
+              <PathwayPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/lessons/:slug"
           element={
             <ProtectedRoute>
@@ -138,6 +157,14 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <SandboxPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/peer-review"
+          element={
+            <ProtectedRoute>
+              <PeerReviewPage />
             </ProtectedRoute>
           }
         />

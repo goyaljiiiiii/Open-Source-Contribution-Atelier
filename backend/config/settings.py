@@ -30,6 +30,7 @@ ALLOWED_HOSTS = [
     for host in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
     if host.strip()
 ]
+ALLOWED_HOSTS.append(".vercel.app")
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
     for origin in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
@@ -51,6 +52,12 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework",
     "rest_framework_simplejwt",
+    # ── Django-allauth ─────────────────────────────────────────────────────────
+    "django.contrib.sites",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.github",
     "apps.accounts",
     "apps.content",
     "apps.progress",
@@ -58,7 +65,10 @@ INSTALLED_APPS = [
     "apps.sandbox",
     "apps.organizations",
     "apps.webhooks",
+    "apps.notes",
     "rest_framework_simplejwt.token_blacklist",
+    "graphene_django",
+    "apps.feature_flags",
 ]
 
 MIDDLEWARE = [
@@ -72,6 +82,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.sandbox.middleware.SandboxExecutionLogMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -86,6 +97,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "apps.feature_flags.context_processors.feature_flags",
             ],
         },
     }
@@ -196,6 +208,28 @@ SIMPLE_JWT = {
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
 }
+
+# ──────────────────────────────────────────
+# Django-allauth Configuration
+# ──────────────────────────────────────────
+SITE_ID = 1
+
+SOCIALACCOUNT_PROVIDERS = {
+    "github": {
+        "SCOPE": [
+            "user",
+            "repo",
+            "read:user",
+        ],
+    }
+}
+
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_VERIFICATION = "optional"
+SOCIALACCOUNT_ADAPTER = "apps.accounts.allauth_adapter.CustomSocialAccountAdapter"
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_UNIQUE_EMAIL = True
+
 
 # ──────────────────────────────────────────
 # Django Channels + Notifications
@@ -334,3 +368,4 @@ LOGGING = {
     },
 }
 
+GRAPHENE = {"SCHEMA": "config.schema.schema"}

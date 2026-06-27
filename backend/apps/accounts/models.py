@@ -3,8 +3,6 @@ import uuid
 from apps.content.models import Lesson
 from django.conf import settings
 from django.db import models
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 
 
 class MentorProfile(models.Model):
@@ -119,6 +117,12 @@ class MagicLinkToken(models.Model):
         return timezone.now() > self.created_at + timedelta(minutes=timeout)
 
 
+def get_timezone_choices():
+    from zoneinfo import available_timezones
+
+    return sorted((tz, tz) for tz in available_timezones())
+
+
 class UserProfile(models.Model):
     """
     Standard user profile linking to the main User model.
@@ -129,7 +133,14 @@ class UserProfile(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile"
     )
     avatar = models.ImageField(upload_to="avatars/", null=True, blank=True)
+    cover_image = models.ImageField(upload_to="covers/", null=True, blank=True)
     last_password_change = models.DateTimeField(auto_now_add=True)
+    timezone = models.CharField(
+        max_length=64, choices=get_timezone_choices, default="UTC"
+    )
+    twitter_url = models.URLField(max_length=500, blank=True, default="")
+    linkedin_url = models.URLField(max_length=500, blank=True, default="")
+    github_url = models.URLField(max_length=500, blank=True, default="")
 
     organization = models.ForeignKey(
         "organizations.Organization",
@@ -142,43 +153,29 @@ class UserProfile(models.Model):
     def __str__(self):
         return f"UserProfile({self.user.username})"
 
-    def save(self, *args, **kwargs):
-        if self.avatar and not self.avatar.name.lower().endswith('.webp'):
-            img = Image.open(self.avatar)
-            
-            if img.mode != 'RGBA' and img.mode != 'RGB':
-                img = img.convert('RGBA')
-            
+    def _convert_to_webp(self, image_field):
+        """Helper method to convert an ImageField to WebP format."""
+        if image_field and not image_field.name.lower().endswith(".webp"):
+            from PIL import Image
+            from io import BytesIO
+            from django.core.files.base import ContentFile
+            import os
+
+            img = Image.open(image_field)
+
+            if img.mode != "RGBA" and img.mode != "RGB":
+                img = img.convert("RGBA")
+
             output = BytesIO()
-            img.save(output, format='WEBP', quality=85)
+            img.save(output, format="WEBP", quality=85)
             output.seek(0)
-            
-            base_name = os.path.splitext(os.path.basename(self.avatar.name))[0]
+
+            base_name = os.path.splitext(os.path.basename(image_field.name))[0]
             new_filename = f"{base_name}.webp"
-            
-            self.avatar.save(new_filename, ContentFile(output.read()), save=False)
-            
+
+            image_field.save(new_filename, ContentFile(output.read()), save=False)
+
+    def save(self, *args, **kwargs):
+        self._convert_to_webp(self.avatar)
+        self._convert_to_webp(self.cover_image)
         super().save(*args, **kwargs)
-
-
-@receiver(post_save, sender=settings.AUTH_USER_MODEL)
-def create_user_profile(sender, instance, created, **kwargs):
-    if created:
-        UserProfile.objects.create(user=instance)
-
-
-@receiver(post_save, sender=settings.AUTH_USER_MODEL)
-def save_user_profile(sender, instance, **kwargs):
-    if hasattr(instance, "profile"):
-        instance.profile.save()
-    else:
-        UserProfile.objects.create(user=instance)
-
-
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
-User.add_to_class(
-    "organization",
-    property(lambda u: u.profile.organization if hasattr(u, "profile") else None),
-)

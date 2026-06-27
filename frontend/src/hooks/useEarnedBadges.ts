@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useAuth } from "../features/auth/AuthContext";
 import { useQuery } from "@tanstack/react-query";
-import { fetchLessonsApi, Lesson } from "../lib/lessons";
+import { fetchLessonsApi, Lesson, buildModulesFromLessons } from "../lib/lessons";
 import { useUserProgress } from "./useUserProgress";
 
 export interface CurriculumModule {
@@ -15,18 +15,6 @@ export function useEarnedBadges() {
   const { user } = useAuth();
   const { isLessonCompleted } = useUserProgress();
 
-  const { data: curriculumData = [], isLoading: isCurriculumLoading } =
-    useQuery<CurriculumModule[]>({
-      queryKey: ["curriculum"],
-      queryFn: async () => {
-        const res = await fetch("/content/curriculum.json");
-        if (!res.ok) throw new Error("Failed to fetch curriculum");
-        const data = await res.json();
-        return data.modules || [];
-      },
-      enabled: !!user && !user.is_staff,
-    });
-
   const { data: lessons = [], isLoading: isLessonsLoading } = useQuery<
     Lesson[]
   >({
@@ -34,6 +22,8 @@ export function useEarnedBadges() {
     queryFn: fetchLessonsApi,
     enabled: !!user && !user.is_staff,
   });
+
+  const curriculumData = useMemo(() => buildModulesFromLessons(lessons) as any, [lessons]);
 
   const progressMetrics = useMemo(() => {
     if (!user || user.is_staff || !lessons.length || !curriculumData.length) {
@@ -79,6 +69,6 @@ export function useEarnedBadges() {
     ...progressMetrics,
     lessons,
     curriculumData,
-    isLessonsLoading: isLessonsLoading || isCurriculumLoading,
+    isLessonsLoading,
   };
 }
