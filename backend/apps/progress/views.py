@@ -781,3 +781,191 @@ class PeerReviewView(APIView):
                 submission.save(update_fields=["status"])
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+import csv
+from django.http import StreamingHttpResponse
+from django.db.models import Max, Q, Count, Sum, OuterRef, Subquery, IntegerField, Value
+from django.db.models.functions import Coalesce
+from django.utils import timezone
+from datetime import timedelta
+from apps.dashboard.models import Issue, StreakFreeze
+
+
+class Echo:
+    """An object that implements just the write method of the file-like interface."""
+
+    def write(self, value):
+        return value
+
+
+class ExportProgressCSVView(APIView):
+    """
+    Export user progress reports as a downloadable CSV file.
+    Streams the response to handle large datasets efficiently.
+    Only accessible to staff/admin users.
+    """
+
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+
+    def get(self, request):
+        def get_streak_info(user, today, join_date):
+            activity_days = set()
+            for attempt in user.exerciseattempt_set.all():
+                activity_days.add(timezone.localdate(attempt.created_at))
+            for prog in user.lessonprogress_set.all():
+                if prog.completed:
+                    activity_days.add(timezone.localdate(prog.updated_at))
+
+            freezes_by_date = {}
+            unused_freezes = 0
+            for freeze in user.streak_freezes.all():
+                if freeze.used_on_date:
+                    freezes_by_date[freeze.used_on_date] = True
+                else:
+                    unused_freezes += 1
+
+            streak_days = 0
+            highest_streak = 0
+            current_day = today
+            current_streak = 0
+            is_current = True
+
+            # Sort activity days to calculate highest streak
+            all_dates = sorted(list(activity_days) + list(freezes_by_date.keys()))
+            if all_dates:
+                temp_streak = 1
+                for i in range(1, len(all_dates)):
+                    if (all_dates[i] - all_dates[i - 1]).days == 1:
+                        temp_streak += 1
+                    elif (all_dates[i] - all_dates[i - 1]).days > 1:
+                        if temp_streak > highest_streak:
+                            highest_streak = temp_streak
+                        temp_streak = 1
+                if temp_streak > highest_streak:
+                    highest_streak = temp_streak
+
+            # Calculate current streak
+            temp_unused_freezes = unused_freezes
+            while current_day >= join_date:
+                if current_day in activity_days or current_day in freezes_by_date:
+                    current_streak += 1
+                elif current_day == today:
+                    pass  # Today hasn't ended, doesn't break streak
+                else:
+                    if temp_unused_freezes > 0:
+                        current_streak += 1
+                        temp_unused_freezes -= 1
+                    else:
+                        break
+                current_day -= timedelta(days=1)
+
+            if current_streak > highest_streak:
+                highest_streak = current_streak
+
+            return current_streak, highest_streak
+
+        def csv_generator():
+            yield [
+                "Username",
+                "Email",
+                "Completed Modules",
+                "Completed Challenges",
+                "XP Earned",
+                "Current Learning Streak",
+                "Highest Streak",
+                "Completion Percentage",
+                "Last Active Date",
+                "Account Creation Date",
+            ]
+
+            lesson_xp = (
+                LessonProgress.objects.filter(user=OuterRef("pk"), completed=True)
+                .values("user")
+                .annotate(total=Sum("score"))
+                .values("total")
+            )
+            issues_xp = (
+                Issue.objects.filter(
+                    assigned_to=OuterRef("pk"), status=Issue.Status.SOLVED
+                )
+                .values("assigned_to")
+                .annotate(total=Sum("points") + Sum("bonus_points"))
+                .values("total")
+            )
+            last_active = (
+                LessonProgress.objects.filter(user=OuterRef("pk"))
+                .values("user")
+                .annotate(latest=Max("updated_at"))
+                .values("latest")
+            )
+
+            total_lessons = Lesson.objects.count()
+            today = timezone.localdate(timezone.now())
+
+            users = (
+                User.objects.filter(is_staff=False)
+                .annotate(
+                    completed_modules=Count(
+                        "lessonprogress",
+                        filter=Q(lessonprogress__completed=True),
+                        distinct=True,
+                    ),
+                    completed_challenges=Count(
+                        "exerciseattempt",
+                        filter=Q(exerciseattempt__is_correct=True),
+                        distinct=True,
+                    ),
+                    u_lxp=Coalesce(
+                        Subquery(lesson_xp, output_field=IntegerField()), Value(0)
+                    ),
+                    u_ixp=Coalesce(
+                        Subquery(issues_xp, output_field=IntegerField()), Value(0)
+                    ),
+                    last_active_date=Subquery(last_active),
+                )
+                .prefetch_related(
+                    "exerciseattempt_set", "lessonprogress_set", "streak_freezes"
+                )
+                .iterator(chunk_size=500)
+            )
+
+            for user in users:
+                xp_earned = user.u_lxp + user.u_ixp
+                completion_percentage = (
+                    int((user.completed_modules / total_lessons) * 100)
+                    if total_lessons > 0
+                    else 0
+                )
+                join_date = timezone.localdate(user.date_joined)
+
+                current_streak, highest_streak = get_streak_info(user, today, join_date)
+
+                last_active_str = (
+                    user.last_active_date.strftime("%Y-%m-%d %H:%M")
+                    if user.last_active_date
+                    else "N/A"
+                )
+                creation_date_str = user.date_joined.strftime("%Y-%m-%d %H:%M")
+
+                yield [
+                    user.username,
+                    user.email,
+                    str(user.completed_modules),
+                    str(user.completed_challenges),
+                    str(xp_earned),
+                    str(current_streak),
+                    str(highest_streak),
+                    f"{completion_percentage}%",
+                    last_active_str,
+                    creation_date_str,
+                ]
+
+        writer = csv.writer(Echo())
+        response = StreamingHttpResponse(
+            (writer.writerow(row) for row in csv_generator()), content_type="text/csv"
+        )
+        response["Content-Disposition"] = (
+            'attachment; filename="user_progress_report.csv"'
+        )
+        return response

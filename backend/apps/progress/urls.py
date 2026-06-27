@@ -15,6 +15,7 @@ from .views import (
     RecommendationsView,
     CodeSubmissionView,
     PeerReviewView,
+    ExportProgressCSVView,
 )
 
 urlpatterns = [
@@ -49,4 +50,5 @@ urlpatterns = [
         PeerReviewView.as_view(),
         name="peer-reviews",
     ),
+    path("export/csv/", ExportProgressCSVView.as_view(), name="export-progress-csv"),
 ]
