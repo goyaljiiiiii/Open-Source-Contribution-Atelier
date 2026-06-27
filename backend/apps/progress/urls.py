@@ -1,14 +1,27 @@
 from django.urls import path
 
-from .views import (BadgeListView, BulkProgressUpdateView,
-                    BulkSyncProgressView, CertificateVerificationView,
-                    CommunityStatsView, ContributorTimelineView,
-                    HelpRequestListCreateView, MentorHelpRequestListView,
-                    MyCertificateView, MyProgressView, QuizAttemptView,
-                    RecommendationsView, CodeSubmissionView, PeerReviewView)
+from .views import (
+    BadgeListView,
+    BulkProgressUpdateView,
+    BulkSyncProgressView,
+    CertificateVerificationView,
+    CommunityStatsView,
+    ContributorTimelineView,
+    HelpRequestListCreateView,
+    MentorHelpRequestListView,
+    MyCertificateView,
+    MyProgressView,
+    QuizAttemptView,
+    RecommendationsView,
+    CodeSubmissionView,
+    PeerReviewView,
+    ExportProgressCSVView,
+    UserAchievementView,
+)
 
 urlpatterns = [
     path("badges/", BadgeListView.as_view(), name="badges"),
+    path("achievements/", UserAchievementView.as_view(), name="user-achievements"),
     path("me/", MyProgressView.as_view(), name="my-progress"),
     path("bulk-sync/", BulkSyncProgressView.as_view(), name="bulk-sync"),
     path("bulk-update/", BulkProgressUpdateView.as_view(), name="bulk-update"),
@@ -34,5 +47,10 @@ urlpatterns = [
         name="verify-certificate",
     ),
     path("code-submissions/", CodeSubmissionView.as_view(), name="code-submissions"),
-    path("code-submissions/<int:submission_id>/reviews/", PeerReviewView.as_view(), name="peer-reviews"),
+    path(
+        "code-submissions/<int:submission_id>/reviews/",
+        PeerReviewView.as_view(),
+        name="peer-reviews",
+    ),
+    path("export/csv/", ExportProgressCSVView.as_view(), name="export-progress-csv"),
 ]

@@ -3,8 +3,6 @@ import json
 import ssl
 
 ctx = ssl.create_default_context()
-ctx.check_hostname = False
-ctx.verify_mode = ssl.CERT_NONE
 
 url = "https://api.github.com/repos/goyaljiiiiii/Open-Source-Contribution-Atelier/issues?state=all&per_page=100"
 req = urllib.request.Request(url)

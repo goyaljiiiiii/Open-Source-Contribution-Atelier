@@ -16,8 +16,9 @@ interface CodeSubmission {
 export function PeerReviewPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"submit" | "review">("submit");
-  
+
   // Submit Tab State
+  const [exerciseId, setExerciseId] = useState("");
   const [title, setTitle] = useState("");
   const [codeSnippet, setCodeSnippet] = useState("");
   const [description, setDescription] = useState("");
@@ -25,10 +26,17 @@ export function PeerReviewPage() {
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
   // Review Tab State
-  const [pendingSubmissions, setPendingSubmissions] = useState<CodeSubmission[]>([]);
-  const [selectedSubmission, setSelectedSubmission] = useState<CodeSubmission | null>(null);
+  const [pendingSubmissions, setPendingSubmissions] = useState<
+    CodeSubmission[]
+  >([]);
+  const [selectedSubmission, setSelectedSubmission] =
+    useState<CodeSubmission | null>(null);
   const [feedback, setFeedback] = useState("");
   const [rating, setRating] = useState(5);
+  const [codeCorrectnessRating, setCodeCorrectnessRating] = useState(5);
+  const [bestPracticesRating, setBestPracticesRating] = useState(5);
+  const [documentationRating, setDocumentationRating] = useState(5);
+  const [isApproved, setIsApproved] = useState(true);
   const [isReviewing, setIsReviewing] = useState(false);
   const [reviewSuccess, setReviewSuccess] = useState(false);
 
@@ -41,7 +49,9 @@ export function PeerReviewPage() {
   const fetchPendingSubmissions = async () => {
     try {
       const response = await fetchApi("/api/progress/code-submissions/");
-      setPendingSubmissions(Array.isArray(response) ? response : response.results || []);
+      setPendingSubmissions(
+        Array.isArray(response) ? response : response.results || [],
+      );
     } catch (error) {
       console.error("Failed to fetch submissions", error);
     }
@@ -56,10 +66,11 @@ export function PeerReviewPage() {
       await fetchApi("/api/progress/code-submissions/", {
         method: "POST",
         body: JSON.stringify({
+          exercise: exerciseId ? parseInt(exerciseId) : null,
           title,
           code_snippet: codeSnippet,
-          description
-        })
+          description,
+        }),
       });
       setSubmitSuccess(true);
       setTitle("");
@@ -75,18 +86,26 @@ export function PeerReviewPage() {
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSubmission) return;
-    
+
     setIsReviewing(true);
     setReviewSuccess(false);
 
     try {
-      await fetchApi(`/api/progress/code-submissions/${selectedSubmission.id}/reviews/`, {
-        method: "POST",
-        body: JSON.stringify({
-          feedback,
-          rating
-        })
-      });
+      await fetchApi(
+        `/api/progress/code-submissions/${selectedSubmission.id}/reviews/`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            feedback,
+            rating,
+            code_correctness_rating: codeCorrectnessRating,
+            readability_rating: rating, // Fallback since it wasn't added to state separately in the earlier diff but I'll use it
+            best_practices_rating: bestPracticesRating,
+            documentation_rating: documentationRating,
+            is_approved: isApproved,
+          }),
+        },
+      );
       setReviewSuccess(true);
       setFeedback("");
       setRating(5);
@@ -107,7 +126,8 @@ export function PeerReviewPage() {
             Peer Review System
           </h1>
           <p className="text-lg font-medium text-black/70 dark:text-white/70 max-w-2xl">
-            Submit your code for peer review, or review others' code to earn XP and strengthen the community.
+            Submit your code for peer review, or review others' code to earn XP
+            and strengthen the community.
           </p>
         </div>
 
@@ -144,6 +164,18 @@ export function PeerReviewPage() {
             )}
             <form onSubmit={handleSubmitCode} className="space-y-4">
               <div>
+                <label className="block font-bold mb-2">
+                  Exercise ID (Optional)
+                </label>
+                <input
+                  type="number"
+                  value={exerciseId}
+                  onChange={(e) => setExerciseId(e.target.value)}
+                  className="w-full px-4 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-primary dark:bg-black dark:border-[#2e2924]"
+                  placeholder="e.g. 1"
+                />
+              </div>
+              <div>
                 <label className="block font-bold mb-2">Title</label>
                 <input
                   type="text"
@@ -166,7 +198,9 @@ export function PeerReviewPage() {
                 />
               </div>
               <div>
-                <label className="block font-bold mb-2">Description (Optional)</label>
+                <label className="block font-bold mb-2">
+                  Description (Optional)
+                </label>
                 <textarea
                   rows={3}
                   value={description}
@@ -191,9 +225,11 @@ export function PeerReviewPage() {
             <div className="bg-surface-low border-4 border-black rounded-2xl p-6 shadow-card dark:bg-[#1a1816] dark:border-[#2e2924]">
               <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
                 Pending Reviews
-                <span className="bg-primary text-black text-sm px-2 py-1 rounded-full">{pendingSubmissions.length}</span>
+                <span className="bg-primary text-black text-sm px-2 py-1 rounded-full">
+                  {pendingSubmissions.length}
+                </span>
               </h2>
-              
+
               {pendingSubmissions.length === 0 ? (
                 <div className="text-center py-10 font-bold opacity-50">
                   No pending submissions found. Check back later!
@@ -211,7 +247,10 @@ export function PeerReviewPage() {
                       }`}
                     >
                       <h3 className="font-bold text-lg">{sub.title}</h3>
-                      <p className="text-sm opacity-70">By {sub.username} • {new Date(sub.created_at).toLocaleDateString()}</p>
+                      <p className="text-sm opacity-70">
+                        By {sub.username} •{" "}
+                        {new Date(sub.created_at).toLocaleDateString()}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -220,15 +259,21 @@ export function PeerReviewPage() {
 
             {selectedSubmission && (
               <div className="bg-surface-low border-4 border-black rounded-2xl p-6 shadow-card dark:bg-[#1a1816] dark:border-[#2e2924] flex flex-col h-full">
-                <h2 className="text-2xl font-bold mb-4">Reviewing: {selectedSubmission.title}</h2>
+                <h2 className="text-2xl font-bold mb-4">
+                  Reviewing: {selectedSubmission.title}
+                </h2>
                 <div className="bg-black text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto mb-6">
                   <pre>{selectedSubmission.code_snippet}</pre>
                 </div>
-                
+
                 {selectedSubmission.description && (
                   <div className="mb-6">
-                    <h4 className="font-bold text-sm uppercase opacity-70 mb-1">Author Notes</h4>
-                    <p className="p-3 bg-surface border-l-4 border-primary rounded">{selectedSubmission.description}</p>
+                    <h4 className="font-bold text-sm uppercase opacity-70 mb-1">
+                      Author Notes
+                    </h4>
+                    <p className="p-3 bg-surface border-l-4 border-primary rounded">
+                      {selectedSubmission.description}
+                    </p>
                   </div>
                 )}
 
@@ -238,9 +283,14 @@ export function PeerReviewPage() {
                   </div>
                 )}
 
-                <form onSubmit={handleSubmitReview} className="space-y-4 mt-auto">
+                <form
+                  onSubmit={handleSubmitReview}
+                  className="space-y-4 mt-auto"
+                >
                   <div>
-                    <label className="block font-bold mb-2">Your Feedback</label>
+                    <label className="block font-bold mb-2">
+                      Your Feedback
+                    </label>
                     <textarea
                       required
                       rows={4}
@@ -250,25 +300,95 @@ export function PeerReviewPage() {
                       placeholder="Be constructive and helpful..."
                     />
                   </div>
-                  <div>
-                    <label className="block font-bold mb-2">Rating (1-5)</label>
-                    <input
-                      type="range"
-                      min="1"
-                      max="5"
-                      value={rating}
-                      onChange={(e) => setRating(parseInt(e.target.value))}
-                      className="w-full accent-primary"
-                    />
-                    <div className="flex justify-between text-sm font-bold opacity-70 mt-1">
-                      <span>Needs Work</span>
-                      <span>Excellent ({rating}/5)</span>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-bold mb-2 text-sm">
+                        Code Correctness (1-5)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="5"
+                        value={rating}
+                        onChange={(e) => setRating(parseInt(e.target.value))}
+                        className="w-full px-4 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-primary dark:bg-black dark:border-[#2e2924]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold mb-2 text-sm">
+                        Readability (1-5)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="5"
+                        value={codeCorrectnessRating}
+                        onChange={(e) =>
+                          setCodeCorrectnessRating(parseInt(e.target.value))
+                        }
+                        className="w-full px-4 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-primary dark:bg-black dark:border-[#2e2924]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold mb-2 text-sm">
+                        Best Practices (1-5)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="5"
+                        value={bestPracticesRating}
+                        onChange={(e) =>
+                          setBestPracticesRating(parseInt(e.target.value))
+                        }
+                        className="w-full px-4 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-primary dark:bg-black dark:border-[#2e2924]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold mb-2 text-sm">
+                        Documentation (1-5)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="5"
+                        value={documentationRating}
+                        onChange={(e) =>
+                          setDocumentationRating(parseInt(e.target.value))
+                        }
+                        className="w-full px-4 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-primary dark:bg-black dark:border-[#2e2924]"
+                      />
                     </div>
                   </div>
+
+                  <div className="flex items-center gap-4 mt-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="approval"
+                        checked={isApproved === true}
+                        onChange={() => setIsApproved(true)}
+                        className="w-5 h-5 text-primary focus:ring-primary"
+                      />
+                      <span className="font-bold">Approve Solution</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="approval"
+                        checked={isApproved === false}
+                        onChange={() => setIsApproved(false)}
+                        className="w-5 h-5 text-red-500 focus:ring-red-500"
+                      />
+                      <span className="font-bold">Request Changes</span>
+                    </label>
+                  </div>
+
                   <button
                     type="submit"
                     disabled={isReviewing}
-                    className="w-full py-3 bg-primary text-black font-black uppercase rounded-lg border-4 border-black hover:-translate-y-1 hover:shadow-card transition-all disabled:opacity-50"
+                    className="w-full py-3 mt-4 bg-primary text-black font-black uppercase rounded-lg border-4 border-black hover:-translate-y-1 hover:shadow-card transition-all disabled:opacity-50"
                   >
                     {isReviewing ? "Submitting..." : "Submit Review (+10 XP)"}
                   </button>

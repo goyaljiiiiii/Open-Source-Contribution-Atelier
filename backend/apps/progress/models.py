@@ -24,12 +24,9 @@ class XPMultiplierEvent(models.Model):
     def get_active_multiplier(cls) -> float:
         now = timezone.now()
         active_event = cls.objects.filter(
-            is_active=True,
-            start_time__lte=now,
-            end_time__gte=now
+            is_active=True, start_time__lte=now, end_time__gte=now
         ).first()
         return active_event.multiplier if active_event else 1.0
-
 
 
 class Badge(models.Model):
@@ -57,6 +54,35 @@ class UserBadge(models.Model):
 
     class Meta:
         unique_together = ("user", "badge")
+
+
+class Achievement(models.Model):
+    objects = models.Manager()
+    name = models.CharField(max_length=120)
+    slug = models.SlugField(unique=True)
+    description = models.TextField()
+    category = models.CharField(max_length=100, default="milestone")
+    icon_name = models.CharField(max_length=100, blank=True, default="🏆")
+    xp_reward = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return self.name
+
+
+class UserAchievement(models.Model):
+    objects = models.Manager()
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="achievements"
+    )
+    achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE)
+    earned_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "achievement")
+        ordering = ["-earned_at"]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.achievement.name}"
 
 
 class LessonProgress(models.Model):
@@ -207,14 +233,33 @@ class CodeSubmission(models.Model):
     objects = models.Manager()
 
     class Status(models.TextChoices):
-        PENDING = "pending", "Pending"
+        PENDING_REVIEW = "pending_review", "Pending Review"
         REVIEWED = "reviewed", "Reviewed"
+        ESCALATED = "escalated", "Escalated"
+        CHANGES_REQUESTED = "changes_requested", "Changes Requested"
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="code_submissions")
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="code_submissions"
+    )
+    exercise = models.ForeignKey(
+        Exercise,
+        on_delete=models.CASCADE,
+        related_name="submissions",
+        null=True,
+        blank=True,
+    )
     title = models.CharField(max_length=255)
     code_snippet = models.TextField()
     description = models.TextField(blank=True)
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True)
+    status = models.CharField(
+        max_length=25,
+        choices=Status.choices,
+        default=Status.PENDING_REVIEW,
+        db_index=True,
+    )
+    assigned_reviewers = models.ManyToManyField(
+        User, related_name="assigned_reviews", blank=True
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -227,10 +272,19 @@ class CodeSubmission(models.Model):
 
 class PeerReview(models.Model):
     objects = models.Manager()
-    submission = models.ForeignKey(CodeSubmission, on_delete=models.CASCADE, related_name="reviews")
-    reviewer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="given_reviews")
+    submission = models.ForeignKey(
+        CodeSubmission, on_delete=models.CASCADE, related_name="reviews"
+    )
+    reviewer = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="given_reviews"
+    )
     feedback = models.TextField()
-    rating = models.PositiveIntegerField(default=5)
+    rating = models.PositiveIntegerField(default=5)  # Overall rating
+    code_correctness_rating = models.PositiveIntegerField(default=5)
+    readability_rating = models.PositiveIntegerField(default=5)
+    best_practices_rating = models.PositiveIntegerField(default=5)
+    documentation_rating = models.PositiveIntegerField(default=5)
+    is_approved = models.BooleanField(default=True)
     points_earned = models.PositiveIntegerField(default=10)
     created_at = models.DateTimeField(auto_now_add=True)
 

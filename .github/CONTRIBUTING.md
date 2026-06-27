@@ -65,6 +65,12 @@ Run all checks above before opening a pull request to avoid CI failures.
 ### 6. Submit a Pull Request
 Push your branch to your fork on GitHub and click **New Pull Request**.
 
+> [!IMPORTANT]
+> **Automated PR Check: Linked Issue Required**
+> Every pull request must reference a related issue in its description. If you don't link an issue, the automated **Check Linked Issue** workflow will fail, and a warning comment will be added.
+>
+> You can link an issue by adding one of the following keywords followed by the issue number in the PR description (e.g., `Closes #123`, `Fixes #123`, `Resolves #123`, `related to #123`, or `ref #123`).
+
 Use the template below for your description:
 ```markdown
 ### Summary
