@@ -3,9 +3,7 @@ import { fetchApi } from "../lib/api";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, "+")
-    .replace(/_/g, "/");
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
 
   const rawData = window.atob(base64);
   const outputArray = new Uint8Array(rawData.length);
@@ -17,17 +15,12 @@ function urlBase64ToUint8Array(base64String: string) {
 }
 
 export function useWebPush() {
-  const [isSupported, setIsSupported] = useState(false);
+  const [isSupported] = useState(
+    () => "serviceWorker" in navigator && "PushManager" in window,
+  );
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [permission, setPermission] = useState<NotificationPermission>("default");
-
-  useEffect(() => {
-    if ("serviceWorker" in navigator && "PushManager" in window) {
-      setIsSupported(true);
-      setPermission(Notification.permission);
-      checkSubscription();
-    }
-  }, []);
+  const [permission, setPermission] =
+    useState<NotificationPermission>("default");
 
   const checkSubscription = async () => {
     try {
@@ -38,6 +31,13 @@ export function useWebPush() {
       console.error("Error checking push subscription:", err);
     }
   };
+
+  useEffect(() => {
+    if (isSupported) {
+      setPermission(Notification.permission); // eslint-disable-line react-hooks/set-state-in-effect
+      checkSubscription();
+    }
+  }, [isSupported]);
 
   const subscribe = useCallback(async () => {
     if (!isSupported) return;
@@ -52,7 +52,7 @@ export function useWebPush() {
       }
 
       const registration = await navigator.serviceWorker.ready;
-      
+
       const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
       if (!vapidPublicKey) {
         throw new Error("VITE_VAPID_PUBLIC_KEY is not configured.");

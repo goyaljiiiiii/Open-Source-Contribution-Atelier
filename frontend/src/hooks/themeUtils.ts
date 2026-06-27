@@ -1,10 +1,11 @@
-export type Theme = "light" | "dark" | "high-contrast";
+export type Theme = "light" | "dark" | "system" | "high-contrast";
 
 const THEME_KEY = "theme";
 
 const VALID_THEMES: ReadonlySet<string> = new Set([
   "light",
   "dark",
+  "system",
   "high-contrast",
 ]);
 
@@ -40,12 +41,18 @@ export function getSystemPreference(): Theme | null {
 }
 
 export function getInitialTheme(): Theme {
-  return getStoredTheme() ?? getSystemPreference() ?? "light";
+  return getStoredTheme() ?? "system";
 }
 
 export function applyThemeToDOM(theme: Theme): void {
   document.documentElement.classList.remove("dark", "high-contrast");
-  if (theme !== "light") {
+  if (theme === "system") {
+    if (window.matchMedia("(prefers-contrast: more)").matches) {
+      document.documentElement.classList.add("high-contrast");
+    } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      document.documentElement.classList.add("dark");
+    }
+  } else if (theme !== "light") {
     document.documentElement.classList.add(theme);
   }
 }
@@ -53,7 +60,7 @@ export function applyThemeToDOM(theme: Theme): void {
 export function syncThemeOnLoad(): void {
   try {
     const stored = localStorage.getItem(THEME_KEY);
-    if (isValidTheme(stored)) {
+    if (isValidTheme(stored) && stored !== "system") {
       if (stored !== "light") {
         document.documentElement.classList.add(stored);
       }

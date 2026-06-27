@@ -31,7 +31,10 @@ export function useWebSocket({
   const reconnectCountRef = useRef(0);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onMessageRef = useRef(onMessage);
-  onMessageRef.current = onMessage;
+
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
 
   const buildUrl = useCallback(() => {
     if (!token) return url;
@@ -54,46 +57,49 @@ export function useWebSocket({
     }
   }, []);
 
-  const connect = useCallback(() => {
-    cleanup();
+  const connect = useCallback(
+    function connectFn() {
+      cleanup();
 
-    if (!token) {
-      setState((s) => ({ ...s, isConnected: false }));
-      return;
-    }
-
-    const wsUrl = buildUrl();
-    const ws = new WebSocket(wsUrl);
-
-    ws.onopen = () => {
-      reconnectCountRef.current = 0;
-      setState((s) => ({ ...s, isConnected: true, error: null }));
-    };
-
-    ws.onclose = () => {
-      setState((s) => ({ ...s, isConnected: false }));
-      if (reconnectCountRef.current < maxReconnectAttempts) {
-        reconnectCountRef.current += 1;
-        reconnectTimerRef.current = setTimeout(connect, reconnectInterval);
+      if (!token) {
+        setState((s) => ({ ...s, isConnected: false }));
+        return;
       }
-    };
 
-    ws.onerror = () => {
-      setState((s) => ({ ...s, isConnected: false }));
-    };
+      const wsUrl = buildUrl();
+      const ws = new WebSocket(wsUrl);
 
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        setState((s) => ({ ...s, lastMessage: data }));
-        onMessageRef.current?.(data);
-      } catch {
-        console.error("useWebSocket: failed to parse message", event.data);
-      }
-    };
+      ws.onopen = () => {
+        reconnectCountRef.current = 0;
+        setState((s) => ({ ...s, isConnected: true, error: null }));
+      };
 
-    wsRef.current = ws;
-  }, [buildUrl, cleanup, reconnectInterval, maxReconnectAttempts, token]);
+      ws.onclose = () => {
+        setState((s) => ({ ...s, isConnected: false }));
+        if (reconnectCountRef.current < maxReconnectAttempts) {
+          reconnectCountRef.current += 1;
+          reconnectTimerRef.current = setTimeout(connectFn, reconnectInterval);
+        }
+      };
+
+      ws.onerror = () => {
+        setState((s) => ({ ...s, isConnected: false }));
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          setState((s) => ({ ...s, lastMessage: data }));
+          onMessageRef.current?.(data);
+        } catch {
+          console.error("useWebSocket: failed to parse message", event.data);
+        }
+      };
+
+      wsRef.current = ws;
+    },
+    [buildUrl, cleanup, reconnectInterval, maxReconnectAttempts, token],
+  );
 
   const disconnect = useCallback(() => {
     reconnectCountRef.current = maxReconnectAttempts;

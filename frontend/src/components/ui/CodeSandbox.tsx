@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Play, RefreshCcw, Users } from "lucide-react";
 import Editor from "@monaco-editor/react";
 import { useWebSocket } from "../../hooks/useWebSocket";
-import { useAuth } from "../../features/auth/AuthContext";
 
 export function CodeSandbox() {
   const [code, setCode] = useState('console.log("Hello, World!");');
@@ -18,7 +17,7 @@ export function CodeSandbox() {
   const { send, isConnected } = useWebSocket({
     url: wsUrl,
     token: token || null,
-    onMessage: (data: any) => {
+    onMessage: (data: { action?: string; code?: string }) => {
       if (data.action === "code_update" && data.code !== undefined) {
         isRemoteUpdate.current = true;
         setCode(data.code || "");

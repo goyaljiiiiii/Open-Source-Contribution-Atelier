@@ -1,20 +1,19 @@
 import { queueProgressSync } from "./offlineQueue";
+import toast from "react-hot-toast"; // <-- YEH HUMNE ADD KIYA HAI
 
 const API_BASE =
-  import.meta.env.VITE_API_BASE_URL?.trim() || `${window.location.origin}/api`;
+  import.meta.env.VITE_API_BASE_URL?.trim() ||
+  `${window.location.origin}/api`;
 
 type RequestOptions = RequestInit & {
   requireAuth?: boolean;
-  responseType?: "json" | "blob";
 };
 
 export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
   const { requireAuth = true, headers: customHeaders, ...config } = options;
 
   const headers = new Headers(customHeaders);
-  if (!(config.body instanceof FormData)) {
-    headers.set("Content-Type", "application/json");
-  }
+  headers.set("Content-Type", "application/json");
 
   if (requireAuth) {
     let token: string | null = null;
@@ -36,17 +35,43 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
 
     if (!response.ok) {
       const errorBody = await response.json().catch(() => ({}));
-      throw new Error(
-        errorBody.detail || errorBody.error || "An error occurred",
-      );
-    }
+      const errorMessage = errorBody.detail || errorBody.error || errorBody.message || "An error occurred";
+      
+      // --- HUMARA GLOBAL TOAST NOTIFICATION LOGIC ---
+      switch (response.status) {
+        case 400:
+          toast.error(errorMessage || 'Invalid request. Please check your inputs.');
+          break;
+        case 401:
+          toast.error('Session expired. Please log in again.');
+          break;
+        case 403:
+          toast.error('You do not have permission to perform this action.');
+          break;
+        case 429:
+          toast.error(errorMessage || 'Too many requests. Please slow down!');
+          break;
+        case 500:
+          toast.error('Server error. Our team has been notified.');
+          break;
+        default:
+          toast.error(errorMessage);
+      }
+      // ----------------------------------------------
 
-    if (options.responseType === "blob") {
-      return response.blob();
+      throw new Error(errorMessage);
     }
-
-    return response.json().catch(() => ({}));
+    
+    return await response.json().catch(() => ({}));
+    
   } catch (error) {
+    // Prevent toast spam if it's specifically the offline background sync firing a network error
+    if (error instanceof TypeError || !navigator.onLine) {
+        if (endpoint !== "/progress/me/") {
+            toast.error('Network error. Please check your connection.');
+        }
+    }
+
     if (endpoint === "/progress/me/" && config.method === "POST") {
       const isOfflineOrNetworkError =
         !navigator.onLine || error instanceof TypeError;
@@ -65,7 +90,6 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
               completed: bodyObj.completed,
               headers: Object.fromEntries(headers.entries()),
             });
-            // Return mock success response so callers (e.g. React Query mutation) succeed
             return {
               lesson_slug,
               completed: bodyObj.completed ?? true,
