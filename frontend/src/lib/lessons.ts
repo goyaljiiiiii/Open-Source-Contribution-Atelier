@@ -85,32 +85,33 @@ export async function fetchLessonsApi(): Promise<Lesson[]> {
     const data = await fetchApi("/content/lessons/", { requireAuth: false });
     if (!Array.isArray(data)) return lessons;
 
-    return data.map((les: Record<string, unknown>, index: number) => {
-      const firstExercise = (
-        les.exercises as Record<string, unknown>[] | undefined
-      )?.[0];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (data as any[]).map((les, index: number) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const firstExercise = (les.exercises as any[] | undefined)?.[0];
       return {
-        slug: les.slug,
-        title: les.title,
-        description: les.summary || "",
-        explanation: les.content || "", // Will load dynamically from backend
-        expected: firstExercise?.expectedCommand || "",
-        hint:
-          firstExercise?.explanation ||
-          "Read the lesson contents and solve the check.",
-        difficulty: les.difficulty || "beginner",
-        points: firstExercise?.points || 15,
-        estimatedMinutes: les.estimatedMinutes || 10,
-        learningObjectives: les.learningObjectives || [],
-        tips: les.tips || [],
-        exercises: les.exercises || [],
-        quizzes: les.quizzes || [],
-        conflictScenario: les.conflictScenario || undefined,
-        pythonExercise: les.pythonExercise || undefined,
-        order: les.order || index,
-        category: les.category || "general",
-        filePath: les.filePath,
-      };
+        slug: String(les.slug ?? ""),
+        title: String(les.title ?? ""),
+        description: String(les.summary ?? ""),
+        explanation: String(les.content ?? ""),
+        expected: String(firstExercise?.expectedCommand ?? ""),
+        hint: String(
+          firstExercise?.explanation ??
+          "Read the lesson contents and solve the check."
+        ),
+        difficulty: String(les.difficulty ?? "beginner"),
+        points: Number(firstExercise?.points ?? 15),
+        estimatedMinutes: Number(les.estimatedMinutes ?? 10),
+        learningObjectives: Array.isArray(les.learningObjectives) ? les.learningObjectives : [],
+        tips: Array.isArray(les.tips) ? les.tips : [],
+        exercises: Array.isArray(les.exercises) ? les.exercises : [],
+        quizzes: Array.isArray(les.quizzes) ? les.quizzes : [],
+        conflictScenario: les.conflictScenario ?? undefined,
+        pythonExercise: les.pythonExercise ?? undefined,
+        order: Number(les.order ?? index),
+        category: String(les.category ?? "general"),
+        filePath: les.filePath ? String(les.filePath) : undefined,
+      } satisfies Lesson;
     });
   } catch (err) {
     console.error("Error loading live curriculum:", err);
@@ -134,7 +135,8 @@ export function buildModulesFromLessons(lessonsList: Lesson[]) {
         lessons: [],
       });
     }
-    modulesMap.get(cat).lessons.push({
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    modulesMap.get(cat)!.lessons.push({
       slug: les.slug,
       title: les.title,
       difficulty: les.difficulty,
