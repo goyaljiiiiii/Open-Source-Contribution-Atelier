@@ -2,14 +2,35 @@ import React, { useState, useRef } from "react";
 import { Play, RefreshCcw, Users, Loader2 } from "lucide-react";
 import Editor from "@monaco-editor/react";
 import { useWebSocket } from "../../hooks/useWebSocket";
+import { fetchApi } from "../../lib/api";
+
+type Language = "javascript" | "rust" | "python";
+
+interface LanguageOption {
+  id: Language;
+  label: string;
+}
+
+const LANGUAGES: LanguageOption[] = [
+  { id: "javascript", label: "JavaScript" },
+  { id: "rust", label: "Rust" },
+  { id: "python", label: "Python" },
+];
+
+const DEFAULT_CODE: Record<Language, string> = {
+  javascript: 'console.log("Hello, World!");',
+  rust: 'fn main() {\n    println!("Hello, World!");\n}',
+  python: 'print("Hello, World!")',
+};
 
 export function CodeSandbox() {
-  const [code, setCode] = useState('print("Hello, World!")');
-  const [output, setOutput] = useState<{ type: string; text: string }[]>([]);
-  const [isRunning, setIsRunning] = useState(false);
+  const [language, setLanguage] = useState<Language>("javascript");
+  const [code, setCode] = useState(DEFAULT_CODE.javascript);
+  const [output, setOutput] = useState<string[]>([]);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const isRemoteUpdate = useRef(false);
-  const token = localStorage.getItem("accessToken");
 
+  const token = localStorage.getItem("accessToken");
   const wsUrl = import.meta.env.VITE_API_URL
     ? import.meta.env.VITE_API_URL.replace("http", "ws") + "ws/sandbox/"
     : "ws://127.0.0.1:8000/ws/sandbox/";
@@ -17,7 +38,7 @@ export function CodeSandbox() {
   const { send, isConnected } = useWebSocket({
     url: wsUrl,
     token: token || null,
-    onMessage: (data: any) => {
+    onMessage: (data: Record<string, unknown>) => {
       if (data.action === "code_update" && data.code !== undefined) {
         isRemoteUpdate.current = true;
         setCode(data.code || "");
@@ -46,37 +67,97 @@ export function CodeSandbox() {
   const handleEditorChange = (value: string | undefined) => {
     const newCode = value || "";
     setCode(newCode);
-
     if (isRemoteUpdate.current) {
       isRemoteUpdate.current = false;
       return;
     }
-
     send({
       action: "code_update",
       code: newCode,
     });
   };
 
-  const runCode = () => {
-    if (isRunning) return;
+  const handleLanguageChange = (newLang: Language) => {
+    if (newLang !== language) {
+      setLanguage(newLang);
+      setCode(DEFAULT_CODE[newLang]);
+      setOutput([]);
+    }
+  };
+
+  const executeInIframe = (codeToRun: string) => {
     setOutput([]);
-    setIsRunning(true);
-    send({
-      action: "execute_code",
-      code: code,
-    });
+    if (!iframeRef.current) return;
+    const srcDoc = `
+      <!DOCTYPE html>
+      <html>
+        <body>
+          <script>
+            const originalLog = console.log;
+            const originalError = console.error;
+            console.log = (...args) => {
+              window.parent.postMessage({ type: 'log', message: args.join(' ') }, '*');
+              originalLog(...args);
+            };
+            console.error = (...args) => {
+              window.parent.postMessage({ type: 'error', message: args.join(' ') }, '*');
+              originalError(...args);
+            };
+            window.addEventListener('error', (event) => {
+              window.parent.postMessage({ type: 'error', message: event.message }, '*');
+            });
+            try {
+              eval(${JSON.stringify(codeToRun)});
+            } catch (e) {
+              console.error(e.toString());
+            }
+          </script>
+        </body>
+      </html>
+    `;
+    iframeRef.current.srcdoc = srcDoc;
+  };
+
+  const runOnBackend = async (codeToRun: string) => {
+    setOutput([`Running ${language}...`]);
+    try {
+      const data = await fetchApi("/challenges/sandbox/run/", {
+        method: "POST",
+        body: JSON.stringify({ code: codeToRun, language }),
+        requireAuth: false,
+      });
+      const lines: string[] = [];
+      if (data.output) {
+        lines.push(data.output);
+      }
+      if (data.success) {
+        lines.push("✓ Program finished");
+      } else {
+        lines.push("✗ Program exited with errors");
+      }
+      setOutput(lines);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Request failed";
+      setOutput([`Error: ${msg}`]);
+    }
+  };
+
+  const runCode = () => {
+    if (language === "javascript") {
+      executeInIframe(code);
+    } else {
+      runOnBackend(code);
+    }
   };
 
   const resetSandbox = () => {
-    const defaultCode = 'print("Hello, World!")';
+    const defaultCode = DEFAULT_CODE[language];
     setCode(defaultCode);
     setOutput([]);
-    setIsRunning(false);
-    send({
-      action: "code_update",
-      code: defaultCode,
-    });
+    if (iframeRef.current) {
+      iframeRef.current.srcdoc = "";
+    }
+    send({ action: "code_update", code: defaultCode });
   };
 
   return (
@@ -86,6 +167,17 @@ export function CodeSandbox() {
           <h3 className="font-bold text-sm text-text dark:text-[#f0ebe2] flex items-center gap-2">
             <span>💻</span> Python Sandbox
           </h3>
+          <select
+            value={language}
+            onChange={(e) => handleLanguageChange(e.target.value as Language)}
+            className="text-xs font-bold bg-white dark:bg-[#1f1c18] border-2 border-black dark:border-[#2e2924] rounded-lg px-2 py-1 text-text dark:text-[#f0ebe2] outline-none cursor-pointer"
+          >
+            {LANGUAGES.map((lang) => (
+              <option key={lang.id} value={lang.id}>
+                {lang.label}
+              </option>
+            ))}
+          </select>
           <div className="flex items-center gap-1.5 px-2 py-1 bg-black/5 dark:bg-white/5 rounded-md">
             <Users
               size={14}
@@ -125,7 +217,7 @@ export function CodeSandbox() {
         <div className="flex-1 border-b-4 lg:border-b-0 lg:border-r-4 border-black dark:border-[#2e2924] relative">
           <Editor
             height="100%"
-            defaultLanguage="python"
+            language={language}
             value={code}
             onChange={handleEditorChange}
             theme="vs-dark"
@@ -160,6 +252,12 @@ export function CodeSandbox() {
           )}
         </div>
       </div>
+      <iframe
+        ref={iframeRef}
+        title="sandbox-execution"
+        sandbox="allow-scripts"
+        className="hidden"
+      />
     </div>
   );
 }

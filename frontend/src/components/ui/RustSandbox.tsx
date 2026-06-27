@@ -1,49 +1,63 @@
 import React, { useState } from "react";
 import { Play, RotateCcw, CheckCircle2, XCircle } from "lucide-react";
-import { usePythonSandbox } from "../../hooks/usePythonSandbox";
-import { PythonExercise } from "../../lib/lessons";
+import { fetchApi } from "../../lib/api";
+import { RustExercise } from "../../lib/lessons";
 import { CodeEditor } from "./CodeEditor";
 
-interface PythonSandboxProps {
-  exercise: PythonExercise;
+interface RustSandboxProps {
+  exercise: RustExercise;
   onSuccess: () => void;
 }
 
-export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
+export function RustSandbox({ exercise, onSuccess }: RustSandboxProps) {
   const [code, setCode] = useState(exercise.starterCode);
   const [output, setOutput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [outputMismatch, setOutputMismatch] = useState(false);
-  const { runPythonCode, isExecuting, isReady } = usePythonSandbox();
+  const [isExecuting, setIsExecuting] = useState(false);
 
   const handleRun = async () => {
-    if (isExecuting || !isReady) return;
+    if (isExecuting) return;
 
-    // We append the hidden test code to the user's code
-    const fullCode = `${code}\n\n${exercise.testCode}`;
-
-    setOutput("Executing...\n");
+    setIsExecuting(true);
+    setOutput("Submitting for verification...\n");
     setError(null);
     setIsSuccess(false);
-    setOutputMismatch(false);
 
-    const result = await runPythonCode(fullCode);
+    try {
+      const data = await fetchApi("/challenges/sandbox/execute/", {
+        method: "POST",
+        body: JSON.stringify({
+          code,
+          language: "rust",
+          expected: exercise.expected || null,
+        }),
+      });
 
-    setOutput(result.output);
+      setOutput(data.feedback || "No output.");
 
-    if (result.error) {
-      setError(result.error);
-    } else {
-      if (
-        exercise.expectedOutput !== undefined &&
-        result.output.trim() !== exercise.expectedOutput.trim()
-      ) {
-        setOutputMismatch(true);
-      } else {
+      if (data.accepted) {
         setIsSuccess(true);
         onSuccess();
+      } else if (data.score_delta && data.score_delta > 0) {
+        setIsSuccess(true);
+        onSuccess();
+      } else {
+        setError(data.feedback || "Your code did not pass verification.");
       }
+    } catch (err: unknown) {
+      const typeName =
+        typeof err === "object" && err !== null
+          ? ((err as Error).constructor?.name ?? typeof err)
+          : typeof err;
+      const detail =
+        err instanceof Error
+          ? `${err.name}: ${err.message}${err.stack ? "\n" + err.stack.split("\n").slice(0, 3).join("\n") : ""}`
+          : String(err);
+      console.error(`RustSandbox error [${typeName}]:`, detail);
+      setError(detail);
+    } finally {
+      setIsExecuting(false);
     }
   };
 
@@ -52,7 +66,6 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
     setOutput("");
     setError(null);
     setIsSuccess(false);
-    setOutputMismatch(false);
   };
 
   return (
@@ -60,7 +73,7 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b-4 border-black dark:border-[#2e2924] bg-white dark:bg-[#1f1c18]">
         <h3 className="font-black text-lg flex items-center gap-2">
-          🐍 Python Sandbox
+          🦀 Rust Sandbox
         </h3>
         <div className="flex items-center gap-2">
           <button
@@ -71,18 +84,18 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
           </button>
           <button
             onClick={handleRun}
-            disabled={isExecuting || !isReady}
+            disabled={isExecuting}
             className="flex items-center gap-2 px-4 py-1.5 text-sm font-bold border-2 border-black dark:border-[#2e2924] bg-accent text-white rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             <Play className="w-4 h-4" />
-            {isExecuting ? "Running..." : "Run"}
+            {isExecuting ? "Verifying..." : "Run"}
           </button>
         </div>
       </div>
 
       {/* Prompt */}
       {exercise.prompt && (
-        <div className="px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border-b-4 border-black dark:border-[#2e2924] text-sm font-medium">
+        <div className="px-4 py-3 bg-orange-50 dark:bg-orange-900/20 border-b-4 border-black dark:border-[#2e2924] text-sm font-medium">
           {exercise.prompt}
         </div>
       )}
@@ -92,7 +105,7 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
         <CodeEditor
           code={code}
           onChange={(code) => setCode(code)}
-          language="python"
+          language="rust"
         />
       </div>
 
@@ -110,7 +123,7 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
         {error && (
           <div className="mt-4 pt-4 border-t border-red-900/50">
             <div className="flex items-center gap-2 text-red-400 font-bold mb-2">
-              <XCircle className="w-4 h-4" /> Runtime Error
+              <XCircle className="w-4 h-4" /> Verification Error
             </div>
             <pre className="text-red-300 whitespace-pre-wrap">{error}</pre>
             {exercise.hint && (
@@ -124,21 +137,9 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
         {isSuccess && (
           <div className="mt-4 pt-4 border-t border-green-900/50">
             <div className="flex items-center gap-2 text-green-400 font-bold">
-              <CheckCircle2 className="w-5 h-5" /> All tests passed! You earned
+              <CheckCircle2 className="w-5 h-5" /> All checks passed! You earned
               points.
             </div>
-          </div>
-        )}
-
-        {outputMismatch && exercise.expectedOutput !== undefined && (
-          <div className="mt-4 pt-4 border-t border-dashed border-gray-600">
-            <div className="flex items-center gap-2 text-yellow-500 font-bold mb-4">
-              <XCircle className="w-5 h-5" /> Output Mismatch
-            </div>
-            <DiffViewer
-              expected={exercise.expectedOutput}
-              actual={output}
-            />
           </div>
         )}
       </div>
