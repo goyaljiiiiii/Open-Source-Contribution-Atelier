@@ -29,7 +29,7 @@ class MentorProfile(models.Model):
     )
 
     def __str__(self) -> str:
-        return f"MentorProfile({self.user.username})"
+        return f"MentorProfile({self.user.username})"  # type: ignore
 
 
 class PasswordResetToken(models.Model):
@@ -148,6 +148,15 @@ class UserProfile(models.Model):
     dnd_enabled = models.BooleanField(
         default=False, help_text="Temporarily disable non-critical email notifications."
     )
+    
+    THEME_CHOICES = [
+        ("light", "Light"),
+        ("dark", "Dark"),
+        ("system", "System Default"),
+    ]
+    theme_preference = models.CharField(
+        max_length=20, choices=THEME_CHOICES, default="system", help_text="User's preferred UI theme."
+    )
 
     organization = models.ForeignKey(
         "organizations.Organization",
@@ -158,7 +167,7 @@ class UserProfile(models.Model):
     )
 
     def __str__(self):
-        return f"UserProfile({self.user.username})"
+        return f"UserProfile({self.user.username})"  # type: ignore
 
     def _convert_to_webp(self, image_field):
         """Helper method to convert an ImageField to WebP format."""
