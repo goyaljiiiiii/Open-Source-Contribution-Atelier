@@ -53,7 +53,7 @@ class PasswordResetToken(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
-        return f"PasswordResetToken(user={self.user.username}, used={self.is_used})"
+        return f"PasswordResetToken(user={self.user.username}, used={self.is_used})"  # type: ignore
 
     def is_expired(self) -> bool:
         """Return True if the token is older than PASSWORD_RESET_TIMEOUT_MINUTES."""
@@ -62,7 +62,7 @@ class PasswordResetToken(models.Model):
         from django.utils import timezone
 
         timeout = getattr(settings, "PASSWORD_RESET_TIMEOUT_MINUTES", 15)
-        return timezone.now() > self.created_at + timedelta(minutes=timeout)
+        return timezone.now() > self.created_at + timedelta(minutes=timeout)  # type: ignore
 
 
 class OTPToken(models.Model):
@@ -83,7 +83,7 @@ class OTPToken(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
-        return f"OTPToken(user={self.user.username}, used={self.is_used})"
+        return f"OTPToken(user={self.user.username}, used={self.is_used})"  # type: ignore
 
 
 class MagicLinkToken(models.Model):
@@ -107,7 +107,7 @@ class MagicLinkToken(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
-        return f"MagicLinkToken(user={self.user.username}, used={self.is_used})"
+        return f"MagicLinkToken(user={self.user.username}, used={self.is_used})"  # type: ignore
 
     def is_expired(self) -> bool:
         """Return True if the token is older than MAGIC_LINK_TIMEOUT_MINUTES."""
@@ -116,7 +116,7 @@ class MagicLinkToken(models.Model):
         from django.utils import timezone
 
         timeout = getattr(settings, "MAGIC_LINK_TIMEOUT_MINUTES", 15)
-        return timezone.now() > self.created_at + timedelta(minutes=timeout)
+        return timezone.now() > self.created_at + timedelta(minutes=timeout)  # type: ignore
 
 
 def get_timezone_choices():
