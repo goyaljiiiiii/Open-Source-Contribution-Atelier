@@ -1,7 +1,12 @@
 from django.urls import path
 
-from .views import (MarkAllReadView, MarkOneReadView, NotificationListView,
-                    SubscribePushView, UnsubscribePushView)
+from .views import (
+    MarkAllReadView,
+    MarkOneReadView,
+    NotificationListView,
+    SubscribePushView,
+    UnsubscribePushView,
+)
 
 urlpatterns = [
     path("", NotificationListView.as_view(), name="notification-list"),

@@ -1,6 +1,6 @@
 from apps.dashboard.models import Issue, PullRequest
-from apps.progress.models import LessonProgress, ExerciseAttempt
 from apps.progress.badge_evaluator import BadgeEvaluator
+from apps.progress.models import ExerciseAttempt, LessonProgress
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.contrib.auth.models import User
