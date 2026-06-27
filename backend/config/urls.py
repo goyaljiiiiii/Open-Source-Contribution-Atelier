@@ -13,6 +13,7 @@ urlpatterns = [
     path("health/", health_view, name="health"),
     path("api/version/", version_view, name="version"),
     path("api/leaderboard/", LeaderboardView.as_view(), name="leaderboard"),
+    path("accounts/", include("allauth.urls")),
     path("api/auth/", include("apps.accounts.urls")),
     path("api/users/", include("apps.accounts.user_urls")),
     path("api/content/", include("apps.content.urls")),
