@@ -43,9 +43,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return null;
     }
   }
+  function sanitizeStorageData(value: string): string {
+    if (!value) return value;
+    return value
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#x27;");
+  }
+
   function safeSetItem(key: string, value: string) {
     try {
-      localStorage.setItem(key, value);
+      localStorage.setItem(key, sanitizeStorageData(value));
     } catch {
       /* localStorage unavailable */
     }

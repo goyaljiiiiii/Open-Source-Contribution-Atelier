@@ -1,13 +1,28 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import { z } from "zod";
 import { fetchApi } from "../../lib/api";
 import { useAuth } from "./AuthContext";
 import { useToast } from "../ui/ToastContext";
 import { AvatarUploadDropzone } from "../../components/ui/AvatarUploadDropzone";
 import { CoverUploadDropzone } from "../../components/ui/CoverUploadDropzone";
 import { useWebPush } from "../../hooks/useWebPush";
+
+const urlOrEmpty = () =>
+  z
+    .string()
+    .optional()
+    .refine(
+      (val) =>
+        !val ||
+        val.startsWith("http://") ||
+        val.startsWith("https://") ||
+        val === "",
+      {
+        message: "Please enter a valid URL (starting with http:// or https://)",
+      },
+    );
 
 const profileSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -19,24 +34,9 @@ const profileSchema = z.object({
       message: "Password must be at least 8 characters long if provided",
     }),
   timezone: z.string(),
-  twitter_url: z
-    .string()
-    .optional()
-    .refine((val) => !val || val.startsWith("http://") || val.startsWith("https://") || val === "", {
-      message: "Please enter a valid URL (starting with http:// or https://)",
-    }),
-  linkedin_url: z
-    .string()
-    .optional()
-    .refine((val) => !val || val.startsWith("http://") || val.startsWith("https://") || val === "", {
-      message: "Please enter a valid URL (starting with http:// or https://)",
-    }),
-  github_url: z
-    .string()
-    .optional()
-    .refine((val) => !val || val.startsWith("http://") || val.startsWith("https://") || val === "", {
-      message: "Please enter a valid URL (starting with http:// or https://)",
-    }),
+  twitter_url: urlOrEmpty(),
+  linkedin_url: urlOrEmpty(),
+  github_url: urlOrEmpty(),
 });
 
 type ProfileFormValues = z.input<typeof profileSchema>;
@@ -44,24 +44,25 @@ type ProfileFormValues = z.input<typeof profileSchema>;
 export function ProfileSettingsForm() {
   const { user, checkUser } = useAuth();
   const { addToast } = useToast();
-  const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState<File | null>(null);
   const [selectedCover, setSelectedCover] = useState<File | null>(null);
 
   const { isSupported, isSubscribed, subscribe, unsubscribe } = useWebPush();
+  const timeZones = Intl.supportedValuesOf("timeZone");
 
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       email: user?.email || "",
       password: "",
-      timezone: user?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+      timezone:
+        user?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
       twitter_url: user?.twitter_url || "",
       linkedin_url: user?.linkedin_url || "",
       github_url: user?.github_url || "",
@@ -73,7 +74,8 @@ export function ProfileSettingsForm() {
       reset({
         email: user.email,
         password: "",
-        timezone: user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+        timezone:
+          user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
         twitter_url: user.twitter_url || "",
         linkedin_url: user.linkedin_url || "",
         github_url: user.github_url || "",
@@ -82,12 +84,9 @@ export function ProfileSettingsForm() {
   }, [user, reset]);
 
   const onSubmit = async (data: ProfileFormValues) => {
-    setLoading(true);
-
     try {
       let body: FormData | string;
 
-      // If we have a file, we MUST use FormData
       if (selectedAvatar || selectedCover) {
         const formData = new FormData();
         formData.append("email", data.email);
@@ -106,7 +105,6 @@ export function ProfileSettingsForm() {
         }
         body = formData;
       } else {
-        // Fallback to JSON payload if no file is selected (cleaner for simple updates)
         const payload: Record<string, string> = {
           email: data.email,
           timezone: data.timezone,
@@ -126,7 +124,7 @@ export function ProfileSettingsForm() {
         body: body,
       });
 
-      await checkUser(); // Refresh global user context to show new avatar instantly
+      await checkUser();
       addToast("Profile settings updated successfully!", "success");
       reset({
         email: data.email,
@@ -143,8 +141,6 @@ export function ProfileSettingsForm() {
           : "Failed to update profile settings.",
         "error",
       );
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -184,7 +180,10 @@ export function ProfileSettingsForm() {
       />
 
       <div className="space-y-2">
-        <label htmlFor="email" className="font-bold text-black ml-2 uppercase tracking-wide text-sm">
+        <label
+          htmlFor="email"
+          className="font-bold text-black ml-2 uppercase tracking-wide text-sm"
+        >
           Email Address
         </label>
         <input
@@ -195,7 +194,7 @@ export function ProfileSettingsForm() {
           }`}
           type="email"
           placeholder="nerd@homework.com"
-          disabled={loading}
+          disabled={isSubmitting}
         />
         {errors.email && (
           <p role="alert" className="text-red-600 font-bold ml-2 text-sm">
@@ -205,7 +204,10 @@ export function ProfileSettingsForm() {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="password" className="font-bold text-black ml-2 uppercase tracking-wide text-sm">
+        <label
+          htmlFor="password"
+          className="font-bold text-black ml-2 uppercase tracking-wide text-sm"
+        >
           New Password (leave blank to keep current)
         </label>
         <input
@@ -216,7 +218,7 @@ export function ProfileSettingsForm() {
           }`}
           type="password"
           placeholder="••••••••"
-          disabled={loading}
+          disabled={isSubmitting}
         />
         {errors.password && (
           <p role="alert" className="text-red-600 font-bold ml-2 text-sm">
@@ -226,7 +228,10 @@ export function ProfileSettingsForm() {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="timezone" className="font-bold text-black ml-2 uppercase tracking-wide text-sm">
+        <label
+          htmlFor="timezone"
+          className="font-bold text-black ml-2 uppercase tracking-wide text-sm"
+        >
           Timezone
         </label>
         <select
@@ -235,9 +240,9 @@ export function ProfileSettingsForm() {
           className={`w-full rounded-2xl border-4 border-black bg-white px-5 py-4 text-black font-bold outline-none shadow-card-sm transition-all focus:-translate-y-1 focus:shadow-card focus:bg-accent ${
             errors.timezone ? "border-red-500" : ""
           }`}
-          disabled={loading}
+          disabled={isSubmitting}
         >
-          {(Intl as any).supportedValuesOf("timeZone").map((tz: string) => (
+          {timeZones.map((tz) => (
             <option key={tz} value={tz}>
               {tz}
             </option>
@@ -251,7 +256,10 @@ export function ProfileSettingsForm() {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="github_url" className="font-bold text-black ml-2 uppercase tracking-wide text-sm">
+        <label
+          htmlFor="github_url"
+          className="font-bold text-black ml-2 uppercase tracking-wide text-sm"
+        >
           GitHub URL
         </label>
         <input
@@ -262,7 +270,7 @@ export function ProfileSettingsForm() {
           }`}
           type="url"
           placeholder="https://github.com/username"
-          disabled={loading}
+          disabled={isSubmitting}
         />
         {errors.github_url && (
           <p role="alert" className="text-red-600 font-bold ml-2 text-sm">
@@ -272,7 +280,10 @@ export function ProfileSettingsForm() {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="linkedin_url" className="font-bold text-black ml-2 uppercase tracking-wide text-sm">
+        <label
+          htmlFor="linkedin_url"
+          className="font-bold text-black ml-2 uppercase tracking-wide text-sm"
+        >
           LinkedIn URL
         </label>
         <input
@@ -283,7 +294,7 @@ export function ProfileSettingsForm() {
           }`}
           type="url"
           placeholder="https://linkedin.com/in/username"
-          disabled={loading}
+          disabled={isSubmitting}
         />
         {errors.linkedin_url && (
           <p role="alert" className="text-red-600 font-bold ml-2 text-sm">
@@ -293,7 +304,10 @@ export function ProfileSettingsForm() {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="twitter_url" className="font-bold text-black ml-2 uppercase tracking-wide text-sm">
+        <label
+          htmlFor="twitter_url"
+          className="font-bold text-black ml-2 uppercase tracking-wide text-sm"
+        >
           Twitter URL
         </label>
         <input
@@ -304,7 +318,7 @@ export function ProfileSettingsForm() {
           }`}
           type="url"
           placeholder="https://twitter.com/username"
-          disabled={loading}
+          disabled={isSubmitting}
         />
         {errors.twitter_url && (
           <p role="alert" className="text-red-600 font-bold ml-2 text-sm">
@@ -316,9 +330,9 @@ export function ProfileSettingsForm() {
       <div className="space-y-4 mt-8">
         <button
           className="w-full rounded-2xl border-4 border-black bg-accent px-5 py-5 font-black text-black text-xl shadow-card hover:bg-tertiary transition-colors cursor-pointer uppercase disabled:opacity-50"
-          disabled={loading}
+          disabled={isSubmitting}
         >
-          {loading ? "Updating..." : "Save Settings"}
+          {isSubmitting ? "Updating..." : "Save Settings"}
         </button>
 
         <div className="space-y-2 mt-6">
@@ -330,10 +344,14 @@ export function ProfileSettingsForm() {
               type="button"
               onClick={isSubscribed ? unsubscribe : subscribe}
               className={`w-full rounded-2xl border-4 border-black px-5 py-4 font-black text-black text-lg shadow-card-sm transition-all cursor-pointer uppercase flex items-center justify-center gap-2 ${
-                isSubscribed ? "bg-red-200 hover:bg-red-300" : "bg-[#E8F0FE] hover:bg-blue-200"
+                isSubscribed
+                  ? "bg-red-200 hover:bg-red-300"
+                  : "bg-[#E8F0FE] hover:bg-blue-200"
               }`}
             >
-              {isSubscribed ? "🔕 Disable Notifications" : "🔔 Enable Notifications"}
+              {isSubscribed
+                ? "🔕 Disable Notifications"
+                : "🔔 Enable Notifications"}
             </button>
           ) : (
             <p className="text-muted ml-2 text-sm italic">

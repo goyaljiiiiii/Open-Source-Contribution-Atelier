@@ -1,5 +1,5 @@
-from apps.progress.models import Badge, LessonProgress, UserBadge, ExerciseAttempt
 from apps.dashboard.models import PullRequest
+from apps.progress.models import Badge, ExerciseAttempt, LessonProgress, UserBadge
 from django.utils import timezone
 
 BADGE_RULES = {

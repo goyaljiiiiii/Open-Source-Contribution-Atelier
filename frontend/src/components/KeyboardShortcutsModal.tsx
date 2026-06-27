@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Keyboard, X } from "lucide-react";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 interface ShortcutRow {
   category: string;
@@ -73,6 +74,7 @@ const shortcuts: ShortcutRow[] = [
 export const KeyboardShortcutsModal: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, isOpen);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -197,7 +199,13 @@ export const KeyboardShortcutsModal: React.FC = () => {
 
             {/* Footer */}
             <div className="px-6 py-3 border-t-4 border-black bg-[#151411] text-xs text-[#6b5a49] font-mono flex justify-between items-center">
-              <span>Press <kbd className="bg-black rounded border border-[#2e2924] px-1 py-0.5 text-[#f0ebe2]">Esc</kbd> or click outside to close</span>
+              <span>
+                Press{" "}
+                <kbd className="bg-black rounded border border-[#2e2924] px-1 py-0.5 text-[#f0ebe2]">
+                  Esc
+                </kbd>{" "}
+                or click outside to close
+              </span>
               <span>The Maintainer Atelier</span>
             </div>
           </motion.div>

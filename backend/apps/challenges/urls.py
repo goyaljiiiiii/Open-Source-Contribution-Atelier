@@ -9,5 +9,7 @@ router.register("", ChallengeViewSet, basename="challenge")
 
 urlpatterns = [
     path("sandbox/execute/", SandboxExecutionView.as_view(), name="sandbox-execute"),
-    path("bulk-upload/", BulkChallengeUploadView.as_view(), name="bulk-upload-challenges"),
+    path(
+        "bulk-upload/", BulkChallengeUploadView.as_view(), name="bulk-upload-challenges"
+    ),
 ] + router.urls

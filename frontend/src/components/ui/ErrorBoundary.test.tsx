@@ -28,20 +28,23 @@ describe("ErrorBoundary", () => {
     vi.clearAllMocks();
 
     // Mock window.location.reload
-    // @ts-ignore
+    // @ts-expect-error - deleting to reassign with mock reload
     delete window.location;
-    window.location = { ...originalLocation, reload: vi.fn() } as any;
+    window.location = {
+      ...originalLocation,
+      reload: vi.fn(),
+    } as unknown as Location;
   });
 
   afterEach(() => {
-    window.location = originalLocation as any;
+    window.location = originalLocation;
   });
 
   it("renders children normally when there is no error", () => {
     render(
       <ErrorBoundary>
         <div data-testid="child">Hello World</div>
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
 
     expect(screen.getByTestId("child")).toBeInTheDocument();
@@ -50,33 +53,41 @@ describe("ErrorBoundary", () => {
 
   it("renders default fallback UI and logs the error when a child throws", () => {
     // Suppress console.error output during test as we expect errors
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
     render(
       <ErrorBoundary>
         <ProblematicComponent />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
 
     expect(screen.getByText("Something went wrong")).toBeInTheDocument();
-    expect(screen.getByText(/We've encountered an unexpected error/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/We've encountered an unexpected error/i),
+    ).toBeInTheDocument();
     expect(logger.error).toHaveBeenCalledTimes(1);
     expect(logger.error).toHaveBeenCalledWith(
       expect.any(Error),
-      expect.any(Object)
+      expect.any(Object),
     );
 
     consoleErrorSpy.mockRestore();
   });
 
   it("renders custom fallback UI when a child throws and custom fallback prop is provided", () => {
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    const customFallback = <div data-testid="custom-fallback">Custom Error Page</div>;
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const customFallback = (
+      <div data-testid="custom-fallback">Custom Error Page</div>
+    );
 
     render(
       <ErrorBoundary fallback={customFallback}>
         <ProblematicComponent />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
 
     expect(screen.getByTestId("custom-fallback")).toBeInTheDocument();
@@ -87,16 +98,20 @@ describe("ErrorBoundary", () => {
   });
 
   it("reloads the page when 'Reload Application' button is clicked in the default fallback UI", async () => {
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
     const user = userEvent.setup();
 
     render(
       <ErrorBoundary>
         <ProblematicComponent />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
 
-    const reloadButton = screen.getByRole("button", { name: /reload application/i });
+    const reloadButton = screen.getByRole("button", {
+      name: /reload application/i,
+    });
     expect(reloadButton).toBeInTheDocument();
 
     await user.click(reloadButton);
