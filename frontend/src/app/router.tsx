@@ -20,6 +20,7 @@ import { VerifyCertificatePage } from "../pages/VerifyCertificatePage";
 import { PeerReviewPage } from "../pages/PeerReviewPage";
 import { useAuth } from "../features/auth/AuthContext";
 import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
+import { PathwayPage } from "../pages/PathwayPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -108,6 +109,14 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <LeaderboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pathway"
+          element={
+            <ProtectedRoute>
+              <PathwayPage />
             </ProtectedRoute>
           }
         />

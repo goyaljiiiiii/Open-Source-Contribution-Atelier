@@ -9,7 +9,7 @@ import SkeletonAdminDashboard from "../components/ui/skeletons/SkeletonAdminDash
 import SkeletonContributorDashboard from "../components/ui/skeletons/SkeletonContributorDashboard";
 import { useRef } from "react";
 import { useElementSize } from "../hooks/useElementSize";
-import { fetchLessonsApi, Lesson } from "../lib/lessons";
+import { fetchLessonsApi, Lesson, buildModulesFromLessons } from "../lib/lessons";
 import { useUserProgress } from "../hooks/useUserProgress";
 import { useBookmarks } from "../hooks/useBookmarks";
 import { BADGES } from "../constants/badges";
@@ -105,20 +105,8 @@ export function DashboardPage() {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
-  // 1. Fetch static modules catalog
+  // 1. Curriculum data is now derived dynamically from the lessons query below.
   const [curriculumData, setCurriculumData] = useState<ModuleData[]>([]);
-  useEffect(() => {
-    fetch("/content/curriculum.json")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.modules) {
-          setCurriculumData(data.modules);
-        }
-      })
-      .catch((err) =>
-        console.error("Error loading dashboard curriculum:", err),
-      );
-  }, []);
 
   // 2. Fetch Admin Dashboard stats (only queries if user is staff)
   const {
@@ -157,6 +145,12 @@ export function DashboardPage() {
     queryFn: fetchLessonsApi,
     enabled: !user?.is_staff,
   });
+
+  useEffect(() => {
+    if (lessons.length > 0) {
+      setCurriculumData(buildModulesFromLessons(lessons) as any);
+    }
+  }, [lessons]);
 
   const isLoading = isAdminLoading || isContributorLoading || isLessonsLoading;
 
@@ -776,12 +770,20 @@ export function DashboardPage() {
           id="tour-learning-queue"
           className="rounded-2xl border-4 border-black bg-white p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none"
         >
-          <h2 className="text-3xl font-black mb-6 flex items-center gap-3">
-            <span className="bg-primary text-white w-10 h-10 rounded-full border-2 border-black flex items-center justify-center text-lg dark:bg-primary/20 dark:text-primary">
-              📚
-            </span>
-            Resume Learning Queue
-          </h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-3xl font-black flex items-center gap-3">
+              <span className="bg-primary text-white w-10 h-10 rounded-full border-2 border-black flex items-center justify-center text-lg dark:bg-primary/20 dark:text-primary">
+                📚
+              </span>
+              Resume Learning Queue
+            </h2>
+            <Link
+              to="/pathway"
+              className="px-4 py-2 border-2 border-black rounded-lg bg-blue-50 font-bold text-black hover:bg-blue-100 transition-colors hidden sm:block"
+            >
+              View Pathway Map
+            </Link>
+          </div>
           <div className="space-y-4">
             {activeLessonsQueue.length > 0 ? (
               activeLessonsQueue.map((lesson: Lesson) => (
