@@ -1015,3 +1015,26 @@ class ExportProgressCSVView(APIView):
             'attachment; filename="user_progress_report.csv"'
         )
         return response
+
+
+class UserAchievementView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from apps.progress.models import UserAchievement
+
+        achievements = UserAchievement.objects.filter(user=request.user).select_related(
+            "achievement"
+        )
+        data = [
+            {
+                "id": ua.id,
+                "achievement_id": ua.achievement.id,
+                "name": ua.achievement.name,
+                "description": ua.achievement.description,
+                "icon": ua.achievement.icon_name,
+                "earned_at": ua.earned_at,
+            }
+            for ua in achievements
+        ]
+        return Response(data)

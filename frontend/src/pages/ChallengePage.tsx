@@ -35,7 +35,7 @@ export function ChallengePage() {
         body: formData,
       });
       setUploadMessage("✅ " + (response.message || "Upload successful"));
-    } catch (error: any) {
+    } catch (error: unknown) {
       setUploadMessage("❌ Error: " + (error.message || "Failed to upload"));
     } finally {
       setIsUploading(false);
