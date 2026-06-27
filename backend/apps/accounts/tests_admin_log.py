@@ -1,8 +1,9 @@
+from django.contrib.admin.models import ADDITION, CHANGE, DELETION, LogEntry
 from django.contrib.auth.models import User
-from django.urls import reverse
-from django.test import TestCase, Client
-from django.contrib.admin.models import LogEntry, ADDITION, CHANGE, DELETION
 from django.contrib.contenttypes.models import ContentType
+from django.test import Client, TestCase
+from django.urls import reverse
+
 
 
 class AdminLogEntryTest(TestCase):

@@ -733,20 +733,42 @@ from .models import CodeSubmission, PeerReview
 from .serializers import CodeSubmissionSerializer, PeerReviewSerializer
 
 
+from apps.content.models import Exercise
+from apps.progress.models import ExerciseAttempt
+import random
+
+
 class CodeSubmissionView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         submissions = CodeSubmission.objects.filter(
-            status=CodeSubmission.Status.PENDING
-        ).exclude(user=request.user)
+            status=CodeSubmission.Status.PENDING_REVIEW, assigned_reviewers=request.user
+        )
         serializer = CodeSubmissionSerializer(submissions, many=True)
         return Response(serializer.data)
 
     def post(self, request):
         serializer = CodeSubmissionSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(user=request.user)
+            with transaction.atomic():
+                submission = serializer.save(
+                    user=request.user, status=CodeSubmission.Status.PENDING_REVIEW
+                )
+                if submission.exercise:
+                    eligible_users = list(
+                        User.objects.filter(
+                            exerciseattempt__exercise=submission.exercise,
+                            exerciseattempt__is_correct=True,
+                        )
+                        .exclude(id=request.user.id)
+                        .distinct()
+                    )
+                    if len(eligible_users) >= 2:
+                        assigned = random.sample(eligible_users, 2)
+                        submission.assigned_reviewers.set(assigned)
+                    elif len(eligible_users) == 1:
+                        submission.assigned_reviewers.set(eligible_users)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -763,6 +785,12 @@ class PeerReviewView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        if not submission.assigned_reviewers.filter(id=request.user.id).exists():
+            return Response(
+                {"error": "You are not assigned to review this submission"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         if PeerReview.objects.filter(
             submission=submission, reviewer=request.user
         ).exists():
@@ -777,8 +805,26 @@ class PeerReviewView(APIView):
                 review = serializer.save(
                     submission=submission, reviewer=request.user, points_earned=10
                 )
-                submission.status = CodeSubmission.Status.REVIEWED
-                submission.save(update_fields=["status"])
+
+                # Check consensus
+                reviews = PeerReview.objects.filter(submission=submission)
+                if reviews.count() >= 2:
+                    approvals = sum(1 for r in reviews if r.is_approved)
+                    if approvals == 2:
+                        submission.status = CodeSubmission.Status.REVIEWED
+                        if submission.exercise:
+                            ExerciseAttempt.objects.create(
+                                user=submission.user,
+                                exercise=submission.exercise,
+                                submitted_command="Peer Reviewed Solution",
+                                is_correct=True,
+                            )
+                    elif approvals == 1:
+                        submission.status = CodeSubmission.Status.ESCALATED
+                    else:
+                        submission.status = CodeSubmission.Status.CHANGES_REQUESTED
+                    submission.save(update_fields=["status"])
+
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -969,3 +1015,26 @@ class ExportProgressCSVView(APIView):
             'attachment; filename="user_progress_report.csv"'
         )
         return response
+
+
+class UserAchievementView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from apps.progress.models import UserAchievement
+
+        achievements = UserAchievement.objects.filter(user=request.user).select_related(
+            "achievement"
+        )
+        data = [
+            {
+                "id": ua.id,
+                "achievement_id": ua.achievement.id,
+                "name": ua.achievement.name,
+                "description": ua.achievement.description,
+                "icon": ua.achievement.icon_name,
+                "earned_at": ua.earned_at,
+            }
+            for ua in achievements
+        ]
+        return Response(data)
