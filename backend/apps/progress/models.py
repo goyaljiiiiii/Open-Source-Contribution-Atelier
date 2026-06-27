@@ -56,6 +56,35 @@ class UserBadge(models.Model):
         unique_together = ("user", "badge")
 
 
+class Achievement(models.Model):
+    objects = models.Manager()
+    name = models.CharField(max_length=120)
+    slug = models.SlugField(unique=True)
+    description = models.TextField()
+    category = models.CharField(max_length=100, default="milestone")
+    icon_name = models.CharField(max_length=100, blank=True, default="🏆")
+    xp_reward = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return self.name
+
+
+class UserAchievement(models.Model):
+    objects = models.Manager()
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="achievements"
+    )
+    achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE)
+    earned_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "achievement")
+        ordering = ["-earned_at"]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.achievement.name}"
+
+
 class LessonProgress(models.Model):
     objects = models.Manager()
     organization = models.ForeignKey(
