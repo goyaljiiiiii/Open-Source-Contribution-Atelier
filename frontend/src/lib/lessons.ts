@@ -17,7 +17,15 @@ export interface PythonExercise {
   prompt: string;
   starterCode: string;
   testCode: string; // Hidden code appended after user code to run assertions
+  expectedOutput?: string; // Used for diff validation instead of assertions if provided
   hint?: string;
+}
+
+export interface RustExercise {
+  prompt: string;
+  starterCode: string;
+  hint?: string;
+  expected?: string; // Expected final code for verification
 }
 
 export interface Lesson {
@@ -43,6 +51,7 @@ export interface Lesson {
   }>;
   conflictScenario?: ConflictScenario;
   pythonExercise?: PythonExercise;
+  rustExercise?: RustExercise;
 }
 
 // Small built-in fallback lessons (used if API unreachable)
@@ -101,6 +110,7 @@ export async function fetchLessonsApi(): Promise<Lesson[]> {
           quizzes: les.quizzes || [],
           conflictScenario: les.conflictScenario || undefined,
           pythonExercise: les.pythonExercise || undefined,
+          rustExercise: les.rustExercise || undefined,
           order: orderIndex++,
           filePath: les.filePath,
         });

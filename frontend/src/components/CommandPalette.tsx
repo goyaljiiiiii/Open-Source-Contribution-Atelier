@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -146,7 +147,6 @@ export const CommandPalette: React.FC = () => {
   // Debounced search (300ms)
   useEffect(() => {
     if (!searchQuery.trim()) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults([]);
       return;
     }

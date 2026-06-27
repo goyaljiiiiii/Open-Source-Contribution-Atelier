@@ -28,7 +28,7 @@ describe("PythonSandbox UI", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (usePythonSandbox as any).mockReturnValue({
+    (usePythonSandbox as unknown).mockReturnValue({
       isReady: true,
       isExecuting: false,
       runPythonCode: mockRunPythonCode,

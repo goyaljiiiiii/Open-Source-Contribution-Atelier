@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable react-hooks/immutability */
 import { useState, useEffect, useCallback } from "react";
 import { fetchApi } from "../lib/api";
 

@@ -1,12 +1,14 @@
 from datetime import timedelta
-from django.utils import timezone
+
+from apps.content.models import Lesson
+from apps.dashboard.models import Issue, StreakFreeze
+from apps.progress.models import LessonProgress
 from django.contrib.auth.models import User
 from django.urls import reverse
-from rest_framework.test import APITestCase
+from django.utils import timezone
 from rest_framework import status
-from apps.dashboard.models import StreakFreeze, Issue
-from apps.progress.models import LessonProgress
-from apps.content.models import Lesson
+from rest_framework.test import APITestCase
+
 
 
 class StreakFreezeTests(APITestCase):

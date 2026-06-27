@@ -2,9 +2,8 @@ import json
 from unittest.mock import MagicMock, patch
 
 import pytest
-from django.test import RequestFactory
-
 from config.health_view import health_view
+from django.test import RequestFactory
 
 
 @pytest.fixture
