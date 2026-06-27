@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Play, RefreshCcw, Users } from "lucide-react";
+import React, { useState, useRef } from "react";
+import { Play, RefreshCcw, Users, Loader2 } from "lucide-react";
 import Editor from "@monaco-editor/react";
 import { useWebSocket } from "../../hooks/useWebSocket";
 import { fetchApi } from "../../lib/api";
@@ -42,6 +42,24 @@ export function CodeSandbox() {
       if (data.action === "code_update" && data.code !== undefined) {
         isRemoteUpdate.current = true;
         setCode(data.code || "");
+      } else if (data.action === "execution_start") {
+        setIsRunning(true);
+      } else if (data.action === "execution_output") {
+        setOutput((prev) => [...prev, { type: data.type, text: data.output }]);
+      } else if (data.action === "execution_error") {
+        setOutput((prev) => [
+          ...prev,
+          { type: "stderr", text: data.error + "\n" },
+        ]);
+      } else if (data.action === "execution_end") {
+        setIsRunning(false);
+        setOutput((prev) => [
+          ...prev,
+          {
+            type: "system",
+            text: `\n[Process Exited with status: ${data.status}]\n`,
+          },
+        ]);
       }
     },
   });
@@ -132,19 +150,6 @@ export function CodeSandbox() {
     }
   };
 
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (
-        event.data &&
-        (event.data.type === "log" || event.data.type === "error")
-      ) {
-        setOutput((prev) => [...prev, event.data.message]);
-      }
-    };
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, []);
-
   const resetSandbox = () => {
     const defaultCode = DEFAULT_CODE[language];
     setCode(defaultCode);
@@ -160,7 +165,7 @@ export function CodeSandbox() {
       <div className="flex items-center justify-between border-b-4 border-black dark:border-[#2e2924] bg-surface-low px-4 py-2 dark:bg-[#151411]">
         <div className="flex items-center gap-4">
           <h3 className="font-bold text-sm text-text dark:text-[#f0ebe2] flex items-center gap-2">
-            <span>💻</span> Code Sandbox
+            <span>💻</span> Python Sandbox
           </h3>
           <select
             value={language}
@@ -192,9 +197,19 @@ export function CodeSandbox() {
           </button>
           <button
             onClick={runCode}
-            className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-white transition hover:-translate-y-0.5 active:translate-y-0 border-2 border-black dark:border-transparent shadow-card-sm"
+            disabled={isRunning || !isConnected}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-white transition border-2 shadow-card-sm ${
+              isRunning || !isConnected
+                ? "bg-gray-400 border-transparent cursor-not-allowed"
+                : "bg-primary hover:-translate-y-0.5 active:translate-y-0 border-black dark:border-transparent"
+            }`}
           >
-            <Play size={14} /> Run
+            {isRunning ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Play size={14} />
+            )}
+            {isRunning ? "Running..." : "Run"}
           </button>
         </div>
       </div>
@@ -216,14 +231,23 @@ export function CodeSandbox() {
             }}
           />
         </div>
-        <div className="flex-1 bg-[#1a1b26] p-4 font-mono text-sm overflow-auto text-[#a9b1d6]">
+        <div className="flex-1 bg-[#1a1b26] p-4 font-mono text-sm overflow-auto text-[#a9b1d6] whitespace-pre-wrap">
           {output.length === 0 ? (
             <span className="opacity-50">Output will appear here...</span>
           ) : (
             output.map((line, i) => (
-              <div key={i} className="mb-1 break-words">
-                <span className="text-[#9ece6a]">❯</span> {line}
-              </div>
+              <span
+                key={i}
+                className={
+                  line.type === "stderr"
+                    ? "text-red-400"
+                    : line.type === "system"
+                      ? "text-yellow-400 opacity-70 italic font-bold"
+                      : "text-[#a9b1d6]"
+                }
+              >
+                {line.text}
+              </span>
             ))
           )}
         </div>

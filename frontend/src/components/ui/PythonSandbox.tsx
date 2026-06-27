@@ -14,6 +14,7 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
   const [output, setOutput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [outputMismatch, setOutputMismatch] = useState(false);
   const { runPythonCode, isExecuting, isReady } = usePythonSandbox();
 
   const handleRun = async () => {
@@ -25,6 +26,7 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
     setOutput("Executing...\n");
     setError(null);
     setIsSuccess(false);
+    setOutputMismatch(false);
 
     const result = await runPythonCode(fullCode);
 
@@ -33,8 +35,15 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
     if (result.error) {
       setError(result.error);
     } else {
-      setIsSuccess(true);
-      onSuccess();
+      if (
+        exercise.expectedOutput !== undefined &&
+        result.output.trim() !== exercise.expectedOutput.trim()
+      ) {
+        setOutputMismatch(true);
+      } else {
+        setIsSuccess(true);
+        onSuccess();
+      }
     }
   };
 
@@ -43,6 +52,7 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
     setOutput("");
     setError(null);
     setIsSuccess(false);
+    setOutputMismatch(false);
   };
 
   return (
@@ -117,6 +127,18 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
               <CheckCircle2 className="w-5 h-5" /> All tests passed! You earned
               points.
             </div>
+          </div>
+        )}
+
+        {outputMismatch && exercise.expectedOutput !== undefined && (
+          <div className="mt-4 pt-4 border-t border-dashed border-gray-600">
+            <div className="flex items-center gap-2 text-yellow-500 font-bold mb-4">
+              <XCircle className="w-5 h-5" /> Output Mismatch
+            </div>
+            <DiffViewer
+              expected={exercise.expectedOutput}
+              actual={output}
+            />
           </div>
         )}
       </div>

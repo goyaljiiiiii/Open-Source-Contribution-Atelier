@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, Link } from "react-router-dom";
+import confetti from "canvas-confetti";
 import {
   ChevronLeft,
   ChevronRight,
@@ -17,8 +18,11 @@ import { useUserProgress } from "../hooks/useUserProgress";
 import { useBookmarks } from "../hooks/useBookmarks";
 
 import { fetchApi } from "../lib/api";
-import { Lesson, fetchLessonsApi, fetchLessonContent } from "../lib/lessons";
+import { Lesson, fetchLessonsApi } from "../lib/lessons";
 import { RichTextEditor } from "../components/ui/RichTextEditor";
+import { useOfflineLesson } from "../hooks/useOfflineLesson";
+import { OfflineStatusBadge } from "../components/ui/OfflineStatusBadge";
+import { OfflineBanner } from "../components/ui/OfflineBanner";
 
 const MarkdownRenderer = React.lazy(() =>
   import("../components/ui/MarkdownRenderer").then((module) => ({
@@ -51,7 +55,28 @@ export function LessonPage() {
   const [lesson, setLesson] = useState<Lesson | undefined>(undefined);
   const [lessonsList, setLessonsList] = useState<Lesson[]>([]);
   const [markdownContent, setMarkdownContent] = useState("");
+  const estimatedReadingTime = useMemo(() => {
+  if (!markdownContent) return 1;
+  const wordCount = markdownContent.trim().split(/\s+/).length;
+  return Math.max(1, Math.ceil(wordCount / 200));
+}, [markdownContent]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Offline-first markdown content
+  const {
+    markdown: markdownContent,
+    source: contentSource,
+    isLoading: isContentLoading,
+    refresh: refreshContent,
+    isCached: isLessonCached,
+  } = useOfflineLesson(lesson);
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    refreshContent();
+    setTimeout(() => setIsRefreshing(false), 1500);
+  };
 
   // Curriculum modules list for sidebar
   const [modules, setModules] = useState<
@@ -106,6 +131,7 @@ export function LessonPage() {
 
   // Note Panel
   const [isNotePanelOpen, setIsNotePanelOpen] = useState(false);
+  const hasConfettiFired = useRef(false);
 
   // Reading progress scroll ref
   const mainContentRef = useRef<HTMLDivElement>(null);
@@ -182,7 +208,23 @@ export function LessonPage() {
       });
   }, [slug, navigate]);
 
-  // 2. Scroll tracking for reading progress
+  // 2. Reset interactive state when lesson changes (content fetched offline-first via useOfflineLesson)
+  useEffect(() => {
+    if (!lesson) return;
+
+    setFeedback("");
+    setInput("");
+    setShowHint(false);
+    setTerminalOutput("");
+    setRepoState(createInitialRepo());
+
+    // Reset Quiz state
+    setCurrentQuizIndex(0);
+    setSelectedOption(null);
+    setQuizFeedback(null);
+  }, [lesson]);
+
+  // 3. Scroll tracking for reading progress
   useEffect(() => {
     const handleScroll = () => {
       if (!mainContentRef.current) return;
@@ -314,6 +356,18 @@ export function LessonPage() {
   const hasQuiz = lesson.quizzes && lesson.quizzes.length > 0;
   const hasConflict = !!lesson.conflictScenario;
   const isCompleted = isLessonCompleted(lesson.slug);
+  // Confetti on lesson completion
+useEffect(() => {
+  if (isCompleted && !hasConfettiFired.current) {
+    hasConfettiFired.current = true;
+    confetti({
+      particleCount: 180,
+      spread: 80,
+      origin: { y: 0.6 },
+      colors: ["#ff3b30", "#ffcc00", "#c3c0ff", "#34c759", "#ff9500"],
+    });
+  }
+}, [isCompleted]);
   const activeModuleId = modules.find((mod) =>
     mod.lessons.some((les) => les.slug === lesson.slug),
   )?.id;
@@ -486,6 +540,17 @@ export function LessonPage() {
             <p className="text-xl font-bold text-muted dark:text-[#c4bbae]">
               {lesson.description}
             </p>
+            <p className="text-xs font-black text-muted dark:text-[#c4bbae] flex items-center gap-1">
+              ⏱️ Estimated reading time: {estimatedReadingTime} min
+            </p>
+
+            {/* Offline banner — shown when offline or using cache */}
+            {(contentSource === "cache" || contentSource === "fallback") && (
+              <OfflineBanner
+                lessonTitle={lesson.title}
+                isCached={contentSource === "cache" && isLessonCached}
+              />
+            )}
 
             <hr className="border-2 border-black/10 dark:border-[#2e2924]/40" />
 
