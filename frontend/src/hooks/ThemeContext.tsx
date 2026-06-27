@@ -29,9 +29,33 @@ function useThemeValue(): ThemeContextValue {
     applyThemeToDOM(theme);
   }, [theme]);
 
+  // Also listen for system preference changes when in 'system' mode
+  useEffect(() => {
+    if (theme !== "system") return;
+    
+    const mediaQueryDark = window.matchMedia("(prefers-color-scheme: dark)");
+    const mediaQueryContrast = window.matchMedia("(prefers-contrast: more)");
+    
+    const handleChange = () => applyThemeToDOM("system");
+    
+    mediaQueryDark.addEventListener("change", handleChange);
+    mediaQueryContrast.addEventListener("change", handleChange);
+    
+    return () => {
+      mediaQueryDark.removeEventListener("change", handleChange);
+      mediaQueryContrast.removeEventListener("change", handleChange);
+    };
+  }, [theme]);
+
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
-      if (e.key === "theme" && (e.newValue === "light" || e.newValue === "dark" || e.newValue === "high-contrast")) {
+      if (
+        e.key === "theme" &&
+        (e.newValue === "light" ||
+          e.newValue === "dark" ||
+          e.newValue === "system" ||
+          e.newValue === "high-contrast")
+      ) {
         setThemeState(e.newValue as Theme);
       }
     };
@@ -40,7 +64,11 @@ function useThemeValue(): ThemeContextValue {
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setThemeState((prev) => (prev === "light" ? "dark" : "light"));
+    setThemeState((prev) => {
+      if (prev === "light") return "dark";
+      if (prev === "dark") return "system";
+      return "light";
+    });
   }, []);
 
   const setTheme = useCallback((newTheme: Theme) => {

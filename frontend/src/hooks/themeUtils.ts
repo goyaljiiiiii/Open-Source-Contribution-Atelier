@@ -1,10 +1,11 @@
-export type Theme = "light" | "dark" | "high-contrast";
+export type Theme = "light" | "dark" | "system" | "high-contrast";
 
 const THEME_KEY = "theme";
 
 const VALID_THEMES: ReadonlySet<string> = new Set([
   "light",
   "dark",
+  "system",
   "high-contrast",
 ]);
 
@@ -29,42 +30,32 @@ export function setStoredTheme(theme: Theme): void {
   }
 }
 
-export function getSystemPreference(): Theme | null {
-  if (window.matchMedia("(prefers-contrast: more)").matches) {
-    return "high-contrast";
+export function resolveTheme(theme: Theme): "light" | "dark" | "high-contrast" {
+  if (theme === "system") {
+    if (window.matchMedia("(prefers-contrast: more)").matches) return "high-contrast";
+    if (window.matchMedia("(prefers-color-scheme: dark)").matches) return "dark";
+    return "light";
   }
-  if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-    return "dark";
-  }
-  return null;
+  return theme;
 }
 
 export function getInitialTheme(): Theme {
-  return getStoredTheme() ?? getSystemPreference() ?? "light";
+  return getStoredTheme() ?? "system";
 }
 
 export function applyThemeToDOM(theme: Theme): void {
   document.documentElement.classList.remove("dark", "high-contrast");
-  if (theme !== "light") {
-    document.documentElement.classList.add(theme);
+  const resolved = resolveTheme(theme);
+  if (resolved !== "light") {
+    document.documentElement.classList.add(resolved);
   }
 }
 
 export function syncThemeOnLoad(): void {
   try {
-    const stored = localStorage.getItem(THEME_KEY);
-    if (isValidTheme(stored)) {
-      if (stored !== "light") {
-        document.documentElement.classList.add(stored);
-      }
-      return;
-    }
-    if (window.matchMedia("(prefers-contrast: more)").matches) {
-      document.documentElement.classList.add("high-contrast");
-    } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      document.documentElement.classList.add("dark");
-    }
+    const theme = getStoredTheme() ?? "system";
+    applyThemeToDOM(theme);
   } catch {
-    // localStorage or matchMedia unavailable
+    // localStorage unavailable
   }
 }

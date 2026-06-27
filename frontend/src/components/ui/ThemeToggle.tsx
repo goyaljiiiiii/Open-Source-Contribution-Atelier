@@ -30,7 +30,7 @@ export function ThemeToggle({
           return (
             <button
               key={opt.id}
-              onClick={() => setTheme(opt.id as any)}
+              onClick={() => setTheme(opt.id as "light" | "dark" | "system")}
               className={`relative z-10 flex items-center justify-center w-9 h-9 rounded-full transition-colors duration-200 ${
                 isActive
                   ? "text-white dark:text-black"
