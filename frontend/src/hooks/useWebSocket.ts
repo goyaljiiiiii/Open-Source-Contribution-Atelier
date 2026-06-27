@@ -37,9 +37,24 @@ export function useWebSocket({
   onMessageRef.current = onMessage;
 
   const buildUrl = useCallback(() => {
-    if (!token) return url;
-    const separator = url.includes("?") ? "&" : "?";
-    return `${url}${separator}token=${encodeURIComponent(token)}`;
+    try {
+      const parsedUrl = new URL(url, window.location.origin);
+      if (parsedUrl.protocol !== "ws:" && parsedUrl.protocol !== "wss:") {
+        console.error("useWebSocket: Invalid protocol");
+        return null;
+      }
+      if (token) {
+        if (!/^[A-Za-z0-9\-_.]+$/.test(token)) {
+          console.error("useWebSocket: Invalid token format");
+          return null;
+        }
+        parsedUrl.searchParams.set("token", token);
+      }
+      return parsedUrl.toString();
+    } catch (e) {
+      console.error("useWebSocket: Invalid URL", e);
+      return null;
+    }
   }, [url, token]);
 
   const cleanup = useCallback(() => {
@@ -66,6 +81,10 @@ export function useWebSocket({
     }
 
     const wsUrl = buildUrl();
+    if (!wsUrl) {
+      setState((s) => ({ ...s, isConnected: false }));
+      return;
+    }
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {

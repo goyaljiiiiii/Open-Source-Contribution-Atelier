@@ -128,7 +128,7 @@ def get_timezone_choices():
 class UserProfile(models.Model):
     """
     Standard user profile linking to the main User model.
-    Stores the user's avatar image.
+    Stores the user's avatar image and user settings.
     """
 
     user = models.OneToOneField(
@@ -143,6 +143,11 @@ class UserProfile(models.Model):
     twitter_url = models.URLField(max_length=500, blank=True, default="")
     linkedin_url = models.URLField(max_length=500, blank=True, default="")
     github_url = models.URLField(max_length=500, blank=True, default="")
+
+    # Feature requirement: Pause email notifications toggle field (#413)
+    dnd_enabled = models.BooleanField(
+        default=False, help_text="Temporarily disable non-critical email notifications."
+    )
 
     organization = models.ForeignKey(
         "organizations.Organization",
