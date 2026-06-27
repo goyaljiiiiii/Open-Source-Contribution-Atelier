@@ -32,7 +32,49 @@ class XPMultiplierEvent(models.Model):
 
 
 
+# ---------------------------------------------------------------------------
+# Streak milestone configuration – single source of truth for both the
+# StreakEngine and BadgeEvaluator.
+# ---------------------------------------------------------------------------
+STREAK_MILESTONES = [
+    {"days": 3,  "multiplier": 1.2, "label": "3-Day Streak 🔥",  "badge_slug": "streak-3"},
+    {"days": 7,  "multiplier": 1.5, "label": "7-Day Streak ⚡",  "badge_slug": "streak-7"},
+    {"days": 14, "multiplier": 2.0, "label": "14-Day Streak 💎", "badge_slug": "streak-14"},
+    {"days": 30, "multiplier": 2.5, "label": "30-Day Streak 👑", "badge_slug": "streak-30"},
+]
+
+
+class StreakProfile(models.Model):
+    """Persisted per-user streak state, updated on each learning activity."""
+
+    objects = models.Manager()
+
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name="streak_profile",
+    )
+    current_streak = models.PositiveIntegerField(default=0)
+    longest_streak = models.PositiveIntegerField(default=0)
+    last_activity_date = models.DateField(null=True, blank=True)
+    current_multiplier = models.FloatField(default=1.0)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["user"], name="idx_streak_profile_user"),
+        ]
+
+    def __str__(self) -> str:
+        return (
+            f"StreakProfile({self.user.username}, "
+            f"streak={self.current_streak}, "
+            f"multiplier={self.current_multiplier}x)"
+        )
+
+
 class Badge(models.Model):
+
     class DoesNotExist(ObjectDoesNotExist):
         pass
 
