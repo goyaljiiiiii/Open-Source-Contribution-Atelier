@@ -1,4 +1,4 @@
-name: AI Issue Labeler
+name: Difficulty Labeler
 
 on:
   issues:
@@ -74,13 +74,13 @@ jobs:
                   const resText = data.choices[0].message.content.trim().toLowerCase().replace(/[^\w]/g, '');
                   if (['easy', 'medium', 'hard'].includes(resText)) {
                     label = resText;
-                    console.log(`AI classified issue as: ${label}`);
+                    console.log(`Classified issue as: ${label}`);
                   }
                 } else {
-                  console.warn(`OpenAI API returned status ${response.status}`);
+                  console.warn(`Classifier API returned status ${response.status}`);
                 }
               } catch (err) {
-                console.error('Error during OpenAI classification:', err);
+                console.error('Error during classification:', err);
               }
             }
 
