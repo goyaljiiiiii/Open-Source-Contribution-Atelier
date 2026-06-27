@@ -11,7 +11,7 @@ jobs:
   label-issue:
     runs-on: ubuntu-latest
     steps:
-      - name: Auto-Label Contributor Issue
+      - name: Auto-Label and Assign Issue
         uses: actions/github-script@v6
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -23,29 +23,18 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
 
-            // 1. Check if the issue was opened by a maintainer/collaborator
-            let isMaintainer = false;
+            // 1. Automatically assign the issue to its author
             try {
-              if (author === owner) {
-                isMaintainer = true;
-              } else {
-                const { data: perm } = await github.rest.repos.getCollaboratorPermissionLevel({
-                  owner,
-                  repo,
-                  username: author
-                });
-                isMaintainer = ['admin', 'write'].includes(perm.permission);
-              }
+              await github.rest.issues.addAssignees({
+                owner,
+                repo,
+                issue_number: context.issue.number,
+                assignees: [author]
+              });
+              console.log(`Automatically assigned issue #${context.issue.number} to author @${author}`);
             } catch (e) {
-              console.log('Error checking collaborator status:', e);
+              console.error('Error assigning issue to author:', e);
             }
-
-            if (isMaintainer) {
-              console.log(`Issue opened by maintainer @${author}. Skipping auto difficulty tagging.`);
-              return;
-            }
-
-            console.log(`Issue opened by contributor @${author}. Proceeding with difficulty tagging.`);
 
             // 2. Classify difficulty
             let label = 'none';

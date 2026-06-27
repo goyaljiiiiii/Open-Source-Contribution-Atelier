@@ -219,27 +219,9 @@ jobs:
                 }
               }
 
-              // 3. Strict Monitoring for difficulty labels (easy/medium/hard) on issues opened by others
+              // 3. Strict Monitoring for difficulty labels (easy/medium/hard) on all issues
               if (!isPR) {
-                let isMaintainer = false;
-                try {
-                  const author = item.user.login;
-                  if (author === context.repo.owner) {
-                    isMaintainer = true;
-                  } else {
-                    const { data: perm } = await github.rest.repos.getCollaboratorPermissionLevel({
-                      owner: context.repo.owner,
-                      repo: context.repo.repo,
-                      username: author
-                    });
-                    isMaintainer = ['admin', 'write'].includes(perm.permission);
-                  }
-                } catch (e) {
-                  console.log(`Error checking collaborator status for issue #${item.number} author:`, e);
-                }
-
-                if (!isMaintainer) {
-                  const currentLabels = item.labels.map(l => l.name.toLowerCase());
+                const currentLabels = item.labels.map(l => l.name.toLowerCase());
                   const hasDifficultyLabel = currentLabels.some(l => ['easy', 'medium', 'hard'].includes(l));
 
                   if (!hasDifficultyLabel) {
