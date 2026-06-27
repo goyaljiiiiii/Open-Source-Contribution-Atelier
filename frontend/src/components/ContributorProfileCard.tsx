@@ -33,7 +33,7 @@ const getDefaultBadgeColour = (index: number): string => {
 const getRankFromXP = (xp: number) => {
   if (xp >= 5000) return { label: "Legend", colour: "text-yellow-500" };
   if (xp >= 3000) return { label: "Expert", colour: "text-purple-500" };
-  if (xp >= 1500) return { label: "Advanced", colour: "text-blue-500" };
+  if (xp >= 1500) return { label: "Advanced", colour: "text-blue-600" };
   if (xp >= 500) return { label: "Intermediate", colour: "text-green-500" };
   return { label: "Beginner", colour: "text-gray-500" };
 };
@@ -68,9 +68,11 @@ const ContributorProfileCard: React.FC<Props> = ({
   return (
     <article className="w-80 rounded-2xl bg-white shadow-lg border hover:shadow-xl transition">
       {/* HEADER */}
-      <div 
+      <div
         className="h-24 bg-gradient-to-r from-blue-600 to-purple-600 bg-cover bg-center rounded-t-2xl"
-        style={coverImageUrl ? { backgroundImage: `url(${coverImageUrl})` } : {}}
+        style={
+          coverImageUrl ? { backgroundImage: `url(${coverImageUrl})` } : {}
+        }
       ></div>
 
       {/* AVATAR */}

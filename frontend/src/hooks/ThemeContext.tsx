@@ -29,9 +29,35 @@ function useThemeValue(): ThemeContextValue {
     applyThemeToDOM(theme);
   }, [theme]);
 
+  // Listener for system preference changes when in "system" mode
+  useEffect(() => {
+    const mediaQueryColor = window.matchMedia("(prefers-color-scheme: dark)");
+    const mediaQueryContrast = window.matchMedia("(prefers-contrast: more)");
+
+    const handleChange = () => {
+      if (theme === "system") {
+        applyThemeToDOM("system");
+      }
+    };
+
+    mediaQueryColor.addEventListener("change", handleChange);
+    mediaQueryContrast.addEventListener("change", handleChange);
+
+    return () => {
+      mediaQueryColor.removeEventListener("change", handleChange);
+      mediaQueryContrast.removeEventListener("change", handleChange);
+    };
+  }, [theme]);
+
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
-      if (e.key === "theme" && (e.newValue === "light" || e.newValue === "dark" || e.newValue === "high-contrast")) {
+      if (
+        e.key === "theme" &&
+        (e.newValue === "light" ||
+          e.newValue === "dark" ||
+          e.newValue === "system" ||
+          e.newValue === "high-contrast")
+      ) {
         setThemeState(e.newValue as Theme);
       }
     };
@@ -40,7 +66,11 @@ function useThemeValue(): ThemeContextValue {
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setThemeState((prev) => (prev === "light" ? "dark" : "light"));
+    setThemeState((prev) => {
+      if (prev === "light") return "dark";
+      if (prev === "dark") return "system";
+      return "light";
+    });
   }, []);
 
   const setTheme = useCallback((newTheme: Theme) => {
@@ -54,9 +84,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const value = useThemeValue();
 
   return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
   );
 }
 

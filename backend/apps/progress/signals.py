@@ -76,3 +76,25 @@ def on_lesson_completed(sender, instance, created, **kwargs):
         )
     except Exception as exc:
         logger.error("Failed to push leaderboard update: %s", exc)
+
+    # Evaluate achievements on lesson completion
+    try:
+        from apps.progress.tasks import evaluate_achievements_task
+
+        evaluate_achievements_task.delay(instance.user.id)
+    except Exception as exc:
+        logger.error("Failed to enqueue achievement evaluation: %s", exc)
+
+
+from apps.progress.models import ExerciseAttempt
+
+
+@receiver(post_save, sender=ExerciseAttempt)
+def on_exercise_attempt(sender, instance, created, **kwargs):
+    if instance.is_correct:
+        try:
+            from apps.progress.tasks import evaluate_achievements_task
+
+            evaluate_achievements_task.delay(instance.user.id)
+        except Exception as exc:
+            logger.error("Failed to enqueue achievement evaluation: %s", exc)
