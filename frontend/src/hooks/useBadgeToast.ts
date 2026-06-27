@@ -5,10 +5,13 @@ import type { BadgeDefinition } from "../constants/badges";
 interface UseBadgeToastReturn {
   toasts: BadgeToastData[];
   addToast: (slug: string) => void;
+  addDynamicToast: (data: BadgeToastData) => void;
   dismissToast: (id: string) => void;
 }
 
-export function useBadgeToast(allBadges: BadgeDefinition[]): UseBadgeToastReturn {
+export function useBadgeToast(
+  allBadges: BadgeDefinition[],
+): UseBadgeToastReturn {
   const [toasts, setToasts] = useState<BadgeToastData[]>([]);
 
   const addToast = useCallback(
@@ -23,6 +26,13 @@ export function useBadgeToast(allBadges: BadgeDefinition[]): UseBadgeToastReturn
     },
     [allBadges],
   );
+
+  const addDynamicToast = useCallback((data: BadgeToastData) => {
+    setToasts((prev) => {
+      if (prev.some((t) => t.id === data.id)) return prev;
+      return [...prev, data];
+    });
+  }, []);
 
   // Dev-only: dispatch window event "badge:test" with { id } to trigger a toast from DevTools.
   useEffect(() => {
@@ -41,5 +51,5 @@ export function useBadgeToast(allBadges: BadgeDefinition[]): UseBadgeToastReturn
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  return { toasts, addToast, dismissToast };
+  return { toasts, addToast, addDynamicToast, dismissToast };
 }
