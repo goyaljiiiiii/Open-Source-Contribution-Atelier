@@ -55,10 +55,24 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     avatar = serializers.ImageField(required=False)
     cover_image = serializers.ImageField(required=False)
     timezone = serializers.CharField(required=False)
+    twitter_url = serializers.URLField(required=False, allow_blank=True)
+    linkedin_url = serializers.URLField(required=False, allow_blank=True)
+    github_url = serializers.URLField(required=False, allow_blank=True)
+    dnd_enabled = serializers.BooleanField(required=False)  # Added for #413
 
     class Meta:
         model = User
-        fields = ("email", "password", "avatar", "cover_image", "timezone")
+        fields = (
+            "email",
+            "password",
+            "avatar",
+            "cover_image",
+            "timezone",
+            "twitter_url",
+            "linkedin_url",
+            "github_url",
+            "dnd_enabled",  # Added for #413
+        )
         extra_kwargs = {
             "email": {"required": False},
         }
@@ -78,6 +92,10 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         avatar = validated_data.pop("avatar", None)
         cover_image = validated_data.pop("cover_image", None)
         tz = validated_data.pop("timezone", None)
+        twitter_url = validated_data.pop("twitter_url", None)
+        linkedin_url = validated_data.pop("linkedin_url", None)
+        github_url = validated_data.pop("github_url", None)
+        dnd_enabled = validated_data.pop("dnd_enabled", None)  # Added for #413
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -88,7 +106,15 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                 instance.profile.save(update_fields=["last_password_change"])
         instance.save()
 
-        if avatar is not None or cover_image is not None or tz is not None:
+        if (
+            avatar is not None
+            or cover_image is not None
+            or tz is not None
+            or twitter_url is not None
+            or linkedin_url is not None
+            or github_url is not None
+            or dnd_enabled is not None  # Added for #413
+        ):
             from apps.accounts.models import UserProfile
 
             profile, _ = UserProfile.objects.get_or_create(user=instance)
@@ -98,6 +124,14 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                 profile.cover_image = cover_image
             if tz is not None:
                 profile.timezone = tz
+            if twitter_url is not None:
+                profile.twitter_url = twitter_url
+            if linkedin_url is not None:
+                profile.linkedin_url = linkedin_url
+            if github_url is not None:
+                profile.github_url = github_url
+            if dnd_enabled is not None:  # Added for #413
+                profile.dnd_enabled = dnd_enabled
             profile.save()
 
         return instance
@@ -107,10 +141,26 @@ class UserListSerializer(serializers.ModelSerializer):
     avatar_url = serializers.SerializerMethodField()
     cover_image_url = serializers.SerializerMethodField()
     timezone = serializers.SerializerMethodField()
+    twitter_url = serializers.SerializerMethodField()
+    linkedin_url = serializers.SerializerMethodField()
+    github_url = serializers.SerializerMethodField()
+    dnd_enabled = serializers.SerializerMethodField()  # Added for #413
 
     class Meta:
         model = User
-        fields = ("id", "username", "email", "is_staff", "avatar_url", "cover_image_url", "timezone")
+        fields = (
+            "id",
+            "username",
+            "email",
+            "is_staff",
+            "avatar_url",
+            "cover_image_url",
+            "timezone",
+            "twitter_url",
+            "linkedin_url",
+            "github_url",
+            "dnd_enabled",  # Added for #413
+        )
 
     def get_avatar_url(self, obj):
         if hasattr(obj, "profile") and obj.profile.avatar:
@@ -132,6 +182,26 @@ class UserListSerializer(serializers.ModelSerializer):
         if hasattr(obj, "profile"):
             return obj.profile.timezone
         return "UTC"
+
+    def get_twitter_url(self, obj):
+        if hasattr(obj, "profile") and obj.profile.twitter_url:
+            return obj.profile.twitter_url
+        return ""
+
+    def get_linkedin_url(self, obj):
+        if hasattr(obj, "profile") and obj.profile.linkedin_url:
+            return obj.profile.linkedin_url
+        return ""
+
+    def get_github_url(self, obj):
+        if hasattr(obj, "profile") and obj.profile.github_url:
+            return obj.profile.github_url
+        return ""
+
+    def get_dnd_enabled(self, obj):  # Added for #413
+        if hasattr(obj, "profile"):
+            return obj.profile.dnd_enabled
+        return False
 
 
 class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):

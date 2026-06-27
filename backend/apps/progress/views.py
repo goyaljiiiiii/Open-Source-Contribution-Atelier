@@ -21,6 +21,7 @@ from .serializers import (BadgeSerializer, BulkSyncSerializer,
                           LessonProgressCreateSerializer,
                           LessonProgressSerializer, QuizAttemptSerializer)
 from .throttles import HelpRequestRateThrottle
+from .streak_engine import StreakEngine
 
 
 @extend_schema(responses=BadgeSerializer(many=True))
@@ -49,7 +50,10 @@ class MyProgressView(APIView):
     def post(self, request):
         lesson_slug = request.data.get("lesson_slug")
         from apps.progress.models import XPMultiplierEvent
-        multiplier = XPMultiplierEvent.get_active_multiplier()
+        from .streak_engine import StreakEngine
+        event_multiplier = XPMultiplierEvent.get_active_multiplier()
+        streak_multiplier = StreakEngine.get_multiplier_for_user(request.user)
+        multiplier = round(event_multiplier * streak_multiplier, 2)
         base_score = request.data.get("score", 100)
         completed = request.data.get("completed", True)
 
@@ -110,7 +114,10 @@ class BulkSyncProgressView(APIView):
         synced = []
 
         from apps.progress.models import XPMultiplierEvent
-        multiplier = XPMultiplierEvent.get_active_multiplier()
+        from .streak_engine import StreakEngine
+        event_multiplier = XPMultiplierEvent.get_active_multiplier()
+        streak_multiplier = StreakEngine.get_multiplier_for_user(request.user)
+        multiplier = round(event_multiplier * streak_multiplier, 2)
 
         with transaction.atomic():
             for item in serializer.validated_data["lessons"]:
@@ -131,8 +138,13 @@ class BulkSyncProgressView(APIView):
                     )
 
                 try:
-                    progress = LessonProgress.objects.get(user=request.user, lesson=lesson)
-                    if progress.base_score != base_score or progress.completed != completed:
+                    progress = LessonProgress.objects.get(
+                        user=request.user, lesson=lesson
+                    )
+                    if (
+                        progress.base_score != base_score
+                        or progress.completed != completed
+                    ):
                         progress.completed = completed
                         progress.base_score = base_score
                         progress.multiplier_applied = multiplier
@@ -244,7 +256,10 @@ class BulkProgressUpdateView(APIView):
                 progress_to_update = []
 
                 from apps.progress.models import XPMultiplierEvent
-                multiplier = XPMultiplierEvent.get_active_multiplier()
+                from .streak_engine import StreakEngine
+                event_multiplier = XPMultiplierEvent.get_active_multiplier()
+                streak_multiplier = StreakEngine.get_multiplier_for_user(request.user)
+                multiplier = round(event_multiplier * streak_multiplier, 2)
 
                 for item in validated_data:
                     lesson = existing_lessons[item["lesson_slug"]]
@@ -279,7 +294,8 @@ class BulkProgressUpdateView(APIView):
 
                 if progress_to_update:
                     LessonProgress.objects.bulk_update(
-                        progress_to_update, ["completed", "score", "base_score", "multiplier_applied"]
+                        progress_to_update,
+                        ["completed", "score", "base_score", "multiplier_applied"],
                     )
                     success_ids.extend([p.id for p in progress_to_update])
 
@@ -710,14 +726,18 @@ class RecommendationsView(APIView):
         serializer = LessonSerializer(recommended_lessons, many=True)
         return Response(serializer.data)
 
+
 from .models import CodeSubmission, PeerReview
 from .serializers import CodeSubmissionSerializer, PeerReviewSerializer
+
 
 class CodeSubmissionView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        submissions = CodeSubmission.objects.filter(status=CodeSubmission.Status.PENDING).exclude(user=request.user)
+        submissions = CodeSubmission.objects.filter(
+            status=CodeSubmission.Status.PENDING
+        ).exclude(user=request.user)
         serializer = CodeSubmissionSerializer(submissions, many=True)
         return Response(serializer.data)
 
@@ -734,18 +754,35 @@ class PeerReviewView(APIView):
 
     def post(self, request, submission_id):
         submission = get_object_or_404(CodeSubmission, id=submission_id)
-        
+
         if submission.user == request.user:
-            return Response({"error": "Cannot review your own submission"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if PeerReview.objects.filter(submission=submission, reviewer=request.user).exists():
-            return Response({"error": "You have already reviewed this submission"}, status=status.HTTP_400_BAD_REQUEST)
-            
+            return Response(
+                {"error": "Cannot review your own submission"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if PeerReview.objects.filter(
+            submission=submission, reviewer=request.user
+        ).exists():
+            return Response(
+                {"error": "You have already reviewed this submission"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         serializer = PeerReviewSerializer(data=request.data)
         if serializer.is_valid():
             with transaction.atomic():
-                review = serializer.save(submission=submission, reviewer=request.user, points_earned=10)
+                review = serializer.save(
+                    submission=submission, reviewer=request.user, points_earned=10
+                )
                 submission.status = CodeSubmission.Status.REVIEWED
                 submission.save(update_fields=["status"])
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class StreakStatusView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from .streak_engine import StreakEngine
+        data = StreakEngine.get_streak_data(request.user)
+        return Response(data)

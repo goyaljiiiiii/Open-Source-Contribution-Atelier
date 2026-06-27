@@ -28,7 +28,7 @@ const OrganizationsGrid: React.FC = () => {
           Supported Orgs
         </h3>
 
-        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-3">
           {Array.from({ length: 6 }).map((_, index) => (
             <SkeletonCard key={index} />
           ))}
@@ -46,7 +46,7 @@ const OrganizationsGrid: React.FC = () => {
         Supported Orgs
       </h3>
 
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
+      <div className="grid gap-3 grid-cols-2 md:grid-cols-3">
         {organizations.map((org) => (
           <a
             key={org.slug}

@@ -4,9 +4,12 @@ import json
 import zipfile
 
 from apps.accounts.models import MentorProfile
-from apps.dashboard.models import Issue, PullRequest
+from apps.chat.models import Message
+from apps.content.models import Comment
+from apps.dashboard.models import Issue, PullRequest, StreakFreeze
 from apps.notifications.models import Notification
-from apps.progress.models import (Certificate, HelpRequest, LessonProgress,
+from apps.progress.models import (Certificate, CodeSubmission, ExerciseAttempt,
+                                  HelpRequest, LessonProgress, PeerReview,
                                   QuizAttempt, UserBadge)
 from apps.sandbox.models import SandboxExecutionLog
 from apps.webhooks.models import WebhookEndpoint
@@ -52,9 +55,25 @@ class DataExportService:
             "assigned_issues": self._queryset_to_list(
                 Issue.objects.filter(assigned_to=self.user)
             ),
+            "streak_freezes": self._queryset_to_list(
+                StreakFreeze.objects.filter(user=self.user)
+            ),
             "webhooks": self._queryset_to_list(
                 WebhookEndpoint.objects.filter(user=self.user)
             ),
+            "exercise_attempts": self._queryset_to_list(
+                ExerciseAttempt.objects.filter(user=self.user)
+            ),
+            "code_submissions": self._queryset_to_list(
+                CodeSubmission.objects.filter(user=self.user)
+            ),
+            "peer_reviews": self._queryset_to_list(
+                PeerReview.objects.filter(reviewer=self.user)
+            ),
+            "comments": self._queryset_to_list(
+                Comment.all_objects.filter(user=self.user)
+            ),
+            "messages": self._queryset_to_list(Message.objects.filter(user=self.user)),
         }
         return data
 

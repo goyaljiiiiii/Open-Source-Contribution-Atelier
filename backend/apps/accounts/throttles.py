@@ -111,16 +111,6 @@ class StrictIdentityPasswordResetThrottle(AnonRateThrottle):
         return _get_real_ip(request)
 
 
-class StrictIdentityPasswordResetThrottle(AnonRateThrottle):
-    scope = "auth_password_reset"
-
-    def get_ident(self, request):
-        email = request.data.get("email")
-        if email:
-            return str(email).strip().lower()
-        return _get_real_ip(request)
-
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Password reset – prevent email bombing / enumeration attacks
 # ─────────────────────────────────────────────────────────────────────────────
