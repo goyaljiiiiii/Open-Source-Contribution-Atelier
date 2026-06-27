@@ -93,3 +93,14 @@ def on_lesson_completed(sender, instance, created, **kwargs):
         )
     except Exception as exc:
         logger.error("Failed to push leaderboard update: %s", exc)
+
+
+@receiver(post_save, sender="progress.CodeSubmission")
+def on_code_submission_saved(sender, instance, created, **kwargs):
+    """
+    Trigger the asynchronous plagiarism analysis when a new CodeSubmission is created.
+    """
+    if created:
+        from apps.progress.tasks import analyze_submission_plagiarism
+        analyze_submission_plagiarism.delay(instance.id)
+        logger.info(f"Queued plagiarism analysis for submission {instance.id}")

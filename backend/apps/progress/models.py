@@ -282,3 +282,20 @@ class PeerReview(models.Model):
 
     def __str__(self):
         return f"Review by {self.reviewer.username} for {self.submission.title}"
+
+
+class PlagiarismReport(models.Model):
+    objects = models.Manager()
+    submission = models.ForeignKey(CodeSubmission, on_delete=models.CASCADE, related_name="plagiarism_reports")
+    matched_submission = models.ForeignKey(CodeSubmission, on_delete=models.CASCADE, related_name="matched_in_reports")
+    similarity_score = models.FloatField()
+    is_flagged = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-similarity_score"]
+        unique_together = ("submission", "matched_submission")
+
+    def __str__(self):
+        return f"PlagiarismReport: {self.submission.id} vs {self.matched_submission.id} ({self.similarity_score:.2f})"
+
