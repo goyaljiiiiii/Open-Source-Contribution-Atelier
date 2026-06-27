@@ -1,4 +1,4 @@
-name: Auto-Label SSOC
+name: SSoC26 Labeler
 
 on:
   issues:
@@ -11,19 +11,17 @@ jobs:
   label-ssoc:
     runs-on: ubuntu-latest
     steps:
-      - name: Check and Label SSoC26
+      - name: Add ssoc26 label
         uses: actions/github-script@v6
         with:
           script: |
-            const body = context.payload.issue.body || '';
-            const isChecked = /\[x\]\s*(?:i\s+am\s+a\s+)?ssoc26/i.test(body);
-            
-            if (isChecked) {
-              await github.rest.issues.addLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                labels: ['SSoC26']
-              });
-              console.log('Added SSoC26 label to issue');
+            const body    = context.payload.issue.body || '';
+            const num     = context.issue.number;
+            const { owner, repo } = context.repo;
+            const existing = context.payload.issue.labels.map(l => l.name.toLowerCase());
+
+            // Always add ssoc26 (this is an SSoC project)
+            if (!existing.includes('ssoc26')) {
+              console.log(`Adding ssoc26 to issue #${num}`);
+              await github.rest.issues.addLabels({ owner, repo, issue_number: num, labels: ['ssoc26'] });
             }
