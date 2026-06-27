@@ -7,6 +7,9 @@ assignees: ''
 
 ---
 
+> Please checkmark if you are contributing under SSoC 2026:
+- [ ] I am a SSoC26 contributor
+
 <!--
   IMPORTANT: Feature requests must propose a concrete improvement with clear acceptance criteria.
   Vague suggestions or "ideas" without technical context will be closed.

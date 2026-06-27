@@ -7,6 +7,9 @@ assignees: ''
 
 ---
 
+> Please checkmark if you are contributing under SSoC 2026:
+- [ ] I am a SSoC26 contributor
+
 <!--
   IMPORTANT: Bug reports that do not include steps to reproduce, environment information,
   and proof/evidence of the issue (such as logs or screenshots) will be closed.

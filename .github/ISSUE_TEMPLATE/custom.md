@@ -7,6 +7,9 @@ assignees: ''
 
 ---
 
+> Please checkmark if you are contributing under SSoC 2026:
+- [ ] I am a SSoC26 contributor
+
 <!--
   IMPORTANT: Lesson proposals must be well-thought-out and match the technical curriculum structure.
   Please check the design doc / contribution guidelines before suggesting a lesson.

@@ -78,7 +78,20 @@ jobs:
                       repo: context.repo.repo,
                       issue_number: issueNumber
                     });
+
+                    // 1. Assign linked issue to PR author if not assigned
+                    const linkedIssueAssignees = linkedIssue.data.assignees.map(a => a.login);
+                    if (!linkedIssueAssignees.includes(item.user.login)) {
+                      console.log(`Retroactively assigning linked issue #${issueNumber} to PR author @${item.user.login}`);
+                      await github.rest.issues.addAssignees({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        issue_number: issueNumber,
+                        assignees: [item.user.login]
+                      });
+                    }
                     
+                    // 2. Copy missing labels from issue to PR
                     const labelsToCopy = linkedIssue.data.labels.map(l => l.name);
                     const currentPRLabels = item.labels.map(l => l.name);
                     const missingLabels = labelsToCopy.filter(l => !currentPRLabels.includes(l));
@@ -92,8 +105,32 @@ jobs:
                         labels: missingLabels
                       });
                     }
+
+                    // 3. Enforce SSoC26 label synchronization on both
+                    const prLabelsLower = currentPRLabels.map(l => l.toLowerCase());
+                    const issueLabelsLower = labelsToCopy.map(l => l.toLowerCase());
+                    const hasSSoC = prLabelsLower.includes('ssoc26') || issueLabelsLower.includes('ssoc26') || /\[x\]\s*(?:i\s+am\s+a\s+)?ssoc26/i.test(body);
+
+                    if (hasSSoC) {
+                      if (!prLabelsLower.includes('ssoc26')) {
+                        await github.rest.issues.addLabels({
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          issue_number: item.number,
+                          labels: ['SSoC26']
+                        });
+                      }
+                      if (!issueLabelsLower.includes('ssoc26')) {
+                        await github.rest.issues.addLabels({
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          issue_number: issueNumber,
+                          labels: ['SSoC26']
+                        });
+                      }
+                    }
                   } catch (error) {
-                    // Ignore errors if issue doesn't exist
+                    console.error(`Error retroactively updating linked issue #${issueNumber}:`, error);
                   }
                 }
               }
@@ -182,27 +219,9 @@ jobs:
                 }
               }
 
-              // 3. Strict Monitoring for difficulty labels (easy/medium/hard) on issues opened by others
+              // 3. Strict Monitoring for difficulty labels (easy/medium/hard) on all issues
               if (!isPR) {
-                let isMaintainer = false;
-                try {
-                  const author = item.user.login;
-                  if (author === context.repo.owner) {
-                    isMaintainer = true;
-                  } else {
-                    const { data: perm } = await github.rest.repos.getCollaboratorPermissionLevel({
-                      owner: context.repo.owner,
-                      repo: context.repo.repo,
-                      username: author
-                    });
-                    isMaintainer = ['admin', 'write'].includes(perm.permission);
-                  }
-                } catch (e) {
-                  console.log(`Error checking collaborator status for issue #${item.number} author:`, e);
-                }
-
-                if (!isMaintainer) {
-                  const currentLabels = item.labels.map(l => l.name.toLowerCase());
+                const currentLabels = item.labels.map(l => l.name.toLowerCase());
                   const hasDifficultyLabel = currentLabels.some(l => ['easy', 'medium', 'hard'].includes(l));
 
                   if (!hasDifficultyLabel) {

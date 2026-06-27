@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import confetti from "canvas-confetti";
@@ -56,6 +56,12 @@ export function LessonPage() {
 
   const [lesson, setLesson] = useState<Lesson | undefined>(undefined);
   const [lessonsList, setLessonsList] = useState<Lesson[]>([]);
+  const [markdownContent, setMarkdownContent] = useState("");
+  const estimatedReadingTime = useMemo(() => {
+  if (!markdownContent) return 1;
+  const wordCount = markdownContent.trim().split(/\s+/).length;
+  return Math.max(1, Math.ceil(wordCount / 200));
+}, [markdownContent]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -506,6 +512,9 @@ useEffect(() => {
 
             <p className="text-xl font-bold text-muted dark:text-[#c4bbae]">
               {lesson.description}
+            </p>
+            <p className="text-xs font-black text-muted dark:text-[#c4bbae] flex items-center gap-1">
+              ⏱️ Estimated reading time: {estimatedReadingTime} min
             </p>
 
             {/* Offline banner — shown when offline or using cache */}
