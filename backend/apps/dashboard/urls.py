@@ -1,5 +1,8 @@
-from apps.dashboard.views import (AdminDashboardView, ContributorDashboardView,
-                                  PublicLandingStatsView)
+from apps.dashboard.views import (
+    AdminDashboardView,
+    ContributorDashboardView,
+    PublicLandingStatsView,
+)
 from django.urls import path
 
 app_name = "dashboard"

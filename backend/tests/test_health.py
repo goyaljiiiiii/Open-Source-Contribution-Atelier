@@ -96,7 +96,10 @@ class TestHealthEndpoint:
             ),
             patch(
                 "config.health_view._check_redis",
-                return_value={"status": "not_configured", "detail": "REDIS_URL is not set"},
+                return_value={
+                    "status": "not_configured",
+                    "detail": "REDIS_URL is not set",
+                },
             ),
         ):
             response = health_view(request_factory.get("/health/"))
@@ -158,7 +161,9 @@ class TestRedisCheck:
         mock_client = MagicMock()
 
         with (
-            patch("config.health_view.os.getenv", return_value="redis://127.0.0.1:6379/0"),
+            patch(
+                "config.health_view.os.getenv", return_value="redis://127.0.0.1:6379/0"
+            ),
             patch("config.health_view.redis.from_url", return_value=mock_client),
         ):
             result = _check_redis()

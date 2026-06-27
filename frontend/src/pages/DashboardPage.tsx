@@ -294,7 +294,9 @@ export function DashboardPage() {
     const queue = lessons.filter((l) => !isLessonCompleted(l.slug)).slice(0, 3);
 
     // Calculate which badges are earned
-    const earned = new Set<string>(contributorData?.personal_stats?.earned_badges || []);
+    const earned = new Set<string>(
+      contributorData?.personal_stats?.earned_badges || [],
+    );
     curriculumData.forEach((mod, index) => {
       const allCompleted = mod.lessons.every((les: { slug: string }) =>
         isLessonCompleted(les.slug),
@@ -774,12 +776,20 @@ export function DashboardPage() {
           id="tour-learning-queue"
           className="rounded-2xl border-4 border-black bg-white p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none"
         >
-          <h2 className="text-3xl font-black mb-6 flex items-center gap-3">
-            <span className="bg-primary text-white w-10 h-10 rounded-full border-2 border-black flex items-center justify-center text-lg dark:bg-primary/20 dark:text-primary">
-              📚
-            </span>
-            Resume Learning Queue
-          </h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-3xl font-black flex items-center gap-3">
+              <span className="bg-primary text-white w-10 h-10 rounded-full border-2 border-black flex items-center justify-center text-lg dark:bg-primary/20 dark:text-primary">
+                📚
+              </span>
+              Resume Learning Queue
+            </h2>
+            <Link
+              to="/pathway"
+              className="px-4 py-2 border-2 border-black rounded-lg bg-blue-50 font-bold text-black hover:bg-blue-100 transition-colors hidden sm:block"
+            >
+              View Pathway Map
+            </Link>
+          </div>
           <div className="space-y-4">
             {activeLessonsQueue.length > 0 ? (
               activeLessonsQueue.map((lesson: Lesson) => (
@@ -887,7 +897,10 @@ export function DashboardPage() {
                   <h3 className="font-black text-lg leading-tight dark:text-[#f0ebe2] pr-4">
                     {bookmark.lesson_title}
                   </h3>
-                  <Bookmark className="fill-primary text-primary shrink-0" size={20} />
+                  <Bookmark
+                    className="fill-primary text-primary shrink-0"
+                    size={20}
+                  />
                 </div>
                 <div className="flex justify-between items-center mt-auto pt-4">
                   <span className="font-black text-[10px] bg-black text-white px-2 py-0.5 rounded-full uppercase dark:bg-[#2e2924]">

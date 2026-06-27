@@ -7,7 +7,11 @@ interface ThemeToggleProps {
   buttonClassName?: string;
 }
 
-export function ThemeToggle({ iconSize = 16, className = "", buttonClassName = "p-2" }: ThemeToggleProps) {
+export function ThemeToggle({
+  iconSize = 16,
+  className = "",
+  buttonClassName = "p-2",
+}: ThemeToggleProps) {
   const { theme, toggleTheme, setTheme } = useTheme();
 
   return (
@@ -44,7 +48,9 @@ export function ThemeToggle({ iconSize = 16, className = "", buttonClassName = "
             ? "bg-primary text-white"
             : "bg-surface-low text-muted hover:text-text dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2]"
         }`}
-        onClick={() => setTheme(theme === "high-contrast" ? "light" : "high-contrast")}
+        onClick={() =>
+          setTheme(theme === "high-contrast" ? "light" : "high-contrast")
+        }
         aria-label="Toggle High Contrast Mode"
         title="High Contrast Mode"
       >
