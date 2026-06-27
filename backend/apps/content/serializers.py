@@ -32,6 +32,9 @@ class ExerciseSerializer(CamelCaseModelSerializer):
 
 class LessonSerializer(CamelCaseModelSerializer):
     exercises = ExerciseSerializer(many=True, read_only=True)
+    prerequisites = serializers.SlugRelatedField(
+        many=True, read_only=True, slug_field="slug"
+    )
 
     class Meta:
         model = Lesson
@@ -40,6 +43,9 @@ class LessonSerializer(CamelCaseModelSerializer):
 
 class LessonSearchSerializer(CamelCaseModelSerializer):
     exercises = ExerciseSerializer(many=True, read_only=True)
+    prerequisites = serializers.SlugRelatedField(
+        many=True, read_only=True, slug_field="slug"
+    )
 
     class Meta:
         model = Lesson
