@@ -3,6 +3,9 @@
   PRs that do not contain proof of manual testing or do not link to a valid issue will be closed automatically.
 -->
 
+> Please checkmark if you are contributing under SSoC 2026:
+- [ ] I am a SSoC26 contributor
+
 ## 📋 Description of Changes
 <!-- 
   Provide a detailed description of the changes introduced by this pull request.
