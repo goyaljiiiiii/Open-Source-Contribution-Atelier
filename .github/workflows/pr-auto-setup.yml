@@ -126,9 +126,31 @@ jobs:
                   const hasDbChanges = filePaths.some(p => p.includes('models.py') || p.includes('migrations/'));
 
                   const issueText = `${issue.title} ${issue.body || ''}`.toLowerCase();
-                  const expectsBackend = issueText.includes('backend');
-                  const expectsFrontend = issueText.includes('frontend') || issueText.includes('ui');
-                  const expectsDb = issueText.includes('db') || issueText.includes('database') || issueText.includes('migration');
+                  const prBodyLower = body.toLowerCase();
+
+                  // Check if PR body explicitly overrides/declares partial scope
+                  const prDeclaresFrontendOnly = prBodyLower.includes('frontend only') || prBodyLower.includes('only frontend') || prBodyLower.includes('ui only') || prBodyLower.includes('only ui') || prBodyLower.includes('frontend part');
+                  const prDeclaresBackendOnly = prBodyLower.includes('backend only') || prBodyLower.includes('only backend') || prBodyLower.includes('backend part');
+                  const prDeclaresDbOnly = prBodyLower.includes('db only') || prBodyLower.includes('database only') || prBodyLower.includes('only db') || prBodyLower.includes('only database');
+
+                  let expectsBackend = issueText.includes('backend');
+                  let expectsFrontend = issueText.includes('frontend') || issueText.includes('ui');
+                  let expectsDb = issueText.includes('db') || issueText.includes('database') || issueText.includes('migration');
+
+                  if (prDeclaresFrontendOnly) {
+                    expectsBackend = false;
+                    expectsDb = false;
+                    console.log('PR explicitly declares Frontend only scope. Waiving backend/database checks.');
+                  }
+                  if (prDeclaresBackendOnly) {
+                    expectsFrontend = false;
+                    console.log('PR explicitly declares Backend only scope. Waiving frontend checks.');
+                  }
+                  if (prDeclaresDbOnly) {
+                    expectsFrontend = false;
+                    expectsBackend = false;
+                    console.log('PR explicitly declares Database only scope. Waiving frontend/backend checks.');
+                  }
 
                   let missingScopes = [];
                   if (expectsBackend && !hasBackendChanges) missingScopes.push('Backend (backend/*)');
