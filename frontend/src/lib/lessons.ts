@@ -22,6 +22,13 @@ export interface PythonExercise {
   hint?: string;
 }
 
+export interface RustExercise {
+  prompt?: string;
+  starterCode: string;
+  expected?: string;
+  hint?: string;
+}
+
 export interface Lesson {
   slug: string; // used for URL
   title: string;
@@ -78,15 +85,19 @@ export async function fetchLessonsApi(): Promise<Lesson[]> {
     const data = await fetchApi("/content/lessons/", { requireAuth: false });
     if (!Array.isArray(data)) return lessons;
 
-    return data.map((les: any, index: number) => {
-      const firstExercise = les.exercises?.[0];
+    return data.map((les: Record<string, unknown>, index: number) => {
+      const firstExercise = (
+        les.exercises as Record<string, unknown>[] | undefined
+      )?.[0];
       return {
         slug: les.slug,
         title: les.title,
         description: les.summary || "",
         explanation: les.content || "", // Will load dynamically from backend
         expected: firstExercise?.expectedCommand || "",
-        hint: firstExercise?.explanation || "Read the lesson contents and solve the check.",
+        hint:
+          firstExercise?.explanation ||
+          "Read the lesson contents and solve the check.",
         difficulty: les.difficulty || "beginner",
         points: firstExercise?.points || 15,
         estimatedMinutes: les.estimatedMinutes || 10,
@@ -108,7 +119,12 @@ export async function fetchLessonsApi(): Promise<Lesson[]> {
 }
 
 export function buildModulesFromLessons(lessonsList: Lesson[]) {
-  const modulesMap = new Map<string, any>();
+  type ModuleEntry = {
+    id: string;
+    title: string;
+    lessons: { slug: string; title: string; difficulty?: string }[];
+  };
+  const modulesMap = new Map<string, ModuleEntry>();
   lessonsList.forEach((les) => {
     const cat = les.category || "general";
     if (!modulesMap.has(cat)) {
