@@ -200,7 +200,7 @@ class UserProfile(models.Model):
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
-        UserProfile.objects.create(user=instance)
+        UserProfile.objects.create(user=instance)  # type: ignore
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
@@ -208,7 +208,7 @@ def save_user_profile(sender, instance, **kwargs):
     if hasattr(instance, "profile"):
         instance.profile.save()
     else:
-        UserProfile.objects.create(user=instance)
+        UserProfile.objects.create(user=instance)  # type: ignore
 
 
 from django.contrib.auth import get_user_model
