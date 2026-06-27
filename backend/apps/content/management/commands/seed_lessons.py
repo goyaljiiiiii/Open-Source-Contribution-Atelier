@@ -1,7 +1,9 @@
 from apps.content.models import Exercise, Lesson
 from django.core.management.base import BaseCommand
 
-LESSONS = [
+from typing import Any, Dict, List
+
+LESSONS: List[Dict[str, Any]] = [
     {
         "slug": "intro",
         "category": "basics",

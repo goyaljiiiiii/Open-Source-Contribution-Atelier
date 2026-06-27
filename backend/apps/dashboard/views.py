@@ -5,7 +5,8 @@ from apps.dashboard.models import Issue, PullRequest, StreakFreeze
 from apps.progress.models import ExerciseAttempt, LessonProgress
 from django.contrib.auth.models import User
 from django.core.cache import cache
-from django.db.models import Count, F, IntegerField, OuterRef, Subquery, Sum, Value
+from django.db.models import (Count, F, IntegerField, OuterRef, Subquery, Sum,
+                              Value)
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from rest_framework import permissions, serializers
@@ -450,9 +451,10 @@ class ContributorDashboardView(APIView):
         return Response(data)
 
 
+from django.db import transaction
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
-from django.db import transaction
+
 
 
 class BuyStreakFreezeView(APIView):

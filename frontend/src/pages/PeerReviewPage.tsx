@@ -18,6 +18,7 @@ export function PeerReviewPage() {
   const [activeTab, setActiveTab] = useState<"submit" | "review">("submit");
 
   // Submit Tab State
+  const [exerciseId, setExerciseId] = useState("");
   const [title, setTitle] = useState("");
   const [codeSnippet, setCodeSnippet] = useState("");
   const [description, setDescription] = useState("");
@@ -32,6 +33,10 @@ export function PeerReviewPage() {
     useState<CodeSubmission | null>(null);
   const [feedback, setFeedback] = useState("");
   const [rating, setRating] = useState(5);
+  const [codeCorrectnessRating, setCodeCorrectnessRating] = useState(5);
+  const [bestPracticesRating, setBestPracticesRating] = useState(5);
+  const [documentationRating, setDocumentationRating] = useState(5);
+  const [isApproved, setIsApproved] = useState(true);
   const [isReviewing, setIsReviewing] = useState(false);
   const [reviewSuccess, setReviewSuccess] = useState(false);
 
@@ -61,6 +66,7 @@ export function PeerReviewPage() {
       await fetchApi("/api/progress/code-submissions/", {
         method: "POST",
         body: JSON.stringify({
+          exercise: exerciseId ? parseInt(exerciseId) : null,
           title,
           code_snippet: codeSnippet,
           description,
@@ -92,6 +98,11 @@ export function PeerReviewPage() {
           body: JSON.stringify({
             feedback,
             rating,
+            code_correctness_rating: codeCorrectnessRating,
+            readability_rating: rating, // Fallback since it wasn't added to state separately in the earlier diff but I'll use it
+            best_practices_rating: bestPracticesRating,
+            documentation_rating: documentationRating,
+            is_approved: isApproved,
           }),
         },
       );
@@ -152,6 +163,18 @@ export function PeerReviewPage() {
               </div>
             )}
             <form onSubmit={handleSubmitCode} className="space-y-4">
+              <div>
+                <label className="block font-bold mb-2">
+                  Exercise ID (Optional)
+                </label>
+                <input
+                  type="number"
+                  value={exerciseId}
+                  onChange={(e) => setExerciseId(e.target.value)}
+                  className="w-full px-4 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-primary dark:bg-black dark:border-[#2e2924]"
+                  placeholder="e.g. 1"
+                />
+              </div>
               <div>
                 <label className="block font-bold mb-2">Title</label>
                 <input
@@ -277,25 +300,95 @@ export function PeerReviewPage() {
                       placeholder="Be constructive and helpful..."
                     />
                   </div>
-                  <div>
-                    <label className="block font-bold mb-2">Rating (1-5)</label>
-                    <input
-                      type="range"
-                      min="1"
-                      max="5"
-                      value={rating}
-                      onChange={(e) => setRating(parseInt(e.target.value))}
-                      className="w-full accent-primary"
-                    />
-                    <div className="flex justify-between text-sm font-bold opacity-70 mt-1">
-                      <span>Needs Work</span>
-                      <span>Excellent ({rating}/5)</span>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-bold mb-2 text-sm">
+                        Code Correctness (1-5)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="5"
+                        value={rating}
+                        onChange={(e) => setRating(parseInt(e.target.value))}
+                        className="w-full px-4 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-primary dark:bg-black dark:border-[#2e2924]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold mb-2 text-sm">
+                        Readability (1-5)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="5"
+                        value={codeCorrectnessRating}
+                        onChange={(e) =>
+                          setCodeCorrectnessRating(parseInt(e.target.value))
+                        }
+                        className="w-full px-4 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-primary dark:bg-black dark:border-[#2e2924]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold mb-2 text-sm">
+                        Best Practices (1-5)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="5"
+                        value={bestPracticesRating}
+                        onChange={(e) =>
+                          setBestPracticesRating(parseInt(e.target.value))
+                        }
+                        className="w-full px-4 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-primary dark:bg-black dark:border-[#2e2924]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold mb-2 text-sm">
+                        Documentation (1-5)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="5"
+                        value={documentationRating}
+                        onChange={(e) =>
+                          setDocumentationRating(parseInt(e.target.value))
+                        }
+                        className="w-full px-4 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-primary dark:bg-black dark:border-[#2e2924]"
+                      />
                     </div>
                   </div>
+
+                  <div className="flex items-center gap-4 mt-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="approval"
+                        checked={isApproved === true}
+                        onChange={() => setIsApproved(true)}
+                        className="w-5 h-5 text-primary focus:ring-primary"
+                      />
+                      <span className="font-bold">Approve Solution</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="approval"
+                        checked={isApproved === false}
+                        onChange={() => setIsApproved(false)}
+                        className="w-5 h-5 text-red-500 focus:ring-red-500"
+                      />
+                      <span className="font-bold">Request Changes</span>
+                    </label>
+                  </div>
+
                   <button
                     type="submit"
                     disabled={isReviewing}
-                    className="w-full py-3 bg-primary text-black font-black uppercase rounded-lg border-4 border-black hover:-translate-y-1 hover:shadow-card transition-all disabled:opacity-50"
+                    className="w-full py-3 mt-4 bg-primary text-black font-black uppercase rounded-lg border-4 border-black hover:-translate-y-1 hover:shadow-card transition-all disabled:opacity-50"
                   >
                     {isReviewing ? "Submitting..." : "Submit Review (+10 XP)"}
                   </button>

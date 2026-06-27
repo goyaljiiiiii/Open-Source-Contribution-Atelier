@@ -1,10 +1,11 @@
-import pytest
 from datetime import timedelta
-from django.utils import timezone
-from apps.progress.models import XPMultiplierEvent, LessonProgress
-from apps.dashboard.models import Issue
+
+import pytest
 from apps.content.models import Lesson
+from apps.dashboard.models import Issue
+from apps.progress.models import LessonProgress, XPMultiplierEvent
 from django.contrib.auth.models import User
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 

@@ -15,10 +15,13 @@ from .views import (
     RecommendationsView,
     CodeSubmissionView,
     PeerReviewView,
+    ExportProgressCSVView,
+    UserAchievementView,
 )
 
 urlpatterns = [
     path("badges/", BadgeListView.as_view(), name="badges"),
+    path("achievements/", UserAchievementView.as_view(), name="user-achievements"),
     path("me/", MyProgressView.as_view(), name="my-progress"),
     path("bulk-sync/", BulkSyncProgressView.as_view(), name="bulk-sync"),
     path("bulk-update/", BulkProgressUpdateView.as_view(), name="bulk-update"),
@@ -49,4 +52,5 @@ urlpatterns = [
         PeerReviewView.as_view(),
         name="peer-reviews",
     ),
+    path("export/csv/", ExportProgressCSVView.as_view(), name="export-progress-csv"),
 ]

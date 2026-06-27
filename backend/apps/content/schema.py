@@ -1,6 +1,8 @@
 import graphene
 from graphene_django.types import DjangoObjectType
-from .models import Lesson, Exercise, Organization
+
+from .models import Exercise, Lesson, Organization
+
 
 
 class OrganizationType(DjangoObjectType):
