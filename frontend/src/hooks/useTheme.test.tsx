@@ -8,30 +8,38 @@ function wrapper({ children }: { children: ReactNode }) {
 }
 
 describe("useTheme", () => {
-  let mediaQueryCallbacks: Record<string, ((e: any) => void)[]> = {};
+  let mediaQueryCallbacks: Record<
+    string,
+    ((e: MediaQueryListEvent | Event) => void)[]
+  > = {};
 
   beforeEach(() => {
     localStorage.clear();
     document.documentElement.className = "";
     mediaQueryCallbacks = {};
-    
-    vi.stubGlobal("matchMedia", vi.fn().mockImplementation((query) => ({
-      matches: false,
-      media: query,
-      onchange: null,
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      addEventListener: vi.fn((event, cb) => {
-        if (!mediaQueryCallbacks[query]) mediaQueryCallbacks[query] = [];
-        mediaQueryCallbacks[query].push(cb);
-      }),
-      removeEventListener: vi.fn((event, cb) => {
-        if (mediaQueryCallbacks[query]) {
-          mediaQueryCallbacks[query] = mediaQueryCallbacks[query].filter(fn => fn !== cb);
-        }
-      }),
-      dispatchEvent: vi.fn(),
-    })));
+
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn().mockImplementation((query) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn((event, cb) => {
+          if (!mediaQueryCallbacks[query]) mediaQueryCallbacks[query] = [];
+          mediaQueryCallbacks[query].push(cb);
+        }),
+        removeEventListener: vi.fn((event, cb) => {
+          if (mediaQueryCallbacks[query]) {
+            mediaQueryCallbacks[query] = mediaQueryCallbacks[query].filter(
+              (fn) => fn !== cb,
+            );
+          }
+        }),
+        dispatchEvent: vi.fn(),
+      })),
+    );
   });
 
   afterEach(() => {
@@ -58,16 +66,19 @@ describe("useTheme", () => {
   });
 
   it("should apply dark class when system preference is dark", () => {
-    vi.stubGlobal("matchMedia", vi.fn().mockImplementation((query) => ({
-      matches: query === '(prefers-color-scheme: dark)',
-      media: query,
-      onchange: null,
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    })));
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn().mockImplementation((query) => ({
+        matches: query === "(prefers-color-scheme: dark)",
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    );
 
     const { result } = renderHook(() => useTheme(), { wrapper });
     expect(result.current.theme).toBe("system");
@@ -84,38 +95,43 @@ describe("useTheme", () => {
     );
   });
 
-  it("should respect system preference for high contrast", () => {
-    vi.stubGlobal("matchMedia", vi.fn().mockImplementation((query) => ({
-      matches: query === "(prefers-contrast: more)",
-      media: query,
-      onchange: null,
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    })));
+  it("should apply high-contrast class when system preference is high contrast", () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn().mockImplementation((query) => ({
+        matches: query === "(prefers-contrast: more)",
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    );
 
     const { result } = renderHook(() => useTheme(), { wrapper });
     expect(result.current.theme).toBe("system");
-    expect(document.documentElement.classList.contains("high-contrast")).toBe(true);
+    expect(document.documentElement.classList.contains("high-contrast")).toBe(
+      true,
+    );
   });
 
   it("should toggle from system to light to dark", () => {
     const { result } = renderHook(() => useTheme(), { wrapper });
     expect(result.current.theme).toBe("system");
-    
+
     act(() => {
       result.current.toggleTheme();
     });
     expect(result.current.theme).toBe("light");
-    
+
     act(() => {
       result.current.toggleTheme();
     });
     expect(result.current.theme).toBe("dark");
     expect(document.documentElement.classList.contains("dark")).toBe(true);
-    
+
     act(() => {
       result.current.toggleTheme();
     });

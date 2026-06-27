@@ -5,6 +5,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 
 
+
 class AdminLogEntryTest(TestCase):
     def setUp(self):
         self.client = Client()

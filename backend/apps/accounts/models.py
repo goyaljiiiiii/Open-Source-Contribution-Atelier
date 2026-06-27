@@ -29,7 +29,7 @@ class MentorProfile(models.Model):
     )
 
     def __str__(self) -> str:
-        return f"MentorProfile({self.user.username})"  # type: ignore
+        return f"MentorProfile({self.user.username})"
 
 
 class PasswordResetToken(models.Model):
@@ -53,7 +53,7 @@ class PasswordResetToken(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
-        return f"PasswordResetToken(user={self.user.username}, used={self.is_used})"  # type: ignore
+        return f"PasswordResetToken(user={self.user.username}, used={self.is_used})"
 
     def is_expired(self) -> bool:
         """Return True if the token is older than PASSWORD_RESET_TIMEOUT_MINUTES."""
@@ -62,7 +62,7 @@ class PasswordResetToken(models.Model):
         from django.utils import timezone
 
         timeout = getattr(settings, "PASSWORD_RESET_TIMEOUT_MINUTES", 15)
-        return timezone.now() > self.created_at + timedelta(minutes=timeout)  # type: ignore
+        return timezone.now() > self.created_at + timedelta(minutes=timeout)
 
 
 class OTPToken(models.Model):
@@ -83,7 +83,7 @@ class OTPToken(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
-        return f"OTPToken(user={self.user.username}, used={self.is_used})"  # type: ignore
+        return f"OTPToken(user={self.user.username}, used={self.is_used})"
 
 
 class MagicLinkToken(models.Model):
@@ -107,7 +107,7 @@ class MagicLinkToken(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
-        return f"MagicLinkToken(user={self.user.username}, used={self.is_used})"  # type: ignore
+        return f"MagicLinkToken(user={self.user.username}, used={self.is_used})"
 
     def is_expired(self) -> bool:
         """Return True if the token is older than MAGIC_LINK_TIMEOUT_MINUTES."""
@@ -116,7 +116,7 @@ class MagicLinkToken(models.Model):
         from django.utils import timezone
 
         timeout = getattr(settings, "MAGIC_LINK_TIMEOUT_MINUTES", 15)
-        return timezone.now() > self.created_at + timedelta(minutes=timeout)  # type: ignore
+        return timezone.now() > self.created_at + timedelta(minutes=timeout)
 
 
 def get_timezone_choices():
@@ -128,7 +128,7 @@ def get_timezone_choices():
 class UserProfile(models.Model):
     """
     Standard user profile linking to the main User model.
-    Stores the user's avatar image and user settings.
+    Stores the user's avatar image.
     """
 
     user = models.OneToOneField(
@@ -144,20 +144,6 @@ class UserProfile(models.Model):
     linkedin_url = models.URLField(max_length=500, blank=True, default="")
     github_url = models.URLField(max_length=500, blank=True, default="")
 
-    # Feature requirement: Pause email notifications toggle field (#413)
-    dnd_enabled = models.BooleanField(
-        default=False, help_text="Temporarily disable non-critical email notifications."
-    )
-    
-    THEME_CHOICES = [
-        ("light", "Light"),
-        ("dark", "Dark"),
-        ("system", "System Default"),
-    ]
-    theme_preference = models.CharField(
-        max_length=20, choices=THEME_CHOICES, default="system", help_text="User's preferred UI theme."
-    )
-
     organization = models.ForeignKey(
         "organizations.Organization",
         on_delete=models.SET_NULL,
@@ -167,16 +153,15 @@ class UserProfile(models.Model):
     )
 
     def __str__(self):
-        return f"UserProfile({self.user.username})"  # type: ignore
+        return f"UserProfile({self.user.username})"
 
     def _convert_to_webp(self, image_field):
         """Helper method to convert an ImageField to WebP format."""
         if image_field and not image_field.name.lower().endswith(".webp"):
-            import os
-            from io import BytesIO
-
-            from django.core.files.base import ContentFile
             from PIL import Image
+            from io import BytesIO
+            from django.core.files.base import ContentFile
+            import os
 
             img = Image.open(image_field)
 
@@ -201,7 +186,7 @@ class UserProfile(models.Model):
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
-        UserProfile.objects.create(user=instance)  # type: ignore
+        UserProfile.objects.create(user=instance)
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
@@ -209,7 +194,7 @@ def save_user_profile(sender, instance, **kwargs):
     if hasattr(instance, "profile"):
         instance.profile.save()
     else:
-        UserProfile.objects.create(user=instance)  # type: ignore
+        UserProfile.objects.create(user=instance)
 
 
 from django.contrib.auth import get_user_model

@@ -38,7 +38,7 @@ describe("PeerReviewPage Edge Cases", () => {
   });
 
   it("handles submitting code snippet successfully", async () => {
-    // vi.spyOn(apiModule, "fetchApi").mockResolvedValue({});
+    const mockFetchApi = vi.spyOn(apiModule, "fetchApi").mockResolvedValue({});
 
     renderWithProviders(<PeerReviewPage />);
 
@@ -87,7 +87,7 @@ describe("PeerReviewPage Edge Cases", () => {
     ];
 
     let callCount = 0;
-    // vi
+    const mockFetchApi = vi
       .spyOn(apiModule, "fetchApi")
       .mockImplementation(async (url, options) => {
         if (url === "/api/progress/code-submissions/" && !options) {

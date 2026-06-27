@@ -6,51 +6,6 @@ from django.db import models
 from django.utils import timezone
 
 
-class UserStreak(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="streak")
-    current_streak = models.PositiveIntegerField(default=0)
-    highest_streak = models.PositiveIntegerField(default=0)
-    last_activity_date = models.DateField(null=True, blank=True)
-    multiplier = models.FloatField(default=1.0)
-
-    def update_streak(self, activity_date=None):
-        if activity_date is None:
-            activity_date = timezone.localdate()
-
-        if self.last_activity_date == activity_date:
-            return
-
-        if self.last_activity_date:
-            delta_days = (activity_date - self.last_activity_date).days
-            if delta_days == 1:
-                self.current_streak += 1
-            elif delta_days > 1:
-                self.current_streak = 1
-        else:
-            self.current_streak = 1
-
-        self.last_activity_date = activity_date
-
-        if self.current_streak > self.highest_streak:
-            self.highest_streak = self.current_streak
-
-        if self.current_streak >= 14:
-            self.multiplier = 2.0
-        elif self.current_streak >= 7:
-            self.multiplier = 1.5
-        elif self.current_streak >= 3:
-            self.multiplier = 1.2
-        else:
-            self.multiplier = 1.0
-
-        self.save()
-
-    @classmethod
-    def get_or_create_for_user(cls, user):
-        streak, _ = cls.objects.get_or_create(user=user)
-        return streak
-
-
 class XPMultiplierEvent(models.Model):
     name = models.CharField(max_length=255)
     multiplier = models.FloatField(default=1.5)
@@ -74,50 +29,7 @@ class XPMultiplierEvent(models.Model):
         return active_event.multiplier if active_event else 1.0
 
 
-
-# ---------------------------------------------------------------------------
-# Streak milestone configuration – single source of truth for both the
-# StreakEngine and BadgeEvaluator.
-# ---------------------------------------------------------------------------
-STREAK_MILESTONES = [
-    {"days": 3,  "multiplier": 1.2, "label": "3-Day Streak 🔥",  "badge_slug": "streak-3"},
-    {"days": 7,  "multiplier": 1.5, "label": "7-Day Streak ⚡",  "badge_slug": "streak-7"},
-    {"days": 14, "multiplier": 2.0, "label": "14-Day Streak 💎", "badge_slug": "streak-14"},
-    {"days": 30, "multiplier": 2.5, "label": "30-Day Streak 👑", "badge_slug": "streak-30"},
-]
-
-
-class StreakProfile(models.Model):
-    """Persisted per-user streak state, updated on each learning activity."""
-
-    objects = models.Manager()
-
-    user = models.OneToOneField(
-        User,
-        on_delete=models.CASCADE,
-        related_name="streak_profile",
-    )
-    current_streak = models.PositiveIntegerField(default=0)
-    longest_streak = models.PositiveIntegerField(default=0)
-    last_activity_date = models.DateField(null=True, blank=True)
-    current_multiplier = models.FloatField(default=1.0)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=["user"], name="idx_streak_profile_user"),
-        ]
-
-    def __str__(self) -> str:
-        return (
-            f"StreakProfile({self.user.username}, "
-            f"streak={self.current_streak}, "
-            f"multiplier={self.current_multiplier}x)"
-        )
-
-
 class Badge(models.Model):
-
     class DoesNotExist(ObjectDoesNotExist):
         pass
 
@@ -142,6 +54,35 @@ class UserBadge(models.Model):
 
     class Meta:
         unique_together = ("user", "badge")
+
+
+class Achievement(models.Model):
+    objects = models.Manager()
+    name = models.CharField(max_length=120)
+    slug = models.SlugField(unique=True)
+    description = models.TextField()
+    category = models.CharField(max_length=100, default="milestone")
+    icon_name = models.CharField(max_length=100, blank=True, default="🏆")
+    xp_reward = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return self.name
+
+
+class UserAchievement(models.Model):
+    objects = models.Manager()
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="achievements"
+    )
+    achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE)
+    earned_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "achievement")
+        ordering = ["-earned_at"]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.achievement.name}"
 
 
 class LessonProgress(models.Model):
@@ -292,17 +233,32 @@ class CodeSubmission(models.Model):
     objects = models.Manager()
 
     class Status(models.TextChoices):
-        PENDING = "pending", "Pending"
+        PENDING_REVIEW = "pending_review", "Pending Review"
         REVIEWED = "reviewed", "Reviewed"
+        ESCALATED = "escalated", "Escalated"
+        CHANGES_REQUESTED = "changes_requested", "Changes Requested"
 
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="code_submissions"
+    )
+    exercise = models.ForeignKey(
+        Exercise,
+        on_delete=models.CASCADE,
+        related_name="submissions",
+        null=True,
+        blank=True,
     )
     title = models.CharField(max_length=255)
     code_snippet = models.TextField()
     description = models.TextField(blank=True)
     status = models.CharField(
-        max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True
+        max_length=25,
+        choices=Status.choices,
+        default=Status.PENDING_REVIEW,
+        db_index=True,
+    )
+    assigned_reviewers = models.ManyToManyField(
+        User, related_name="assigned_reviews", blank=True
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -323,7 +279,12 @@ class PeerReview(models.Model):
         User, on_delete=models.CASCADE, related_name="given_reviews"
     )
     feedback = models.TextField()
-    rating = models.PositiveIntegerField(default=5)
+    rating = models.PositiveIntegerField(default=5)  # Overall rating
+    code_correctness_rating = models.PositiveIntegerField(default=5)
+    readability_rating = models.PositiveIntegerField(default=5)
+    best_practices_rating = models.PositiveIntegerField(default=5)
+    documentation_rating = models.PositiveIntegerField(default=5)
+    is_approved = models.BooleanField(default=True)
     points_earned = models.PositiveIntegerField(default=10)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -333,20 +294,3 @@ class PeerReview(models.Model):
 
     def __str__(self):
         return f"Review by {self.reviewer.username} for {self.submission.title}"
-
-
-class PlagiarismReport(models.Model):
-    objects = models.Manager()
-    submission = models.ForeignKey(CodeSubmission, on_delete=models.CASCADE, related_name="plagiarism_reports")
-    matched_submission = models.ForeignKey(CodeSubmission, on_delete=models.CASCADE, related_name="matched_in_reports")
-    similarity_score = models.FloatField()
-    is_flagged = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ["-similarity_score"]
-        unique_together = ("submission", "matched_submission")
-
-    def __str__(self):
-        return f"PlagiarismReport: {self.submission.id} vs {self.matched_submission.id} ({self.similarity_score:.2f})"
-

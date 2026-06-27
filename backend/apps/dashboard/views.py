@@ -456,6 +456,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import status
 
 
+
 class BuyStreakFreezeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 

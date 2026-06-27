@@ -72,7 +72,7 @@ describe("DeleteAccountModal", () => {
   });
 
   it("calls the API and logout on successful deletion", async () => {
-    (fetchApi as unknown).mockResolvedValueOnce({});
+    (fetchApi as any).mockResolvedValueOnce({});
 
     renderWithProviders(
       <DeleteAccountModal isOpen={true} onClose={() => {}} />,

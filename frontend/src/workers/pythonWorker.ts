@@ -49,7 +49,7 @@ self.onmessage = async (event) => {
       results: output,
       error: errorOutput ? errorOutput : null,
     });
-  } catch (error: unknown) {
+  } catch (error: any) {
     self.postMessage({ id, error: error.message });
   }
 };

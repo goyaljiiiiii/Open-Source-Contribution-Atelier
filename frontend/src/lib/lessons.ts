@@ -1,3 +1,5 @@
+import { fetchApi } from "./api";
+
 export interface Exercise {
   id?: number;
   title: string;
@@ -17,15 +19,7 @@ export interface PythonExercise {
   prompt: string;
   starterCode: string;
   testCode: string; // Hidden code appended after user code to run assertions
-  expectedOutput?: string; // Used for diff validation instead of assertions if provided
   hint?: string;
-}
-
-export interface RustExercise {
-  prompt: string;
-  starterCode: string;
-  hint?: string;
-  expected?: string; // Expected final code for verification
 }
 
 export interface Lesson {
@@ -51,7 +45,7 @@ export interface Lesson {
   }>;
   conflictScenario?: ConflictScenario;
   pythonExercise?: PythonExercise;
-  rustExercise?: RustExercise;
+  category?: string;
 }
 
 // Small built-in fallback lessons (used if API unreachable)
@@ -78,49 +72,59 @@ export const lessons: Lesson[] = [
   },
 ];
 
-// Fetch lessons from local curriculum JSON asset
+// Fetch lessons from live API
 export async function fetchLessonsApi(): Promise<Lesson[]> {
   try {
-    const response = await fetch("/content/curriculum.json");
-    if (!response.ok) {
-      throw new Error("Failed to load curriculum.json");
-    }
-    const data = await response.json();
-    if (!data || !Array.isArray(data.modules)) return lessons;
+    const data = await fetchApi("/content/lessons/", { requireAuth: false });
+    if (!Array.isArray(data)) return lessons;
 
-    const allLessons: Lesson[] = [];
-    let orderIndex = 0;
-
-    for (const mod of data.modules) {
-      if (!Array.isArray(mod.lessons)) continue;
-      for (const les of mod.lessons) {
-        allLessons.push({
-          slug: les.slug,
-          title: les.title,
-          description: les.description || "",
-          explanation: "", // Will load dynamically from markdown content
-          expected: les.expected || "",
-          hint: les.hint || "Read the lesson contents and solve the check.",
-          difficulty: les.difficulty || "beginner",
-          points: les.points || 15,
-          estimatedMinutes: les.estimatedMinutes || 10,
-          learningObjectives: les.learningObjectives || [],
-          tips: les.tips || [],
-          exercises: les.exercises || [],
-          quizzes: les.quizzes || [],
-          conflictScenario: les.conflictScenario || undefined,
-          pythonExercise: les.pythonExercise || undefined,
-          rustExercise: les.rustExercise || undefined,
-          order: orderIndex++,
-          filePath: les.filePath,
-        });
-      }
-    }
-    return allLessons;
+    return data.map((les: any, index: number) => {
+      const firstExercise = les.exercises?.[0];
+      return {
+        slug: les.slug,
+        title: les.title,
+        description: les.summary || "",
+        explanation: les.content || "", // Will load dynamically from backend
+        expected: firstExercise?.expectedCommand || "",
+        hint: firstExercise?.explanation || "Read the lesson contents and solve the check.",
+        difficulty: les.difficulty || "beginner",
+        points: firstExercise?.points || 15,
+        estimatedMinutes: les.estimatedMinutes || 10,
+        learningObjectives: les.learningObjectives || [],
+        tips: les.tips || [],
+        exercises: les.exercises || [],
+        quizzes: les.quizzes || [],
+        conflictScenario: les.conflictScenario || undefined,
+        pythonExercise: les.pythonExercise || undefined,
+        order: les.order || index,
+        category: les.category || "general",
+        filePath: les.filePath,
+      };
+    });
   } catch (err) {
-    console.error("Error loading curriculum JSON:", err);
+    console.error("Error loading live curriculum:", err);
     return lessons;
   }
+}
+
+export function buildModulesFromLessons(lessonsList: Lesson[]) {
+  const modulesMap = new Map<string, any>();
+  lessonsList.forEach((les) => {
+    const cat = les.category || "general";
+    if (!modulesMap.has(cat)) {
+      modulesMap.set(cat, {
+        id: cat,
+        title: cat.charAt(0).toUpperCase() + cat.slice(1).replace(/-/g, " "),
+        lessons: [],
+      });
+    }
+    modulesMap.get(cat).lessons.push({
+      slug: les.slug,
+      title: les.title,
+      difficulty: les.difficulty,
+    });
+  });
+  return Array.from(modulesMap.values());
 }
 
 // Fetch markdown text content for a lesson

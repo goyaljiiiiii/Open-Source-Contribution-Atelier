@@ -13,7 +13,6 @@ export function AuthPageShell({
   mode,
   children,
 }: AuthPageShellProps) {
-
   const highlightBox1 =
     mode === "login"
       ? {

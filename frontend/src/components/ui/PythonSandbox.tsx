@@ -1,8 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Editor from "react-simple-code-editor";
+import Prism from "prismjs";
+import "prismjs/components/prism-python";
+import "prismjs/themes/prism-tomorrow.css"; // Dark theme
 import { Play, RotateCcw, CheckCircle2, XCircle } from "lucide-react";
 import { usePythonSandbox } from "../../hooks/usePythonSandbox";
 import { PythonExercise } from "../../lib/lessons";
-import { CodeEditor } from "./CodeEditor";
 
 interface PythonSandboxProps {
   exercise: PythonExercise;
@@ -14,8 +17,15 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
   const [output, setOutput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [outputMismatch, setOutputMismatch] = useState(false);
   const { runPythonCode, isExecuting, isReady } = usePythonSandbox();
+
+  // Reset if exercise changes
+  useEffect(() => {
+    setCode(exercise.starterCode);
+    setOutput("");
+    setError(null);
+    setIsSuccess(false);
+  }, [exercise]);
 
   const handleRun = async () => {
     if (isExecuting || !isReady) return;
@@ -26,7 +36,6 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
     setOutput("Executing...\n");
     setError(null);
     setIsSuccess(false);
-    setOutputMismatch(false);
 
     const result = await runPythonCode(fullCode);
 
@@ -35,15 +44,8 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
     if (result.error) {
       setError(result.error);
     } else {
-      if (
-        exercise.expectedOutput !== undefined &&
-        result.output.trim() !== exercise.expectedOutput.trim()
-      ) {
-        setOutputMismatch(true);
-      } else {
-        setIsSuccess(true);
-        onSuccess();
-      }
+      setIsSuccess(true);
+      onSuccess();
     }
   };
 
@@ -52,7 +54,6 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
     setOutput("");
     setError(null);
     setIsSuccess(false);
-    setOutputMismatch(false);
   };
 
   return (
@@ -88,11 +89,22 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
       )}
 
       {/* Editor */}
-      <div className="p-4">
-        <CodeEditor
-          code={code}
-          onChange={(code) => setCode(code)}
-          language="python"
+      <div className="p-4 font-mono text-sm bg-white dark:bg-[#151411]">
+        <Editor
+          value={code}
+          onValueChange={(code) => setCode(code)}
+          highlight={(code) =>
+            Prism.highlight(code, Prism.languages.python, "python")
+          }
+          padding={10}
+          style={{
+            fontFamily: '"Fira Code", "JetBrains Mono", monospace',
+            fontSize: 14,
+            minHeight: "200px",
+            backgroundColor: "transparent",
+            outline: "none",
+          }}
+          textareaClassName="focus:outline-none"
         />
       </div>
 
@@ -127,18 +139,6 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
               <CheckCircle2 className="w-5 h-5" /> All tests passed! You earned
               points.
             </div>
-          </div>
-        )}
-
-        {outputMismatch && exercise.expectedOutput !== undefined && (
-          <div className="mt-4 pt-4 border-t border-dashed border-gray-600">
-            <div className="flex items-center gap-2 text-yellow-500 font-bold mb-4">
-              <XCircle className="w-5 h-5" /> Output Mismatch
-            </div>
-            <DiffViewer
-              expected={exercise.expectedOutput}
-              actual={output}
-            />
           </div>
         )}
       </div>

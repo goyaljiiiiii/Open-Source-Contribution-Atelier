@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 import {
   createContext,
   useContext,
@@ -30,20 +29,22 @@ function useThemeValue(): ThemeContextValue {
     applyThemeToDOM(theme);
   }, [theme]);
 
-  // Also listen for system preference changes when in 'system' mode
+  // Listener for system preference changes when in "system" mode
   useEffect(() => {
-    if (theme !== "system") return;
-    
-    const mediaQueryDark = window.matchMedia("(prefers-color-scheme: dark)");
+    const mediaQueryColor = window.matchMedia("(prefers-color-scheme: dark)");
     const mediaQueryContrast = window.matchMedia("(prefers-contrast: more)");
-    
-    const handleChange = () => applyThemeToDOM("system");
-    
-    mediaQueryDark.addEventListener("change", handleChange);
+
+    const handleChange = () => {
+      if (theme === "system") {
+        applyThemeToDOM("system");
+      }
+    };
+
+    mediaQueryColor.addEventListener("change", handleChange);
     mediaQueryContrast.addEventListener("change", handleChange);
-    
+
     return () => {
-      mediaQueryDark.removeEventListener("change", handleChange);
+      mediaQueryColor.removeEventListener("change", handleChange);
       mediaQueryContrast.removeEventListener("change", handleChange);
     };
   }, [theme]);

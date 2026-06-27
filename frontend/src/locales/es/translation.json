@@ -1,20 +1,20 @@
 {
   "landing": {
-    "authorized_access_only": "AUTHORIZED ACCESS ONLY 🔒",
-    "contributor": "Contributor",
-    "maintainer": "Maintainer",
-    "enter_sandbox": "Enter the Sandbox.",
-    "maintainer_login": "Maintainer Login.",
-    "sign_in_google": "Sign in with Google",
-    "sign_in_github": "Sign in with GitHub",
-    "or": "OR",
-    "username_email_placeholder": "Username or Email",
+    "authorized_access_only": "SOLO ACCESO AUTORIZADO 🔒",
+    "contributor": "Colaborador",
+    "maintainer": "Mantenedor",
+    "enter_sandbox": "Entrar al Sandbox.",
+    "maintainer_login": "Inicio de Sesión del Mantenedor.",
+    "sign_in_google": "Iniciar sesión con Google",
+    "sign_in_github": "Iniciar sesión con GitHub",
+    "or": "O",
+    "username_email_placeholder": "Usuario o Correo Electrónico",
     "password_placeholder": "••••••••",
-    "assemble_run": "Assemble & Run!",
-    "new_contributors": "NEW CONTRIBUTORS",
-    "create_account": "Create Account",
-    "error_login_failed": "Failed to login",
-    "error_google_auth_backend": "Google Auth Failed. Check Backend.",
-    "error_google_login_failed": "Google Login Failed / Cancelled."
+    "assemble_run": "¡Ensamblar y Ejecutar!",
+    "new_contributors": "NUEVOS COLABORADORES",
+    "create_account": "Crear Cuenta",
+    "error_login_failed": "Error al iniciar sesión",
+    "error_google_auth_backend": "Error de autenticación de Google. Verifique el Backend.",
+    "error_google_login_failed": "Inicio de sesión de Google fallido / cancelado."
   }
 }

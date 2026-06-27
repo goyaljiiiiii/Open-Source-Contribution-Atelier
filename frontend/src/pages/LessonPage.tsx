@@ -1,7 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import confetti from "canvas-confetti";
 import {
   ChevronLeft,
   ChevronRight,
@@ -9,20 +8,19 @@ import {
   X,
   BookOpen,
   CheckCircle2,
+  NotebookText,
   Lock,
   Bookmark,
 } from "lucide-react";
 
 import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
+import { useAuth } from "../features/auth/AuthContext";
 import { useUserProgress } from "../hooks/useUserProgress";
 import { useBookmarks } from "../hooks/useBookmarks";
-
+import { useLessonNote } from "../hooks/useLessonNote";
 import { fetchApi } from "../lib/api";
-import { Lesson, fetchLessonsApi } from "../lib/lessons";
+import { Lesson, fetchLessonsApi, fetchLessonContent, buildModulesFromLessons } from "../lib/lessons";
 import { RichTextEditor } from "../components/ui/RichTextEditor";
-import { useOfflineLesson } from "../hooks/useOfflineLesson";
-import { OfflineStatusBadge } from "../components/ui/OfflineStatusBadge";
-import { OfflineBanner } from "../components/ui/OfflineBanner";
 
 const MarkdownRenderer = React.lazy(() =>
   import("../components/ui/MarkdownRenderer").then((module) => ({
@@ -32,7 +30,6 @@ const MarkdownRenderer = React.lazy(() =>
 import { GitGraph } from "../components/ui/GitGraph";
 import { NotePanel } from "../components/ui/NotePanel";
 import { PythonSandbox } from "../components/ui/PythonSandbox";
-import { RustSandbox } from "../components/ui/RustSandbox";
 import { TextToSpeechControls } from "../components/ui/TextToSpeechControls";
 
 import {
@@ -48,35 +45,19 @@ function normalizeCommand(value: string) {
 export function LessonPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { isLessonCompleted, syncProgress } = useUserProgress();
+  const { user } = useAuth();
+  const {
+    isLessonCompleted,
+    syncProgress,
+    isLoading: isSyncingProgress,
+  } = useUserProgress();
   const { isBookmarked, toggleBookmark } = useBookmarks();
   const queryClient = useQueryClient();
 
   const [lesson, setLesson] = useState<Lesson | undefined>(undefined);
   const [lessonsList, setLessonsList] = useState<Lesson[]>([]);
   const [markdownContent, setMarkdownContent] = useState("");
-  const estimatedReadingTime = useMemo(() => {
-  if (!markdownContent) return 1;
-  const wordCount = markdownContent.trim().split(/\s+/).length;
-  return Math.max(1, Math.ceil(wordCount / 200));
-}, [markdownContent]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // Offline-first markdown content
-  const {
-    markdown: markdownContent,
-    source: contentSource,
-    isLoading: isContentLoading,
-    refresh: refreshContent,
-    isCached: isLessonCached,
-  } = useOfflineLesson(lesson);
-
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    refreshContent();
-    setTimeout(() => setIsRefreshing(false), 1500);
-  };
 
   // Curriculum modules list for sidebar
   const [modules, setModules] = useState<
@@ -131,7 +112,6 @@ export function LessonPage() {
 
   // Note Panel
   const [isNotePanelOpen, setIsNotePanelOpen] = useState(false);
-  const hasConfettiFired = useRef(false);
 
   // Reading progress scroll ref
   const mainContentRef = useRef<HTMLDivElement>(null);
@@ -157,15 +137,9 @@ export function LessonPage() {
     },
   });
 
+  // 1. Fetch modules catalog & lessons
   useEffect(() => {
-    fetch("/content/curriculum.json")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.modules) {
-          setModules(data.modules);
-        }
-      })
-      .catch((err) => console.error("Error fetching curriculum catalog:", err));
+    setIsLoading(true);
 
     fetchLessonsApi()
       .then((data) => {
@@ -173,32 +147,10 @@ export function LessonPage() {
         const found = data.find((l) => l.slug === slug);
         if (!found) {
           navigate("/dashboard", { replace: true });
-          return null;
+          return;
         }
-        return found;
-      })
-      .then((found) => {
-        if (!found) return;
-
         setLesson(found);
-
-        // Reset interactive state when lesson changes
-        setFeedback("");
-        setInput("");
-        setShowHint(false);
-        setTerminalOutput("");
-        setRepoState(createInitialRepo());
-        setCurrentQuizIndex(0);
-        setSelectedOption(null);
-        setQuizFeedback(null);
-
-        if (found.filePath) {
-          return fetchLessonContent(found.filePath).then((content) => {
-            setMarkdownContent(content);
-          });
-        } else {
-          setMarkdownContent(`# ${found.title}\n\n${found.explanation}`);
-        }
+        setModules(buildModulesFromLessons(data) as any);
       })
       .catch(() => {
         navigate("/dashboard", { replace: true });
@@ -208,7 +160,7 @@ export function LessonPage() {
       });
   }, [slug, navigate]);
 
-  // 2. Reset interactive state when lesson changes (content fetched offline-first via useOfflineLesson)
+  // 2. Fetch markdown content and reset interactive state when lesson changes
   useEffect(() => {
     if (!lesson) return;
 
@@ -222,6 +174,16 @@ export function LessonPage() {
     setCurrentQuizIndex(0);
     setSelectedOption(null);
     setQuizFeedback(null);
+
+    if (lesson.explanation) {
+      setMarkdownContent(lesson.explanation);
+    } else if (lesson.filePath) {
+      fetchLessonContent(lesson.filePath).then((content) => {
+        setMarkdownContent(content);
+      });
+    } else {
+      setMarkdownContent(`# ${lesson.title}\n\n`);
+    }
   }, [lesson]);
 
   // 3. Scroll tracking for reading progress
@@ -356,18 +318,6 @@ export function LessonPage() {
   const hasQuiz = lesson.quizzes && lesson.quizzes.length > 0;
   const hasConflict = !!lesson.conflictScenario;
   const isCompleted = isLessonCompleted(lesson.slug);
-  // Confetti on lesson completion
-useEffect(() => {
-  if (isCompleted && !hasConfettiFired.current) {
-    hasConfettiFired.current = true;
-    confetti({
-      particleCount: 180,
-      spread: 80,
-      origin: { y: 0.6 },
-      colors: ["#ff3b30", "#ffcc00", "#c3c0ff", "#34c759", "#ff9500"],
-    });
-  }
-}, [isCompleted]);
   const activeModuleId = modules.find((mod) =>
     mod.lessons.some((les) => les.slug === lesson.slug),
   )?.id;
@@ -540,17 +490,6 @@ useEffect(() => {
             <p className="text-xl font-bold text-muted dark:text-[#c4bbae]">
               {lesson.description}
             </p>
-            <p className="text-xs font-black text-muted dark:text-[#c4bbae] flex items-center gap-1">
-              ⏱️ Estimated reading time: {estimatedReadingTime} min
-            </p>
-
-            {/* Offline banner — shown when offline or using cache */}
-            {(contentSource === "cache" || contentSource === "fallback") && (
-              <OfflineBanner
-                lessonTitle={lesson.title}
-                isCached={contentSource === "cache" && isLessonCached}
-              />
-            )}
 
             <hr className="border-2 border-black/10 dark:border-[#2e2924]/40" />
 
@@ -569,24 +508,9 @@ useEffect(() => {
 
             {/* Exercises & validation section */}
             <div className="pt-8 space-y-6">
-              {lesson.rustExercise ? (
-                <div className="mt-8">
-                  <RustSandbox
-                    key={lesson.slug}
-                    exercise={lesson.rustExercise}
-                    onSuccess={() => {
-                      syncProgress({
-                        lesson_slug: lesson.slug,
-                        score: lesson.points || 20,
-                        completed: true,
-                      });
-                    }}
-                  />
-                </div>
-              ) : lesson.pythonExercise ? (
+              {lesson.pythonExercise ? (
                 <div className="mt-8">
                   <PythonSandbox
-                    key={lesson.slug}
                     exercise={lesson.pythonExercise}
                     onSuccess={() => {
                       syncProgress({

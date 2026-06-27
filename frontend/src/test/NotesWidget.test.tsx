@@ -34,7 +34,7 @@ describe("NotesWidget", () => {
   });
 
   it("renders the widget toggle button initially", () => {
-    (fetchApi as unknown).mockResolvedValueOnce([]);
+    (fetchApi as any).mockResolvedValueOnce([]);
     renderWithProviders(<NotesWidget />);
     expect(
       screen.getByRole("button", { name: /Private Notes/i }),
@@ -42,7 +42,7 @@ describe("NotesWidget", () => {
   });
 
   it("opens the widget and shows empty state", async () => {
-    (fetchApi as unknown).mockResolvedValueOnce([]);
+    (fetchApi as any).mockResolvedValueOnce([]);
     renderWithProviders(<NotesWidget />);
 
     fireEvent.click(screen.getByRole("button", { name: /Private Notes/i }));
@@ -62,7 +62,7 @@ describe("NotesWidget", () => {
         updated_at: "",
       },
     ];
-    (fetchApi as unknown).mockResolvedValueOnce(mockNotes);
+    (fetchApi as any).mockResolvedValueOnce(mockNotes);
 
     renderWithProviders(<NotesWidget />);
     fireEvent.click(screen.getByRole("button", { name: /Private Notes/i }));
@@ -73,8 +73,8 @@ describe("NotesWidget", () => {
   });
 
   it("saves a new encrypted note", async () => {
-    (fetchApi as unknown).mockResolvedValueOnce([]); // initial load
-    (fetchApi as unknown).mockResolvedValueOnce({ id: 2 }); // save response
+    (fetchApi as any).mockResolvedValueOnce([]); // initial load
+    (fetchApi as any).mockResolvedValueOnce({ id: 2 }); // save response
 
     renderWithProviders(<NotesWidget />);
     fireEvent.click(screen.getByRole("button", { name: /Private Notes/i }));
