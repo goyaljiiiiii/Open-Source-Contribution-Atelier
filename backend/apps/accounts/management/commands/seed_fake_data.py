@@ -1,11 +1,11 @@
 import random
-from django.core.management.base import BaseCommand
-from django.contrib.auth import get_user_model
-from faker import Faker
 
 from apps.accounts.models import UserProfile
 from apps.content.models import Exercise, Lesson
 from apps.progress.models import ExerciseAttempt, HelpRequest, LessonProgress
+from django.contrib.auth import get_user_model
+from django.core.management.base import BaseCommand
+from faker import Faker
 
 User = get_user_model()
 

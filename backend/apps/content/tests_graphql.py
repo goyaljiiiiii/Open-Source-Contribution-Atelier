@@ -1,7 +1,8 @@
 import pytest
-from apps.content.models import Lesson, Exercise, Organization
-from graphene.test import Client
+from apps.content.models import Exercise, Lesson, Organization
 from config.schema import schema
+from graphene.test import Client
+
 
 
 @pytest.fixture

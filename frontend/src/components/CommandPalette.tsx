@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import {
   LayoutGrid,
   BookOpen,
@@ -98,6 +99,7 @@ export const CommandPalette: React.FC = () => {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, isOpen);
 
   // Toggle palette with Cmd+K or Ctrl+K globally
   useEffect(() => {

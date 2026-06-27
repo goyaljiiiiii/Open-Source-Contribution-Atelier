@@ -46,6 +46,20 @@ cp frontend/.env.example frontend/.env
 > **Google OAuth login requires a valid `VITE_GOOGLE_CLIENT_ID` in `frontend/.env`.**
 > Create credentials in the [Google Cloud Console](https://console.cloud.google.com/) with authorized redirect URIs set to `http://localhost:5173`.
 
+> [!WARNING]
+> **GitHub OAuth login requires GitHub OAuth credentials.**
+> 1. Go to [GitHub OAuth Apps Settings](https://github.com/settings/developers)
+> 2. Click "OAuth Apps" → "New OAuth App"
+> 3. Fill in:
+>    - **Application name**: `Open Source Contribution Atelier`
+>    - **Homepage URL**: `http://localhost:8000`
+>    - **Authorization callback URL**: `http://localhost:8000/accounts/github/login/callback/`
+> 4. Copy `Client ID` and `Client Secret` to `backend/.env`:
+>    ```
+>    GITHUB_OAUTH_CLIENT_ID=your_client_id
+>    GITHUB_OAUTH_CLIENT_SECRET=your_client_secret
+>    ```
+
 ### 2. Run the Backend (Django)
 Ensure you are using **Python 3.9+**.
 ```bash
@@ -87,7 +101,7 @@ This project is fully configured to be deployed on **Vercel** as a monorepo.
 ## 🧑‍💻 Contributing
 
 We welcome contributions of all levels suitable for **SSOC 2026** and long-term participation! Please review our guides:
-- **[CONTRIBUTING.md](CONTRIBUTING.md)**: Forking, branching guidelines, commit conventions, and review cycles.
-- **[SUPPORT.md](SUPPORT.md)**: How to get help, community channels, and asking questions.
-- **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)**: Community participation guidelines.
-- **[SECURITY.md](SECURITY.md)**: Responsible vulnerability disclosure rules.
+- **[CONTRIBUTING.md](.github/CONTRIBUTING.md)**: Forking, branching guidelines, commit conventions, and review cycles.
+- **[SUPPORT.md](.github/SUPPORT.md)**: How to get help, community channels, and asking questions.
+- **[CODE_OF_CONDUCT.md](.github/CODE_OF_CONDUCT.md)**: Community participation guidelines.
+- **[SECURITY.md](.github/SECURITY.md)**: Responsible vulnerability disclosure rules.

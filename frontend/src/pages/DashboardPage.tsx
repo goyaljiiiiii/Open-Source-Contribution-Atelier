@@ -9,7 +9,7 @@ import SkeletonAdminDashboard from "../components/ui/skeletons/SkeletonAdminDash
 import SkeletonContributorDashboard from "../components/ui/skeletons/SkeletonContributorDashboard";
 import { useRef } from "react";
 import { useElementSize } from "../hooks/useElementSize";
-import { fetchLessonsApi, Lesson } from "../lib/lessons";
+import { fetchLessonsApi, Lesson, buildModulesFromLessons } from "../lib/lessons";
 import { useUserProgress } from "../hooks/useUserProgress";
 import { useBookmarks } from "../hooks/useBookmarks";
 import { BADGES } from "../constants/badges";
@@ -105,20 +105,8 @@ export function DashboardPage() {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
-  // 1. Fetch static modules catalog
+  // 1. Curriculum data is now derived dynamically from the lessons query below.
   const [curriculumData, setCurriculumData] = useState<ModuleData[]>([]);
-  useEffect(() => {
-    fetch("/content/curriculum.json")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.modules) {
-          setCurriculumData(data.modules);
-        }
-      })
-      .catch((err) =>
-        console.error("Error loading dashboard curriculum:", err),
-      );
-  }, []);
 
   // 2. Fetch Admin Dashboard stats (only queries if user is staff)
   const {
@@ -158,13 +146,19 @@ export function DashboardPage() {
     enabled: !user?.is_staff,
   });
 
+  useEffect(() => {
+    if (lessons.length > 0) {
+      setCurriculumData(buildModulesFromLessons(lessons) as any);
+    }
+  }, [lessons]);
+
   const isLoading = isAdminLoading || isContributorLoading || isLessonsLoading;
 
   const [showSkeleton, setShowSkeleton] = useState(isLoading);
 
   useEffect(() => {
     if (isLoading) {
-      setShowSkeleton(true);
+      setShowSkeleton(true); // eslint-disable-line react-hooks/set-state-in-effect
       return;
     }
     const timer = setTimeout(() => setShowSkeleton(false), 400);
@@ -255,7 +249,7 @@ export function DashboardPage() {
     if (user && !user.is_staff) {
       const isBoarded = localStorage.getItem("atelier_onboarded");
       if (!isBoarded) {
-        setShowOnboarding(true);
+        setShowOnboarding(true); // eslint-disable-line react-hooks/set-state-in-effect
       }
     }
   }, [user]);
@@ -294,7 +288,9 @@ export function DashboardPage() {
     const queue = lessons.filter((l) => !isLessonCompleted(l.slug)).slice(0, 3);
 
     // Calculate which badges are earned
-    const earned = new Set<string>(contributorData?.personal_stats?.earned_badges || []);
+    const earned = new Set<string>(
+      contributorData?.personal_stats?.earned_badges || [],
+    );
     curriculumData.forEach((mod, index) => {
       const allCompleted = mod.lessons.every((les: { slug: string }) =>
         isLessonCompleted(les.slug),
@@ -774,12 +770,20 @@ export function DashboardPage() {
           id="tour-learning-queue"
           className="rounded-2xl border-4 border-black bg-white p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none"
         >
-          <h2 className="text-3xl font-black mb-6 flex items-center gap-3">
-            <span className="bg-primary text-white w-10 h-10 rounded-full border-2 border-black flex items-center justify-center text-lg dark:bg-primary/20 dark:text-primary">
-              📚
-            </span>
-            Resume Learning Queue
-          </h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-3xl font-black flex items-center gap-3">
+              <span className="bg-primary text-white w-10 h-10 rounded-full border-2 border-black flex items-center justify-center text-lg dark:bg-primary/20 dark:text-primary">
+                📚
+              </span>
+              Resume Learning Queue
+            </h2>
+            <Link
+              to="/pathway"
+              className="px-4 py-2 border-2 border-black rounded-lg bg-blue-50 font-bold text-black hover:bg-blue-100 transition-colors hidden sm:block"
+            >
+              View Pathway Map
+            </Link>
+          </div>
           <div className="space-y-4">
             {activeLessonsQueue.length > 0 ? (
               activeLessonsQueue.map((lesson: Lesson) => (
@@ -887,7 +891,10 @@ export function DashboardPage() {
                   <h3 className="font-black text-lg leading-tight dark:text-[#f0ebe2] pr-4">
                     {bookmark.lesson_title}
                   </h3>
-                  <Bookmark className="fill-primary text-primary shrink-0" size={20} />
+                  <Bookmark
+                    className="fill-primary text-primary shrink-0"
+                    size={20}
+                  />
                 </div>
                 <div className="flex justify-between items-center mt-auto pt-4">
                   <span className="font-black text-[10px] bg-black text-white px-2 py-0.5 rounded-full uppercase dark:bg-[#2e2924]">

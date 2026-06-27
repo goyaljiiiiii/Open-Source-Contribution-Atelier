@@ -35,7 +35,9 @@ from .serializers import (
 def get_active_lessons():
     lessons = cache.get("active_lessons_list")
     if lessons is None:
-        lessons = list(Lesson.objects.prefetch_related("exercises").all())
+        lessons = list(
+            Lesson.objects.prefetch_related("exercises", "prerequisites").all()
+        )
         cache.set("active_lessons_list", lessons, 60 * 60 * 24)
     return lessons
 
@@ -61,7 +63,7 @@ class SearchView(views.APIView):
 
         def get_fts_objects(model_class, content_type):
             docs = (
-                SearchDocument.objects.filter(
+                SearchDocument.objects.filter(  # type: ignore
                     content_type=content_type, search_vector=search_query
                 )
                 .annotate(rank=SearchRank("search_vector", search_query))
@@ -70,7 +72,7 @@ class SearchView(views.APIView):
 
             if not docs.exists():
                 docs = (
-                    SearchDocument.objects.filter(content_type=content_type)
+                    SearchDocument.objects.filter(content_type=content_type)  # type: ignore
                     .annotate(similarity=TrigramSimilarity("title", query))
                     .filter(similarity__gt=0.3)
                     .order_by("-similarity")[:50]
@@ -117,9 +119,16 @@ class SemanticSearchView(views.APIView):
             )
 
         # Apply multi-tenant filtering
-        lessons = Lesson.objects.filter(
-            embedding__isnull=False, organization=request.user.organization
-        ).prefetch_related("exercises")
+        lessons = (
+            Lesson.objects.filter(
+                embedding__isnull=False,
+                organization=request.user.organization,
+            )
+            .annotate(
+                trigram_similarity=TrigramSimilarity("title", query)
+            )
+            .prefetch_related("exercises")
+        )
         if not lessons.exists():
             return response.Response({"query": query, "results": []})
 
@@ -180,6 +189,7 @@ class RoadmapView(views.APIView):
                     "estimatedMinutes": lesson.estimated_minutes,
                     "order": lesson.order,
                     "exerciseCount": lesson.exercises.count(),
+                    "prerequisites": [p.slug for p in lesson.prerequisites.all()],
                     "completed": completed,
                     "score": score,
                 }
@@ -198,7 +208,7 @@ class RoadmapView(views.APIView):
 
 # --- New: Organization View ---
 class OrganizationListView(generics.ListAPIView):
-    queryset = Organization.objects.all()
+    queryset = Organization.objects.all()  # type: ignore
     serializer_class = OrganizationSerializer
     permission_classes = [AllowAny]
     filter_backends = [filters.OrderingFilter]

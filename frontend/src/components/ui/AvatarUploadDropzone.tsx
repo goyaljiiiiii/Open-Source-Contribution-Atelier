@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { UploadCloud, X } from "lucide-react";
 import { useToast } from "../../features/ui/ToastContext";
 
@@ -17,12 +17,6 @@ export function AvatarUploadDropzone({
   );
   const inputRef = useRef<HTMLInputElement>(null);
   const { addToast } = useToast();
-
-  useEffect(() => {
-    if (currentAvatarUrl && !previewUrl) {
-      setPreviewUrl(currentAvatarUrl);
-    }
-  }, [currentAvatarUrl, previewUrl]);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();

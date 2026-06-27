@@ -450,9 +450,10 @@ class ContributorDashboardView(APIView):
         return Response(data)
 
 
+from django.db import transaction
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
-from django.db import transaction
+
 
 
 class BuyStreakFreezeView(APIView):

@@ -8,6 +8,7 @@ class Notification(models.Model):
     NOTIFICATION_TYPES = [
         ("badge", "Badge Earned"),
         ("comment", "New Comment"),
+        ("achievement", "Achievement Unlocked"),
     ]
 
     objects = models.Manager()

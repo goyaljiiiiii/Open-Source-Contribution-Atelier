@@ -1,13 +1,14 @@
 import json
+from datetime import timedelta
+
+from apps.content.models import Exercise, Lesson
+from apps.progress.models import ExerciseAttempt, LessonProgress, QuizAttempt
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
-from django.contrib.auth import get_user_model
-from apps.content.models import Lesson, Exercise
-from apps.progress.models import LessonProgress, ExerciseAttempt, QuizAttempt
-from django.utils import timezone
-from datetime import timedelta
 
 User = get_user_model()
 

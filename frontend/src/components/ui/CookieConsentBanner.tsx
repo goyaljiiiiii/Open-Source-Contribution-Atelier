@@ -1,17 +1,11 @@
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Cookie, X } from "lucide-react";
 
 export function CookieConsentBanner() {
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    // Check local storage after component mounts
-    const consent = localStorage.getItem("cookie-consent");
-    if (!consent) {
-      setIsVisible(true);
-    }
-  }, []);
+  const [isVisible, setIsVisible] = useState(() => {
+    return !localStorage.getItem("cookie-consent");
+  });
 
   const handleConsent = (status: "granted" | "denied") => {
     localStorage.setItem("cookie-consent", status);
@@ -19,7 +13,7 @@ export function CookieConsentBanner() {
 
     // Dispatch a custom event so other scripts (like analytics) can react immediately
     window.dispatchEvent(
-      new CustomEvent("cookieConsentUpdated", { detail: { status } })
+      new CustomEvent("cookieConsentUpdated", { detail: { status } }),
     );
   };
 
@@ -48,7 +42,9 @@ export function CookieConsentBanner() {
               We Value Your Privacy
             </h2>
             <p className="text-gray-700 font-medium">
-              We use cookies to enhance your browsing experience, serve personalized content, and analyze our traffic. By clicking "Accept All", you consent to our use of cookies.
+              We use cookies to enhance your browsing experience, serve
+              personalized content, and analyze our traffic. By clicking "Accept
+              All", you consent to our use of cookies.
               <Link
                 to="/privacy"
                 className="ml-2 text-blue-600 font-bold hover:underline"
