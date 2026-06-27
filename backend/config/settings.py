@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     "apps.notes",
     "rest_framework_simplejwt.token_blacklist",
     "graphene_django",
+    "apps.feature_flags",
 ]
 
 MIDDLEWARE = [
@@ -96,6 +97,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "apps.feature_flags.context_processors.feature_flags",
             ],
         },
     }
@@ -366,7 +368,4 @@ LOGGING = {
     },
 }
 
-GRAPHENE = {
-    "SCHEMA": "config.schema.schema"
-}
-
+GRAPHENE = {"SCHEMA": "config.schema.schema"}

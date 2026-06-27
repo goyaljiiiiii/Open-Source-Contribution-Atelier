@@ -38,4 +38,11 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 if settings.DEBUG:
+    from apps.feature_flags.debug_view import feature_flags_debug_view
+
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns.append(
+        path(
+            "debug/feature-flags/", feature_flags_debug_view, name="debug-feature-flags"
+        )
+    )
