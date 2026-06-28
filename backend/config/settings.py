@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     "apps.notes",
     "apps.recommendations",
     "apps.rbac",
+    "apps.uploads",
     "rest_framework_simplejwt.token_blacklist",
     "graphene_django",
     "apps.feature_flags",
