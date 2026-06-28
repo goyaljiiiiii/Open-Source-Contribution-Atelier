@@ -48,6 +48,7 @@
     "react-simple-code-editor": "^0.14.1",
     "react-simplemde-editor": "^5.2.0",
     "recharts": "^3.8.1",
+    "sucrase": "^3.35.1",
     "y-monaco": "^0.1.6",
     "y-websocket": "^3.0.0",
     "yjs": "^13.6.31",

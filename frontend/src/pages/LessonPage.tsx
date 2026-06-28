@@ -28,6 +28,7 @@ import { GitGraph } from "../components/ui/GitGraph";
 import { NotePanel } from "../components/ui/NotePanel";
 import { PythonSandbox } from "../components/ui/PythonSandbox";
 import { CollabPythonSandbox } from "../components/ui/CollabPythonSandbox";
+import { JSSandbox } from "../components/ui/JSSandbox";
 import { TextToSpeechControls } from "../components/ui/TextToSpeechControls";
 
 import {
@@ -536,6 +537,19 @@ export function LessonPage() {
                       }}
                     />
                   )}
+                </div>
+              ) : lesson.jsExercise ? (
+                <div className="mt-8">
+                  <JSSandbox
+                    exercise={lesson.jsExercise}
+                    onSuccess={() => {
+                      syncProgress({
+                        lesson_slug: lesson.slug,
+                        score: lesson.points || 20,
+                        completed: true,
+                      });
+                    }}
+                  />
                 </div>
               ) : hasQuiz ? (
                 // QUIZ MODE RENDER

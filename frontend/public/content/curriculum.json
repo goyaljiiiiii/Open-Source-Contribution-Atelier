@@ -587,6 +587,28 @@
           }
         }
       ]
+    },
+    {
+      "id": "module-javascript",
+      "title": "Interactive JS/TS Sandbox",
+      "description": "Learn to code using embedded JavaScript/TypeScript Sandboxes in the browser.",
+      "lessons": [
+        {
+          "slug": "hello-javascript",
+          "title": "Hello, JavaScript",
+          "description": "Write your first JavaScript program using Web Workers.",
+          "difficulty": "beginner",
+          "estimatedMinutes": 5,
+          "points": 20,
+          "filePath": "module-javascript/hello-javascript.md",
+          "jsExercise": {
+            "prompt": "Write a JavaScript function `multiply` that returns the product of two numbers. Log the result of `multiply(4, 5)` to the console.",
+            "starterCode": "function multiply(a, b) {\n  // Write your code here\n}\n\nconsole.log(multiply(4, 5));\n",
+            "testCode": "if (typeof multiply !== 'function') throw new Error('multiply function is not defined');\nif (multiply(2, 3) !== 6) throw new Error('multiply(2, 3) should return 6');",
+            "hint": "Use the return keyword to send back the product (a * b)."
+          }
+        }
+      ]
     }
   ]
 }
