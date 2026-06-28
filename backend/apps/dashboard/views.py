@@ -535,9 +535,18 @@ class BuyStreakFreezeView(APIView):
             )
 
 from django.db import models
+from apps.rbac.models import UserRole
+
+class IsModeratorOrAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        if request.user.is_superuser or request.user.is_staff:
+            return True
+        return UserRole.objects.filter(user=request.user, role__name__in=["Moderator", "Administrator"]).exists()
 
 class ModeratorAnalyticsView(APIView):
-    permission_classes = [permissions.IsAuthenticated, lambda: HasRole("Moderator") or HasRole("Administrator")]
+    permission_classes = [permissions.IsAuthenticated, IsModeratorOrAdmin]
 
     def get(self, request):
         thirty_days_ago = timezone.now() - timedelta(days=30)
