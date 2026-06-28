@@ -65,17 +65,27 @@ import asyncio
 import sys
 
 
-async def stream_python_execution(code: str, send_callback, timeout: int = 5):
+import asyncio
+import sys
+from .resource_manager import ResourceManagementEngine
+
+async def stream_python_execution(code: str, send_callback, user_id: str = "anonymous", timeout: int = ResourceManagementEngine.MAX_EXECUTION_TIME_SECONDS):
     """
-    Executes Python code in a subprocess and streams output asynchronously.
+    Executes Python code securely with resource limits in a subprocess and streams output asynchronously.
     """
+    if not ResourceManagementEngine.acquire_execution_lock(user_id):
+        await send_callback({"action": "execution_error", "error": "Execution limit reached. Please wait for your previous code to finish."})
+        return
+
     await send_callback({"action": "execution_start"})
 
     try:
+        wrapper_code = ResourceManagementEngine.get_wrapper_script(code)
+        
         process = await asyncio.create_subprocess_exec(
             sys.executable,
             "-c",
-            code,
+            wrapper_code,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -104,10 +114,16 @@ async def stream_python_execution(code: str, send_callback, timeout: int = 5):
                 timeout=timeout,
             )
 
+            status = "Completed"
+            if process.returncode == 137:
+                status = "Memory Limit Exceeded"
+            elif process.returncode != 0:
+                status = "Failed"
+
             await send_callback(
                 {
                     "action": "execution_end",
-                    "status": "Completed" if process.returncode == 0 else "Failed",
+                    "status": status,
                     "returncode": process.returncode,
                 }
             )
@@ -117,8 +133,10 @@ async def stream_python_execution(code: str, send_callback, timeout: int = 5):
             except ProcessLookupError:
                 pass
             await send_callback(
-                {"action": "execution_end", "status": "Timed Out", "returncode": -1}
+                {"action": "execution_end", "status": "Timed Out (CPU/Time Limit Exceeded)", "returncode": -1}
             )
 
     except Exception as e:
         await send_callback({"action": "execution_error", "error": str(e)})
+    finally:
+        ResourceManagementEngine.release_execution_lock(user_id)
