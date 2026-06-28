@@ -1,10 +1,10 @@
-# ❓ Why Open Source Matters
+# 💡 Why Open Source Matters
 
 ### Modern technology is built on a foundation of open source. From the servers hosting your favorite web apps (Linux) to the browsers you use (Chromium) and the languages you write (Python, JavaScript, Go), open source forms the backbone of the internet.
 
 ---
 
-### Key Benefits of Open Source
+### ✅ Key Benefits of Open Source
 
 1. **Quality and Innovation**
    Because anyone can view the code, developers can collaborate, patch bugs, and introduce features much faster than a single company or organization.
