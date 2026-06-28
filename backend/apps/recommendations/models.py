@@ -2,6 +2,8 @@ from django.contrib.auth.models import User
 from django.db import models
 
 class Recommendation(models.Model):
+    objects = models.Manager()
+    
     class ContentType(models.TextChoices):
         LESSON = "lesson", "Lesson"
         CHALLENGE = "challenge", "Challenge"
