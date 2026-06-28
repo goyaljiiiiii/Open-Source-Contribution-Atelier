@@ -29,6 +29,7 @@ import { NotePanel } from "../components/ui/NotePanel";
 import { PythonSandbox } from "../components/ui/PythonSandbox";
 import { CollabPythonSandbox } from "../components/ui/CollabPythonSandbox";
 import { JSSandbox } from "../components/ui/JSSandbox";
+import { InteractiveDebugger } from "../components/ui/InteractiveDebugger";
 import { TextToSpeechControls } from "../components/ui/TextToSpeechControls";
 
 import {
@@ -546,6 +547,19 @@ export function LessonPage() {
                       syncProgress({
                         lesson_slug: lesson.slug,
                         score: lesson.points || 20,
+                        completed: true,
+                      });
+                    }}
+                  />
+                </div>
+              ) : lesson.debugExercise ? (
+                <div className="mt-8">
+                  <InteractiveDebugger
+                    exercise={lesson.debugExercise}
+                    onSuccess={() => {
+                      syncProgress({
+                        lesson_slug: lesson.slug,
+                        score: lesson.points || 30,
                         completed: true,
                       });
                     }}

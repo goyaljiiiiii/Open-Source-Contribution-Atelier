@@ -29,6 +29,12 @@ export interface JSExercise {
   hint?: string;
 }
 
+export interface DebugExercise {
+  prompt: string;
+  starterCode: string;
+  hint?: string;
+}
+
 export interface RustExercise {
   prompt?: string;
   starterCode: string;
@@ -60,6 +66,7 @@ export interface Lesson {
   conflictScenario?: ConflictScenario;
   pythonExercise?: PythonExercise;
   jsExercise?: JSExercise;
+  debugExercise?: DebugExercise;
   category?: string;
 }
 
@@ -117,6 +124,7 @@ export async function fetchLessonsApi(): Promise<Lesson[]> {
         conflictScenario: les.conflictScenario ?? undefined,
         pythonExercise: les.pythonExercise ?? undefined,
         jsExercise: les.jsExercise ?? undefined,
+        debugExercise: les.debugExercise ?? undefined,
         order: Number(les.order ?? index),
         category: String(les.category ?? "general"),
         filePath: les.filePath ? String(les.filePath) : undefined,
