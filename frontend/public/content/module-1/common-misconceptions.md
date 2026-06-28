@@ -4,20 +4,24 @@
 
 ---
 
-### 1️⃣ Myth 1: "I need to be a coding genius."
+### 1️⃣ MYTH 1: "I need to be a coding genius."
 
 **Reality**: Most open source contributions are small fixes, typo corrections, documentation improvements, or simple bug patches. You do not need to rewrite the entire project to help! Starting small is key, and you will eventually transition into 
 
-### 2️⃣ Myth 2: "Open source is only about writing code."
+----
+
+### 2️⃣ MYTH 2: "Open source is only about writing code."
 
 **Reality**: Non-code contributions are highly valued. Projects need:
 
-- **Documentation**: Fixing typos, enhancing or rewriting guides, translating text.
-- **Design**: Creating logos, improving UI layouts, styling components, adding relevant images.
-- **Triage**: Testing issues, writing reproducing steps, tagging duplicates.
-- **Community**: Answering questions in discussions, mentoring others.
+- **📝 Documentation**: Fixing typos, enhancing or rewriting guides, translating text.
+- **🎨 Design**: Creating logos, improving UI layouts, styling components, adding relevant images.
+- **🖧 Triage**: Testing issues, writing reproducing steps, tagging duplicates.
+- **🤝 Community**: Answering questions in discussions, mentoring other fellow users and contributors.
 
-### 3️⃣ Myth 3: "My code must be perfect before submitting."
+---
+
+### 3️⃣ MYTH 3: "My code must be perfect before submitting."
 
 **Reality**: Pull requests are collaborative spaces. Maintainers expect revisions and are usually happy to help you refine your work if you communicate politely.
 
