@@ -114,6 +114,14 @@ export function AppRouter() {
           }
         />
         <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute>
+              <AnalyticsDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/pathway"
           element={
             <ProtectedRoute>
