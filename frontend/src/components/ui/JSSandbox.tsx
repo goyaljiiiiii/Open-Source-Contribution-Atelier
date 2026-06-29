@@ -1,23 +1,24 @@
 import React, { useState, useEffect } from "react";
 import Editor from "react-simple-code-editor";
 import Prism from "prismjs";
-import "prismjs/components/prism-python";
+import "prismjs/components/prism-javascript";
+import "prismjs/components/prism-typescript";
 import "prismjs/themes/prism-tomorrow.css"; // Dark theme
-import { Play, RotateCcw, CheckCircle2, XCircle, Users } from "lucide-react";
-import { usePythonSandbox } from "../../hooks/usePythonSandbox";
-import { PythonExercise } from "../../lib/lessons";
+import { Play, RotateCcw, CheckCircle2, XCircle } from "lucide-react";
+import { useJSSandbox } from "../../hooks/useJSSandbox";
+import { JSExercise } from "../../lib/lessons";
 
-interface PythonSandboxProps {
-  exercise: PythonExercise;
+interface JSSandboxProps {
+  exercise: JSExercise;
   onSuccess: () => void;
 }
 
-export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
+export function JSSandbox({ exercise, onSuccess }: JSSandboxProps) {
   const [code, setCode] = useState(exercise.starterCode);
   const [output, setOutput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
-  const { runPythonCode, isExecuting, isReady } = usePythonSandbox();
+  const { runJSCode, isExecuting, isReady } = useJSSandbox();
 
   // Reset if exercise changes
   useEffect(() => {
@@ -33,13 +34,13 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
     if (isExecuting || !isReady) return;
 
     // We append the hidden test code to the user's code
-    const fullCode = `${code}\n\n${exercise.testCode}`;
+    const fullCode = `${code}\n\n${exercise.testCode || ""}`;
 
     setOutput("Executing...\n");
     setError(null);
     setIsSuccess(false);
 
-    const result = await runPythonCode(fullCode);
+    const result = await runJSCode(fullCode);
 
     setOutput(result.output);
 
@@ -58,27 +59,14 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
     setIsSuccess(false);
   };
 
-  const handleStartCollab = () => {
-    const newSessionId = crypto.randomUUID();
-    const url = new URL(window.location.href);
-    url.searchParams.set("session", newSessionId);
-    window.location.href = url.toString();
-  };
-
   return (
     <div className="flex flex-col gap-4 w-full border-4 border-black dark:border-[#2e2924] rounded-xl overflow-hidden bg-surface dark:bg-[#151411]">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b-4 border-black dark:border-[#2e2924] bg-white dark:bg-[#1f1c18]">
         <h3 className="font-black text-lg flex items-center gap-2">
-          🐍 Python Sandbox
+          ⚡ JS/TS Sandbox
         </h3>
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleStartCollab}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm font-bold border-2 border-black dark:border-[#2e2924] text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Users className="w-4 h-4" /> Collab
-          </button>
           <button
             onClick={handleReset}
             className="flex items-center gap-2 px-3 py-1.5 text-sm font-bold border-2 border-black dark:border-[#2e2924] rounded-lg hover:bg-black hover:text-white dark:hover:bg-[#f0ebe2] dark:hover:text-black transition-colors"
@@ -98,7 +86,7 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
 
       {/* Prompt */}
       {exercise.prompt && (
-        <div className="px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border-b-4 border-black dark:border-[#2e2924] text-sm font-medium">
+        <div className="px-4 py-3 bg-yellow-50 dark:bg-yellow-900/20 border-b-4 border-black dark:border-[#2e2924] text-sm font-medium">
           {exercise.prompt}
         </div>
       )}
@@ -109,7 +97,7 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
           value={code}
           onValueChange={(code) => setCode(code)}
           highlight={(code) =>
-            Prism.highlight(code, Prism.languages.python, "python")
+            Prism.highlight(code, Prism.languages.typescript || Prism.languages.javascript, "typescript")
           }
           padding={10}
           style={{
@@ -151,8 +139,7 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
         {isSuccess && (
           <div className="mt-4 pt-4 border-t border-green-900/50">
             <div className="flex items-center gap-2 text-green-400 font-bold">
-              <CheckCircle2 className="w-5 h-5" /> All tests passed! You earned
-              points.
+              <CheckCircle2 className="w-5 h-5" /> Execution completed! You earned points.
             </div>
           </div>
         )}

@@ -27,6 +27,9 @@ const MarkdownRenderer = React.lazy(() =>
 import { GitGraph } from "../components/ui/GitGraph";
 import { NotePanel } from "../components/ui/NotePanel";
 import { PythonSandbox } from "../components/ui/PythonSandbox";
+import { CollabPythonSandbox } from "../components/ui/CollabPythonSandbox";
+import { JSSandbox } from "../components/ui/JSSandbox";
+import { InteractiveDebugger } from "../components/ui/InteractiveDebugger";
 import { TextToSpeechControls } from "../components/ui/TextToSpeechControls";
 
 import {
@@ -511,12 +514,52 @@ export function LessonPage() {
             <div className="pt-8 space-y-6">
               {lesson.pythonExercise ? (
                 <div className="mt-8">
-                  <PythonSandbox
-                    exercise={lesson.pythonExercise}
+                  {new URLSearchParams(window.location.search).get("session") ? (
+                    <CollabPythonSandbox
+                      exercise={lesson.pythonExercise}
+                      roomId={new URLSearchParams(window.location.search).get("session")!}
+                      onSuccess={() => {
+                        syncProgress({
+                          lesson_slug: lesson.slug,
+                          score: lesson.points || 20,
+                          completed: true,
+                        });
+                      }}
+                    />
+                  ) : (
+                    <PythonSandbox
+                      exercise={lesson.pythonExercise}
+                      onSuccess={() => {
+                        syncProgress({
+                          lesson_slug: lesson.slug,
+                          score: lesson.points || 20,
+                          completed: true,
+                        });
+                      }}
+                    />
+                  )}
+                </div>
+              ) : lesson.jsExercise ? (
+                <div className="mt-8">
+                  <JSSandbox
+                    exercise={lesson.jsExercise}
                     onSuccess={() => {
                       syncProgress({
                         lesson_slug: lesson.slug,
                         score: lesson.points || 20,
+                        completed: true,
+                      });
+                    }}
+                  />
+                </div>
+              ) : lesson.debugExercise ? (
+                <div className="mt-8">
+                  <InteractiveDebugger
+                    exercise={lesson.debugExercise}
+                    onSuccess={() => {
+                      syncProgress({
+                        lesson_slug: lesson.slug,
+                        score: lesson.points || 30,
                         completed: true,
                       });
                     }}
