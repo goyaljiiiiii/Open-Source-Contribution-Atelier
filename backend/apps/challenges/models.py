@@ -4,6 +4,7 @@ from django.db import models
 
 
 class Challenge(models.Model):
+    objects = models.Manager()
     organization = models.ForeignKey(
         Organization, on_delete=models.CASCADE, null=True, blank=True
     )

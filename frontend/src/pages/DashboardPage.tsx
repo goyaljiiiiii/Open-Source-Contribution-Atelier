@@ -42,6 +42,7 @@ import {
 } from "recharts";
 import { OnboardingTour } from "../components/ui/OnboardingTour";
 import { NotesWidget } from "../components/ui/NotesWidget";
+import { RecommendationsList } from "../components/ui/RecommendationsList";
 import { ChallengeOfTheDayWidget } from "../components/ui/ChallengeOfTheDayWidget";
 
 const FACTS = [
@@ -873,6 +874,17 @@ export function DashboardPage() {
             learning modules
           </div>
         </div>
+      </section>
+
+      {/* Recommended Content */}
+      <section className="rounded-[2.5rem] border-4 border-black bg-white p-6 sm:p-8 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none mt-6">
+        <h2 className="text-3xl font-black mb-6 flex items-center gap-3">
+          <span className="bg-accent text-white w-10 h-10 rounded-full border-2 border-black flex items-center justify-center text-lg">
+            ✨
+          </span>
+          Recommended For You
+        </h2>
+        <RecommendationsList />
       </section>
 
       {/* Read Later / Bookmarks */}
