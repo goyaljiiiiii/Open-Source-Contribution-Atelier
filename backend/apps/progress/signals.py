@@ -1,49 +1,76 @@
 import logging
+from datetime import timedelta
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
+from django.db import transaction
 
-from .models import LessonProgress
+from .models import LessonProgress, ExerciseAttempt
 
 logger = logging.getLogger(__name__)
 
 
+def update_user_streak(user):
+    """
+    Core business logic to calculate and update daily coding streaks.
+    """
+    from apps.progress.models import StreakProfile
+
+    today = timezone.localdate()
+
+    with transaction.atomic():
+        profile, created = StreakProfile.objects.select_for_update().get_or_create(
+            user=user
+        )
+
+        # If already updated today, do nothing
+        if profile.last_activity_date == today:
+            return
+
+        # If last activity was exactly yesterday, continue the streak
+        if profile.last_activity_date == today - timedelta(days=1):
+            profile.current_streak += 1
+        else:
+            # Otherwise, the streak broke. Reset to 1.
+            profile.current_streak = 1
+
+        # Update all-time high
+        if profile.current_streak > profile.longest_streak:
+            profile.longest_streak = profile.current_streak
+
+        profile.last_activity_date = today
+        profile.save(
+            update_fields=[
+                "current_streak",
+                "longest_streak",
+                "last_activity_date",
+                "updated_at",
+            ]
+        )
+
+
 @receiver(post_save, sender=LessonProgress)
 def on_lesson_completed(sender, instance, created, **kwargs):
-    """
-    Signal receiver that fires when a LessonProgress record is saved.
-
-    Broadcasts a leaderboard_update only on a *first-time* completion
-    transition (created-and-completed, or flipped from incomplete to complete)
-    to prevent duplicate broadcasts when an already-completed record is
-    re-saved for unrelated reasons.
-    """
-    # Only broadcast on a genuine completion transition.
-    # `created` covers the case where the record is inserted as completed.
-    # For updates we check the previous DB value via update_fields / pre-save.
     if not instance.completed:
         return
 
-    # If the instance was not freshly created, verify it was previously
-    # incomplete by querying the DB.  We use `created` as the fast path.
     if not created:
         try:
             previous = LessonProgress.objects.only("completed").get(pk=instance.pk)
-            # previous.completed is stale from *before* this save only when
-            # the row was fetched before the save; Django doesn't do that for
-            # us, so we rely on update_fields presence as a hint, and fall back
-            # to a second query approach via the pre-save state stored by the
-            # model if available, otherwise skip to avoid duplicate broadcasts.
-            #
-            # Simplest safe guard: if update_fields is set and 'completed' is
-            # not in it, the completion flag wasn't touched — skip.
             update_fields = kwargs.get("update_fields")
             if update_fields is not None and "completed" not in update_fields:
                 return
         except LessonProgress.DoesNotExist:
             pass
+
+    # --- UPDATE STREAK ---
+    try:
+        update_user_streak(instance.user)
+    except Exception as exc:
+        logger.error("Failed to update user streak: %s", exc)
 
     channel_layer = get_channel_layer()
     if channel_layer is None:
@@ -69,15 +96,9 @@ def on_lesson_completed(sender, instance, created, **kwargs):
                 "message": f"User {instance.user.username} completed lesson {instance.lesson.title}",
             },
         )
-        logger.info(
-            "Pushed leaderboard update for user %s completing lesson %s",
-            instance.user.username,
-            instance.lesson.title,
-        )
     except Exception as exc:
         logger.error("Failed to push leaderboard update: %s", exc)
 
-    # Evaluate achievements on lesson completion
     try:
         from apps.progress.tasks import evaluate_achievements_task
 
@@ -86,12 +107,15 @@ def on_lesson_completed(sender, instance, created, **kwargs):
         logger.error("Failed to enqueue achievement evaluation: %s", exc)
 
 
-from apps.progress.models import ExerciseAttempt
-
-
 @receiver(post_save, sender=ExerciseAttempt)
 def on_exercise_attempt(sender, instance, created, **kwargs):
     if instance.is_correct:
+        # --- UPDATE STREAK ---
+        try:
+            update_user_streak(instance.user)
+        except Exception as exc:
+            logger.error("Failed to update user streak: %s", exc)
+
         try:
             from apps.progress.tasks import evaluate_achievements_task
 

@@ -3,11 +3,15 @@ from datetime import timedelta
 from apps.challenges.models import ChallengeCompletion
 from apps.content.models import Lesson
 from apps.dashboard.models import Issue, PullRequest, StreakFreeze
-from apps.progress.models import ExerciseAttempt, LessonProgress, QuizAttempt, CodeSubmission
+from apps.progress.models import (
+    ExerciseAttempt,
+    LessonProgress,
+    QuizAttempt,
+    CodeSubmission,
+)
 from django.contrib.auth.models import User
 from django.core.cache import cache
-from django.db.models import (Count, F, IntegerField, OuterRef, Subquery, Sum,
-                              Value)
+from django.db.models import Count, F, IntegerField, OuterRef, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django.db.models.functions import TruncDate
@@ -279,59 +283,13 @@ class ContributorDashboardView(APIView):
             )
             total_xp = lesson_xp + issues_xp + challenge_bonus_xp
 
-            # Calculate streak based on unique days of activity (attempts or completed lessons) and active/used freezes
-            activity_days = set()
-            attempts = ExerciseAttempt.objects.filter(user=user).values_list(
-                "created_at", flat=True
-            )
-            for dt in attempts:
-                activity_days.add(timezone.localdate(dt))
-            progress_entries = LessonProgress.objects.filter(
-                user=user, completed=True
-            ).values_list("updated_at", flat=True)
-            for dt in progress_entries:
-                activity_days.add(timezone.localdate(dt))
+            # --- NEW CLEAN STREAK LOGIC ---
+            from apps.progress.models import StreakProfile
 
-            # Apply streak freezes to calculate streak days
-            today = timezone.localdate(timezone.now())
-            join_date = timezone.localdate(user.date_joined)
-            streak_days = 0
-            current_day = today
-
-            with transaction.atomic():
-                while True:
-                    if current_day < join_date:
-                        break
-
-                    if current_day in activity_days:
-                        streak_days += 1
-                    elif current_day == today:
-                        # If today has no activity, we just skip it (does not break the streak and does not count towards it)
-                        pass
-                    else:
-                        # Check if there is already a consumed freeze for this date
-                        consumed_freeze = StreakFreeze.objects.filter(
-                            user=user, used_on_date=current_day
-                        ).exists()
-                        if consumed_freeze:
-                            streak_days += 1
-                        else:
-                            # Check if there is an unused freeze to consume
-                            unused_freeze = (
-                                StreakFreeze.objects.filter(
-                                    user=user, used_on_date__isnull=True
-                                )
-                                .order_by("purchased_at")
-                                .first()
-                            )
-                            if unused_freeze:
-                                unused_freeze.used_on_date = current_day
-                                unused_freeze.save()
-                                streak_days += 1
-                            else:
-                                # No activity and no freeze available, the streak is broken
-                                break
-                    current_day -= timedelta(days=1)
+            streak_profile, _ = StreakProfile.objects.get_or_create(user=user)
+            streak_days = streak_profile.current_streak
+            longest_streak = streak_profile.longest_streak
+            # ------------------------------
 
             # Determine Rank based on user XP vs others
             lesson_xp_sub = (
@@ -390,6 +348,7 @@ class ContributorDashboardView(APIView):
                 "prs_merged": prs_merged,
                 "total_xp": total_xp,
                 "streak_days": streak_days,
+                "longest_streak": longest_streak,  # ADDED THIS TO API
                 "rank": rank,
                 "earned_badges": earned_badges,
                 "available_points": available_points,
@@ -551,8 +510,10 @@ class BuyStreakFreezeView(APIView):
                 status=status.HTTP_201_CREATED,
             )
 
+
 from django.db import models
 from apps.rbac.models import UserRole
+
 
 class IsModeratorOrAdmin(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -560,52 +521,57 @@ class IsModeratorOrAdmin(permissions.BasePermission):
             return False
         if request.user.is_superuser or request.user.is_staff:
             return True
-        return UserRole.objects.filter(user=request.user, role__name__in=["Moderator", "Administrator"]).exists()
+        return UserRole.objects.filter(
+            user=request.user, role__name__in=["Moderator", "Administrator"]
+        ).exists()
+
 
 class ModeratorAnalyticsView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsModeratorOrAdmin]
 
     def get(self, request):
         thirty_days_ago = timezone.now() - timedelta(days=30)
-        
+
         # 1. Registrations
         registrations = (
             User.objects.filter(date_joined__gte=thirty_days_ago)
-            .annotate(date=TruncDate('date_joined'))
-            .values('date')
-            .annotate(count=Count('id'))
-            .order_by('date')
+            .annotate(date=TruncDate("date_joined"))
+            .values("date")
+            .annotate(count=Count("id"))
+            .order_by("date")
         )
-        
+
         # 2. Course Enrollments vs Completions
         progress_stats = (
             LessonProgress.objects.filter(updated_at__gte=thirty_days_ago)
-            .annotate(date=TruncDate('updated_at'))
-            .values('date')
+            .annotate(date=TruncDate("updated_at"))
+            .values("date")
             .annotate(
-                completed=Count('id', filter=models.Q(completed=True)),
-                enrolled=Count('id')
+                completed=Count("id", filter=models.Q(completed=True)),
+                enrolled=Count("id"),
             )
-            .order_by('date')
+            .order_by("date")
         )
-        
+
         # 3. Quiz Performance
         quiz_stats = (
             QuizAttempt.objects.filter(created_at__gte=thirty_days_ago)
-            .values('is_correct')
-            .annotate(count=Count('id'))
+            .values("is_correct")
+            .annotate(count=Count("id"))
         )
-        
+
         # 4. Coding Challenges
         challenge_stats = (
             CodeSubmission.objects.filter(created_at__gte=thirty_days_ago)
-            .values('status')
-            .annotate(count=Count('id'))
+            .values("status")
+            .annotate(count=Count("id"))
         )
 
-        return Response({
-            "registrations": list(registrations),
-            "progress_stats": list(progress_stats),
-            "quiz_stats": list(quiz_stats),
-            "challenge_stats": list(challenge_stats)
-        })
+        return Response(
+            {
+                "registrations": list(registrations),
+                "progress_stats": list(progress_stats),
+                "quiz_stats": list(quiz_stats),
+                "challenge_stats": list(challenge_stats),
+            }
+        )
