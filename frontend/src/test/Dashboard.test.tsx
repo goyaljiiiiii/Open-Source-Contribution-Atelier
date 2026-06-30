@@ -142,6 +142,6 @@ describe("DashboardPage Dual-Role Views", () => {
 
     // Assert lesson queue
     expect(screen.getByText("Resume Learning Queue")).toBeInTheDocument();
-    expect(screen.getByText("Open Source Mindset")).toBeInTheDocument();
+    expect(screen.getByText("Introduction to Atelier")).toBeInTheDocument();
   });
 });

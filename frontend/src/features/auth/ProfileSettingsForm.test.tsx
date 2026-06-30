@@ -14,12 +14,25 @@ beforeAll(() => {
   global.URL.revokeObjectURL = vi.fn();
 });
 
-// Mock useAuth context values
+// Mock useAuth context values — use stable references to prevent infinite useEffect loops
+const mockCheckUser = vi.fn();
+const mockUser = { email: "test@example.com", username: "testuser" };
 vi.mock("./AuthContext", () => ({
   useAuth: () => ({
-    user: { email: "test@example.com", username: "testuser" },
+    user: mockUser,
     isLoading: false,
-    checkUser: vi.fn(),
+    checkUser: mockCheckUser,
+  }),
+}));
+
+// Mock useWebPush to prevent navigator.serviceWorker issues in jsdom
+vi.mock("../../hooks/useWebPush", () => ({
+  useWebPush: () => ({
+    isSupported: false,
+    isSubscribed: false,
+    permission: "default" as NotificationPermission,
+    subscribe: vi.fn(),
+    unsubscribe: vi.fn(),
   }),
 }));
 

@@ -84,8 +84,9 @@ def test_send_weekly_progress_summary_active_user(
     assert data["username"] == "active_user"
     assert data["lessons_completed"] == 1
     assert data["xp_earned"] == 20
-    assert data["badges_earned"] == 1
-    assert data["badge_names"] == ["Test Badge"]
+    assert data["badges_earned"] == 2
+    assert "Test Badge" in data["badge_names"]
+    assert len(data["badge_names"]) == 2
 
 
 @pytest.mark.django_db

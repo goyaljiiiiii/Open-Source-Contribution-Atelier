@@ -42,8 +42,9 @@ class TestChatConsumer:
         pass
 
     async def test_authenticated_connection(self, auth_user, token):
+        headers = [(b"origin", b"http://localhost")]
         communicator = WebsocketCommunicator(
-            application, f"/ws/chat/room1/?token={token}"
+            application, f"/ws/chat/room1/?token={token}", headers=headers
         )
         connected, _ = await communicator.connect()
         assert connected
@@ -59,15 +60,20 @@ class TestChatConsumer:
     async def test_typing_indicators(self, auth_user, token):
         user2 = await create_user("testuser2")
         token2 = str(AccessToken.for_user(user2))
+        headers = [(b"origin", b"http://localhost")]
 
         # Connect User 1
-        comm1 = WebsocketCommunicator(application, f"/ws/chat/room1/?token={token}")
+        comm1 = WebsocketCommunicator(
+            application, f"/ws/chat/room1/?token={token}", headers=headers
+        )
         connected1, _ = await comm1.connect()
         assert connected1
         await comm1.receive_json_from()  # connection_established
 
         # Connect User 2
-        comm2 = WebsocketCommunicator(application, f"/ws/chat/room1/?token={token2}")
+        comm2 = WebsocketCommunicator(
+            application, f"/ws/chat/room1/?token={token2}", headers=headers
+        )
         connected2, _ = await comm2.connect()
         assert connected2
         await comm2.receive_json_from()  # connection_established
@@ -97,12 +103,17 @@ class TestChatConsumer:
     async def test_send_chat_message(self, auth_user, token):
         user2 = await create_user("testuser2")
         token2 = str(AccessToken.for_user(user2))
+        headers = [(b"origin", b"http://localhost")]
 
-        comm1 = WebsocketCommunicator(application, f"/ws/chat/room1/?token={token}")
+        comm1 = WebsocketCommunicator(
+            application, f"/ws/chat/room1/?token={token}", headers=headers
+        )
         await comm1.connect()
         await comm1.receive_json_from()
 
-        comm2 = WebsocketCommunicator(application, f"/ws/chat/room1/?token={token2}")
+        comm2 = WebsocketCommunicator(
+            application, f"/ws/chat/room1/?token={token2}", headers=headers
+        )
         await comm2.connect()
         await comm2.receive_json_from()
 
@@ -119,7 +130,6 @@ class TestChatConsumer:
         assert response["message"] == "Hello from User 1!"
 
         # User 1 should ALSO receive their own message broadcast
-        # (based on ChatConsumer logic which doesn't skip sender_channel for messages)
         response1 = await comm1.receive_json_from()
         assert response1["type"] == "new_message"
         assert response1["message"] == "Hello from User 1!"

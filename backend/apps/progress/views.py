@@ -81,15 +81,20 @@ class MyProgressView(APIView):
         try:
             progress = LessonProgress.objects.get(user=request.user, lesson=lesson)
             created = False
-            
+
             skip_update = False
             if client_timestamp_ms:
                 import datetime
-                client_dt = datetime.datetime.fromtimestamp(client_timestamp_ms / 1000.0, tz=datetime.timezone.utc)
+
+                client_dt = datetime.datetime.fromtimestamp(
+                    client_timestamp_ms / 1000.0, tz=datetime.timezone.utc
+                )
                 if progress.updated_at > client_dt:
                     skip_update = True
 
-            if not skip_update and (progress.base_score != base_score or progress.completed != completed):
+            if not skip_update and (
+                progress.base_score != base_score or progress.completed != completed
+            ):
                 progress.completed = completed
                 progress.base_score = base_score
                 progress.multiplier_applied = multiplier
@@ -159,7 +164,10 @@ class BulkSyncProgressView(APIView):
                     skip_update = False
                     if client_timestamp_ms:
                         import datetime
-                        client_dt = datetime.datetime.fromtimestamp(client_timestamp_ms / 1000.0, tz=datetime.timezone.utc)
+
+                        client_dt = datetime.datetime.fromtimestamp(
+                            client_timestamp_ms / 1000.0, tz=datetime.timezone.utc
+                        )
                         if progress.updated_at > client_dt:
                             skip_update = True
 
@@ -288,16 +296,21 @@ class BulkProgressUpdateView(APIView):
 
                     if lesson.id in existing_progress:
                         prog = existing_progress[lesson.id]
-                        
+
                         client_timestamp_ms = item.get("client_timestamp")
                         skip_update = False
                         if client_timestamp_ms:
                             import datetime
-                            client_dt = datetime.datetime.fromtimestamp(client_timestamp_ms / 1000.0, tz=datetime.timezone.utc)
+
+                            client_dt = datetime.datetime.fromtimestamp(
+                                client_timestamp_ms / 1000.0, tz=datetime.timezone.utc
+                            )
                             if prog.updated_at > client_dt:
                                 skip_update = True
 
-                        if not skip_update and (prog.base_score != base_score or prog.completed != completed):
+                        if not skip_update and (
+                            prog.base_score != base_score or prog.completed != completed
+                        ):
                             prog.completed = completed
                             prog.base_score = base_score
                             prog.multiplier_applied = multiplier
@@ -756,7 +769,7 @@ class RecommendationsView(APIView):
         return Response(serializer.data)
 
 
-from .models import CodeSubmission, PeerReview
+from .models import CodeSubmission, PeerReview, ExerciseAttempt
 from .serializers import CodeSubmissionSerializer, PeerReviewSerializer
 
 
@@ -765,7 +778,7 @@ class CodeSubmissionView(APIView):
 
     def get(self, request):
         submissions = CodeSubmission.objects.filter(
-            status=CodeSubmission.Status.PENDING
+            status=CodeSubmission.Status.PENDING_REVIEW
         ).exclude(user=request.user)
         serializer = CodeSubmissionSerializer(submissions, many=True)
         return Response(serializer.data)
@@ -773,7 +786,18 @@ class CodeSubmissionView(APIView):
     def post(self, request):
         serializer = CodeSubmissionSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(user=request.user)
+            submission = serializer.save(user=request.user)
+            if submission.exercise:
+                eligible = (
+                    ExerciseAttempt.objects.filter(
+                        exercise=submission.exercise, is_correct=True
+                    )
+                    .values_list("user_id", flat=True)
+                    .distinct()
+                )
+                submission.assigned_reviewers.set(
+                    User.objects.filter(id__in=eligible).exclude(id=request.user.id)[:2]
+                )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -790,6 +814,12 @@ class PeerReviewView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        if not submission.assigned_reviewers.filter(id=request.user.id).exists():
+            return Response(
+                {"error": "You are not assigned to review this submission"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         if PeerReview.objects.filter(
             submission=submission, reviewer=request.user
         ).exists():
@@ -804,7 +834,27 @@ class PeerReviewView(APIView):
                 review = serializer.save(
                     submission=submission, reviewer=request.user, points_earned=10
                 )
-                submission.status = CodeSubmission.Status.REVIEWED
-                submission.save(update_fields=["status"])
+                review_count = PeerReview.objects.filter(submission=submission).count()
+                if review_count >= 2:
+                    reviews = list(
+                        PeerReview.objects.filter(submission=submission).values_list(
+                            "is_approved", flat=True
+                        )
+                    )
+                    if all(reviews):
+                        submission.status = CodeSubmission.Status.REVIEWED
+                        submission.save(update_fields=["status"])
+                        if submission.exercise:
+                            ExerciseAttempt.objects.get_or_create(
+                                user=submission.user,
+                                exercise=submission.exercise,
+                                defaults={
+                                    "submitted_command": "peer_review_passed",
+                                    "is_correct": True,
+                                },
+                            )
+                    elif not all(reviews):
+                        submission.status = CodeSubmission.Status.ESCALATED
+                        submission.save(update_fields=["status"])
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

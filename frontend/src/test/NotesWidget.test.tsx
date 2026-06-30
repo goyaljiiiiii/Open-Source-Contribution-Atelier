@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fetchApi } from "../lib/api";
 
 vi.mock("../lib/api", () => ({
-  fetchApi: vi.fn(),
+  fetchApi: vi.fn().mockResolvedValue([]),
 }));
 
 // Mock the crypto lib so we don't need real IndexedDB/CryptoKey in tests
@@ -21,7 +21,7 @@ vi.mock("../lib/notesCrypto", () => ({
 
 function renderWithProviders(ui: React.ReactElement) {
   const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
+    defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   });
   return render(
     <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,

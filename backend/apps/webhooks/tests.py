@@ -135,9 +135,12 @@ class TestWebhookDelivery:
         assert delivery.status == "pending"
         mock_retry.assert_called_once()
 
+    @patch("apps.webhooks.tasks.deliver_webhook.retry")
     @patch("requests.post")
-    def test_retry_on_429(self, mock_post, endpoint):
+    def test_retry_on_429(self, mock_post, mock_retry, endpoint):
         from celery.exceptions import Retry
+
+        mock_retry.side_effect = Retry()
 
         mock_response = MagicMock()
         mock_response.status_code = 429

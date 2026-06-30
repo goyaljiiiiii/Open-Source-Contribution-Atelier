@@ -95,7 +95,7 @@ class ExerciseAttempt(models.Model):
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
-    submitted_command = models.CharField(max_length=255)
+    submitted_command = models.CharField(max_length=255, default="")
     is_correct = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -204,17 +204,31 @@ class CodeSubmission(models.Model):
     objects = models.Manager()
 
     class Status(models.TextChoices):
-        PENDING = "pending", "Pending"
+        PENDING_REVIEW = "pending_review", "Pending Review"
         REVIEWED = "reviewed", "Reviewed"
+        ESCALATED = "escalated", "Escalated"
 
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="code_submissions"
+    )
+    exercise = models.ForeignKey(
+        Exercise,
+        on_delete=models.CASCADE,
+        related_name="submissions",
+        null=True,
+        blank=True,
+    )
+    assigned_reviewers = models.ManyToManyField(
+        User, blank=True, related_name="assigned_reviews"
     )
     title = models.CharField(max_length=255)
     code_snippet = models.TextField()
     description = models.TextField(blank=True)
     status = models.CharField(
-        max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True
+        max_length=25,
+        choices=Status.choices,
+        default=Status.PENDING_REVIEW,
+        db_index=True,
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -236,6 +250,7 @@ class PeerReview(models.Model):
     )
     feedback = models.TextField()
     rating = models.PositiveIntegerField(default=5)
+    is_approved = models.BooleanField(default=True)
     points_earned = models.PositiveIntegerField(default=10)
     created_at = models.DateTimeField(auto_now_add=True)
 
