@@ -3,6 +3,7 @@ import json
 import bdb
 import traceback
 
+
 class JSONDebugger(bdb.Bdb):
     def __init__(self, breakpoints):
         super().__init__()
@@ -17,37 +18,48 @@ class JSONDebugger(bdb.Bdb):
     def print_state(self, event, frame):
         if not self.output_state:
             return
-            
+
         # Only output state if we are in the target script
         if frame.f_code.co_filename != sys.argv[1]:
             return
-            
+
         stack = []
         f = frame
         while f:
             if f.f_code.co_filename == sys.argv[1]:
-                stack.append({
-                    "function": f.f_code.co_name,
-                    "line": f.f_lineno,
-                    "file": f.f_code.co_filename
-                })
+                stack.append(
+                    {
+                        "function": f.f_code.co_name,
+                        "line": f.f_lineno,
+                        "file": f.f_code.co_filename,
+                    }
+                )
             f = f.f_back
-            
+
         # Get locals (filter out standard builtins)
         local_vars = {}
         for k, v in frame.f_locals.items():
-            if k not in ['__builtins__', '__doc__', '__loader__', '__name__', '__package__', '__spec__', '__file__', '__cached__']:
+            if k not in [
+                "__builtins__",
+                "__doc__",
+                "__loader__",
+                "__name__",
+                "__package__",
+                "__spec__",
+                "__file__",
+                "__cached__",
+            ]:
                 try:
                     local_vars[k] = repr(v)
                 except Exception:
                     local_vars[k] = "<Error getting repr>"
-                    
+
         state = {
             "type": "debug_state",
             "event": event,
             "line": frame.f_lineno,
             "locals": local_vars,
-            "stack": stack[::-1]
+            "stack": stack[::-1],
         }
         print(json.dumps(state), flush=True)
 
@@ -56,7 +68,7 @@ class JSONDebugger(bdb.Bdb):
         if frame.f_code.co_filename != sys.argv[1]:
             self.set_step()
             return
-            
+
         self.print_state("line", frame)
         self.wait_for_command(frame)
 
@@ -64,7 +76,7 @@ class JSONDebugger(bdb.Bdb):
         if frame.f_code.co_filename != sys.argv[1]:
             self.set_step()
             return
-            
+
         self.print_state("return", frame)
         self.wait_for_command(frame)
 
@@ -72,14 +84,12 @@ class JSONDebugger(bdb.Bdb):
         if frame.f_code.co_filename != sys.argv[1]:
             self.set_step()
             return
-            
+
         exc_type, exc_value, exc_traceback = exc_info
-        error_msg = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
-        state = {
-            "type": "debug_error",
-            "error": error_msg,
-            "line": frame.f_lineno
-        }
+        error_msg = "".join(
+            traceback.format_exception(exc_type, exc_value, exc_traceback)
+        )
+        state = {"type": "debug_error", "error": error_msg, "line": frame.f_lineno}
         print(json.dumps(state), flush=True)
         self.wait_for_command(frame)
 
@@ -111,19 +121,20 @@ class JSONDebugger(bdb.Bdb):
                 except ValueError:
                     pass
 
+
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         print("Usage: python debugger_script.py <script_file> <breakpoints_json>")
         sys.exit(1)
-        
+
     script_file = sys.argv[1]
     breakpoints = json.loads(sys.argv[2])
-    
+
     debugger = JSONDebugger(breakpoints)
-    
+
     with open(script_file, "r") as f:
         code = f.read()
-        
+
     try:
         debugger.run(code, globals={"__name__": "__main__", "__file__": script_file})
     except bdb.BdbQuit:
@@ -131,5 +142,5 @@ if __name__ == "__main__":
     except Exception as e:
         error_msg = traceback.format_exc()
         print(json.dumps({"type": "debug_error", "error": error_msg}), flush=True)
-        
+
     print(json.dumps({"type": "debug_end"}), flush=True)

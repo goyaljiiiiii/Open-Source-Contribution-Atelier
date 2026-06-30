@@ -4,7 +4,6 @@ from config.schema import schema
 from graphene.test import Client
 
 
-
 @pytest.fixture
 def graphene_client():
     return Client(schema)
