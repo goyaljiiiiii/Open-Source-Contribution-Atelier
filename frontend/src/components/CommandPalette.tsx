@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useFocusTrap } from "../hooks/useFocusTrap";
@@ -297,175 +298,180 @@ export const CommandPalette: React.FC = () => {
 
   return (
     <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4">
-          {/* Backdrop Overlay */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm"
-            onClick={() => setIsOpen(false)}
-          />
+      {isOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4">
+            {/* Backdrop Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+              onClick={() => setIsOpen(false)}
+            />
 
-          {/* Modal Container */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: -20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -20 }}
-            transition={{ duration: 0.15 }}
-            ref={modalRef}
-            className="relative w-full max-w-2xl bg-[#0f0e0c] border-4 border-black rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col focus:outline-none z-10"
-          >
-            {/* Search Input Header */}
-            <div className="flex items-center px-4 py-4 border-b-4 border-black bg-[#151411]">
-              <Search className="w-6 h-6 text-[#FFCC00] flex-shrink-0" />
-              <input
-                ref={inputRef}
-                type="text"
-                className="flex-1 bg-transparent text-[#f0ebe2] placeholder-[#6b5a49] font-bold text-lg outline-none ml-3"
-                placeholder="Search pages, lessons, and topics..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={handleKeyDown}
-              />
-              <div className="flex items-center gap-2">
-                {isLoading && (
-                  <span className="text-xs text-[#FFCC00] animate-pulse font-mono mr-2">
-                    Loading Index...
+            {/* Modal Container */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -20 }}
+              transition={{ duration: 0.15 }}
+              ref={modalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Command palette"
+              className="relative w-full max-w-2xl bg-[#0f0e0c] border-4 border-black rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col focus:outline-none z-10"
+            >
+              {/* Search Input Header */}
+              <div className="flex items-center px-4 py-4 border-b-4 border-black bg-[#151411]">
+                <Search className="w-6 h-6 text-[#FFCC00] flex-shrink-0" />
+                <input
+                  ref={inputRef}
+                  type="text"
+                  className="flex-1 bg-transparent text-[#f0ebe2] placeholder-[#6b5a49] font-bold text-lg outline-none ml-3"
+                  placeholder="Search pages, lessons, and topics..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                />
+                <div className="flex items-center gap-2">
+                  {isLoading && (
+                    <span className="text-xs text-[#FFCC00] animate-pulse font-mono mr-2">
+                      Loading Index...
+                    </span>
+                  )}
+                  <span className="px-2 py-1 bg-black text-[#6b5a49] text-xs font-mono rounded border border-[#2e2924] select-none">
+                    ESC
                   </span>
-                )}
-                <span className="px-2 py-1 bg-black text-[#6b5a49] text-xs font-mono rounded border border-[#2e2924] select-none">
-                  ESC
-                </span>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="p-1 rounded-md hover:bg-[#2e2924] text-[#6b5a49] hover:text-[#f0ebe2] transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Results Body */}
-            <div className="flex-1 overflow-y-auto max-h-[60vh] p-4 space-y-2 bg-[#0f0e0c]">
-              {combinedResults.length === 0 ? (
-                <div className="p-8 text-center text-[#6b5a49] font-bold bg-[#151411] border-4 border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                  No matches found for "{searchQuery}"
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className="p-1 rounded-md hover:bg-[#2e2924] text-[#6b5a49] hover:text-[#f0ebe2] transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
-              ) : (
-                combinedResults.map((item, i) => {
-                  const isSelected = i === selectedIndex;
-                  let title: string;
-                  let description: string;
-                  let iconElement: React.ReactNode;
-                  const badgeElement: React.ReactNode = getBadgeForType(
-                    item.type,
-                  );
+              </div>
 
-                  if (item.type === "navigation") {
-                    title = item.label;
-                    description = item.description;
-                    const NavIcon = item.icon;
-                    iconElement = (
-                      <div
-                        className={`p-2 rounded-lg border-2 border-black flex-shrink-0 ${
+              {/* Results Body */}
+              <div className="flex-1 overflow-y-auto max-h-[60vh] p-4 space-y-2 bg-[#0f0e0c]">
+                {combinedResults.length === 0 ? (
+                  <div className="p-8 text-center text-[#6b5a49] font-bold bg-[#151411] border-4 border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                    No matches found for "{searchQuery}"
+                  </div>
+                ) : (
+                  combinedResults.map((item, i) => {
+                    const isSelected = i === selectedIndex;
+                    let title: string;
+                    let description: string;
+                    let iconElement: React.ReactNode;
+                    const badgeElement: React.ReactNode = getBadgeForType(
+                      item.type,
+                    );
+
+                    if (item.type === "navigation") {
+                      title = item.label;
+                      description = item.description;
+                      const NavIcon = item.icon;
+                      iconElement = (
+                        <div
+                          className={`p-2 rounded-lg border-2 border-black flex-shrink-0 ${
+                            isSelected
+                              ? "bg-[#FF3B30] text-white"
+                              : "bg-[#0f0e0c] text-[#FFCC00]"
+                          }`}
+                        >
+                          <NavIcon size={20} />
+                        </div>
+                      );
+                    } else {
+                      title = item.entry.title;
+                      description = item.entry.content;
+                      if (item.entry.subtitle) {
+                        title = `${item.entry.title} (${item.entry.subtitle})`;
+                      }
+                      iconElement = getIconForType(item.type, isSelected);
+                    }
+
+                    return (
+                      <button
+                        key={item.type === "navigation" ? item.to : item.entry.id}
+                        onClick={() => handleSelect(item)}
+                        onMouseEnter={() => setSelectedIndex(i)}
+                        className={`w-full flex items-center justify-between p-4 rounded-xl text-left transition-all ${
                           isSelected
-                            ? "bg-[#FF3B30] text-white"
-                            : "bg-[#0f0e0c] text-[#FFCC00]"
+                            ? "bg-[#FFCC00] text-black border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -translate-y-1"
+                            : "bg-[#151411] text-[#f0ebe2] border-4 border-transparent hover:border-black hover:bg-[#1f1c18]"
                         }`}
                       >
-                        <NavIcon size={20} />
-                      </div>
-                    );
-                  } else {
-                    title = item.entry.title;
-                    description = item.entry.content;
-                    if (item.entry.subtitle) {
-                      title = `${item.entry.title} (${item.entry.subtitle})`;
-                    }
-                    iconElement = getIconForType(item.type, isSelected);
-                  }
-
-                  return (
-                    <button
-                      key={item.type === "navigation" ? item.to : item.entry.id}
-                      onClick={() => handleSelect(item)}
-                      onMouseEnter={() => setSelectedIndex(i)}
-                      className={`w-full flex items-center justify-between p-4 rounded-xl text-left transition-all ${
-                        isSelected
-                          ? "bg-[#FFCC00] text-black border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -translate-y-1"
-                          : "bg-[#151411] text-[#f0ebe2] border-4 border-transparent hover:border-black hover:bg-[#1f1c18]"
-                      }`}
-                    >
-                      <div className="flex items-center space-x-4 overflow-hidden">
-                        {iconElement}
-                        <div className="overflow-hidden">
-                          <div className="flex items-center space-x-2">
-                            <p className="font-extrabold text-lg tracking-tight truncate">
-                              {title}
+                        <div className="flex items-center space-x-4 overflow-hidden">
+                          {iconElement}
+                          <div className="overflow-hidden">
+                            <div className="flex items-center space-x-2">
+                              <p className="font-extrabold text-lg tracking-tight truncate">
+                                {title}
+                              </p>
+                              {badgeElement}
+                            </div>
+                            <p
+                              className={`text-sm truncate ${
+                                isSelected ? "text-zinc-800" : "text-[#6b5a49]"
+                              }`}
+                            >
+                              {description}
                             </p>
-                            {badgeElement}
                           </div>
-                          <p
-                            className={`text-sm truncate ${
-                              isSelected ? "text-zinc-800" : "text-[#6b5a49]"
-                            }`}
-                          >
-                            {description}
-                          </p>
                         </div>
-                      </div>
-                      <ChevronRight
-                        className={`w-5 h-5 flex-shrink-0 transition-transform ${
-                          isSelected
-                            ? "text-black translate-x-1"
-                            : "text-[#6b5a49]"
-                        }`}
-                      />
-                    </button>
-                  );
-                })
-              )}
-            </div>
+                        <ChevronRight
+                          className={`w-5 h-5 flex-shrink-0 transition-transform ${
+                            isSelected
+                              ? "text-black translate-x-1"
+                              : "text-[#6b5a49]"
+                          }`}
+                        />
+                      </button>
+                    );
+                  })
+                )}
+              </div>
 
-            {/* Footer */}
-            <div className="px-4 py-3 border-t-4 border-black bg-[#151411] flex items-center justify-between text-xs text-[#6b5a49] font-mono">
-              <div className="flex items-center space-x-4">
-                <span className="flex items-center">
-                  <kbd className="bg-black rounded px-1.5 py-0.5 mr-1 text-[#f0ebe2] border border-[#2e2924]">
-                    ↑↓
+              {/* Footer */}
+              <div className="px-4 py-3 border-t-4 border-black bg-[#151411] flex items-center justify-between text-xs text-[#6b5a49] font-mono">
+                <div className="flex items-center space-x-4">
+                  <span className="flex items-center">
+                    <kbd className="bg-black rounded px-1.5 py-0.5 mr-1 text-[#f0ebe2] border border-[#2e2924]">
+                      ↑↓
+                    </kbd>{" "}
+                    to navigate
+                  </span>
+                  <span className="flex items-center">
+                    <kbd className="bg-black rounded px-1.5 py-0.5 mr-1 text-[#f0ebe2] border border-[#2e2924]">
+                      ↵
+                    </kbd>{" "}
+                    to select
+                  </span>
+                  <span className="flex items-center">
+                    <kbd className="bg-black rounded px-1.5 py-0.5 mr-1 text-[#f0ebe2] border border-[#2e2924]">
+                      esc
+                    </kbd>{" "}
+                    to close
+                  </span>
+                </div>
+                <div className="hidden sm:block text-right">
+                  Press{" "}
+                  <kbd className="bg-black rounded px-1.5 py-0.5 text-[#f0ebe2] border border-[#2e2924]">
+                    ⌘K
                   </kbd>{" "}
-                  to navigate
-                </span>
-                <span className="flex items-center">
-                  <kbd className="bg-black rounded px-1.5 py-0.5 mr-1 text-[#f0ebe2] border border-[#2e2924]">
-                    ↵
+                  /{" "}
+                  <kbd className="bg-black rounded px-1.5 py-0.5 text-[#f0ebe2] border border-[#2e2924]">
+                    Ctrl K
                   </kbd>{" "}
-                  to select
-                </span>
-                <span className="flex items-center">
-                  <kbd className="bg-black rounded px-1.5 py-0.5 mr-1 text-[#f0ebe2] border border-[#2e2924]">
-                    esc
-                  </kbd>{" "}
-                  to close
-                </span>
+                  anywhere
+                </div>
               </div>
-              <div className="hidden sm:block text-right">
-                Press{" "}
-                <kbd className="bg-black rounded px-1.5 py-0.5 text-[#f0ebe2] border border-[#2e2924]">
-                  ⌘K
-                </kbd>{" "}
-                /{" "}
-                <kbd className="bg-black rounded px-1.5 py-0.5 text-[#f0ebe2] border border-[#2e2924]">
-                  Ctrl K
-                </kbd>{" "}
-                anywhere
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      )}
+            </motion.div>
+          </div>,
+          document.body,
+        )}
     </AnimatePresence>
   );
 };
