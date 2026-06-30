@@ -4,7 +4,7 @@
 
 ---
 
-### ✅ Key Benefits of Open Source
+## ✅ Key Benefits of Open Source
 
 1. **Quality and Innovation**
    Because anyone can view the code, developers can collaborate, patch bugs, and introduce features much faster than a single company or organization.
