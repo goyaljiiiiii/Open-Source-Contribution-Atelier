@@ -257,3 +257,34 @@ html.high-contrast select:focus {
   outline: 2px solid var(--hc-accent) !important;
   outline-offset: 2px;
 }
+
+/* Global focus-visible indicator overrides for keyboard accessibility */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid #FF3B30 !important; /* primary brand color */
+  outline-offset: 2px !important;
+}
+
+html.dark a:focus-visible,
+html.dark button:focus-visible,
+html.dark input:focus-visible,
+html.dark select:focus-visible,
+html.dark textarea:focus-visible,
+html.dark [tabindex]:focus-visible {
+  outline: 3px solid #FFCC00 !important; /* accent brand color in dark mode */
+  outline-offset: 2px !important;
+}
+
+html.high-contrast a:focus-visible,
+html.high-contrast button:focus-visible,
+html.high-contrast input:focus-visible,
+html.high-contrast select:focus-visible,
+html.high-contrast textarea:focus-visible,
+html.high-contrast [tabindex]:focus-visible {
+  outline: 3px solid var(--hc-accent) !important;
+  outline-offset: 2px !important;
+}

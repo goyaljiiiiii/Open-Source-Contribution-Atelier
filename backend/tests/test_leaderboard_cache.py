@@ -52,6 +52,12 @@ class TestLeaderboardCaching:
     def test_cache_expires_after_ttl(self, api_client):
         with patch("apps.dashboard.views.cache.set") as mock_set:
             api_client.get("/api/leaderboard/")
-            mock_set.assert_called_once()
-            _, _, ttl = mock_set.call_args[0]
+            # Find the leaderboard cache call among throttle calls
+            leaderboard_calls = [
+                call
+                for call in mock_set.call_args_list
+                if call.args[0].startswith("leaderboard_page_")
+            ]
+            assert len(leaderboard_calls) == 1
+            _, _, ttl = leaderboard_calls[0].args
             assert ttl == 300

@@ -5,11 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Message
-from .serializers import (
-    ChatRoomSerializer,
-    MessageCreateSerializer,
-    MessageSerializer,
-)
+from .serializers import ChatRoomSerializer, MessageCreateSerializer, MessageSerializer
 
 
 class MessagePagination(pagination.PageNumberPagination):

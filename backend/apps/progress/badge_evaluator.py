@@ -1,3 +1,5 @@
+from django.utils import timezone
+
 from apps.dashboard.models import PullRequest
 from apps.progress.models import Badge, ExerciseAttempt, LessonProgress, UserBadge
 from django.utils import timezone

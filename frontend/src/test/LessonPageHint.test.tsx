@@ -32,6 +32,35 @@ vi.mock("../features/ui/ToastContext", () => ({
   useToast: () => ({ addToast: vi.fn() }),
 }));
 
+// Mock Monaco editor and its CSS imports
+vi.mock("@monaco-editor/react", () => ({
+  __esModule: true,
+  default: () => <div data-testid="monaco-editor" />,
+  useMonaco: () => null,
+}));
+
+// Mock InteractiveDebugger to avoid Monaco dependency
+vi.mock("../components/ui/InteractiveDebugger", () => ({
+  InteractiveDebugger: () => <div data-testid="interactive-debugger" />,
+}));
+
+// Mock CollabPythonSandbox and JSSandbox to avoid heavy deps
+vi.mock("../components/ui/CollabPythonSandbox", () => ({
+  CollabPythonSandbox: () => <div data-testid="collab-python-sandbox" />,
+}));
+vi.mock("../components/ui/JSSandbox", () => ({
+  JSSandbox: () => <div data-testid="js-sandbox" />,
+}));
+vi.mock("../components/ui/PythonSandbox", () => ({
+  PythonSandbox: () => <div data-testid="python-sandbox" />,
+}));
+vi.mock("../components/ui/RichTextEditor", () => ({
+  RichTextEditor: () => <div data-testid="rich-text-editor" />,
+}));
+vi.mock("../components/ui/NotePanel", () => ({
+  NotePanel: () => <div data-testid="note-panel" />,
+}));
+
 // Provide our own mock data
 const customLesson = {
   slug: "test-lesson-hint",

@@ -97,7 +97,11 @@ export function JSSandbox({ exercise, onSuccess }: JSSandboxProps) {
           value={code}
           onValueChange={(code) => setCode(code)}
           highlight={(code) =>
-            Prism.highlight(code, Prism.languages.typescript || Prism.languages.javascript, "typescript")
+            Prism.highlight(
+              code,
+              Prism.languages.typescript || Prism.languages.javascript,
+              "typescript",
+            )
           }
           padding={10}
           style={{
@@ -139,7 +143,8 @@ export function JSSandbox({ exercise, onSuccess }: JSSandboxProps) {
         {isSuccess && (
           <div className="mt-4 pt-4 border-t border-green-900/50">
             <div className="flex items-center gap-2 text-green-400 font-bold">
-              <CheckCircle2 className="w-5 h-5" /> Execution completed! You earned points.
+              <CheckCircle2 className="w-5 h-5" /> Execution completed! You
+              earned points.
             </div>
           </div>
         )}

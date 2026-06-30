@@ -4,12 +4,22 @@ from apps.challenges.models import ChallengeCompletion
 from apps.content.models import Lesson
 from apps.dashboard.models import Issue, PullRequest, StreakFreeze
 from apps.progress.models import (
+feat/daily-coding-streaks-398
+    ExerciseAttempt,
+    LessonProgress,
+    QuizAttempt,
+    CodeSubmission,
+)
+from django.contrib.auth.models import User
+from django.core.cache import cache
+from django.db.models import Count, F, IntegerField, OuterRef, Subquery, Sum, Value
+from django.db.models.functions import Coalesce
+
     CodeSubmission,
     ExerciseAttempt,
     LessonProgress,
     QuizAttempt,
 )
-
 from apps.rbac.permissions import HasRole
 from apps.rbac.models import UserRole
 
@@ -19,21 +29,33 @@ from django.db import models, transaction
 from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce, TruncDate
 
+ main
 from django.utils import timezone
 
 from drf_spectacular.utils import extend_schema
 from rest_framework import permissions, serializers, status
 from rest_framework.generics import ListAPIView
-from rest_framework.pagination import CursorPagination
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.challenges.models import ChallengeCompletion
+from apps.content.models import Lesson
+from apps.dashboard.models import Issue, PullRequest, StreakFreeze
+from apps.progress.models import (
+    CodeSubmission,
+    ExerciseAttempt,
+    LessonProgress,
+    QuizAttempt,
+)
+from apps.rbac.permissions import HasRole
 from rest_framework.views import APIView
 
 
-class LeaderboardPagination(CursorPagination):
+class LeaderboardPagination(PageNumberPagination):
     page_size = 20
-    ordering = ("-xp", "username", "id")
+    page_size_query_param = "page_size"
+    max_page_size = 100
 
 
 class LeaderboardSerializer(serializers.ModelSerializer):
@@ -53,6 +75,18 @@ class LeaderboardView(ListAPIView):
 
     serializer_class = LeaderboardSerializer
     pagination_class = LeaderboardPagination
+
+    def list(self, request, *args, **kwargs):
+        page = request.query_params.get("page", "1")
+        cache_key = f"leaderboard_page_{page}"
+
+        cached_data = cache.get(cache_key)
+        if cached_data is not None:
+            return Response(cached_data)
+
+        response = super().list(request, *args, **kwargs)
+        cache.set(cache_key, response.data, 300)
+        return response
 
     def get_queryset(self):
         timeframe = self.request.query_params.get("timeframe", "all")
@@ -286,6 +320,15 @@ class ContributorDashboardView(APIView):
             )
             total_xp = lesson_xp + issues_xp + challenge_bonus_xp
 
+ feat/daily-coding-streaks-398
+            # --- NEW CLEAN STREAK LOGIC ---
+            from apps.progress.models import StreakProfile
+
+            streak_profile, _ = StreakProfile.objects.get_or_create(user=user)
+            streak_days = streak_profile.current_streak
+            longest_streak = streak_profile.longest_streak
+            # ------------------------------
+
             # Calculate streak based on unique days of activity (attempts or completed lessons) and active/used freezes
             activity_days = set()
             attempts = ExerciseAttempt.objects.filter(user=user).values_list(
@@ -340,6 +383,7 @@ class ContributorDashboardView(APIView):
             if modified_freezes:
                 with transaction.atomic():
                     StreakFreeze.objects.bulk_update(modified_freezes, ["used_on_date"])
+ main
 
             # Determine Rank based on user XP vs others
             lesson_xp_sub = (
@@ -410,6 +454,7 @@ class ContributorDashboardView(APIView):
                 "prs_merged": prs_merged,
                 "total_xp": total_xp,
                 "streak_days": streak_days,
+                "longest_streak": longest_streak,  # ADDED THIS TO API
                 "rank": rank,
                 "earned_badges": earned_badges,
                 "available_points": available_points,
@@ -595,9 +640,9 @@ class BuyStreakFreezeView(APIView):
             )
 
 
-from apps.rbac.models import UserRole
 from django.db import models
 
+from apps.rbac.models import UserRole
 
 
 class IsModeratorOrAdmin(permissions.BasePermission):

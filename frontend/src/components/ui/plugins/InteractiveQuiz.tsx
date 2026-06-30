@@ -13,17 +13,29 @@ export function InteractiveQuiz({ id }: InteractiveQuizProps) {
   const [submitted, setSubmitted] = useState(false);
   const { syncProgress } = useUserProgress();
 
-  const { data: quiz, isLoading, error } = useQuery({
+  const {
+    data: quiz,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["quiz", id],
     queryFn: () => fetchApi(`/content/quizzes/${id}/`, { requireAuth: false }),
   });
 
   if (isLoading) {
-    return <div className="p-4 border-4 border-black/20 animate-pulse bg-surface-low rounded-xl">Loading Quiz...</div>;
+    return (
+      <div className="p-4 border-4 border-black/20 animate-pulse bg-surface-low rounded-xl">
+        Loading Quiz...
+      </div>
+    );
   }
 
   if (error || !quiz) {
-    return <div className="p-4 border-4 border-red-500 bg-red-50 text-red-700 rounded-xl font-bold">Error loading interactive quiz (ID: {id})</div>;
+    return (
+      <div className="p-4 border-4 border-red-500 bg-red-50 text-red-700 rounded-xl font-bold">
+        Error loading interactive quiz (ID: {id})
+      </div>
+    );
   }
 
   const isCorrect = selectedOption === quiz.answer;
@@ -56,21 +68,30 @@ export function InteractiveQuiz({ id }: InteractiveQuizProps) {
 
       <div className="space-y-3">
         {quiz.options.map((option: string, i: number) => {
-          let buttonClass = "border-black bg-white text-text hover:bg-surface-lowest dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2]";
+          let buttonClass =
+            "border-black bg-white text-text hover:bg-surface-lowest dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2]";
           let showIcon = null;
 
           if (submitted) {
             if (i === quiz.answer) {
-              buttonClass = "border-green-500 bg-green-50 text-green-800 dark:bg-green-900/20 dark:border-green-700 dark:text-green-300";
-              showIcon = <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />;
+              buttonClass =
+                "border-green-500 bg-green-50 text-green-800 dark:bg-green-900/20 dark:border-green-700 dark:text-green-300";
+              showIcon = (
+                <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
+              );
             } else if (i === selectedOption) {
-              buttonClass = "border-red-500 bg-red-50 text-red-800 dark:bg-red-900/20 dark:border-red-700 dark:text-red-300";
-              showIcon = <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />;
+              buttonClass =
+                "border-red-500 bg-red-50 text-red-800 dark:bg-red-900/20 dark:border-red-700 dark:text-red-300";
+              showIcon = (
+                <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+              );
             } else {
-              buttonClass = "border-black/20 bg-surface text-muted dark:bg-[#1f1c18] dark:border-[#2e2924]/50 dark:text-[#c4bbae]";
+              buttonClass =
+                "border-black/20 bg-surface text-muted dark:bg-[#1f1c18] dark:border-[#2e2924]/50 dark:text-[#c4bbae]";
             }
           } else if (selectedOption === i) {
-            buttonClass = "border-primary bg-primary/10 text-primary dark:border-primary dark:bg-primary/20 dark:text-primary";
+            buttonClass =
+              "border-primary bg-primary/10 text-primary dark:border-primary dark:bg-primary/20 dark:text-primary";
           }
 
           return (
@@ -88,7 +109,9 @@ export function InteractiveQuiz({ id }: InteractiveQuizProps) {
       </div>
 
       {submitted && quiz.explanation && (
-        <div className={`mt-6 p-4 rounded-xl border-4 font-medium ${isCorrect ? "bg-green-50 border-green-500 text-green-900" : "bg-amber-50 border-amber-500 text-amber-900"}`}>
+        <div
+          className={`mt-6 p-4 rounded-xl border-4 font-medium ${isCorrect ? "bg-green-50 border-green-500 text-green-900" : "bg-amber-50 border-amber-500 text-amber-900"}`}
+        >
           <p>{quiz.explanation}</p>
         </div>
       )}

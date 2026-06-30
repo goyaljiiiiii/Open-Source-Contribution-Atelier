@@ -10,7 +10,9 @@ export function useHeatmap() {
   return useQuery({
     queryKey: ["activity-heatmap"],
     queryFn: async (): Promise<HeatmapEntry[]> => {
-      const response = await fetchApi("/progress/heatmap/");
+      const response = await fetchApi("/progress/heatmap/", {
+        suppressErrorToast: true,
+      });
       if (!response.ok) {
         throw new Error("Failed to fetch activity heatmap data");
       }

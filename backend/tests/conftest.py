@@ -13,3 +13,8 @@ def _configure_django_q_test_settings(settings):
     settings.Q_CLUSTER = {
         "sync": True,
     }
+    settings.CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        },
+    }

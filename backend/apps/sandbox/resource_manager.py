@@ -1,9 +1,11 @@
-import logging
 import ast
+import logging
 import sys
-from django.core.cache import cache
-from apps.sandbox.models import ExecutionViolationLog
+
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
+
+from apps.sandbox.models import ExecutionViolationLog
 
 logger = logging.getLogger(__name__)
 

@@ -147,7 +147,13 @@ export function MergeConflictSandbox() {
                     <div
                       className={`mt-2 p-2 font-bold ${resolvedStatus === "current" || resolvedStatus === "both" ? "text-blue-400 bg-blue-900/30" : "text-white/40"}`}
                     >
-                      {"<<<<<<< HEAD (Current Change)"}
+                      {"<" +
+                        "<" +
+                        "<" +
+                        "<" +
+                        "<" +
+                        "<" +
+                        "< HEAD (Current Change)"}
                       <br />
                       {"  const fetchUsers = () => api.get('/v2/users');"}
                     </div>

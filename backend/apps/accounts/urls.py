@@ -6,6 +6,7 @@ from .views import (
     GitHubOAuthStartView,
     GoogleLoginView,
     LoginView,
+    LogoutView,
     MagicLinkRequestView,
     MagicLinkVerifyView,
     MeView,
@@ -14,15 +15,10 @@ from .views import (
     PasswordResetConfirmView,
     PasswordResetRequestView,
     RefreshView,
+    SecureAccountDeleteView,
     SignupView,
     UserListView,
-    PasswordResetRequestView,
-    PasswordResetConfirmView,
-    OtpRequestView,
-    OtpVerifyView,
-    LogoutView,
     UserStatisticsView,
-    SecureAccountDeleteView,
 )
 
 urlpatterns = [

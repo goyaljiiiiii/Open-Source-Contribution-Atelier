@@ -130,14 +130,14 @@ export function DashboardPage() {
     error: adminError,
   } = useQuery({
     queryKey: ["adminDashboardStats"],
-    queryFn: () => fetchApi("/dashboard/admin/"),
+    queryFn: () => fetchApi("/dashboard/admin/", { suppressErrorToast: true }),
     enabled: !!user?.is_staff,
   });
 
   // 3. Fetch paginated leaderboard for admin chart (only queries if user is staff)
   const { data: leaderboardData, isLoading: isLeaderboardLoading } = useQuery({
     queryKey: ["leaderboard", 1],
-    queryFn: () => fetchApi("/leaderboard/"),
+    queryFn: () => fetchApi("/leaderboard/", { suppressErrorToast: true }),
     enabled: !!user?.is_staff,
   });
 
@@ -148,7 +148,8 @@ export function DashboardPage() {
     error: contributorError,
   } = useQuery({
     queryKey: ["contributorDashboardStats"],
-    queryFn: () => fetchApi("/dashboard/contributor/"),
+    queryFn: () =>
+      fetchApi("/dashboard/contributor/", { suppressErrorToast: true }),
     enabled: !!user && !user.is_staff,
   });
 
@@ -335,7 +336,8 @@ export function DashboardPage() {
   // Fetch user certificate if course is completed
   const { data: certificateData } = useQuery({
     queryKey: ["userCertificate"],
-    queryFn: () => fetchApi("/progress/certificate/"),
+    queryFn: () =>
+      fetchApi("/progress/certificate/", { suppressErrorToast: true }),
     enabled: !!user && !user.is_staff && completionPercentage === 100,
     retry: false,
   });
@@ -713,6 +715,10 @@ export function DashboardPage() {
             <span className="font-black text-black uppercase tracking-widest text-[9px] mt-1 dark:text-[#c4bbae]">
               Streak Days
             </span>
+            {/* Added longest streak display */}
+            <div className="absolute top-2 right-2 bg-surface-low border-2 border-black rounded-full px-2 py-0.5 text-[8px] font-black text-muted flex items-center gap-1 dark:bg-[#151411]">
+              <span className="text-[10px]">🏆</span> Max: {personal_stats.longest_streak || personal_stats.streak_days}
+            </div>
           </div>
 
           <div className="rounded-[2rem] border-4 border-black bg-white p-6 shadow-card flex flex-col justify-center items-center text-center dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none hover:-translate-y-0.5 transition-transform">

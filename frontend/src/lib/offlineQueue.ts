@@ -18,7 +18,7 @@ export interface PendingSyncItem {
   entity_type: string;
   entity_id: string;
   timestamp: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -28,17 +28,17 @@ export async function enqueueOfflineAction(
   url: string,
   method: string,
   headers: Record<string, string>,
-  body: any,
+  body: Record<string, unknown>,
   entity_type: string,
-  entity_id: string
+  entity_id: string,
 ) {
   const API_BASE =
     import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
   const fullUrl = url.startsWith("http") ? url : `${API_BASE}${url}`;
-  
+
   const id = `${entity_type}-${entity_id}`;
   const timestamp = Date.now();
-  
+
   // Inject client_timestamp into the payload for conflict resolution on the backend
   const bodyObj = { ...body, client_timestamp: timestamp };
 
@@ -73,7 +73,9 @@ export async function enqueueOfflineAction(
     const pending = JSON.parse(
       localStorage.getItem("atelier_pending_sync") || "[]",
     );
-    const existingIndex = pending.findIndex((p: PendingSyncItem) => p.id === id);
+    const existingIndex = pending.findIndex(
+      (p: PendingSyncItem) => p.id === id,
+    );
     const newItem = { id, entity_type, entity_id, timestamp, ...bodyObj };
     if (existingIndex >= 0) {
       pending[existingIndex] = newItem;
@@ -256,9 +258,7 @@ if (typeof window !== "undefined") {
           const pending = JSON.parse(
             localStorage.getItem("atelier_pending_sync") || "[]",
           );
-          const filtered = pending.filter(
-            (p: PendingSyncItem) => p.id !== id,
-          );
+          const filtered = pending.filter((p: PendingSyncItem) => p.id !== id);
           localStorage.setItem(
             "atelier_pending_sync",
             JSON.stringify(filtered),

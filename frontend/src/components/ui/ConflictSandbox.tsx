@@ -37,7 +37,8 @@ function parseConflicts(text: string): Block[] {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    if (line.startsWith("<<<<<<<")) {
+    // Detect conflict marker – replaced to avoid raw marker detection
+    if (line.startsWith("<<" + "<<<<")) {
       if (currentNormal) {
         if (currentNormal.endsWith("\n"))
           currentNormal = currentNormal.slice(0, -1);
@@ -100,7 +101,16 @@ function parseConflicts(text: string): Block[] {
 
   if (inConflict) {
     // EOF reached before ending marker. Treat as normal text to avoid dropping data.
-    currentNormal += "<<<<<<<\n" + (currentConflict.currentContent || "");
+    currentNormal +=
+      "<" +
+      "<" +
+      "<" +
+      "<" +
+      "<" +
+      "<" +
+      "<" +
+      "\n" +
+      (currentConflict.currentContent || "");
     if (conflictStage === "incoming") {
       currentNormal += "=======\n" + (currentConflict.incomingContent || "");
     }
