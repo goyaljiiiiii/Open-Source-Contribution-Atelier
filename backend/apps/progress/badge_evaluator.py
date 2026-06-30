@@ -1,7 +1,7 @@
 from apps.dashboard.models import PullRequest
 from apps.progress.models import Badge, ExerciseAttempt, LessonProgress, UserBadge
+from django.db import IntegrityError, transaction
 from django.utils import timezone
-from django.db import transaction, IntegrityError
 
 BADGE_RULES = {
     "first-steps": {

@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from "react";
 import { useGoogleLogin } from "@react-oauth/google";
 import { GitBranch, Moon, Sun } from "lucide-react";
@@ -24,7 +23,7 @@ export function LandingPage() {
   try {
     const auth = useAuth();
     login = auth.login;
-  } catch (e) {
+  } catch {
     // No AuthProvider in the tree; proceed with fallback login.
   }
   const { theme, toggleTheme } = useTheme();

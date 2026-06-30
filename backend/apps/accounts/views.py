@@ -731,7 +731,6 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 
-
 class LogoutView(APIView):
     """
     Accepts a refresh token in the request body and adds it to the blacklist.
@@ -794,17 +793,17 @@ class ExportDataView(APIView):
         if export_format == "json":
             json_data = service.generate_json()
             response = HttpResponse(json_data, content_type="application/json")
-            response[
-                "Content-Disposition"
-            ] = f'attachment; filename="data_export_{request.user.username}.json"'
+            response["Content-Disposition"] = (
+                f'attachment; filename="data_export_{request.user.username}.json"'
+            )
             return response
 
         elif export_format == "csv":
             zip_data = service.generate_csv_zip()
             response = HttpResponse(zip_data, content_type="application/zip")
-            response[
-                "Content-Disposition"
-            ] = f'attachment; filename="data_export_{request.user.username}.zip"'
+            response["Content-Disposition"] = (
+                f'attachment; filename="data_export_{request.user.username}.zip"'
+            )
             return response
 
         return Response(

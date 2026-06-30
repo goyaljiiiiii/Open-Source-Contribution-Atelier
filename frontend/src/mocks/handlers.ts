@@ -47,6 +47,10 @@ export const handlers = [
     return HttpResponse.json([]);
   }),
 
+  http.get(matchUrl("/api/users/me/learning-path/"), () => {
+    return HttpResponse.json({});
+  }),
+
   http.get(matchUrl("/api/notes/"), () => {
     return HttpResponse.json([]);
   }),

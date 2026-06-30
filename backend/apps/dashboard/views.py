@@ -9,24 +9,19 @@ from apps.progress.models import (
     LessonProgress,
     QuizAttempt,
 )
-from apps.rbac.permissions import HasRole
 from apps.rbac.models import UserRole
-
+from apps.rbac.permissions import HasRole
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.db import models, transaction
 from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce, TruncDate
-
 from django.utils import timezone
-
 from drf_spectacular.utils import extend_schema
 from rest_framework import permissions, serializers, status
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
-from rest_framework.views import APIView
-
 from rest_framework.views import APIView
 
 
@@ -607,14 +602,6 @@ class BuyStreakFreezeView(APIView):
             )
 
 
-<<<<<<< HEAD
-from apps.rbac.models import UserRole
-from django.db import models
-
-
-
-=======
->>>>>>> pr-816
 class IsModeratorOrAdmin(permissions.BasePermission):
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:

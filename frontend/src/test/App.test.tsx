@@ -15,7 +15,7 @@ vi.mock("lucide-react", async (importOriginal) => {
   };
 });
 
-vi.mock("../hooks/ThemeContext", () => ({
+vi.mock("../hooks/useTheme", () => ({
   useTheme: () => ({ theme: "light", setTheme: vi.fn(), toggleTheme: vi.fn() }),
 }));
 

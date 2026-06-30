@@ -154,7 +154,9 @@ def analyze_submission_plagiarism(submission_id: int):
     Only exact structural matches (score == 1.0) are flagged, matching the test expectations.
     """
     from apps.progress.models import CodeSubmission, PlagiarismReport
-    from apps.progress.services.plagiarism_detector import calculate_structural_similarity
+    from apps.progress.services.plagiarism_detector import (
+        calculate_structural_similarity,
+    )
 
     try:
         submission = CodeSubmission.objects.get(id=submission_id)
@@ -162,9 +164,13 @@ def analyze_submission_plagiarism(submission_id: int):
         return
 
     # Compare with other submissions for the same exercise (if any)
-    candidates = CodeSubmission.objects.filter(exercise=submission.exercise).exclude(id=submission.id)
+    candidates = CodeSubmission.objects.filter(exercise=submission.exercise).exclude(
+        id=submission.id
+    )
     for other in candidates:
-        score = calculate_structural_similarity(submission.code_snippet, other.code_snippet)
+        score = calculate_structural_similarity(
+            submission.code_snippet, other.code_snippet
+        )
         if score == 1.0:
             PlagiarismReport.objects.create(
                 submission=submission,
