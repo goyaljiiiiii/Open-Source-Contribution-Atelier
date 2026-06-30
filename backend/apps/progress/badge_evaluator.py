@@ -1,6 +1,7 @@
 from apps.dashboard.models import PullRequest
 from apps.progress.models import Badge, ExerciseAttempt, LessonProgress, UserBadge
 from django.utils import timezone
+from django.db import transaction, IntegrityError
 
 BADGE_RULES = {
     "first-steps": {
@@ -191,4 +192,11 @@ class BadgeEvaluator:
                     slug=badge_slug,
                     defaults={"name": rule["name"], "description": rule["description"]},
                 )
-                UserBadge.objects.get_or_create(user=user, badge=badge)
+
+                # Guard against concurrent evaluation race conditions
+                try:
+                    with transaction.atomic():
+                        UserBadge.objects.get_or_create(user=user, badge=badge)
+                except IntegrityError:
+                    # Race condition caught and handled gracefully; badge was already awarded
+                    pass

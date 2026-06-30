@@ -12,7 +12,7 @@ token = os.environ.get("GITHUB_TOKEN")
 headers = {
     "Authorization": f"Bearer {token}",
     "Accept": "application/vnd.github.v3+json",
-    "User-Agent": "python-urllib"
+    "User-Agent": "python-urllib",
 }
 
 repo = "goyaljiiiiii/Open-Source-Contribution-Atelier"
@@ -33,38 +33,57 @@ while True:
         print(f"Error fetching page {page}: {e}")
         break
 
+
 def normalize_title(title):
     t = title.lower().strip()
-    prefixes = ['[frontend]', '[backend]', 'feat:', 'fix:', 'docs:', 'perf:', 'feat/', 'build a', 'build', 'implement', 'add', 'create', 'setup', 'design']
+    prefixes = [
+        "[frontend]",
+        "[backend]",
+        "feat:",
+        "fix:",
+        "docs:",
+        "perf:",
+        "feat/",
+        "build a",
+        "build",
+        "implement",
+        "add",
+        "create",
+        "setup",
+        "design",
+    ]
     changed = True
     while changed:
         changed = False
         for p in prefixes:
             if t.startswith(p):
-                t = t[len(p):].strip()
+                t = t[len(p) :].strip()
                 changed = True
     return t
 
+
 normalized_issues = []
 for issue in issues:
-    if 'pull_request' in issue:
+    if "pull_request" in issue:
         continue
-    normalized_issues.append({
-        'number': issue['number'],
-        'title': normalize_title(issue['title']),
-        'original_title': issue['title'],
-        'state': issue['state']
-    })
+    normalized_issues.append(
+        {
+            "number": issue["number"],
+            "title": normalize_title(issue["title"]),
+            "original_title": issue["title"],
+            "state": issue["state"],
+        }
+    )
 
-normalized_issues.sort(key=lambda x: x['number'])
+normalized_issues.sort(key=lambda x: x["number"])
 
 seen_titles = {}
 duplicates_to_close = []
 
 for issue in normalized_issues:
-    t = issue['title']
+    t = issue["title"]
     if t in seen_titles:
-        if issue['state'] == 'open':
+        if issue["state"] == "open":
             duplicates_to_close.append((issue, seen_titles[t]))
     else:
         seen_titles[t] = issue
@@ -73,4 +92,6 @@ print(f"Total issues analyzed: {len(normalized_issues)}")
 print(f"Found {len(duplicates_to_close)} open duplicate issues.")
 
 for dup, orig in duplicates_to_close:
-    print(f"Duplicate: #{dup['number']} '{dup['original_title']}' -> Original: #{orig['number']} '{orig['original_title']}'")
+    print(
+        f"Duplicate: #{dup['number']} '{dup['original_title']}' -> Original: #{orig['number']} '{orig['original_title']}'"
+    )
