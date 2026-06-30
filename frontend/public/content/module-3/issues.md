@@ -1,4 +1,4 @@
-# 📌 GitHub Issues
+# 📌 Issues
 
 ### Before writing any code, work in open source almost always begins inside an **Issue**.
 
