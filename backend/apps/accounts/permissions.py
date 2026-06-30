@@ -1,4 +1,5 @@
 from rest_framework import permissions
+
 from apps.rbac.permissions import HasRole
 
 
@@ -14,7 +15,7 @@ class IsAdminRole(permissions.BasePermission):
 
         if request.user.is_superuser or request.user.is_staff:
             return True
-            
+
         return HasRole("Administrator").has_permission(request, view)
 
 
@@ -42,5 +43,7 @@ class IsAdminOrModeratorRole(permissions.BasePermission):
 
         if request.user.is_superuser or request.user.is_staff:
             return True
-            
-        return HasRole("Administrator").has_permission(request, view) or HasRole("Moderator").has_permission(request, view)
+
+        return HasRole("Administrator").has_permission(request, view) or HasRole(
+            "Moderator"
+        ).has_permission(request, view)

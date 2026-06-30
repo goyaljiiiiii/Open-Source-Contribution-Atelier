@@ -347,7 +347,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
     if (pluginMatch && !line.includes("](")) {
       const pluginName = pluginMatch[1];
       const propsString = pluginMatch[2] || "";
-      
+
       const PluginComponent = pluginRegistry[pluginName];
       if (PluginComponent) {
         // Parse props like key="value"
@@ -357,17 +357,20 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
         while ((match = propRegex.exec(propsString)) !== null) {
           props[match[1]] = match[2];
         }
-        
+
         blocks.push(
           <div key={index} className="my-4">
             <PluginComponent {...props} />
-          </div>
+          </div>,
         );
       } else {
         blocks.push(
-          <div key={index} className="p-4 my-4 bg-red-50 border-4 border-red-500 rounded-xl text-red-700 font-bold shadow-card-sm">
+          <div
+            key={index}
+            className="p-4 my-4 bg-red-50 border-4 border-red-500 rounded-xl text-red-700 font-bold shadow-card-sm"
+          >
             Unsupported interactive component: {pluginName}
-          </div>
+          </div>,
         );
       }
       index++;

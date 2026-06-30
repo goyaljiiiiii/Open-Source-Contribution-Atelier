@@ -4,8 +4,6 @@ from typing import Optional
 from urllib.parse import urlencode
 
 import requests as http_requests
-from apps.progress.models import LessonProgress, UserBadge
-from apps.progress.serializers import UserBadgeSerializer
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
@@ -22,6 +20,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
+from apps.progress.models import LessonProgress, UserBadge
+from apps.progress.serializers import UserBadgeSerializer
 
 from .models import MagicLinkToken, OTPToken, PasswordResetToken
 from .serializers import (
@@ -41,6 +42,7 @@ from .tasks import (
     send_otp_email_task,
     send_password_reset_email_task,
 )
+from django_q.tasks import async_task
 from .throttles import (
     LoginThrottle,
     MagicLinkRequestThrottle,
@@ -432,7 +434,8 @@ class PasswordResetRequestView(APIView):
             )
             timeout = getattr(settings, "PASSWORD_RESET_TIMEOUT_MINUTES", 15)
 
-            send_password_reset_email_task.delay(
+            async_task(
+                "apps.accounts.tasks.send_password_reset_email_task",
                 user_email=user.email,
                 user_username=user.username,
                 reset_url=reset_url,
@@ -544,7 +547,8 @@ class OtpRequestView(APIView):
             OTPToken.objects.filter(user=user, is_used=False).update(is_used=True)
             otp_obj = OTPToken.objects.create(user=user)
 
-            send_otp_email_task.delay(
+            async_task(
+                "apps.accounts.tasks.send_otp_email_task",
                 user_email=user.email,
                 user_username=user.username,
                 otp_token=otp_obj.token,
@@ -642,7 +646,8 @@ class MagicLinkRequestView(APIView):
             login_url = frontend_url("/magic-login", {"token": str(magic_token.token)})
             timeout = getattr(settings, "MAGIC_LINK_TIMEOUT_MINUTES", 15)
 
-            send_magic_link_email_task.delay(
+            async_task(
+                "apps.accounts.tasks.send_magic_link_email_task",
                 user_email=user.email,
                 user_username=user.username,
                 login_url=login_url,
@@ -721,18 +726,22 @@ class MagicLinkVerifyView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
+
 
 class LogoutView(APIView):
     """
     Accepts a refresh token in the request body and adds it to the blacklist.
     Requires user to be authenticated.
     """
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -740,28 +749,25 @@ class LogoutView(APIView):
             refresh_token = request.data.get("refresh")
             if not refresh_token:
                 return Response(
-                    {"error": "Refresh token is required"}, 
-                    status=status.HTTP_400_BAD_REQUEST
+                    {"error": "Refresh token is required"},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
-            
+
             # This automatically adds the token to the BlacklistedToken model
             token = RefreshToken(refresh_token)
             token.blacklist()
-            
+
             return Response(
-                {"message": "Successfully logged out."}, 
-                status=status.HTTP_205_RESET_CONTENT
+                {"message": "Successfully logged out."},
+                status=status.HTTP_205_RESET_CONTENT,
             )
         except TokenError:
             return Response(
-                {"error": "Invalid or expired refresh token."}, 
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "Invalid or expired refresh token."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
         except Exception as e:
-            return Response(
-                {"error": str(e)}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 from django.http import HttpResponse, JsonResponse
@@ -792,17 +798,17 @@ class ExportDataView(APIView):
         if export_format == "json":
             json_data = service.generate_json()
             response = HttpResponse(json_data, content_type="application/json")
-            response[
-                "Content-Disposition"
-            ] = f'attachment; filename="data_export_{request.user.username}.json"'
+            response["Content-Disposition"] = (
+                f'attachment; filename="data_export_{request.user.username}.json"'
+            )
             return response
 
         elif export_format == "csv":
             zip_data = service.generate_csv_zip()
             response = HttpResponse(zip_data, content_type="application/zip")
-            response[
-                "Content-Disposition"
-            ] = f'attachment; filename="data_export_{request.user.username}.zip"'
+            response["Content-Disposition"] = (
+                f'attachment; filename="data_export_{request.user.username}.zip"'
+            )
             return response
 
         return Response(
@@ -814,8 +820,8 @@ class ExportDataView(APIView):
         )
 
 
-from apps.content.models import Comment
 from apps.chat.models import Message
+from apps.content.models import Comment
 
 
 class SecureAccountDeleteView(APIView):

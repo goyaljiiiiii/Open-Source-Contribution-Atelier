@@ -1,6 +1,3 @@
-from apps.dashboard.models import Issue, PullRequest
-from apps.progress.badge_evaluator import BadgeEvaluator
-from apps.progress.models import ExerciseAttempt, LessonProgress
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.contrib.auth.models import User
@@ -8,6 +5,10 @@ from django.core.cache import cache
 from django.db.models import Sum
 from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
+
+from apps.dashboard.models import Issue, PullRequest
+from apps.progress.badge_evaluator import BadgeEvaluator
+from apps.progress.models import ExerciseAttempt, LessonProgress
 
 
 def clear_dashboard_caches(user_id=None):
@@ -17,6 +18,10 @@ def clear_dashboard_caches(user_id=None):
     # If a specific user is affected, clear their specific contributor stats cache
     if user_id:
         cache.delete(f"dashboard_contributor_stats_{user_id}")
+        cache.delete(f"dashboard_contributor_personal_stats_{user_id}")
+        cache.delete(f"dashboard_contributor_assigned_issues_{user_id}")
+        cache.delete(f"dashboard_contributor_recent_prs_{user_id}")
+        cache.delete(f"dashboard_contributor_progress_tracker_{user_id}")
 
 
 @receiver(pre_save, sender=Issue)

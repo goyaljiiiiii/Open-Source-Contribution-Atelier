@@ -5,16 +5,16 @@ from .views import (
     BulkProgressUpdateView,
     BulkSyncProgressView,
     CertificateVerificationView,
+    CodeSubmissionView,
     CommunityStatsView,
     ContributorTimelineView,
     HelpRequestListCreateView,
     MentorHelpRequestListView,
     MyCertificateView,
     MyProgressView,
+    PeerReviewView,
     QuizAttemptView,
     RecommendationsView,
-    CodeSubmissionView,
-    PeerReviewView,
 )
 
 urlpatterns = [

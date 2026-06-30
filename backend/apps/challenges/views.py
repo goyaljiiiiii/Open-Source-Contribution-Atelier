@@ -194,7 +194,9 @@ class CompleteChallengeOfTheDayView(APIView):
             )
 
         # Invalidate contributor dashboard cache so XP reflects immediately
-        cache.delete(f"dashboard_contributor_stats_{request.user.id}")
+        from apps.dashboard.signals import clear_dashboard_caches
+
+        clear_dashboard_caches(user_id=request.user.id)
 
         return Response(
             {"bonus_earned": cotd.bonus_points},

@@ -45,7 +45,7 @@ import { OnboardingTour } from "../components/ui/OnboardingTour";
 import { NotesWidget } from "../components/ui/NotesWidget";
 import { RecommendationsList } from "../components/ui/RecommendationsList";
 import { ChallengeOfTheDayWidget } from "../components/ui/ChallengeOfTheDayWidget";
-
+import { DailyQuoteWidget } from "../components/ui/DailyQuoteWidget";
 const FACTS = [
   "Git was created in 2005 by Linus Torvalds because he was frustrated with the commercial tool they were using for Linux development.",
   "Modern servers run on Linux, browsers run on Chromium, and compilers run on open source languages: the internet is built on OSS.",
@@ -130,14 +130,14 @@ export function DashboardPage() {
     error: adminError,
   } = useQuery({
     queryKey: ["adminDashboardStats"],
-    queryFn: () => fetchApi("/dashboard/admin/"),
+    queryFn: () => fetchApi("/dashboard/admin/", { suppressErrorToast: true }),
     enabled: !!user?.is_staff,
   });
 
   // 3. Fetch paginated leaderboard for admin chart (only queries if user is staff)
   const { data: leaderboardData, isLoading: isLeaderboardLoading } = useQuery({
     queryKey: ["leaderboard", 1],
-    queryFn: () => fetchApi("/leaderboard/"),
+    queryFn: () => fetchApi("/leaderboard/", { suppressErrorToast: true }),
     enabled: !!user?.is_staff,
   });
 
@@ -148,7 +148,8 @@ export function DashboardPage() {
     error: contributorError,
   } = useQuery({
     queryKey: ["contributorDashboardStats"],
-    queryFn: () => fetchApi("/dashboard/contributor/"),
+    queryFn: () =>
+      fetchApi("/dashboard/contributor/", { suppressErrorToast: true }),
     enabled: !!user && !user.is_staff,
   });
 
@@ -335,7 +336,8 @@ export function DashboardPage() {
   // Fetch user certificate if course is completed
   const { data: certificateData } = useQuery({
     queryKey: ["userCertificate"],
-    queryFn: () => fetchApi("/progress/certificate/"),
+    queryFn: () =>
+      fetchApi("/progress/certificate/", { suppressErrorToast: true }),
     enabled: !!user && !user.is_staff && completionPercentage === 100,
     retry: false,
   });
@@ -675,6 +677,17 @@ export function DashboardPage() {
             <h1 className="text-4xl sm:text-5xl font-black text-white drop-shadow-[3.5px_3.5px_0_#000] mb-4 dark:text-[#f0ebe2] dark:drop-shadow-none">
               Welcome to the Atelier, {user?.username}.
             </h1>
+
+            {/* --- NEW BIO RENDERER START --- */}
+            {user?.bio_html && (
+              <div
+                className="prose prose-sm prose-invert mb-6 text-white dark:text-[#f0ebe2] max-w-2xl bg-black/20 p-4 rounded-xl border-2 border-white/20 shadow-inner"
+                dangerouslySetInnerHTML={{ __html: user.bio_html }}
+              />
+            )}
+            {/* --- NEW BIO RENDERER END --- */}
+
+            <p className="text-lg font-bold text-black bg-white/95 p-4 rounded-lg border-4 border-black shadow-card-sm inline-block max-w-xl leading-relaxed dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2]"></p>
             <p className="text-lg font-bold text-black bg-white/95 p-4 rounded-lg border-4 border-black shadow-card-sm inline-block max-w-xl leading-relaxed dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2]">
               You have completed {completedLessonsCount} of {totalLessonsCount}{" "}
               course modules, earning{" "}
@@ -699,6 +712,10 @@ export function DashboardPage() {
             <span className="font-black text-black uppercase tracking-widest text-[9px] mt-1 dark:text-[#c4bbae]">
               Streak Days
             </span>
+            {/* Added longest streak display */}
+            <div className="absolute top-2 right-2 bg-surface-low border-2 border-black rounded-full px-2 py-0.5 text-[8px] font-black text-muted flex items-center gap-1 dark:bg-[#151411]">
+              <span className="text-[10px]">🏆</span> Max: {personal_stats.longest_streak || personal_stats.streak_days}
+            </div>
           </div>
 
           <div className="rounded-[2rem] border-4 border-black bg-white p-6 shadow-card flex flex-col justify-center items-center text-center dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none hover:-translate-y-0.5 transition-transform">
@@ -733,8 +750,9 @@ export function DashboardPage() {
         </div>
       </section>
 
-      {/* 2. Fact of the Day and Certificate Unlock */}
-      <section className="grid gap-6 md:grid-cols-[1.3fr_0.7fr]">
+      {/* 2. Fact of the Day, Quote, and Certificate Unlock */}
+      {/* Updated to grid-cols-3 to fit the new widget nicely */}
+      <section className="grid gap-6 md:grid-cols-[1fr_1fr_0.8fr]">
         <div
           id="tour-fact"
           className="rounded-2xl border-4 border-black bg-surface-low p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none flex items-start gap-4"
@@ -744,13 +762,16 @@ export function DashboardPage() {
           </div>
           <div>
             <h4 className="font-mono text-xs text-primary uppercase tracking-wider font-black mb-1">
-              Open Source Fact of the Day
+              Fact of the Day
             </h4>
             <p className="font-bold text-sm text-text leading-relaxed dark:text-[#c4bbae]">
               {factOfDay}
             </p>
           </div>
         </div>
+
+        {/* --- NEW DAILY QUOTE WIDGET --- */}
+        <DailyQuoteWidget />
 
         {/* Certificate Card */}
         <div

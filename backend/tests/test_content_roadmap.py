@@ -1,10 +1,11 @@
 import pytest
-from apps.content.models import Exercise, Lesson
-from apps.progress.models import LessonProgress
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from rest_framework.test import APIClient
+
+from apps.content.models import Exercise, Lesson
+from apps.progress.models import LessonProgress
 
 
 @pytest.fixture(autouse=True)
@@ -40,7 +41,7 @@ def test_roadmap_endpoint_for_anonymous_user():
     assert response.status_code == 200
     assert response.data["stats"]["total_lessons"] == 1
     assert response.data["track"][0]["slug"] == "intro-roadmap"
-    assert response.data["track"][0]["exercise_count"] == 1
+    assert response.data["track"][0]["exerciseCount"] == 1
     assert response.data["track"][0]["completed"] is False
     assert response.data["track"][0]["score"] == 0
 
