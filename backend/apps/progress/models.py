@@ -54,7 +54,12 @@ class UserBadge(models.Model):
     earned_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ("user", "badge")
+        # Upgraded to modern UniqueConstraint for stricter DB-level locking
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "badge"], name="unique_user_badge_award"
+            )
+        ]
 
 
 class LessonProgress(models.Model):
@@ -240,6 +245,29 @@ class CodeSubmission(models.Model):
     def __str__(self):
         return f"{self.title} by {self.user.username}"
 
+
+class PlagiarismReport(models.Model):
+    """Model to store plagiarism detection results for a code submission.
+
+    Fields correspond to the migration that creates this table.
+    """
+    objects = models.Manager()
+    submission = models.ForeignKey(
+        CodeSubmission, on_delete=models.CASCADE, related_name="plagiarism_reports"
+    )
+    matched_submission = models.ForeignKey(
+        CodeSubmission, on_delete=models.CASCADE, related_name="matched_in_reports"
+    )
+    similarity_score = models.FloatField()
+    is_flagged = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-similarity_score"]
+        unique_together = ("submission", "matched_submission")
+
+    def __str__(self):
+        return f"PlagiarismReport(submission={self.submission.id}, matched={self.matched_submission.id}, score={self.similarity_score})"
 
 class PeerReview(models.Model):
     objects = models.Manager()

@@ -132,6 +132,24 @@ export function LessonPage() {
     },
   });
 
+  const quizAttemptMutation = useMutation({
+    mutationFn: (payload: {
+      question_id: string;
+      question_text: string;
+      selected_answer: string;
+      correct_answer: string;
+      is_correct: boolean;
+    }) => {
+      return fetchApi("/progress/quiz-attempts/", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+    },
+    onError: (err) => {
+      console.error("Failed to submit quiz attempt:", err);
+    },
+  });
+
   // 1. Fetch modules catalog & lessons
   // First, try to find the lesson from the backend API. If the slug doesn't exist
   // there (e.g. curriculum.json and seed data are out of sync), fall back to
@@ -307,8 +325,18 @@ export function LessonPage() {
   const handleQuizOptionCheck = () => {
     if (selectedOption === null || !lesson || !lesson.quizzes) return;
     const currentQuiz = lesson.quizzes[currentQuizIndex];
+    const isCorrect = selectedOption === currentQuiz.answer;
 
-    if (selectedOption === currentQuiz.answer) {
+    // Send attempt to backend
+    quizAttemptMutation.mutate({
+      question_id: `${lesson.slug}-q${currentQuizIndex}`,
+      question_text: currentQuiz.question,
+      selected_answer: currentQuiz.options[selectedOption] || "",
+      correct_answer: currentQuiz.options[currentQuiz.answer] || "",
+      is_correct: isCorrect,
+    });
+
+    if (isCorrect) {
       setQuizFeedback("correct");
       if (currentQuizIndex === lesson.quizzes.length - 1) {
         setFeedback("correct");

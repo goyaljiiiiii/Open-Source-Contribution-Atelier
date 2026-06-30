@@ -4,6 +4,7 @@ from django.db import models
 from apps.organizations.models import Organization
 
 
+
 class Permission(models.Model):
     objects = models.Manager()
     slug = models.CharField(max_length=100, unique=True)

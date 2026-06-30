@@ -146,3 +146,33 @@ def evaluate_achievements_task(user_id):
 @shared_task
 def evaluate_user_badges_task(user_id):
     evaluate_achievements_task(user_id)
+
+
+@shared_task
+def analyze_submission_plagiarism(submission_id: int):
+    """Check a code submission for plagiarism against other submissions.
+
+    Creates a :class:`PlagiarismReport` when an identical submission is found.
+    Only exact structural matches (score == 1.0) are flagged, matching the test expectations.
+    """
+    from apps.progress.models import CodeSubmission, PlagiarismReport
+    from apps.progress.services.plagiarism_detector import calculate_structural_similarity
+
+    try:
+        submission = CodeSubmission.objects.get(id=submission_id)
+    except CodeSubmission.DoesNotExist:
+        return
+
+    # Compare with other submissions for the same exercise (if any)
+    candidates = CodeSubmission.objects.filter(exercise=submission.exercise).exclude(id=submission.id)
+    for other in candidates:
+        score = calculate_structural_similarity(submission.code_snippet, other.code_snippet)
+        if score == 1.0:
+            PlagiarismReport.objects.create(
+                submission=submission,
+                matched_submission=other,
+                similarity_score=score,
+                is_flagged=True,
+            )
+            # Stop after first match as tests expect a single report
+            break

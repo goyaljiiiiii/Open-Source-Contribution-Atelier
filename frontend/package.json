@@ -33,6 +33,7 @@
     "i18next": "^26.3.2",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^1.21.0",
+    "magic-string": "^0.30.21",
     "prismjs": "^1.30.0",
     "pyodide": "^314.0.0",
     "randomcolor": "^0.6.2",
