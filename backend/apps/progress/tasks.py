@@ -1,20 +1,23 @@
+import logging
 from datetime import timedelta
 
+from django_q.tasks import async_task
+
 from apps.progress.models import LessonProgress, UserBadge
-from celery import current_app  # type: ignore
-from celery import shared_task  # type: ignore
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
+logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
-@shared_task
 def send_weekly_progress_summary():
     """
-    Celery cron task to calculate learning progress over the past 7 days
+    Django-Q scheduled task to calculate learning progress over the past 7 days
     for each active user, and dispatch an email summary.
     """
+    from apps.notifications.tasks import send_bulk_email
+
     seven_days_ago = timezone.now() - timedelta(days=7)
 
     # Process active users in chunks
@@ -47,14 +50,9 @@ def send_weekly_progress_summary():
                     "badge_names": badge_names,
                 },
             }
-
-            # Dispatch email using the existing bulk email worker
-            current_app.send_task(
-                "apps.notifications.tasks.send_bulk_email", kwargs={"payload": payload}
-            )
+            async_task("apps.notifications.tasks.send_bulk_email", payload)
 
 
-@shared_task
 def evaluate_achievements_task(user_id):
     from apps.progress.models import (
         Achievement,
@@ -136,6 +134,5 @@ def evaluate_achievements_task(user_id):
                 )
 
 
-@shared_task
 def evaluate_user_badges_task(user_id):
     evaluate_achievements_task(user_id)

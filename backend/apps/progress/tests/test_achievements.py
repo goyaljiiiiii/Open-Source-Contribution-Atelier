@@ -39,7 +39,7 @@ def custom_exercises(db, custom_lesson):
 @pytest.fixture
 def mock_channel_layer():
     with patch("channels.layers.get_channel_layer") as mock_layer:
-        with patch("apps.notifications.signals.send_web_push_notification.delay"):
+        with patch("apps.notifications.signals.async_task") as mock_async:
             with patch(
                 "apps.notifications.signals.channel_layer", mock_layer, create=True
             ):
@@ -54,7 +54,7 @@ def test_achievement_milestones(
     ExerciseAttempt.objects.create(
         user=test_user, exercise=custom_exercises[0], is_correct=True
     )
-    # The signal should have triggered the task, but we can call it manually to be sure in tests if Celery isn't running inline
+    # The signal should have triggered the task, but we can call it manually to be sure in tests if Django-Q isn't running inline
     evaluate_achievements_task(test_user.id)
 
     assert UserAchievement.objects.filter(

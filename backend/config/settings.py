@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     
     "graphene_django",
     "apps.feature_flags",
+    "django_q",
 ]
 
 MIDDLEWARE = [
@@ -316,13 +317,24 @@ else:
     }
 
 # ──────────────────────────────────────────
-# Celery Configuration
+# Django-Q Configuration
 # ──────────────────────────────────────────
-CELERY_BROKER_URL = ENV_REDIS_URL or "redis://127.0.0.1:6379/0"
-CELERY_RESULT_BACKEND = CELERY_BROKER_URL
-CELERY_ACCEPT_CONTENT = ["json"]
-CELERY_TASK_SERIALIZER = "json"
-CELERY_RESULT_SERIALIZER = "json"
+# Use Redis as the broker when available; fall back to the ORM (SQLite/Postgres)
+# so that local dev and CI work without a running Redis instance.
+_q_broker: dict = (
+    {"redis": ENV_REDIS_URL}
+    if is_redis_available(CHECK_REDIS_URL) and ENV_REDIS_URL
+    else {"orm": "default"}
+)
+Q_CLUSTER = {
+    "name": "atelier",
+    "workers": 4,
+    "timeout": 90,
+    "retry": 120,
+    "queue_limit": 50,
+    "bulk": 10,
+    **_q_broker,
+}
 
 
 # ──────────────────────────────────────────

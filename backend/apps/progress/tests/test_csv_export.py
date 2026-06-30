@@ -27,7 +27,7 @@ from django.test import override_settings
 
 
 @pytest.fixture
-@override_settings(CELERY_TASK_ALWAYS_EAGER=True)
+@override_settings(Q_CLUSTER={"sync": True})
 def custom_data(db, test_users):
     user1, user2, admin = test_users
 
@@ -41,9 +41,7 @@ def custom_data(db, test_users):
     # User 1 completes 1 lesson
     from unittest.mock import patch
 
-    with patch("apps.progress.tasks.evaluate_user_badges_task.delay"), patch(
-        "apps.notifications.signals.send_web_push_notification.delay"
-    ), patch("celery.app.task.Task.delay"):
+    with patch("django_q.tasks.async_task"):
         LessonProgress.objects.create(
             user=user1, lesson=lesson1, completed=True, score=100
         )
