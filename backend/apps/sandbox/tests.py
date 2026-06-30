@@ -6,7 +6,6 @@ from channels.testing import WebsocketCommunicator
 from config.asgi import application
 
 
-
 @pytest.mark.asyncio
 async def test_sandbox_websocket_consumer():
     headers = [(b"origin", b"http://localhost"), (b"host", b"localhost")]

@@ -27,16 +27,16 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
     def populate_user(self, request, sociallogin, data):
         """Populate user instance with data from social provider."""
         user = super().populate_user(request, sociallogin, data)
-        
+
         # Ensure unique username from GitHub login or email
         github_login = data.get("login")
         email = data.get("email")
         username_source = github_login or email
-        
+
         if username_source:
             user.username = unique_username_from_value(username_source)
-        
+
         # Set a random password for social auth users
         user.set_password(secrets.token_urlsafe(24))
-        
+
         return user

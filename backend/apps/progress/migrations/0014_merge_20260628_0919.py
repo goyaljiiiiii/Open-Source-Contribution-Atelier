@@ -6,11 +6,10 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('progress', '0011_merge_20260625_2105'),
-        ('progress', '0012_plagiarismreport_streakprofile'),
-        ('progress', '0012_userstreak'),
-        ('progress', '0013_achievement_userachievement'),
+        ("progress", "0011_merge_20260625_2105"),
+        ("progress", "0012_plagiarismreport_streakprofile"),
+        ("progress", "0012_userstreak"),
+        ("progress", "0013_achievement_userachievement"),
     ]
 
-    operations = [
-    ]
+    operations = []
