@@ -62,14 +62,11 @@ def verify_git_command(command: str, expected_command: str) -> VerificationResul
 
 
 import asyncio
-import sys
-import os
-import tempfile
 import json
-
-
-import asyncio
+import os
 import sys
+import tempfile
+
 from .resource_manager import ResourceManagementEngine, SecurityViolation
 
 

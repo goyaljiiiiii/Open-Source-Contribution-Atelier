@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchApi } from "../../lib/api";
 import { useAuth } from "../../features/auth/AuthContext";
 import { Trash2, AlertTriangle, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
 
 export function DeleteAccountModal({
   isOpen,
@@ -16,6 +18,20 @@ export function DeleteAccountModal({
   const { logout } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useFocusTrap(modalRef, isOpen);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
 
   const deleteAccountMutation = useMutation({
     mutationFn: () => fetchApi("/auth/users/me/delete/", { method: "DELETE" }),
@@ -28,11 +44,18 @@ export function DeleteAccountModal({
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl border-4 border-black p-8 max-w-md w-full shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative animate-in fade-in zoom-in duration-200">
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-account-title"
+        className="bg-white rounded-3xl border-4 border-black p-8 max-w-md w-full shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative animate-in fade-in zoom-in duration-200"
+      >
         <button
           onClick={onClose}
+          aria-label="Close dialog"
           className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
         >
           <X className="w-6 h-6" />
@@ -43,7 +66,10 @@ export function DeleteAccountModal({
             <AlertTriangle className="w-10 h-10 text-red-500" />
           </div>
 
-          <h2 className="text-2xl font-black uppercase tracking-tight text-red-600">
+          <h2
+            id="delete-account-title"
+            className="text-2xl font-black uppercase tracking-tight text-red-600"
+          >
             Delete Account?
           </h2>
 
@@ -103,6 +129,7 @@ export function DeleteAccountModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

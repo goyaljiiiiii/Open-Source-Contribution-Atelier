@@ -1,11 +1,12 @@
 import json
 
 import pytest
-from apps.sandbox.consumers import SandboxConsumer
 from channels.testing import WebsocketCommunicator
+
+from apps.sandbox.consumers import SandboxConsumer
 from config.asgi import application
 
-
+@pytest.mark.asyncio
 @pytest.mark.asyncio
 async def test_sandbox_websocket_consumer():
     headers = [(b"origin", b"http://localhost"), (b"host", b"localhost")]

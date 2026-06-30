@@ -5,10 +5,10 @@ from .views import (
     LessonPDFView,
     LessonViewSet,
     OrganizationListView,
+    QuizDetailView,
     RoadmapView,
     SearchView,
     SemanticSearchView,
-    QuizDetailView,
 )
 
 router = DefaultRouter()

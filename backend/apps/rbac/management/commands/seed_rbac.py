@@ -1,5 +1,8 @@
 from django.core.management.base import BaseCommand
-from apps.rbac.models import Role, Permission
+
+from apps.rbac.models import Permission, Role
+
+
 
 
 class Command(BaseCommand):

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import Editor, { useMonaco } from "@monaco-editor/react";
+import Editor from "@monaco-editor/react";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { MonacoBinding } from "y-monaco";
@@ -15,15 +15,21 @@ interface CollabPythonSandboxProps {
   roomId: string;
 }
 
-export function CollabPythonSandbox({ exercise, onSuccess, roomId }: CollabPythonSandboxProps) {
+export function CollabPythonSandbox({
+  exercise,
+  onSuccess,
+  roomId,
+}: CollabPythonSandboxProps) {
   const [output, setOutput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [activeUsers, setActiveUsers] = useState<any[]>([]);
+  const [activeUsers, setActiveUsers] = useState<
+    Array<{ name: string; color: string }>
+  >([]);
   const { runPythonCode, isExecuting, isReady } = usePythonSandbox();
   const { user } = useAuth();
-  
-  const editorRef = useRef<any>(null);
+
+  const editorRef = useRef<{ getModel: () => unknown }>(null);
   const ydocRef = useRef<Y.Doc | null>(null);
   const providerRef = useRef<WebsocketProvider | null>(null);
   const bindingRef = useRef<MonacoBinding | null>(null);
@@ -37,28 +43,27 @@ export function CollabPythonSandbox({ exercise, onSuccess, roomId }: CollabPytho
     // Ensure we use the correct protocol (ws:// or wss://) and host
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     // Determine backend host from env or fallback to localhost:8000
-    const backendHost = import.meta.env.VITE_API_URL 
-      ? new URL(import.meta.env.VITE_API_URL).host 
+    const backendHost = import.meta.env.VITE_API_URL
+      ? new URL(import.meta.env.VITE_API_URL).host
       : "localhost:8000";
-    
+
     const wsUrl = `${protocol}//${backendHost}/ws/collab`;
-    
+
     // y-websocket connects to serverUrl/roomname
-    const provider = new WebsocketProvider(
-      wsUrl,
-      roomId,
-      ydoc,
-      { connect: true, WebSocketPolyfill: WebSocket }
-    );
+    const provider = new WebsocketProvider(wsUrl, roomId, ydoc, {
+      connect: true,
+      WebSocketPolyfill: WebSocket,
+    });
     providerRef.current = provider;
 
     // Awareness (Cursors, Presence)
     const awareness = provider.awareness;
-    
+
     // Setup local user info
-    const userName = user?.username || `Guest_${Math.floor(Math.random() * 1000)}`;
-    const userColor = randomColor({ luminosity: 'dark' });
-    
+    const userName =
+      user?.username || `Guest_${Math.floor(Math.random() * 1000)}`;
+    const userColor = randomColor({ luminosity: "dark" });
+
     awareness.setLocalStateField("user", {
       name: userName,
       color: userColor,
@@ -67,7 +72,9 @@ export function CollabPythonSandbox({ exercise, onSuccess, roomId }: CollabPytho
     // Track active users
     awareness.on("change", () => {
       const states = Array.from(awareness.getStates().values());
-      const users = states.map((state: any) => state.user).filter(Boolean);
+      const users = states
+        .map((state: { user?: { name: string; color: string } }) => state.user)
+        .filter(Boolean);
       setActiveUsers(users);
     });
 
@@ -79,19 +86,19 @@ export function CollabPythonSandbox({ exercise, onSuccess, roomId }: CollabPytho
     };
   }, [roomId, user]);
 
-  const handleEditorDidMount = (editor: any, monaco: any) => {
+  const handleEditorDidMount = (editor: { getModel: () => unknown }) => {
     editorRef.current = editor;
-    
+
     if (ydocRef.current && providerRef.current) {
       const type = ydocRef.current.getText("monaco");
-      
+
       bindingRef.current = new MonacoBinding(
         type,
         editor.getModel(),
         new Set([editor]),
-        providerRef.current.awareness
+        providerRef.current.awareness,
       );
-      
+
       if (type.length === 0) {
         type.insert(0, exercise.starterCode);
       }
@@ -142,21 +149,21 @@ export function CollabPythonSandbox({ exercise, onSuccess, roomId }: CollabPytho
     <div className="flex flex-col gap-4 w-full border-4 border-black dark:border-[#2e2924] rounded-xl overflow-hidden bg-surface dark:bg-[#151411]">
       <div className="flex flex-wrap items-center justify-between p-4 border-b-4 border-black dark:border-[#2e2924] bg-white dark:bg-[#1f1c18] gap-4">
         <div className="flex items-center gap-4">
-            <h3 className="font-black text-lg flex items-center gap-2">
-              🐍 Collab Sandbox
-            </h3>
-            <div className="flex -space-x-2">
-                {activeUsers.map((u, i) => (
-                    <div 
-                        key={i} 
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ring-2 ring-white dark:ring-[#1f1c18]"
-                        style={{ backgroundColor: u.color }}
-                        title={u.name}
-                    >
-                        {u.name.charAt(0).toUpperCase()}
-                    </div>
-                ))}
-            </div>
+          <h3 className="font-black text-lg flex items-center gap-2">
+            🐍 Collab Sandbox
+          </h3>
+          <div className="flex -space-x-2">
+            {activeUsers.map((u, i) => (
+              <div
+                key={i}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ring-2 ring-white dark:ring-[#1f1c18]"
+                style={{ backgroundColor: u.color }}
+                title={u.name}
+              >
+                {u.name.charAt(0).toUpperCase()}
+              </div>
+            ))}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <button

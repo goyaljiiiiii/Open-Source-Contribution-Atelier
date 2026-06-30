@@ -18,7 +18,7 @@ export interface PendingSyncItem {
   entity_type: string;
   entity_id: string;
   timestamp: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -28,17 +28,17 @@ export async function enqueueOfflineAction(
   url: string,
   method: string,
   headers: Record<string, string>,
-  body: any,
+  body: Record<string, unknown>,
   entity_type: string,
-  entity_id: string
+  entity_id: string,
 ) {
   const API_BASE =
     import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
   const fullUrl = url.startsWith("http") ? url : `${API_BASE}${url}`;
-  
+
   const id = `${entity_type}-${entity_id}`;
   const timestamp = Date.now();
-  
+
   // Inject client_timestamp into the payload for conflict resolution on the backend
   const bodyObj = { ...body, client_timestamp: timestamp };
 
@@ -73,7 +73,9 @@ export async function enqueueOfflineAction(
     const pending = JSON.parse(
       localStorage.getItem("atelier_pending_sync") || "[]",
     );
-    const existingIndex = pending.findIndex((p: PendingSyncItem) => p.id === id);
+    const existingIndex = pending.findIndex(
+      (p: PendingSyncItem) => p.id === id,
+    );
     const newItem = { id, entity_type, entity_id, timestamp, ...bodyObj };
     if (existingIndex >= 0) {
       pending[existingIndex] = newItem;
@@ -138,6 +140,52 @@ export async function syncOfflineQueue() {
 
     for (const action of actions) {
       try {
+        // --- CONFLICT RESOLUTION: Last-Write-Wins with Server Precedence ---
+        try {
+          const checkResponse = await fetch(action.url, {
+            method: "GET",
+            headers: {
+              ...action.headers,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (checkResponse.ok) {
+            const serverData = await checkResponse.json();
+            const serverTs = serverData.timestamp || 
+                             (serverData.updated_at ? new Date(serverData.updated_at).getTime() : 0) || 
+                             (serverData.client_timestamp ? serverData.client_timestamp : 0);
+
+            if (serverTs > action.timestamp) {
+              console.warn(`[Sync Conflict] Server data is newer. Discarding stale local write for ${action.id}`);
+              
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("syncConflict", { detail: action.entity_type }));
+              }
+
+              // Discard from IndexedDB
+              const writeTx = db.transaction("sync-queue", "readwrite");
+              await new Promise<void>((resolve, reject) => {
+                const deleteReq = writeTx.objectStore("sync-queue").delete(action.id);
+                deleteReq.onsuccess = () => resolve();
+                deleteReq.onerror = () => reject(deleteReq.error);
+              });
+
+              // Discard from localStorage
+              const pending = JSON.parse(localStorage.getItem("atelier_pending_sync") || "[]");
+              localStorage.setItem("atelier_pending_sync", JSON.stringify(
+                pending.filter((p: PendingSyncItem) => p.id !== action.id)
+              ));
+
+              continue; // Skip the POST, move to next item
+            }
+          }
+        } catch (checkErr) {
+          // If pre-flight GET fails (e.g., 405 Method Not Allowed), just proceed normally
+          console.debug(`[OfflineQueue] Pre-flight check skipped for ${action.id}`);
+        }
+        // --- END CONFLICT RESOLUTION ---
+
         const response = await fetch(action.url, {
           method: action.method,
           headers: action.headers,
@@ -210,9 +258,7 @@ if (typeof window !== "undefined") {
           const pending = JSON.parse(
             localStorage.getItem("atelier_pending_sync") || "[]",
           );
-          const filtered = pending.filter(
-            (p: PendingSyncItem) => p.id !== id,
-          );
+          const filtered = pending.filter((p: PendingSyncItem) => p.id !== id);
           localStorage.setItem(
             "atelier_pending_sync",
             JSON.stringify(filtered),

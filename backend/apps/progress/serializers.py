@@ -138,10 +138,12 @@ class CodeSubmissionSerializer(serializers.ModelSerializer):
             "id",
             "user",
             "username",
+            "exercise",
             "title",
             "code_snippet",
             "description",
             "status",
+            "client_timestamp",
             "created_at",
         ]
         read_only_fields = ["id", "user", "username", "status", "created_at"]
@@ -159,6 +161,7 @@ class PeerReviewSerializer(serializers.ModelSerializer):
             "reviewer_username",
             "feedback",
             "rating",
+            "is_approved",
             "points_earned",
             "created_at",
         ]

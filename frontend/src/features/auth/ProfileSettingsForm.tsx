@@ -18,6 +18,10 @@ const profileSchema = z.object({
     .refine((val) => !val || val.length >= 8, {
       message: "Password must be at least 8 characters long if provided",
     }),
+  bio: z
+    .string()
+    .max(1500, { message: "Bio cannot exceed 1500 characters" })
+    .optional(),
   timezone: z.string(),
   twitter_url: z
     .string()
@@ -82,6 +86,7 @@ export function ProfileSettingsForm() {
     defaultValues: {
       email: user?.email || "",
       password: "",
+      bio: user?.bio || "",
       timezone:
         user?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
       twitter_url: user?.twitter_url || "",
@@ -95,6 +100,7 @@ export function ProfileSettingsForm() {
       reset({
         email: user.email,
         password: "",
+        bio: user.bio || "",
         timezone:
           user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
         twitter_url: user.twitter_url || "",
@@ -110,26 +116,19 @@ export function ProfileSettingsForm() {
     try {
       let body: FormData | string;
 
-      // If we have a file, we MUST use FormData
       if (selectedAvatar || selectedCover) {
         const formData = new FormData();
         formData.append("email", data.email);
-        if (data.password) {
-          formData.append("password", data.password);
-        }
+        if (data.password) formData.append("password", data.password);
+        if (data.bio !== undefined) formData.append("bio", data.bio);
         formData.append("timezone", data.timezone);
         formData.append("twitter_url", data.twitter_url || "");
         formData.append("linkedin_url", data.linkedin_url || "");
         formData.append("github_url", data.github_url || "");
-        if (selectedAvatar) {
-          formData.append("avatar", selectedAvatar);
-        }
-        if (selectedCover) {
-          formData.append("cover_image", selectedCover);
-        }
+        if (selectedAvatar) formData.append("avatar", selectedAvatar);
+        if (selectedCover) formData.append("cover_image", selectedCover);
         body = formData;
       } else {
-        // Fallback to JSON payload if no file is selected (cleaner for simple updates)
         const payload: Record<string, string> = {
           email: data.email,
           timezone: data.timezone,
@@ -137,9 +136,8 @@ export function ProfileSettingsForm() {
           linkedin_url: data.linkedin_url || "",
           github_url: data.github_url || "",
         };
-        if (data.password) {
-          payload.password = data.password;
-        }
+        if (data.password) payload.password = data.password;
+        if (data.bio !== undefined) payload.bio = data.bio;
         body = JSON.stringify(payload);
       }
 
@@ -149,11 +147,12 @@ export function ProfileSettingsForm() {
         body: body,
       });
 
-      await checkUser(); // Refresh global user context to show new avatar instantly
+      await checkUser(); 
       addToast("Profile settings updated successfully!", "success");
       reset({
         email: data.email,
         password: "",
+        bio: data.bio || "",
         timezone: data.timezone,
         twitter_url: data.twitter_url || "",
         linkedin_url: data.linkedin_url || "",
@@ -236,6 +235,30 @@ export function ProfileSettingsForm() {
         {errors.email && (
           <p role="alert" className="text-red-600 font-bold ml-2 text-sm">
             {errors.email.message}
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <label
+          htmlFor="bio"
+          className="font-bold text-black ml-2 uppercase tracking-wide text-sm"
+        >
+          Bio (Markdown Supported)
+        </label>
+        <textarea
+          id="bio"
+          {...register("bio")}
+          rows={5}
+          className={`w-full rounded-2xl border-4 border-black bg-white px-5 py-4 text-black font-bold outline-none placeholder:text-muted/60 focus:bg-accent shadow-card-sm transition-all focus:-translate-y-1 focus:shadow-card ${
+            errors.bio ? "border-red-500" : ""
+          }`}
+          placeholder="Tell us about yourself... **Bold**, *Italic*, [Links](https://...) are supported!"
+          disabled={loading}
+        />
+        {errors.bio && (
+          <p role="alert" className="text-red-600 font-bold ml-2 text-sm">
+            {errors.bio.message}
           </p>
         )}
       </div>

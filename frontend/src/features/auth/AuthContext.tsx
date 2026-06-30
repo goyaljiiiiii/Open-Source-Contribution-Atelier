@@ -15,6 +15,8 @@ type User = {
   is_staff: boolean;
   avatar_url?: string | null;
   cover_image_url?: string | null;
+  bio?: string;
+  bio_html?: string;
   timezone?: string;
   twitter_url?: string;
   linkedin_url?: string;

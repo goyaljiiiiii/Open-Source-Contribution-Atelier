@@ -132,27 +132,83 @@ export function LessonPage() {
     },
   });
 
+  const quizAttemptMutation = useMutation({
+    mutationFn: (payload: {
+      question_id: string;
+      question_text: string;
+      selected_answer: string;
+      correct_answer: string;
+      is_correct: boolean;
+    }) => {
+      return fetchApi("/progress/quiz-attempts/", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+    },
+    onError: (err) => {
+      console.error("Failed to submit quiz attempt:", err);
+    },
+  });
+
   // 1. Fetch modules catalog & lessons
+  // First, try to find the lesson from the backend API. If the slug doesn't exist
+  // there (e.g. curriculum.json and seed data are out of sync), fall back to
+  // constructing a basic Lesson object from curriculum.json data.
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect */
     setIsLoading(true);
-    fetch("/content/curriculum.json")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.modules) {
-          setModules(data.modules);
-        }
-      })
-      .catch((err) => console.error("Error fetching curriculum catalog:", err));
 
-    fetchLessonsApi()
-      .then((data) => {
-        setLessonsList(data);
-        const found = data.find((l) => l.slug === slug);
+    Promise.all([
+      fetch("/content/curriculum.json").then((res) => res.json()),
+      fetchLessonsApi(),
+    ])
+      .then(([curriculumJson, lessonsData]) => {
+        setLessonsList(lessonsData);
+
+        if (curriculumJson && curriculumJson.modules) {
+          setModules(curriculumJson.modules);
+        }
+
+        // Try to find the lesson in the backend API data first
+        let found = lessonsData.find((l) => l.slug === slug);
+
+        // If not found in API, look it up in curriculum.json and build a Lesson
+        if (!found && curriculumJson?.modules) {
+          for (const mod of curriculumJson.modules) {
+            const curriculumLesson = mod.lessons.find(
+              (l: { slug: string; title: string; difficulty?: string }) =>
+                l.slug === slug,
+            );
+            if (curriculumLesson) {
+              found = {
+                slug: curriculumLesson.slug,
+                title: curriculumLesson.title,
+                description: curriculumLesson.description || "",
+                explanation: "",
+                expected: curriculumLesson.expected || "",
+                hint:
+                  curriculumLesson.hint || "Read the lesson content carefully.",
+                difficulty: curriculumLesson.difficulty || "beginner",
+                points: curriculumLesson.points || 15,
+                estimatedMinutes: curriculumLesson.estimatedMinutes || 10,
+                learningObjectives: [],
+                tips: [],
+                exercises: [],
+                quizzes: curriculumLesson.quizzes || [],
+                filePath: curriculumLesson.filePath,
+                category: mod.id || "general",
+                order: mod.lessons.indexOf(curriculumLesson),
+              } as Lesson;
+              break;
+            }
+          }
+        }
+
         if (!found) {
           navigate("/dashboard", { replace: true });
           return;
         }
+
         setLesson(found);
       })
       .catch(() => {
@@ -269,8 +325,18 @@ export function LessonPage() {
   const handleQuizOptionCheck = () => {
     if (selectedOption === null || !lesson || !lesson.quizzes) return;
     const currentQuiz = lesson.quizzes[currentQuizIndex];
+    const isCorrect = selectedOption === currentQuiz.answer;
 
-    if (selectedOption === currentQuiz.answer) {
+    // Send attempt to backend
+    quizAttemptMutation.mutate({
+      question_id: `${lesson.slug}-q${currentQuizIndex}`,
+      question_text: currentQuiz.question,
+      selected_answer: currentQuiz.options[selectedOption] || "",
+      correct_answer: currentQuiz.options[currentQuiz.answer] || "",
+      is_correct: isCorrect,
+    });
+
+    if (isCorrect) {
       setQuizFeedback("correct");
       if (currentQuizIndex === lesson.quizzes.length - 1) {
         setFeedback("correct");
@@ -514,10 +580,16 @@ export function LessonPage() {
             <div className="pt-8 space-y-6">
               {lesson.pythonExercise ? (
                 <div className="mt-8">
-                  {new URLSearchParams(window.location.search).get("session") ? (
+                  {new URLSearchParams(window.location.search).get(
+                    "session",
+                  ) ? (
                     <CollabPythonSandbox
                       exercise={lesson.pythonExercise}
-                      roomId={new URLSearchParams(window.location.search).get("session")!}
+                      roomId={
+                        new URLSearchParams(window.location.search).get(
+                          "session",
+                        )!
+                      }
                       onSuccess={() => {
                         syncProgress({
                           lesson_slug: lesson.slug,

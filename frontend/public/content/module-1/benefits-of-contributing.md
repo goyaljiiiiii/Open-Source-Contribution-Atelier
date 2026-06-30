@@ -4,7 +4,7 @@
 
 ---
 
-### 💡 Why You Should Contribute
+## 💡 Why You Should Contribute
 
 - **Level Up Your Skills**: Working on large codebases exposes you to collaborative workflows, advanced design patterns, testing frameworks, and lint tools.
 
@@ -17,7 +17,6 @@ _Contribution Graph_
 You can also earn cool achievements for doing a variety of tasks like getting pull requests merged, closing an issue, or answering questions posted by other users on forums!
 
 <img width="321" height="130" alt="image" src="https://github.com/user-attachments/assets/8d0aadbc-7ea9-4b41-81f6-2ecb3db054df" />
-
 
 - **Collaborative Experience**: You learn standard industry practices like code reviews, pull requests, CI/CD checks, and Git version control.
 

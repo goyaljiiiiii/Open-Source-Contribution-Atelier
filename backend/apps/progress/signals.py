@@ -5,7 +5,10 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+ feat/daily-coding-streaks-398
 from django.utils import timezone
+
+ main
 from django.db import transaction
 
 from .models import LessonProgress, ExerciseAttempt
@@ -13,6 +16,7 @@ from .models import LessonProgress, ExerciseAttempt
 logger = logging.getLogger(__name__)
 
 
+feat/daily-coding-streaks-398
 def update_user_streak(user):
     """
     Core business logic to calculate and update daily coding streaks.
@@ -52,6 +56,7 @@ def update_user_streak(user):
         )
 
 
+ main
 @receiver(post_save, sender=LessonProgress)
 def on_lesson_completed(sender, instance, created, **kwargs):
     if not instance.completed:
@@ -78,8 +83,9 @@ def on_lesson_completed(sender, instance, created, **kwargs):
         return
 
     try:
-        from apps.progress.models import LessonProgress as LP
         from django.db.models import Sum
+
+        from apps.progress.models import LessonProgress as LP
 
         total_xp = (
             LP.objects.filter(user=instance.user).aggregate(total=Sum("score"))["total"]
@@ -99,10 +105,16 @@ def on_lesson_completed(sender, instance, created, **kwargs):
     except Exception as exc:
         logger.error("Failed to push leaderboard update: %s", exc)
 
+ feat/daily-coding-streaks-398
+
+    # Evaluate achievements on lesson completion - Wrapped in on_commit to prevent mid-transaction evaluation
+ main
     try:
         from apps.progress.tasks import evaluate_achievements_task
 
-        evaluate_achievements_task.delay(instance.user.id)
+        transaction.on_commit(
+            lambda: evaluate_achievements_task.delay(instance.user.id)
+        )
     except Exception as exc:
         logger.error("Failed to enqueue achievement evaluation: %s", exc)
 
@@ -119,6 +131,8 @@ def on_exercise_attempt(sender, instance, created, **kwargs):
         try:
             from apps.progress.tasks import evaluate_achievements_task
 
-            evaluate_achievements_task.delay(instance.user.id)
+            transaction.on_commit(
+                lambda: evaluate_achievements_task.delay(instance.user.id)
+            )
         except Exception as exc:
             logger.error("Failed to enqueue achievement evaluation: %s", exc)

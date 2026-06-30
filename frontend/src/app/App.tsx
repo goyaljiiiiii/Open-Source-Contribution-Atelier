@@ -11,18 +11,19 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         {/* Global Toast Configuration */}
-        <Toaster 
+        <Toaster
           position="top-right"
           toastOptions={{
-            className: 'bg-gray-900 text-white border border-gray-800 shadow-xl font-sans text-sm',
+            className:
+              "bg-gray-900 text-white border border-gray-800 shadow-xl font-sans text-sm",
             duration: 4000,
             success: {
-              iconTheme: { primary: '#10B981', secondary: '#ffffff' },
+              iconTheme: { primary: "#10B981", secondary: "#ffffff" },
             },
             error: {
-              iconTheme: { primary: '#EF4444', secondary: '#ffffff' },
+              iconTheme: { primary: "#EF4444", secondary: "#ffffff" },
             },
-          }} 
+          }}
         />
         <AppRouter />
         <ScrollToTop />

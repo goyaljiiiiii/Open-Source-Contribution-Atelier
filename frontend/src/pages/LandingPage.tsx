@@ -19,7 +19,14 @@ function getErrorMessage(error: unknown, fallback: string) {
 
 export function LandingPage() {
   const { t } = useTranslation();
-  const { login } = useAuth();
+  // Safely obtain login function; if AuthContext is not provided, default to a no-op.
+  let login = () => {};
+  try {
+    const auth = useAuth();
+    login = auth.login;
+  } catch (e) {
+    // No AuthProvider in the tree; proceed with fallback login.
+  }
   const { theme, toggleTheme } = useTheme();
   const [authRole, setAuthRole] = useState<"student" | "admin">("student");
   const [email, setEmail] = useState("");

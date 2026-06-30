@@ -106,7 +106,11 @@ export function ActivityHeatmap() {
         </div>
       </div>
 
-      <div className="overflow-x-auto pb-4">
+      <div
+        className="overflow-x-auto pb-4"
+        role="img"
+        aria-label={`Activity graph showing contribution activity over the past year. Total contributions: ${totalActivity}. Active days: ${activeDays}.`}
+      >
         <div className="inline-flex gap-1">
           {calendarGrid.map((week, wIdx) => (
             <div key={wIdx} className="flex flex-col gap-1">
@@ -125,6 +129,8 @@ export function ActivityHeatmap() {
                 return (
                   <div
                     key={day.dateStr}
+                    role="img"
+                    aria-label={`${day.count} contributions on ${day.dateStr}`}
                     title={`${day.count} contributions on ${day.dateStr}`}
                     className={`w-3.5 h-3.5 rounded-sm ${colorClass} hover:ring-2 hover:ring-black hover:scale-125 transition-transform cursor-crosshair`}
                   />

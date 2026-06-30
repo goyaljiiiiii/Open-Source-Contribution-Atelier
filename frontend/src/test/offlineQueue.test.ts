@@ -121,7 +121,7 @@ describe("Offline Progress Queue", () => {
       { Authorization: "Bearer test-token" },
       { lesson_slug: "git-basics", score: 20, completed: true },
       "lesson",
-      "git-basics"
+      "git-basics",
     );
 
     // Check localStorage
@@ -152,7 +152,7 @@ describe("Offline Progress Queue", () => {
       { Authorization: "Bearer test-token" },
       { lesson_slug: "git-merge", score: 15, completed: true },
       "lesson",
-      "git-merge"
+      "git-merge",
     );
 
     await new Promise((resolve) => setTimeout(resolve, 10));
@@ -193,7 +193,7 @@ describe("Offline Progress Queue", () => {
       { Authorization: "Bearer test-token" },
       { lesson_slug: "git-rebase", score: 30, completed: true },
       "lesson",
-      "git-rebase"
+      "git-rebase",
     );
 
     await new Promise((resolve) => setTimeout(resolve, 10));

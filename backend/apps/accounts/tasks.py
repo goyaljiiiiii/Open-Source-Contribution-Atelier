@@ -1,7 +1,7 @@
 from celery import shared_task
 from django.conf import settings
-from django.core.mail import send_mail
 from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
@@ -76,7 +76,7 @@ def send_notification_email_task(self, user_email, subject, message_body):
         user = User.objects.filter(email__iexact=user_email).first()
 
         # Intercept and drop the email if the user profile has DND toggled on
-        if user and hasattr(user, "profile") and user.profile.dnd_enabled:
+        if user and hasattr(user, "profile"):
             return "Email skipped: User has 'Do Not Disturb' enabled."
 
         send_mail(
