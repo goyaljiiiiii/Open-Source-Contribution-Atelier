@@ -27,6 +27,16 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.challenges.models import ChallengeCompletion
+from apps.content.models import Lesson
+from apps.dashboard.models import Issue, PullRequest, StreakFreeze
+from apps.progress.models import (
+    CodeSubmission,
+    ExerciseAttempt,
+    LessonProgress,
+    QuizAttempt,
+)
+from apps.rbac.permissions import HasRole
 from rest_framework.views import APIView
 
 
@@ -607,14 +617,11 @@ class BuyStreakFreezeView(APIView):
             )
 
 
-<<<<<<< HEAD
-from apps.rbac.models import UserRole
 from django.db import models
 
+from apps.rbac.models import UserRole
 
 
-=======
->>>>>>> pr-816
 class IsModeratorOrAdmin(permissions.BasePermission):
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
