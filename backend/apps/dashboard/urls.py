@@ -1,8 +1,8 @@
 from apps.dashboard.views import (
     AdminDashboardView,
     ContributorDashboardView,
-    PublicLandingStatsView,
     ModeratorAnalyticsView,
+    PublicLandingStatsView,
 )
 from django.urls import path
 

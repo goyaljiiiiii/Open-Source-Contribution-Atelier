@@ -19,7 +19,9 @@ export interface CachedLesson {
 
 // ─── read ────────────────────────────────────────────────────────────────────
 
-export async function getCachedLesson(slug: string): Promise<CachedLesson | undefined> {
+export async function getCachedLesson(
+  slug: string,
+): Promise<CachedLesson | undefined> {
   try {
     const db = await openDB();
     return new Promise((resolve, reject) => {
@@ -83,7 +85,9 @@ export async function deleteCachedLesson(slug: string): Promise<void> {
 
 const DEFAULT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-export async function purgeExpiredLessons(maxAgeMs = DEFAULT_MAX_AGE_MS): Promise<void> {
+export async function purgeExpiredLessons(
+  maxAgeMs = DEFAULT_MAX_AGE_MS,
+): Promise<void> {
   try {
     const db = await openDB();
     const cutoff = Date.now() - maxAgeMs;

@@ -13,7 +13,10 @@ interface OfflineBannerProps {
   isCached?: boolean;
 }
 
-export function OfflineBanner({ lessonTitle, isCached = false }: OfflineBannerProps) {
+export function OfflineBanner({
+  lessonTitle,
+  isCached = false,
+}: OfflineBannerProps) {
   if (isCached) {
     // Soft banner — user is offline but can still read
     return (

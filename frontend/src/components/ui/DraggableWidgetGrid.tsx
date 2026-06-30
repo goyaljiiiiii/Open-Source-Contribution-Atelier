@@ -42,7 +42,7 @@ export function DraggableWidgetGrid({
       setDragOverIndex(null);
       onReorder(newWidgets);
     },
-    [widgets, onReorder]
+    [widgets, onReorder],
   );
 
   const handleDragEnd = useCallback(() => {

@@ -1,6 +1,7 @@
 from celery import shared_task
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
+
 from .engine import RecommendationEngine
 
 

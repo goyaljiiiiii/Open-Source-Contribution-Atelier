@@ -52,9 +52,10 @@ class SandboxConsumer(AsyncWebsocketConsumer):
             elif action == "debug_start":
                 code = text_data_json.get("code")
                 breakpoints = text_data_json.get("breakpoints", [])
-                from .services import start_debug_session
-                import os
                 import asyncio
+                import os
+
+                from .services import start_debug_session
 
                 await self._cleanup_debug_session()
 

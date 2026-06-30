@@ -1,7 +1,7 @@
 from celery import shared_task
 from django.conf import settings
-from django.core.mail import send_mail
 from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)

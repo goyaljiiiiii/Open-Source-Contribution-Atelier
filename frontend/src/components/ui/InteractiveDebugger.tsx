@@ -1,17 +1,24 @@
 import React, { useState, useRef, useEffect } from "react";
 import Editor, { useMonaco, Monaco } from "@monaco-editor/react";
-import { Play, Square, StepForward, SkipForward, ArrowRight, Bug } from "lucide-react";
+import { Play, Square, SkipForward, ArrowRight, Bug } from "lucide-react";
 import { useDebugger } from "../../hooks/useDebugger";
 import { DebugExercise } from "../../lib/lessons";
 
 interface InteractiveDebuggerProps {
   exercise: DebugExercise;
-  onSuccess?: () => void;
 }
 
-export function InteractiveDebugger({ exercise, onSuccess }: InteractiveDebuggerProps) {
+export function InteractiveDebugger({ exercise }: InteractiveDebuggerProps) {
   const monaco = useMonaco();
-  const editorRef = useRef<any>(null);
+  const editorRef = useRef<{
+    onMouseDown: (
+      callback: (e: {
+        target: { type: number; position: { lineNumber: number } };
+      }) => void,
+    ) => void;
+    deltaDecorations: (old: string[], newDecorations: unknown[]) => string[];
+    revealLineInCenter: (line: number) => void;
+  }>(null);
   const [code, setCode] = useState(exercise.starterCode);
   const [breakpoints, setBreakpoints] = useState<number[]>([]);
   const decorationIds = useRef<string[]>([]);
@@ -32,26 +39,39 @@ export function InteractiveDebugger({ exercise, onSuccess }: InteractiveDebugger
     removeBreakpoint,
   } = useDebugger();
 
-  const handleEditorDidMount = (editor: any, m: Monaco) => {
+  const handleEditorDidMount = (
+    editor: {
+      onMouseDown: (
+        callback: (e: {
+          target: { type: number; position: { lineNumber: number } };
+        }) => void,
+      ) => void;
+    },
+    m: Monaco,
+  ) => {
     editorRef.current = editor;
 
     // Handle clicking on the margin for breakpoints
-    editor.onMouseDown((e: any) => {
-      if (e.target.type === m.editor.MouseTargetType.GUTTER_GLYPH_MARGIN ||
-          e.target.type === m.editor.MouseTargetType.GUTTER_LINE_NUMBERS) {
-        const line = e.target.position.lineNumber;
-        
-        setBreakpoints((prev) => {
-          if (prev.includes(line)) {
-            removeBreakpoint(line);
-            return prev.filter((b) => b !== line);
-          } else {
-            addBreakpoint(line);
-            return [...prev, line];
-          }
-        });
-      }
-    });
+    editor.onMouseDown(
+      (e: { target: { type: number; position: { lineNumber: number } } }) => {
+        if (
+          e.target.type === m.editor.MouseTargetType.GUTTER_GLYPH_MARGIN ||
+          e.target.type === m.editor.MouseTargetType.GUTTER_LINE_NUMBERS
+        ) {
+          const line = e.target.position.lineNumber;
+
+          setBreakpoints((prev) => {
+            if (prev.includes(line)) {
+              removeBreakpoint(line);
+              return prev.filter((b) => b !== line);
+            } else {
+              addBreakpoint(line);
+              return [...prev, line];
+            }
+          });
+        }
+      },
+    );
   };
 
   // Update breakpoint decorators
@@ -66,7 +86,10 @@ export function InteractiveDebugger({ exercise, onSuccess }: InteractiveDebugger
       },
     }));
 
-    decorationIds.current = editorRef.current.deltaDecorations(decorationIds.current, decorations);
+    decorationIds.current = editorRef.current.deltaDecorations(
+      decorationIds.current,
+      decorations,
+    );
   }, [breakpoints, monaco]);
 
   // Update current line highlight
@@ -79,14 +102,21 @@ export function InteractiveDebugger({ exercise, onSuccess }: InteractiveDebugger
           range: new monaco.Range(currentLine, 1, currentLine, 1),
           options: {
             isWholeLine: true,
-            className: "bg-yellow-200 dark:bg-yellow-900/30 border-y-2 border-yellow-400",
+            className:
+              "bg-yellow-200 dark:bg-yellow-900/30 border-y-2 border-yellow-400",
           },
         },
       ];
-      lineDecorationIds.current = editorRef.current.deltaDecorations(lineDecorationIds.current, decorations);
+      lineDecorationIds.current = editorRef.current.deltaDecorations(
+        lineDecorationIds.current,
+        decorations,
+      );
       editorRef.current.revealLineInCenter(currentLine);
     } else {
-      lineDecorationIds.current = editorRef.current.deltaDecorations(lineDecorationIds.current, []);
+      lineDecorationIds.current = editorRef.current.deltaDecorations(
+        lineDecorationIds.current,
+        [],
+      );
     }
   }, [currentLine, monaco]);
 
@@ -168,7 +198,9 @@ export function InteractiveDebugger({ exercise, onSuccess }: InteractiveDebugger
             </div>
             <div className="flex-1 overflow-y-auto p-3 text-sm font-mono space-y-1">
               {Object.keys(variables).length === 0 ? (
-                <span className="text-muted text-xs italic">No locals available</span>
+                <span className="text-muted text-xs italic">
+                  No locals available
+                </span>
               ) : (
                 Object.entries(variables).map(([key, val]) => (
                   <div key={key} className="flex flex-col">
@@ -190,7 +222,10 @@ export function InteractiveDebugger({ exercise, onSuccess }: InteractiveDebugger
                 <span className="text-muted text-xs italic">Not paused</span>
               ) : (
                 callStack.map((frame, i) => (
-                  <div key={i} className={`px-2 py-1 rounded border-2 ${i === 0 ? "border-accent bg-accent/20" : "border-transparent"}`}>
+                  <div
+                    key={i}
+                    className={`px-2 py-1 rounded border-2 ${i === 0 ? "border-accent bg-accent/20" : "border-transparent"}`}
+                  >
                     <div className="font-bold">{frame.function}</div>
                     <div className="text-xs text-muted">Line {frame.line}</div>
                   </div>
@@ -209,7 +244,12 @@ export function InteractiveDebugger({ exercise, onSuccess }: InteractiveDebugger
                 <span className="text-white/30 italic">No output yet...</span>
               ) : (
                 logs.map((log, i) => (
-                  <div key={i} className={log.startsWith("Error:") ? "text-red-400" : ""}>{log}</div>
+                  <div
+                    key={i}
+                    className={log.startsWith("Error:") ? "text-red-400" : ""}
+                  >
+                    {log}
+                  </div>
                 ))
               )}
             </div>

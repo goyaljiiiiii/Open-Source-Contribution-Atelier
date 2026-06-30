@@ -18,7 +18,6 @@ You can also earn cool achievements for doing a variety of tasks like getting pu
 
 <img width="321" height="130" alt="image" src="https://github.com/user-attachments/assets/8d0aadbc-7ea9-4b41-81f6-2ecb3db054df" />
 
-
 - **Collaborative Experience**: You learn standard industry practices like code reviews, pull requests, CI/CD checks, and Git version control.
 
 - **Find Mentors and Network**: Collaborating with maintainers and other contributors connects you with engineers worldwide.

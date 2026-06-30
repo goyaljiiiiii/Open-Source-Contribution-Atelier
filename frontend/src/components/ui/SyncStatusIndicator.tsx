@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { WifiOff, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { WifiOff, RefreshCw } from "lucide-react";
 
 export function SyncStatusIndicator() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -9,15 +9,17 @@ export function SyncStatusIndicator() {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
 
     // Poll local storage for pending syncs
     const checkPending = () => {
       try {
-        const pending = JSON.parse(localStorage.getItem('atelier_pending_sync') || '[]');
+        const pending = JSON.parse(
+          localStorage.getItem("atelier_pending_sync") || "[]",
+        );
         setPendingCount(pending.length);
-      } catch (e) {
+      } catch {
         setPendingCount(0);
       }
     };
@@ -25,8 +27,8 @@ export function SyncStatusIndicator() {
     const interval = setInterval(checkPending, 2000);
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
       clearInterval(interval);
     };
   }, []);
@@ -40,12 +42,16 @@ export function SyncStatusIndicator() {
       {isOnline ? (
         <>
           <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" />
-          <span className="hidden sm:inline">Syncing {pendingCount} item{pendingCount !== 1 ? 's' : ''}...</span>
+          <span className="hidden sm:inline">
+            Syncing {pendingCount} item{pendingCount !== 1 ? "s" : ""}...
+          </span>
         </>
       ) : (
         <>
           <WifiOff className="w-4 h-4 text-yellow-500" />
-          <span className="hidden sm:inline">Offline ({pendingCount} pending)</span>
+          <span className="hidden sm:inline">
+            Offline ({pendingCount} pending)
+          </span>
         </>
       )}
     </div>

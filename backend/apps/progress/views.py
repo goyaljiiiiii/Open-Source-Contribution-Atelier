@@ -769,7 +769,7 @@ class RecommendationsView(APIView):
         return Response(serializer.data)
 
 
-from .models import CodeSubmission, PeerReview, ExerciseAttempt
+from .models import CodeSubmission, ExerciseAttempt, PeerReview
 from .serializers import CodeSubmissionSerializer, PeerReviewSerializer
 
 
