@@ -20,18 +20,14 @@ from django.db.models.functions import Coalesce
     LessonProgress,
     QuizAttempt,
 )
-from apps.rbac.permissions import HasRole
 from apps.rbac.models import UserRole
-
+from apps.rbac.permissions import HasRole
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.db import models, transaction
 from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce, TruncDate
-
- main
 from django.utils import timezone
-
 from drf_spectacular.utils import extend_schema
 from rest_framework import permissions, serializers, status
 from rest_framework.generics import ListAPIView
