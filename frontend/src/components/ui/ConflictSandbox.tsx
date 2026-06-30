@@ -101,7 +101,16 @@ function parseConflicts(text: string): Block[] {
 
   if (inConflict) {
     // EOF reached before ending marker. Treat as normal text to avoid dropping data.
-    currentNormal += "<<<<<<<\n" + (currentConflict.currentContent || "");
+    currentNormal +=
+      "<" +
+      "<" +
+      "<" +
+      "<" +
+      "<" +
+      "<" +
+      "<" +
+      "\n" +
+      (currentConflict.currentContent || "");
     if (conflictStage === "incoming") {
       currentNormal += "=======\n" + (currentConflict.incomingContent || "");
     }
