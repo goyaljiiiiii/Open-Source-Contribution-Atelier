@@ -5,6 +5,7 @@ from .models import Recommendation
 from .serializers import RecommendationSerializer
 from .engine import RecommendationEngine
 
+
 class RecommendationListView(generics.ListAPIView):
     serializer_class = RecommendationSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -14,6 +15,7 @@ class RecommendationListView(generics.ListAPIView):
             user=self.request.user, is_dismissed=False
         ).order_by("-priority_score", "-created_at")
 
+
 class GenerateRecommendationsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -21,6 +23,7 @@ class GenerateRecommendationsView(APIView):
         engine = RecommendationEngine(request.user)
         engine.generate_recommendations()
         return Response({"status": "success"}, status=status.HTTP_200_OK)
+
 
 class DismissRecommendationView(APIView):
     permission_classes = [permissions.IsAuthenticated]

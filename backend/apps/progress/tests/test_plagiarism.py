@@ -1,7 +1,10 @@
 import pytest
 from unittest.mock import patch
 from apps.progress.models import CodeSubmission, PlagiarismReport
-from apps.progress.services.plagiarism_detector import extract_ast_nodes, calculate_structural_similarity
+from apps.progress.services.plagiarism_detector import (
+    extract_ast_nodes,
+    calculate_structural_similarity,
+)
 from apps.progress.tasks import analyze_submission_plagiarism
 from django.contrib.auth import get_user_model
 
@@ -67,7 +70,7 @@ def test_plagiarism_task_execution():
 def solve(n):
     if n <= 1: return n
     return solve(n-1) + solve(n-2)
-"""
+""",
     )
 
     # user2 submits identical logic but renamed variables
@@ -78,17 +81,17 @@ def solve(n):
 def my_func(x):
     if x <= 1: return x
     return my_func(x-1) + my_func(x-2)
-"""
+""",
     )
 
-    # Note: signal might have already queued sub2 depending on settings, 
+    # Note: signal might have already queued sub2 depending on settings,
     # but we can explicitly call the task synchronously for testing.
     analyze_submission_plagiarism(sub2.id)
 
     # Verify a PlagiarismReport was generated
     reports = PlagiarismReport.objects.filter(submission=sub2)
     assert reports.count() == 1
-    
+
     report = reports.first()
     assert report.matched_submission == sub1
     assert report.similarity_score == 1.0
@@ -99,9 +102,7 @@ def my_func(x):
 def test_plagiarism_task_avoids_self_and_unrelated():
     user = User.objects.create(username="user1", email="u1@test.com")
     sub1 = CodeSubmission.objects.create(
-        user=user,
-        title="Challenge 2",
-        code_snippet="print('hello')"
+        user=user, title="Challenge 2", code_snippet="print('hello')"
     )
     # Self-submission shouldn't trigger plagiarism reports
     analyze_submission_plagiarism(sub1.id)
