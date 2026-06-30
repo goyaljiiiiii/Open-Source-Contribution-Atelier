@@ -28,10 +28,7 @@ export function useJSSandbox() {
   }, []);
 
   const runJSCode = useCallback(
-    (
-      code: string,
-      timeoutMs: number = 5000,
-    ): Promise<JSExecutionResult> => {
+    (code: string, timeoutMs: number = 5000): Promise<JSExecutionResult> => {
       return new Promise((resolve) => {
         if (!workerRef.current) {
           resolve({ output: "", error: "Worker not initialized" });

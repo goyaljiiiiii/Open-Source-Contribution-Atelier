@@ -1,9 +1,13 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from .views import (BulkChallengeUploadView, ChallengeOfTheDayView,
-                    ChallengeViewSet, CompleteChallengeOfTheDayView,
-                    SandboxExecutionView)
+from .views import (
+    BulkChallengeUploadView,
+    ChallengeOfTheDayView,
+    ChallengeViewSet,
+    CompleteChallengeOfTheDayView,
+    SandboxExecutionView,
+)
 
 router = DefaultRouter()
 router.include_format_suffixes = False

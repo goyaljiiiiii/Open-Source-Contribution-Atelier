@@ -11,7 +11,7 @@ export interface StreakData {
 export function useStreak() {
   const { data, isLoading, error } = useQuery<StreakData>({
     queryKey: ["userStreak"],
-    queryFn: () => fetchApi("/progress/streak/"),
+    queryFn: () => fetchApi("/progress/streak/", { suppressErrorToast: true }),
   });
 
   return {

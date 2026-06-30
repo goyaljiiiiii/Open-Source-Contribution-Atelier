@@ -62,24 +62,35 @@ def verify_git_command(command: str, expected_command: str) -> VerificationResul
 
 
 import asyncio
-import sys
-import os
-import tempfile
 import json
-
-
-import asyncio
+import os
 import sys
+import tempfile
+
 from .resource_manager import ResourceManagementEngine, SecurityViolation
 
-async def stream_python_execution(code: str, send_callback, user_id: str = "anonymous", timeout: int = ResourceManagementEngine.MAX_EXECUTION_TIME_SECONDS):
+
+async def stream_python_execution(
+    code: str,
+    send_callback,
+    user_id: str = "anonymous",
+    timeout: int = ResourceManagementEngine.MAX_EXECUTION_TIME_SECONDS,
+):
     """
     Executes Python code securely with resource limits in a subprocess and streams output asynchronously.
     """
     if not ResourceManagementEngine.acquire_execution_lock(user_id):
         from asgiref.sync import sync_to_async
-        await sync_to_async(ResourceManagementEngine.log_violation)(user_id, code, "concurrency", "Exceeded concurrent executions limit.")
-        await send_callback({"action": "execution_error", "error": "Execution limit reached. Please wait for your previous code to finish."})
+
+        await sync_to_async(ResourceManagementEngine.log_violation)(
+            user_id, code, "concurrency", "Exceeded concurrent executions limit."
+        )
+        await send_callback(
+            {
+                "action": "execution_error",
+                "error": "Execution limit reached. Please wait for your previous code to finish.",
+            }
+        )
         return
 
     try:
@@ -88,14 +99,19 @@ async def stream_python_execution(code: str, send_callback, user_id: str = "anon
             ResourceManagementEngine.analyze_ast(code)
         except SecurityViolation as sv:
             from asgiref.sync import sync_to_async
-            await sync_to_async(ResourceManagementEngine.log_violation)(user_id, code, "security", str(sv))
-            await send_callback({"action": "execution_error", "error": f"Security Violation: {sv}"})
+
+            await sync_to_async(ResourceManagementEngine.log_violation)(
+                user_id, code, "security", str(sv)
+            )
+            await send_callback(
+                {"action": "execution_error", "error": f"Security Violation: {sv}"}
+            )
             return
 
         await send_callback({"action": "execution_start"})
 
         wrapper_code = ResourceManagementEngine.get_wrapper_script(code)
-        
+
         process = await asyncio.create_subprocess_exec(
             sys.executable,
             "-c",
@@ -132,7 +148,10 @@ async def stream_python_execution(code: str, send_callback, user_id: str = "anon
             if process.returncode == 137:
                 status = "Memory Limit Exceeded"
                 from asgiref.sync import sync_to_async
-                await sync_to_async(ResourceManagementEngine.log_violation)(user_id, code, "memory", "Process returned 137")
+
+                await sync_to_async(ResourceManagementEngine.log_violation)(
+                    user_id, code, "memory", "Process returned 137"
+                )
             elif process.returncode != 0:
                 status = "Failed"
 
@@ -149,9 +168,16 @@ async def stream_python_execution(code: str, send_callback, user_id: str = "anon
             except ProcessLookupError:
                 pass
             from asgiref.sync import sync_to_async
-            await sync_to_async(ResourceManagementEngine.log_violation)(user_id, code, "timeout", "Execution exceeded time limit")
+
+            await sync_to_async(ResourceManagementEngine.log_violation)(
+                user_id, code, "timeout", "Execution exceeded time limit"
+            )
             await send_callback(
-                {"action": "execution_end", "status": "Timed Out (CPU/Time Limit Exceeded)", "returncode": -1}
+                {
+                    "action": "execution_end",
+                    "status": "Timed Out (CPU/Time Limit Exceeded)",
+                    "returncode": -1,
+                }
             )
 
     except Exception as e:
@@ -168,9 +194,9 @@ async def start_debug_session(code: str, breakpoints: list):
     fd, path = tempfile.mkstemp(suffix=".py")
     with os.fdopen(fd, "w") as f:
         f.write(code)
-    
+
     debugger_script = os.path.join(os.path.dirname(__file__), "debugger_script.py")
-    
+
     process = await asyncio.create_subprocess_exec(
         sys.executable,
         debugger_script,
@@ -180,5 +206,5 @@ async def start_debug_session(code: str, breakpoints: list):
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
-    
+
     return process, path

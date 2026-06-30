@@ -19,7 +19,7 @@ export function useUserProgress() {
   // 1. Query to fetch all progress
   const { data: progress = [], isLoading } = useQuery<ProgressEntry[]>({
     queryKey: ["userProgress"],
-    queryFn: () => fetchApi("/progress/me/"),
+    queryFn: () => fetchApi("/progress/me/", { suppressErrorToast: true }),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
@@ -31,6 +31,7 @@ export function useUserProgress() {
       completed?: boolean;
     }) =>
       fetchApi("/progress/me/", {
+        suppressErrorToast: true,
         method: "POST",
         body: JSON.stringify(vars),
       }),

@@ -91,6 +91,7 @@ class LessonThread(models.Model):
             models.Index(
                 fields=["lesson", "is_deleted"],
                 name="idx_thrd_lsn_del",
+                name="idx_lessonthread_les_del",
             ),
         ]
 
@@ -131,6 +132,7 @@ class LessonComment(models.Model):
             models.Index(
                 fields=["thread", "is_deleted"],
                 name="idx_cmt_thrd_del",
+                name="idx_lessoncomment_thr_del",
             ),
         ]
 

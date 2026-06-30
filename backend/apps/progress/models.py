@@ -1,5 +1,3 @@
-from apps.content.models import Exercise, Lesson
-from apps.organizations.models import Organization
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
@@ -11,6 +9,9 @@ STREAK_MILESTONES = [
     {"days": 14, "multiplier": 1.5, "label": "2-Week Streak"},
     {"days": 30, "multiplier": 2.0, "label": "1-Month Streak"},
 ]
+from apps.content.models import Exercise, Lesson
+from apps.organizations.models import Organization
+
 
 class XPMultiplierEvent(models.Model):
     name = models.CharField(max_length=255)
@@ -59,7 +60,12 @@ class UserBadge(models.Model):
     earned_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ("user", "badge")
+        # Upgraded to modern UniqueConstraint for stricter DB-level locking
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "badge"], name="unique_user_badge_award"
+            )
+        ]
 
 
 class LessonProgress(models.Model):
@@ -101,7 +107,7 @@ class ExerciseAttempt(models.Model):
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
-    submitted_command = models.CharField(max_length=255)
+    submitted_command = models.CharField(max_length=255, default="")
     is_correct = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -210,17 +216,31 @@ class CodeSubmission(models.Model):
     objects = models.Manager()
 
     class Status(models.TextChoices):
-        PENDING = "pending", "Pending"
+        PENDING_REVIEW = "pending_review", "Pending Review"
         REVIEWED = "reviewed", "Reviewed"
+        ESCALATED = "escalated", "Escalated"
 
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="code_submissions"
+    )
+    exercise = models.ForeignKey(
+        Exercise,
+        on_delete=models.CASCADE,
+        related_name="submissions",
+        null=True,
+        blank=True,
+    )
+    assigned_reviewers = models.ManyToManyField(
+        User, blank=True, related_name="assigned_reviews"
     )
     title = models.CharField(max_length=255)
     code_snippet = models.TextField()
     description = models.TextField(blank=True)
     status = models.CharField(
-        max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True
+        max_length=25,
+        choices=Status.choices,
+        default=Status.PENDING_REVIEW,
+        db_index=True,
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -230,6 +250,31 @@ class CodeSubmission(models.Model):
 
     def __str__(self):
         return f"{self.title} by {self.user.username}"
+
+
+class PlagiarismReport(models.Model):
+    """Model to store plagiarism detection results for a code submission.
+
+    Fields correspond to the migration that creates this table.
+    """
+
+    objects = models.Manager()
+    submission = models.ForeignKey(
+        CodeSubmission, on_delete=models.CASCADE, related_name="plagiarism_reports"
+    )
+    matched_submission = models.ForeignKey(
+        CodeSubmission, on_delete=models.CASCADE, related_name="matched_in_reports"
+    )
+    similarity_score = models.FloatField()
+    is_flagged = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-similarity_score"]
+        unique_together = ("submission", "matched_submission")
+
+    def __str__(self):
+        return f"PlagiarismReport(submission={self.submission.id}, matched={self.matched_submission.id}, score={self.similarity_score})"
 
 
 class PeerReview(models.Model):
@@ -242,6 +287,7 @@ class PeerReview(models.Model):
     )
     feedback = models.TextField()
     rating = models.PositiveIntegerField(default=5)
+    is_approved = models.BooleanField(default=True)
     points_earned = models.PositiveIntegerField(default=10)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -265,3 +311,27 @@ class StreakProfile(models.Model):
 
     def __str__(self):
         return f"StreakProfile({self.user.username})"
+
+class StreakProfile(models.Model):
+    """
+    Tracks daily coding streaks for a user.
+    Updated via signals whenever a user completes an activity (Lesson, Exercise, etc.).
+    """
+
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="streak_profile"
+    )
+    current_streak = models.PositiveIntegerField(default=0)
+    longest_streak = models.PositiveIntegerField(default=0)
+    last_activity_date = models.DateField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=["user", "current_streak"], name="idx_streak_user_current"
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.current_streak} day streak"
