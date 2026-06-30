@@ -38,6 +38,33 @@ export function generateCommitId(): string {
   return Math.random().toString(16).substring(2, 8);
 }
 
+// Helper: Traverses the DAG to get the commit history for a specific commit ID
+export function getCommitHistory(startCommitId: string, commits: GitCommit[]): GitCommit[] {
+  const visited = new Set<string>();
+  const queue = [startCommitId];
+
+  while (queue.length > 0) {
+    const currentId = queue.shift()!;
+    if (visited.has(currentId)) continue;
+    visited.add(currentId);
+
+    const commit = commits.find((c) => c.id === currentId);
+    if (commit) {
+      queue.push(...commit.parents);
+    }
+  }
+
+  // Preserve chronological order by filtering the main array (append-only)
+  // Reversing at the end gives newest-to-oldest, matching real `git log`
+  return commits.filter((c) => visited.has(c.id)).reverse();
+}
+
+// Helper: Checks if one commit is an ancestor of another
+export function isAncestor(ancestorId: string, descendantId: string, commits: GitCommit[]): boolean {
+  const history = getCommitHistory(descendantId, commits);
+  return history.some((c) => c.id === ancestorId);
+}
+
 export function parseGitCommand(
   command: string,
   state: RepoState,
@@ -78,7 +105,6 @@ export function parseGitCommand(
           .replace(/'/g, "");
       }
 
-      // Clear conflicts if any (assuming staged via git add)
       if (newState.conflicts.length > 0) {
         newState.conflicts = [];
       }
@@ -123,11 +149,12 @@ export function parseGitCommand(
       newState.branches.push({ name: newBranchName, target: headCommitId });
       return { newState, output: "" };
     }
-    case "checkout": {
+    case "checkout":
+    case "switch": {
       let branchName = parts[2];
       let createBranch = false;
 
-      if (branchName === "-b") {
+      if (branchName === "-b" || branchName === "-c") {
         createBranch = true;
         branchName = parts[3];
       }
@@ -163,24 +190,23 @@ export function parseGitCommand(
     }
     case "merge": {
       const targetBranchName = parts[2];
-      if (!targetBranchName) {
-        return { newState: state, error: "fatal: Missing branch to merge" };
-      }
-      const targetBranch = newState.branches.find(
-        (b) => b.name === targetBranchName,
-      );
-      if (!targetBranch) {
-        return {
-          newState: state,
-          error: `merge: ${targetBranchName} - not something we can merge`,
-        };
-      }
+      if (!targetBranchName) return { newState: state, error: "fatal: Missing branch to merge" };
+      
+      const targetBranch = newState.branches.find((b) => b.name === targetBranchName);
+      if (!targetBranch) return { newState: state, error: `merge: ${targetBranchName} - not something we can merge` };
 
-      if (headBranch && headBranch.name === targetBranchName) {
+      // Check for Fast-Forward or Up-to-Date
+      if (isAncestor(targetBranch.target, headCommitId, newState.commits)) {
         return { newState: state, output: "Already up to date." };
       }
+      
+      if (isAncestor(headCommitId, targetBranch.target, newState.commits)) {
+        if (headBranch) headBranch.target = targetBranch.target;
+        else newState.HEAD = targetBranch.target;
+        return { newState, output: `Updating ${headCommitId.substring(0,6)}..${targetBranch.target.substring(0,6)}\nFast-forward` };
+      }
 
-      // Simulate a conflict if the branch name contains "conflict"
+      // Simulate a conflict trigger
       if (targetBranchName.includes("conflict")) {
         newState.conflicts = ["index.html"];
         return {
@@ -189,6 +215,7 @@ export function parseGitCommand(
         };
       }
 
+      // Recursive Merge
       const newCommitId = generateCommitId();
       newState.commits.push({
         id: newCommitId,
@@ -197,13 +224,48 @@ export function parseGitCommand(
         branch: headBranch?.name || "detached",
       });
 
-      if (headBranch) {
-        headBranch.target = newCommitId;
-      } else {
-        newState.HEAD = newCommitId;
-      }
+      if (headBranch) headBranch.target = newCommitId;
+      else newState.HEAD = newCommitId;
 
       return { newState, output: `Merge made by the 'recursive' strategy.` };
+    }
+    case "rebase": {
+      const targetBranchName = parts[2];
+      if (!targetBranchName) return { newState: state, error: "fatal: Missing branch to rebase onto" };
+
+      const targetBranch = newState.branches.find((b) => b.name === targetBranchName);
+      if (!targetBranch) return { newState: state, error: `fatal: invalid upstream '${targetBranchName}'` };
+      if (!headBranch) return { newState: state, error: "fatal: You are not on a branch." };
+
+      if (isAncestor(headCommitId, targetBranch.target, newState.commits)) {
+         return { newState: state, output: `Current branch ${headBranch.name} is up to date.` };
+      }
+
+      // Identify commits unique to the current branch
+      const targetHistoryIds = new Set(getCommitHistory(targetBranch.target, newState.commits).map(c => c.id));
+      const currentHistory = getCommitHistory(headCommitId, newState.commits).reverse(); // oldest to newest
+      
+      const commitsToRebase = currentHistory.filter(c => !targetHistoryIds.has(c.id));
+
+      if (commitsToRebase.length === 0) {
+        return { newState: state, output: `Current branch ${headBranch.name} is up to date.` };
+      }
+
+      // Simulate rebasing by rewriting commits
+      let newParentId = targetBranch.target;
+      for (const c of commitsToRebase) {
+        const newCommitId = generateCommitId();
+        newState.commits.push({
+          id: newCommitId,
+          message: c.message,
+          parents: [newParentId],
+          branch: headBranch.name,
+        });
+        newParentId = newCommitId;
+      }
+
+      headBranch.target = newParentId;
+      return { newState, output: `Successfully rebased and updated ${headBranch.name}.` };
     }
     case "status": {
       if (newState.conflicts.length > 0) {
@@ -221,9 +283,9 @@ export function parseGitCommand(
       return { newState, output: "" };
     }
     case "log": {
-      const log = newState.commits
-        .slice()
-        .reverse()
+      // Log now traverses the graph properly instead of just reversing the whole array
+      const history = getCommitHistory(headCommitId, newState.commits);
+      const log = history
         .map((c) => `commit ${c.id}\n    ${c.message}`)
         .join("\n\n");
       return { newState, output: log };
