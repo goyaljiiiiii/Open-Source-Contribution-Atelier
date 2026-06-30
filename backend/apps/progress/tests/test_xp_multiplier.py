@@ -1,12 +1,13 @@
 from datetime import timedelta
 
 import pytest
-from apps.content.models import Lesson
-from apps.dashboard.models import Issue
-from apps.progress.models import LessonProgress, XPMultiplierEvent
 from django.contrib.auth.models import User
 from django.utils import timezone
 from rest_framework.test import APIClient
+
+from apps.content.models import Lesson
+from apps.dashboard.models import Issue
+from apps.progress.models import LessonProgress, XPMultiplierEvent
 
 
 @pytest.fixture
@@ -28,7 +29,7 @@ def issue(user):
 class TestXPMultiplier:
 
     def test_no_active_event(self, settings, user, lesson, issue):
-        settings.CELERY_TASK_ALWAYS_EAGER = True
+        settings.Q_CLUSTER = {"sync": True}
         client = APIClient()
         # 1. Lesson Progress creation without active event
         client.force_authenticate(user=user)
@@ -50,7 +51,7 @@ class TestXPMultiplier:
         assert issue.bonus_points == 0
 
     def test_active_event_multiplier(self, settings, user, lesson, issue):
-        settings.CELERY_TASK_ALWAYS_EAGER = True
+        settings.Q_CLUSTER = {"sync": True}
         client = APIClient()
         now = timezone.now()
         XPMultiplierEvent.objects.create(

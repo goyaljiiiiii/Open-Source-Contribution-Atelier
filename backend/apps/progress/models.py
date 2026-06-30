@@ -1,9 +1,10 @@
-from apps.content.models import Exercise, Lesson
-from apps.organizations.models import Organization
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.utils import timezone
+
+from apps.content.models import Exercise, Lesson
+from apps.organizations.models import Organization
 
 
 class XPMultiplierEvent(models.Model):
@@ -290,3 +291,28 @@ class PeerReview(models.Model):
 
     def __str__(self):
         return f"Review by {self.reviewer.username} for {self.submission.title}"
+
+
+class StreakProfile(models.Model):
+    """
+    Tracks daily coding streaks for a user.
+    Updated via signals whenever a user completes an activity (Lesson, Exercise, etc.).
+    """
+
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="streak_profile"
+    )
+    current_streak = models.PositiveIntegerField(default=0)
+    longest_streak = models.PositiveIntegerField(default=0)
+    last_activity_date = models.DateField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=["user", "current_streak"], name="idx_streak_user_current"
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.current_streak} day streak"

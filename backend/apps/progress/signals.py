@@ -1,13 +1,57 @@
 import logging
+from datetime import timedelta
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
+from django.db import transaction
 
 from .models import ExerciseAttempt, LessonProgress
 
 logger = logging.getLogger(__name__)
+
+
+
+def update_user_streak(user):
+    """
+    Core business logic to calculate and update daily coding streaks.
+    """
+    from apps.progress.models import StreakProfile
+
+    today = timezone.localdate()
+
+    with transaction.atomic():
+        profile, created = StreakProfile.objects.select_for_update().get_or_create(
+            user=user
+        )
+
+        # If already updated today, do nothing
+        if profile.last_activity_date == today:
+            return
+
+        # If last activity was exactly yesterday, continue the streak
+        if profile.last_activity_date == today - timedelta(days=1):
+            profile.current_streak += 1
+        else:
+            # Otherwise, the streak broke. Reset to 1.
+            profile.current_streak = 1
+
+        # Update all-time high
+        if profile.current_streak > profile.longest_streak:
+            profile.longest_streak = profile.current_streak
+
+        profile.last_activity_date = today
+        profile.save(
+            update_fields=[
+                "current_streak",
+                "longest_streak",
+                "last_activity_date",
+                "updated_at",
+            ]
+        )
+
 
 
 @receiver(post_save, sender=LessonProgress)
@@ -24,15 +68,11 @@ def on_lesson_completed(sender, instance, created, **kwargs):
         except LessonProgress.DoesNotExist:
             pass
 
-    # Evaluate achievements on lesson completion
-    # Called directly (not via on_commit) so it works in test environments
-    # where the outer transaction is never committed.
+    # --- UPDATE STREAK ---
     try:
-        from apps.progress.tasks import evaluate_achievements_task
-
-        evaluate_achievements_task(instance.user.id)
+        update_user_streak(instance.user)
     except Exception as exc:
-        logger.error("Failed to evaluate achievements: %s", exc)
+        logger.error("Failed to update user streak: %s", exc)
 
     channel_layer = get_channel_layer()
     if channel_layer is None:
@@ -40,8 +80,9 @@ def on_lesson_completed(sender, instance, created, **kwargs):
         return
 
     try:
-        from apps.progress.models import LessonProgress as LP
         from django.db.models import Sum
+
+        from apps.progress.models import LessonProgress as LP
 
         total_xp = (
             LP.objects.filter(user=instance.user).aggregate(total=Sum("score"))["total"]
@@ -58,21 +99,34 @@ def on_lesson_completed(sender, instance, created, **kwargs):
                 "message": f"User {instance.user.username} completed lesson {instance.lesson.title}",
             },
         )
-        logger.info(
-            "Pushed leaderboard update for user %s completing lesson %s",
-            instance.user.username,
-            instance.lesson.title,
-        )
     except Exception as exc:
         logger.error("Failed to push leaderboard update: %s", exc)
+
+    # Evaluate achievements on lesson completion - Wrapped in on_commit to prevent mid-transaction evaluation
+    try:
+        from django_q.tasks import async_task
+
+        transaction.on_commit(
+            lambda: async_task("apps.progress.tasks.evaluate_achievements_task", instance.user.id)
+        )
+    except Exception as exc:
+        logger.error("Failed to enqueue achievement evaluation: %s", exc)
 
 
 @receiver(post_save, sender=ExerciseAttempt)
 def on_exercise_attempt(sender, instance, created, **kwargs):
     if instance.is_correct:
+        # --- UPDATE STREAK ---
         try:
-            from apps.progress.tasks import evaluate_achievements_task
+            update_user_streak(instance.user)
+        except Exception as exc:
+            logger.error("Failed to update user streak: %s", exc)
 
-            evaluate_achievements_task(instance.user.id)
+        try:
+            from django_q.tasks import async_task
+
+            transaction.on_commit(
+                lambda: async_task("apps.progress.tasks.evaluate_achievements_task", instance.user.id)
+            )
         except Exception as exc:
             logger.error("Failed to evaluate achievements: %s", exc)

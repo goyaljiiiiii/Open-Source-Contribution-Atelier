@@ -1,6 +1,11 @@
-from apps.organizations.models import Organization
 from django.contrib.auth.models import User
 from django.db import models
+
+from apps.organizations.models import Organization
+
+
+ 
+
 
 
 class Permission(models.Model):

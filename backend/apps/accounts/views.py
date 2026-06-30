@@ -4,8 +4,6 @@ from typing import Optional
 from urllib.parse import urlencode
 
 import requests as http_requests
-from apps.progress.models import LessonProgress, UserBadge
-from apps.progress.serializers import UserBadgeSerializer
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
@@ -22,6 +20,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
+from apps.progress.models import LessonProgress, UserBadge
+from apps.progress.serializers import UserBadgeSerializer
 
 from .models import MagicLinkToken, OTPToken, PasswordResetToken
 from .serializers import (
@@ -41,6 +42,7 @@ from .tasks import (
     send_otp_email_task,
     send_password_reset_email_task,
 )
+from django_q.tasks import async_task
 from .throttles import (
     LoginThrottle,
     MagicLinkRequestThrottle,
@@ -432,7 +434,8 @@ class PasswordResetRequestView(APIView):
             )
             timeout = getattr(settings, "PASSWORD_RESET_TIMEOUT_MINUTES", 15)
 
-            send_password_reset_email_task.delay(
+            async_task(
+                "apps.accounts.tasks.send_password_reset_email_task",
                 user_email=user.email,
                 user_username=user.username,
                 reset_url=reset_url,
@@ -544,7 +547,8 @@ class OtpRequestView(APIView):
             OTPToken.objects.filter(user=user, is_used=False).update(is_used=True)
             otp_obj = OTPToken.objects.create(user=user)
 
-            send_otp_email_task.delay(
+            async_task(
+                "apps.accounts.tasks.send_otp_email_task",
                 user_email=user.email,
                 user_username=user.username,
                 otp_token=otp_obj.token,
@@ -642,7 +646,8 @@ class MagicLinkRequestView(APIView):
             login_url = frontend_url("/magic-login", {"token": str(magic_token.token)})
             timeout = getattr(settings, "MAGIC_LINK_TIMEOUT_MINUTES", 15)
 
-            send_magic_link_email_task.delay(
+            async_task(
+                "apps.accounts.tasks.send_magic_link_email_task",
                 user_email=user.email,
                 user_username=user.username,
                 login_url=login_url,

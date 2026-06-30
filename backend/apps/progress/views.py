@@ -1,5 +1,3 @@
-from apps.content.models import Lesson
-from apps.content.serializers import LessonSerializer
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import Count, Min, Sum
@@ -11,6 +9,9 @@ from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
+
+from apps.content.models import Lesson
+from apps.content.serializers import LessonSerializer
 
 from .models import (
     Badge,
@@ -113,9 +114,9 @@ class MyProgressView(APIView):
             )
             created = True
 
-        from .tasks import evaluate_user_badges_task
+        from django_q.tasks import async_task
 
-        evaluate_user_badges_task.delay(request.user.id)
+        async_task("apps.progress.tasks.evaluate_user_badges_task", request.user.id)
 
         serializer = LessonProgressSerializer(progress)
 
@@ -192,9 +193,9 @@ class BulkSyncProgressView(APIView):
 
                 synced.append(progress.id)
 
-            from .tasks import evaluate_user_badges_task
+            from django_q.tasks import async_task
 
-            evaluate_user_badges_task.delay(request.user.id)
+            async_task("apps.progress.tasks.evaluate_user_badges_task", request.user.id)
 
         return Response(
             {"synced_count": len(synced), "progress_ids": synced},
@@ -341,9 +342,9 @@ class BulkProgressUpdateView(APIView):
                     )
                     success_ids.extend([p.id for p in progress_to_update])
 
-                from .tasks import evaluate_user_badges_task
+                from django_q.tasks import async_task
 
-                evaluate_user_badges_task.delay(request.user.id)
+                async_task("apps.progress.tasks.evaluate_user_badges_task", request.user.id)
 
         except ValueError as ve:
             return Response(

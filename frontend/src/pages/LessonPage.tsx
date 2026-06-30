@@ -575,6 +575,15 @@ export function LessonPage() {
                 <MarkdownRenderer content={markdownContent} />
               </React.Suspense>
             </article>
+            {/* Report Typo Button */}
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={() => alert("Thanks for reporting the typo")}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg font-bold border-2 border-black hover:opacity-90 transition"
+              >
+                Report Typo 🐛
+              </button>
+            </div>
 
             {/* Exercises & validation section */}
             <div className="pt-8 space-y-6">
