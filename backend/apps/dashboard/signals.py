@@ -17,6 +17,10 @@ def clear_dashboard_caches(user_id=None):
     # If a specific user is affected, clear their specific contributor stats cache
     if user_id:
         cache.delete(f"dashboard_contributor_stats_{user_id}")
+        cache.delete(f"dashboard_contributor_personal_stats_{user_id}")
+        cache.delete(f"dashboard_contributor_assigned_issues_{user_id}")
+        cache.delete(f"dashboard_contributor_recent_prs_{user_id}")
+        cache.delete(f"dashboard_contributor_progress_tracker_{user_id}")
 
 
 @receiver(pre_save, sender=Issue)
