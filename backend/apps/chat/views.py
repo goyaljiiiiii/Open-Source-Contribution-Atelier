@@ -1,7 +1,6 @@
 from django.db.models import Count, Max
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
-from rest_framework import generics, permissions, status
-from rest_framework.pagination import PageNumberPagination
+from rest_framework import generics, permissions, status, pagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -9,7 +8,7 @@ from .models import Message
 from .serializers import ChatRoomSerializer, MessageCreateSerializer, MessageSerializer
 
 
-class MessagePagination(PageNumberPagination):
+class MessagePagination(pagination.PageNumberPagination):
     page_size = 50
     page_size_query_param = "page_size"
     max_page_size = 200

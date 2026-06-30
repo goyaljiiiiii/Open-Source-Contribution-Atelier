@@ -9,11 +9,13 @@ from apps.progress.models import (
     LessonProgress,
     QuizAttempt,
 )
+
 from apps.rbac.permissions import HasRole
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.db.models import Count, F, IntegerField, OuterRef, Subquery, Sum, Value
 from django.db.models.functions import Coalesce, TruncDate
+
 from django.utils import timezone
 from rest_framework import permissions, serializers
 from rest_framework.generics import ListAPIView
@@ -566,10 +568,6 @@ class BuyStreakFreezeView(APIView):
                 },
                 status=status.HTTP_201_CREATED,
             )
-
-
-from apps.rbac.models import UserRole
-from django.db import models
 
 
 class IsModeratorOrAdmin(permissions.BasePermission):

@@ -1,19 +1,26 @@
-# Forks on GitHub
+# 𐂐 Forks on GitHub
 
-In open source, you usually do not have direct write permissions to edit the main repository of a project. To make changes, you use a **Fork**.
+### In open source, you usually do not have direct write permissions to edit the main repository of a project. To make changes, you use a **Fork**.
+
+<br>
+<div align="center">
+  <img width="600" height=auto alt="Untitled design (1)" src="https://github.com/user-attachments/assets/23a980f9-4d45-4d26-9e46-27a3a6e49630" />
+</div>
 
 ---
 
-### What is a Fork?
+## 🗐 What is a Fork?
 
-A **Fork** is a copy of a repository that is created under your own GitHub account.
+A **Fork** is a copy of a repository that is created under your own GitHub account and is accessible from your profile.
 
 Because the fork belongs to you:
 
 - You have complete write permission to create branches, push commits, and delete files.
-- The original (upstream) project remains unaffected by your local edits.
+- The original (upstream) repository remains unaffected by your local edits, until you choose to push commits to the upstream project.
 
-### The Fork-and-PR Workflow
+---
+
+## 🛠️ How to Fork a Repo and Raise a Pull Request
 
 1. Find a repository you want to contribute to.
 2. Click the **Fork** button on GitHub to copy it to your account.

@@ -4,7 +4,7 @@
 
 ---
 
-### 🕰️ The Milestones
+## 🕰️ Important Milestones
 
 - **The Hacker Era (1950s - 1970s)**: In the early days of computing, software was shared freely alongside hardware.
 

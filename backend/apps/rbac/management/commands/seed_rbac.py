@@ -2,6 +2,7 @@ from apps.rbac.models import Permission, Role
 from django.core.management.base import BaseCommand
 
 
+
 class Command(BaseCommand):
     help = "Seeds the database with base RBAC roles and permissions"
 

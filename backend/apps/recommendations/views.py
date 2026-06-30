@@ -7,6 +7,7 @@ from .models import Recommendation
 from .serializers import RecommendationSerializer
 
 
+
 class RecommendationListView(generics.ListAPIView):
     serializer_class = RecommendationSerializer
     permission_classes = [permissions.IsAuthenticated]

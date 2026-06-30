@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.db import models
 
 
+
 class Permission(models.Model):
     objects = models.Manager()
     slug = models.CharField(max_length=100, unique=True)
