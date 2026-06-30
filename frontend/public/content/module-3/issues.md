@@ -8,9 +8,14 @@
 
 An **Issue** is a tracking ticket. It is used to record bugs, suggest new ideas, request documentation improvements, or discuss architectural shifts.
 
+<br>
+<div align="center">
+  <img width="650" height=auto alt="image" src="https://github.com/user-attachments/assets/8a23a0c6-6a54-455d-95f8-ed85217df791" />
+</div>
+
 ---
 
-### Elements of an Issue
+## Elements of an Issue
 
 - **Issue Title**: The name of the issue which is set by the developer/repo owner.
 
