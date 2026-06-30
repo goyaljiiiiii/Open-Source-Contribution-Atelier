@@ -90,7 +90,7 @@ class LessonThread(models.Model):
         indexes = [
             models.Index(
                 fields=["lesson", "is_deleted"],
-                name="idx_lessonthread_lesson_is_deleted",
+                name="idx_thrd_lsn_del",
             ),
         ]
 
@@ -130,7 +130,7 @@ class LessonComment(models.Model):
         indexes = [
             models.Index(
                 fields=["thread", "is_deleted"],
-                name="idx_lessoncomment_thread_is_deleted",
+                name="idx_cmt_thrd_del",
             ),
         ]
 
