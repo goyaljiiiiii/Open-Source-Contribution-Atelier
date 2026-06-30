@@ -108,10 +108,10 @@ def on_lesson_completed(sender, instance, created, **kwargs):
     # Evaluate achievements on lesson completion - Wrapped in on_commit to prevent mid-transaction evaluation
  main
     try:
-        from apps.progress.tasks import evaluate_achievements_task
+        from django_q.tasks import async_task
 
         transaction.on_commit(
-            lambda: evaluate_achievements_task.delay(instance.user.id)
+            lambda: async_task("apps.progress.tasks.evaluate_achievements_task", instance.user.id)
         )
     except Exception as exc:
         logger.error("Failed to enqueue achievement evaluation: %s", exc)
@@ -127,10 +127,10 @@ def on_exercise_attempt(sender, instance, created, **kwargs):
             logger.error("Failed to update user streak: %s", exc)
 
         try:
-            from apps.progress.tasks import evaluate_achievements_task
+            from django_q.tasks import async_task
 
             transaction.on_commit(
-                lambda: evaluate_achievements_task.delay(instance.user.id)
+                lambda: async_task("apps.progress.tasks.evaluate_achievements_task", instance.user.id)
             )
         except Exception as exc:
             logger.error("Failed to enqueue achievement evaluation: %s", exc)
