@@ -117,7 +117,10 @@ export function Navigation() {
 
   return (
     <>
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-[280px] border-r border-outline bg-surface-lowest/90 backdrop-blur-xl lg:flex lg:flex-col dark:bg-[#0f0e0c]/90 dark:border-[#2e2924]">
+      <aside
+        aria-label="Main sidebar"
+        className="fixed inset-y-0 left-0 z-20 hidden w-[280px] border-r border-outline bg-surface-lowest/90 backdrop-blur-xl lg:flex lg:flex-col dark:bg-[#0f0e0c]/90 dark:border-[#2e2924]"
+      >
         <div className="border-b border-outline px-6 py-5">
           <Link
             to="/"
@@ -134,7 +137,7 @@ export function Navigation() {
             </span>
           </p>
         </div>
-        <nav className="flex-1 px-4 py-6">
+        <nav aria-label="Sidebar navigation" className="flex-1 px-4 py-6">
           <div className="space-y-2">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -205,13 +208,15 @@ export function Navigation() {
               <input
                 type="text"
                 placeholder="Search lessons, issues..."
-                className="bg-transparent border-none outline-none text-sm w-full text-text placeholder:text-muted/50 dark:text-[#f0ebe2] dark:placeholder:text-[#c4bbae]/50"
+                aria-label="Search lessons and issues"
+                className="bg-transparent border-none outline-none text-sm w-full text-text placeholder:text-muted/75 dark:text-[#f0ebe2] dark:placeholder:text-[#c4bbae]/75"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
+                  aria-label="Clear search"
                   className="hover:text-text"
                 >
                   <X size={14} />
@@ -320,7 +325,10 @@ export function Navigation() {
             >
               <Eye size={16} />
             </button>
-            <button className="relative rounded-lg bg-surface-low p-2 text-muted hover:text-text dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2]">
+            <button
+              aria-label="Notifications"
+              className="relative rounded-lg bg-surface-low p-2 text-muted hover:text-text dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2]"
+            >
               <Bell size={16} />
               {badgeCount > 0 && (
                 <span className="absolute right-1.5 top-1.5 flex h-2 w-2">

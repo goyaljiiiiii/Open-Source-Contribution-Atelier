@@ -4,6 +4,17 @@ from apps.challenges.models import ChallengeCompletion
 from apps.content.models import Lesson
 from apps.dashboard.models import Issue, PullRequest, StreakFreeze
 from apps.progress.models import (
+feat/daily-coding-streaks-398
+    ExerciseAttempt,
+    LessonProgress,
+    QuizAttempt,
+    CodeSubmission,
+)
+from django.contrib.auth.models import User
+from django.core.cache import cache
+from django.db.models import Count, F, IntegerField, OuterRef, Subquery, Sum, Value
+from django.db.models.functions import Coalesce
+
     CodeSubmission,
     ExerciseAttempt,
     LessonProgress,
@@ -22,6 +33,18 @@ from rest_framework import permissions, serializers, status
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from apps.challenges.models import ChallengeCompletion
+from apps.content.models import Lesson
+from apps.dashboard.models import Issue, PullRequest, StreakFreeze
+from apps.progress.models import (
+    CodeSubmission,
+    ExerciseAttempt,
+    LessonProgress,
+    QuizAttempt,
+)
+from apps.rbac.permissions import HasRole
 from rest_framework.views import APIView
 
 
@@ -293,6 +316,15 @@ class ContributorDashboardView(APIView):
             )
             total_xp = lesson_xp + issues_xp + challenge_bonus_xp
 
+ feat/daily-coding-streaks-398
+            # --- NEW CLEAN STREAK LOGIC ---
+            from apps.progress.models import StreakProfile
+
+            streak_profile, _ = StreakProfile.objects.get_or_create(user=user)
+            streak_days = streak_profile.current_streak
+            longest_streak = streak_profile.longest_streak
+            # ------------------------------
+
             # Calculate streak based on unique days of activity (attempts or completed lessons) and active/used freezes
             activity_days = set()
             attempts = ExerciseAttempt.objects.filter(user=user).values_list(
@@ -347,6 +379,7 @@ class ContributorDashboardView(APIView):
             if modified_freezes:
                 with transaction.atomic():
                     StreakFreeze.objects.bulk_update(modified_freezes, ["used_on_date"])
+ main
 
             # Determine Rank based on user XP vs others
             lesson_xp_sub = (
@@ -417,6 +450,7 @@ class ContributorDashboardView(APIView):
                 "prs_merged": prs_merged,
                 "total_xp": total_xp,
                 "streak_days": streak_days,
+                "longest_streak": longest_streak,  # ADDED THIS TO API
                 "rank": rank,
                 "earned_badges": earned_badges,
                 "available_points": available_points,
@@ -600,6 +634,11 @@ class BuyStreakFreezeView(APIView):
                 },
                 status=status.HTTP_201_CREATED,
             )
+
+
+from django.db import models
+
+from apps.rbac.models import UserRole
 
 
 class IsModeratorOrAdmin(permissions.BasePermission):

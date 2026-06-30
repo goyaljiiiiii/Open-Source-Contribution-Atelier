@@ -1,16 +1,60 @@
 import logging
+from datetime import timedelta
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.db import transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
+from django.db import transaction
 
 from .models import ExerciseAttempt, LessonProgress
 
 logger = logging.getLogger(__name__)
 
 
+feat/daily-coding-streaks-398
+def update_user_streak(user):
+    """
+    Core business logic to calculate and update daily coding streaks.
+    """
+    from apps.progress.models import StreakProfile
+
+    today = timezone.localdate()
+
+    with transaction.atomic():
+        profile, created = StreakProfile.objects.select_for_update().get_or_create(
+            user=user
+        )
+
+        # If already updated today, do nothing
+        if profile.last_activity_date == today:
+            return
+
+        # If last activity was exactly yesterday, continue the streak
+        if profile.last_activity_date == today - timedelta(days=1):
+            profile.current_streak += 1
+        else:
+            # Otherwise, the streak broke. Reset to 1.
+            profile.current_streak = 1
+
+        # Update all-time high
+        if profile.current_streak > profile.longest_streak:
+            profile.longest_streak = profile.current_streak
+
+        profile.last_activity_date = today
+        profile.save(
+            update_fields=[
+                "current_streak",
+                "longest_streak",
+                "last_activity_date",
+                "updated_at",
+            ]
+        )
+
+
+ main
 @receiver(post_save, sender=LessonProgress)
 def on_lesson_completed(sender, instance, created, **kwargs):
     if not instance.completed:
@@ -25,14 +69,21 @@ def on_lesson_completed(sender, instance, created, **kwargs):
         except LessonProgress.DoesNotExist:
             pass
 
+    # --- UPDATE STREAK ---
+    try:
+        update_user_streak(instance.user)
+    except Exception as exc:
+        logger.error("Failed to update user streak: %s", exc)
+
     channel_layer = get_channel_layer()
     if channel_layer is None:
         logger.warning("No channel layer configured; skipping leaderboard broadcast.")
         return
 
     try:
-        from apps.progress.models import LessonProgress as LP
         from django.db.models import Sum
+
+        from apps.progress.models import LessonProgress as LP
 
         total_xp = (
             LP.objects.filter(user=instance.user).aggregate(total=Sum("score"))["total"]
@@ -49,15 +100,13 @@ def on_lesson_completed(sender, instance, created, **kwargs):
                 "message": f"User {instance.user.username} completed lesson {instance.lesson.title}",
             },
         )
-        logger.info(
-            "Pushed leaderboard update for user %s completing lesson %s",
-            instance.user.username,
-            instance.lesson.title,
-        )
     except Exception as exc:
         logger.error("Failed to push leaderboard update: %s", exc)
 
+ feat/daily-coding-streaks-398
+
     # Evaluate achievements on lesson completion - Wrapped in on_commit to prevent mid-transaction evaluation
+ main
     try:
         from apps.progress.tasks import evaluate_achievements_task
 
@@ -71,6 +120,12 @@ def on_lesson_completed(sender, instance, created, **kwargs):
 @receiver(post_save, sender=ExerciseAttempt)
 def on_exercise_attempt(sender, instance, created, **kwargs):
     if instance.is_correct:
+        # --- UPDATE STREAK ---
+        try:
+            update_user_streak(instance.user)
+        except Exception as exc:
+            logger.error("Failed to update user streak: %s", exc)
+
         try:
             from apps.progress.tasks import evaluate_achievements_task
 

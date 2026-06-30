@@ -1,10 +1,10 @@
 import json
 
 import pytest
-from apps.sandbox.consumers import SandboxConsumer
 from channels.testing import WebsocketCommunicator
-from config.asgi import application
 
+from apps.sandbox.consumers import SandboxConsumer
+from config.asgi import application
 
 @pytest.mark.asyncio
 @pytest.mark.asyncio

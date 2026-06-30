@@ -712,6 +712,10 @@ export function DashboardPage() {
             <span className="font-black text-black uppercase tracking-widest text-[9px] mt-1 dark:text-[#c4bbae]">
               Streak Days
             </span>
+            {/* Added longest streak display */}
+            <div className="absolute top-2 right-2 bg-surface-low border-2 border-black rounded-full px-2 py-0.5 text-[8px] font-black text-muted flex items-center gap-1 dark:bg-[#151411]">
+              <span className="text-[10px]">🏆</span> Max: {personal_stats.longest_streak || personal_stats.streak_days}
+            </div>
           </div>
 
           <div className="rounded-[2rem] border-4 border-black bg-white p-6 shadow-card flex flex-col justify-center items-center text-center dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none hover:-translate-y-0.5 transition-transform">
