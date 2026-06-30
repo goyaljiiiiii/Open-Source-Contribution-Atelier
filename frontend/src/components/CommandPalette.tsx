@@ -53,7 +53,7 @@ const navItems: NavItem[] = [
   },
   {
     type: "navigation",
-    to: "/lessons/what-is-open-source",
+    to: "/lessons/intro",
     label: "Lessons",
     icon: BookOpen,
     description: "Learn how to contribute to open source projects",

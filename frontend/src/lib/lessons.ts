@@ -98,7 +98,8 @@ export const lessons: Lesson[] = [
 export async function fetchLessonsApi(): Promise<Lesson[]> {
   try {
     const data = await fetchApi("/content/lessons/", { requireAuth: false });
-    if (!Array.isArray(data)) return lessons;
+    // Use fallback lessons when the API returns no data (e.g. unseeded database)
+    if (!Array.isArray(data) || data.length === 0) return lessons;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (data as any[]).map((les, index: number) => {
@@ -112,12 +113,14 @@ export async function fetchLessonsApi(): Promise<Lesson[]> {
         expected: String(firstExercise?.expectedCommand ?? ""),
         hint: String(
           firstExercise?.explanation ??
-          "Read the lesson contents and solve the check."
+            "Read the lesson contents and solve the check.",
         ),
         difficulty: String(les.difficulty ?? "beginner"),
         points: Number(firstExercise?.points ?? 15),
         estimatedMinutes: Number(les.estimatedMinutes ?? 10),
-        learningObjectives: Array.isArray(les.learningObjectives) ? les.learningObjectives : [],
+        learningObjectives: Array.isArray(les.learningObjectives)
+          ? les.learningObjectives
+          : [],
         tips: Array.isArray(les.tips) ? les.tips : [],
         exercises: Array.isArray(les.exercises) ? les.exercises : [],
         quizzes: Array.isArray(les.quizzes) ? les.quizzes : [],
@@ -152,7 +155,7 @@ export function buildModulesFromLessons(lessonsList: Lesson[]) {
         lessons: [],
       });
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
     modulesMap.get(cat)!.lessons.push({
       slug: les.slug,
       title: les.title,

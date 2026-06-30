@@ -17,7 +17,7 @@ export function RecommendationsList() {
   const queryClient = useQueryClient();
   const { data, isLoading } = useQuery<Recommendation[]>({
     queryKey: ["recommendations"],
-    queryFn: () => fetchApi("/recommendations/"),
+    queryFn: () => fetchApi("/recommendations/", { suppressErrorToast: true }),
   });
 
   const dismissMutation = useMutation({
@@ -31,7 +31,9 @@ export function RecommendationsList() {
   if (isLoading) {
     return (
       <div className="p-8 text-center bg-white rounded-2xl border-4 border-dashed border-black dark:bg-[#151411] dark:border-[#2e2924]">
-        <p className="font-bold text-muted dark:text-[#c4bbae]">Loading recommendations...</p>
+        <p className="font-bold text-muted dark:text-[#c4bbae]">
+          Loading recommendations...
+        </p>
       </div>
     );
   }
@@ -39,7 +41,9 @@ export function RecommendationsList() {
   if (!data || data.length === 0) {
     return (
       <div className="p-8 text-center bg-white rounded-2xl border-4 border-dashed border-black dark:bg-[#151411] dark:border-[#2e2924]">
-        <p className="font-bold text-muted dark:text-[#c4bbae]">No recommendations right now. Keep learning! 🌟</p>
+        <p className="font-bold text-muted dark:text-[#c4bbae]">
+          No recommendations right now. Keep learning! 🌟
+        </p>
       </div>
     );
   }
@@ -84,7 +88,7 @@ export function RecommendationsList() {
           >
             <X size={16} strokeWidth={3} />
           </button>
-          
+
           <div className="flex items-center gap-3 mb-2">
             <div className="bg-white p-2 rounded-lg border-2 border-black shadow-card-sm dark:bg-[#0f0e0c] dark:border-[#2e2924]">
               {getIcon(rec.content_type)}
@@ -98,7 +102,7 @@ export function RecommendationsList() {
               </h3>
             </div>
           </div>
-          
+
           <p className="text-sm font-bold text-muted dark:text-[#c4bbae] mb-2">
             {rec.reason}
           </p>

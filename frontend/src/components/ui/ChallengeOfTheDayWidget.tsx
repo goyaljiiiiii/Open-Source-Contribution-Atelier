@@ -17,7 +17,7 @@ export function ChallengeOfTheDayWidget() {
 
   const { data, isLoading, isError } = useQuery<ChallengeOfTheDayData>({
     queryKey: ["challengeOfTheDay"],
-    queryFn: () => fetchApi("/challenges/today/"),
+    queryFn: () => fetchApi("/challenges/today/", { suppressErrorToast: true }),
     retry: false,
   });
 
