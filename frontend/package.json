@@ -26,6 +26,7 @@
     "@types/randomcolor": "^0.5.9",
     "@types/zxcvbn": "^4.4.5",
     "@xyflow/react": "^12.11.1",
+    "axios": "^1.18.1",
     "clsx": "^2.1.1",
     "dagre": "^0.8.5",
     "easymde": "^2.21.0",

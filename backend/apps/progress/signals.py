@@ -2,7 +2,6 @@ import logging
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
-from django.db import transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -24,6 +23,16 @@ def on_lesson_completed(sender, instance, created, **kwargs):
                 return
         except LessonProgress.DoesNotExist:
             pass
+
+    # Evaluate achievements on lesson completion
+    # Called directly (not via on_commit) so it works in test environments
+    # where the outer transaction is never committed.
+    try:
+        from apps.progress.tasks import evaluate_achievements_task
+
+        evaluate_achievements_task(instance.user.id)
+    except Exception as exc:
+        logger.error("Failed to evaluate achievements: %s", exc)
 
     channel_layer = get_channel_layer()
     if channel_layer is None:
@@ -57,16 +66,6 @@ def on_lesson_completed(sender, instance, created, **kwargs):
     except Exception as exc:
         logger.error("Failed to push leaderboard update: %s", exc)
 
-    # Evaluate achievements on lesson completion - Wrapped in on_commit to prevent mid-transaction evaluation
-    try:
-        from apps.progress.tasks import evaluate_achievements_task
-
-        transaction.on_commit(
-            lambda: evaluate_achievements_task.delay(instance.user.id)
-        )
-    except Exception as exc:
-        logger.error("Failed to enqueue achievement evaluation: %s", exc)
-
 
 @receiver(post_save, sender=ExerciseAttempt)
 def on_exercise_attempt(sender, instance, created, **kwargs):
@@ -74,8 +73,6 @@ def on_exercise_attempt(sender, instance, created, **kwargs):
         try:
             from apps.progress.tasks import evaluate_achievements_task
 
-            transaction.on_commit(
-                lambda: evaluate_achievements_task.delay(instance.user.id)
-            )
+            evaluate_achievements_task(instance.user.id)
         except Exception as exc:
-            logger.error("Failed to enqueue achievement evaluation: %s", exc)
+            logger.error("Failed to evaluate achievements: %s", exc)
