@@ -4,9 +4,11 @@
 
 ---
 
-### 🔦 Exploring a GitHub Repository
+## 🔦 Exploring a GitHub Repository
 
 When visiting a project repository on GitHub, you'll see several key tabs:
+
+---
 
 ### **</> Code**:
 The file explorer showing branch directories, README, and licenses.
@@ -44,7 +46,7 @@ The automated workflow engine that builds code and runs tests (CI/CD).
 
 ---
 
-### ✨ Starring and Watching a Repository
+## ✨ Starring and Watching a Repository
 
 - **⭐ Star**: Similar to bookmarking. It shows appreciation and registers your interest.
 - **👀 Watch**: Subscribes you to notifications (issues, PRs, releases) so you can follow the project's development live.
