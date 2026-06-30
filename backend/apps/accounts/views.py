@@ -733,6 +733,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 
 
+
 class LogoutView(APIView):
     """
     Accepts a refresh token in the request body and adds it to the blacklist.
