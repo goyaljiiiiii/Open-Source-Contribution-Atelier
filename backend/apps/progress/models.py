@@ -53,7 +53,12 @@ class UserBadge(models.Model):
     earned_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ("user", "badge")
+        # Upgraded to modern UniqueConstraint for stricter DB-level locking
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "badge"], name="unique_user_badge_award"
+            )
+        ]
 
 
 class LessonProgress(models.Model):

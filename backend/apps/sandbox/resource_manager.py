@@ -7,8 +7,10 @@ from django.contrib.auth import get_user_model
 
 logger = logging.getLogger(__name__)
 
+
 class SecurityViolation(Exception):
     pass
+
 
 class ResourceManagementEngine:
     MAX_EXECUTION_TIME_SECONDS = 5
@@ -17,11 +19,21 @@ class ResourceManagementEngine:
     MAX_CONCURRENT_EXECUTIONS = 2
 
     # AST Whitelist rules
-    FORBIDDEN_IMPORTS = {"os", "sys", "subprocess", "socket", "pathlib", "shutil", "pty"}
+    FORBIDDEN_IMPORTS = {
+        "os",
+        "sys",
+        "subprocess",
+        "socket",
+        "pathlib",
+        "shutil",
+        "pty",
+    }
     FORBIDDEN_FUNCTIONS = {"open", "eval", "exec", "__import__"}
 
     @classmethod
-    def log_violation(cls, user_id: str, code: str, violation_type: str, details: str = ""):
+    def log_violation(
+        cls, user_id: str, code: str, violation_type: str, details: str = ""
+    ):
         user = None
         user_identifier = user_id
         User = get_user_model()
@@ -30,13 +42,13 @@ class ResourceManagementEngine:
                 user = User.objects.get(id=int(user_id))
             except User.DoesNotExist:
                 pass
-        
+
         ExecutionViolationLog.objects.create(
             user=user,
             user_identifier=user_identifier,
             code_snippet=code,
             violation_type=violation_type,
-            details=details
+            details=details,
         )
         logger.warning(f"Violation [{violation_type}] by {user_identifier}: {details}")
 
@@ -50,23 +62,32 @@ class ResourceManagementEngine:
         for node in ast.walk(tree):
             if isinstance(node, ast.Import):
                 for alias in node.names:
-                    if alias.name.split('.')[0] in cls.FORBIDDEN_IMPORTS:
-                        raise SecurityViolation(f"Importing '{alias.name}' is forbidden for security reasons.")
+                    if alias.name.split(".")[0] in cls.FORBIDDEN_IMPORTS:
+                        raise SecurityViolation(
+                            f"Importing '{alias.name}' is forbidden for security reasons."
+                        )
             elif isinstance(node, ast.ImportFrom):
-                if node.module and node.module.split('.')[0] in cls.FORBIDDEN_IMPORTS:
-                    raise SecurityViolation(f"Importing from '{node.module}' is forbidden.")
+                if node.module and node.module.split(".")[0] in cls.FORBIDDEN_IMPORTS:
+                    raise SecurityViolation(
+                        f"Importing from '{node.module}' is forbidden."
+                    )
             elif isinstance(node, ast.Call):
-                if isinstance(node.func, ast.Name) and node.func.id in cls.FORBIDDEN_FUNCTIONS:
-                    raise SecurityViolation(f"Function call '{node.func.id}()' is disabled in the sandbox.")
+                if (
+                    isinstance(node.func, ast.Name)
+                    and node.func.id in cls.FORBIDDEN_FUNCTIONS
+                ):
+                    raise SecurityViolation(
+                        f"Function call '{node.func.id}()' is disabled in the sandbox."
+                    )
 
     @classmethod
     def acquire_execution_lock(cls, session_id: str) -> bool:
         cache_key = f"sandbox_concurrent_executions_{session_id}"
         current = cache.get(cache_key, 0)
-        
+
         if current >= cls.MAX_CONCURRENT_EXECUTIONS:
             return False
-            
+
         cache.set(cache_key, current + 1, timeout=cls.MAX_EXECUTION_TIME_SECONDS * 2)
         return True
 
@@ -74,9 +95,11 @@ class ResourceManagementEngine:
     def release_execution_lock(cls, session_id: str):
         cache_key = f"sandbox_concurrent_executions_{session_id}"
         current = cache.get(cache_key, 0)
-        
+
         if current > 0:
-            cache.set(cache_key, current - 1, timeout=cls.MAX_EXECUTION_TIME_SECONDS * 2)
+            cache.set(
+                cache_key, current - 1, timeout=cls.MAX_EXECUTION_TIME_SECONDS * 2
+            )
 
     @classmethod
     def get_wrapper_script(cls, code: str) -> str:

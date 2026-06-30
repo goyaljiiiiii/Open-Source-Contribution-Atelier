@@ -73,7 +73,9 @@ class LessonProgressCreateSerializer(serializers.Serializer):
     completed = serializers.BooleanField(
         default=True, help_text="Whether the lesson is completed"
     )
-    client_timestamp = serializers.IntegerField(required=False, help_text="Client timestamp for conflict resolution")
+    client_timestamp = serializers.IntegerField(
+        required=False, help_text="Client timestamp for conflict resolution"
+    )
 
 
 class BulkLessonProgressSerializer(serializers.Serializer):

@@ -5,6 +5,7 @@ from apps.content.models import Lesson
 from apps.challenges.models import Challenge
 from .models import Recommendation
 
+
 class RecommendationEngine:
     def __init__(self, user):
         self.user = user
@@ -13,7 +14,7 @@ class RecommendationEngine:
         # Clear old generated ones that are not dismissed maybe?
         # For simplicity, we just generate new ones and rely on unique_together to avoid duplicates
         # or we just get or create
-        
+
         self._generate_remedial_recommendations()
         self._generate_advanced_recommendations()
         self._generate_streak_recommendations()
@@ -31,21 +32,23 @@ class RecommendationEngine:
                 content_id=quiz.question_id,
                 title=quiz.question_text[:50],
                 reason="You recently struggled with this quiz. Try reviewing the topic and attempting it again.",
-                priority_score=80
+                priority_score=80,
             )
 
         # Find recently failed exercises
-        recent_failed_exercises = ExerciseAttempt.objects.filter(
-            user=self.user, is_correct=False
-        ).select_related("exercise").order_by("-created_at")[:5]
+        recent_failed_exercises = (
+            ExerciseAttempt.objects.filter(user=self.user, is_correct=False)
+            .select_related("exercise")
+            .order_by("-created_at")[:5]
+        )
 
         for attempt in recent_failed_exercises:
             self._create_or_update_recommendation(
                 content_type=Recommendation.ContentType.LESSON,
-                content_id=str(attempt.exercise.lesson.id), # assuming relation
+                content_id=str(attempt.exercise.lesson.id),  # assuming relation
                 title=attempt.exercise.lesson.title,
                 reason="You had some trouble with a recent coding exercise. Reviewing this lesson might help.",
-                priority_score=75
+                priority_score=75,
             )
 
     def _generate_advanced_recommendations(self):
@@ -56,14 +59,16 @@ class RecommendationEngine:
 
         if completed_lessons.exists():
             # Recommend challenges
-            challenges = Challenge.objects.all().order_by("?")[:3] # Random for now, can be improved
+            challenges = Challenge.objects.all().order_by("?")[
+                :3
+            ]  # Random for now, can be improved
             for challenge in challenges:
                 self._create_or_update_recommendation(
                     content_type=Recommendation.ContentType.CHALLENGE,
                     content_id=str(challenge.id),
                     title=challenge.title,
                     reason="You're doing great! Try testing your skills with this challenge.",
-                    priority_score=60
+                    priority_score=60,
                 )
 
     def _generate_streak_recommendations(self):
@@ -85,14 +90,21 @@ class RecommendationEngine:
                     content_id=str(uncompleted.id),
                     title=uncompleted.title,
                     reason="Keep your streak alive! Complete this quick lesson today.",
-                    priority_score=90
+                    priority_score=90,
                 )
 
-    def _create_or_update_recommendation(self, content_type, content_id, title, reason, priority_score):
+    def _create_or_update_recommendation(
+        self, content_type, content_id, title, reason, priority_score
+    ):
         # Skip if already dismissed
-        if Recommendation.objects.filter(user=self.user, content_type=content_type, content_id=content_id, is_dismissed=True).exists():
+        if Recommendation.objects.filter(
+            user=self.user,
+            content_type=content_type,
+            content_id=content_id,
+            is_dismissed=True,
+        ).exists():
             return
-            
+
         Recommendation.objects.update_or_create(
             user=self.user,
             content_type=content_type,
@@ -101,5 +113,5 @@ class RecommendationEngine:
                 "title": title,
                 "reason": reason,
                 "priority_score": priority_score,
-            }
+            },
         )

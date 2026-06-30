@@ -1,17 +1,20 @@
 from django.contrib.auth.models import User
 from django.db import models
 
+
 class Recommendation(models.Model):
     objects = models.Manager()
-    
+
     class ContentType(models.TextChoices):
         LESSON = "lesson", "Lesson"
         CHALLENGE = "challenge", "Challenge"
         QUIZ = "quiz", "Quiz"
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="recommendations")
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="recommendations"
+    )
     content_type = models.CharField(max_length=20, choices=ContentType.choices)
-    content_id = models.CharField(max_length=255) # Assuming slug or id
+    content_id = models.CharField(max_length=255)  # Assuming slug or id
     title = models.CharField(max_length=255, default="")
     reason = models.TextField()
     priority_score = models.IntegerField(default=0)
