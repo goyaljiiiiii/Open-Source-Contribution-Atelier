@@ -6,12 +6,11 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0009_merge_20260626_2233'),
-        ('accounts', '0009_merge_20260627_0810'),
-        ('accounts', '0009_merge_20260627_1209'),
-        ('accounts', '0010_userprofile_is_deleted'),
-        ('accounts', '0011_userprofile_theme_preference'),
+        ("accounts", "0009_merge_20260626_2233"),
+        ("accounts", "0009_merge_20260627_0810"),
+        ("accounts", "0009_merge_20260627_1209"),
+        ("accounts", "0010_userprofile_is_deleted"),
+        ("accounts", "0011_userprofile_theme_preference"),
     ]
 
-    operations = [
-    ]
+    operations = []

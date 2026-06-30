@@ -44,7 +44,7 @@ import { OnboardingTour } from "../components/ui/OnboardingTour";
 import { NotesWidget } from "../components/ui/NotesWidget";
 import { RecommendationsList } from "../components/ui/RecommendationsList";
 import { ChallengeOfTheDayWidget } from "../components/ui/ChallengeOfTheDayWidget";
-
+import { DailyQuoteWidget } from "../components/ui/DailyQuoteWidget";
 const FACTS = [
   "Git was created in 2005 by Linus Torvalds because he was frustrated with the commercial tool they were using for Linux development.",
   "Modern servers run on Linux, browsers run on Chromium, and compilers run on open source languages: the internet is built on OSS.",
@@ -724,8 +724,9 @@ export function DashboardPage() {
         </div>
       </section>
 
-      {/* 2. Fact of the Day and Certificate Unlock */}
-      <section className="grid gap-6 md:grid-cols-[1.3fr_0.7fr]">
+       {/* 2. Fact of the Day, Quote, and Certificate Unlock */}
+       {/* Updated to grid-cols-3 to fit the new widget nicely */}
+       <section className="grid gap-6 md:grid-cols-[1fr_1fr_0.8fr]">
         <div
           id="tour-fact"
           className="rounded-2xl border-4 border-black bg-surface-low p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none flex items-start gap-4"
@@ -735,13 +736,16 @@ export function DashboardPage() {
           </div>
           <div>
             <h4 className="font-mono text-xs text-primary uppercase tracking-wider font-black mb-1">
-              Open Source Fact of the Day
+              Fact of the Day
             </h4>
             <p className="font-bold text-sm text-text leading-relaxed dark:text-[#c4bbae]">
               {factOfDay}
             </p>
           </div>
         </div>
+
+        {/* --- NEW DAILY QUOTE WIDGET --- */}
+        <DailyQuoteWidget />
 
         {/* Certificate Card */}
         <div

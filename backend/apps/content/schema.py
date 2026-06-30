@@ -4,7 +4,6 @@ from graphene_django.types import DjangoObjectType
 from .models import Exercise, Lesson, Organization
 
 
-
 class OrganizationType(DjangoObjectType):
     class Meta:
         model = Organization

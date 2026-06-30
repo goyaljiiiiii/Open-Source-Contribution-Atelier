@@ -124,9 +124,7 @@ class SemanticSearchView(views.APIView):
                 embedding__isnull=False,
                 organization=request.user.organization,
             )
-            .annotate(
-                trigram_similarity=TrigramSimilarity("title", query)
-            )
+            .annotate(trigram_similarity=TrigramSimilarity("title", query))
             .prefetch_related("exercises")
         )
         if not lessons.exists():
@@ -281,6 +279,7 @@ import json
 import os
 from django.conf import settings
 
+
 class QuizDetailView(views.APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -293,15 +292,13 @@ class QuizDetailView(views.APIView):
         except (FileNotFoundError, json.JSONDecodeError):
             return response.Response(
                 {"error": "Quizzes data not available"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-        
+
         quiz_data = quizzes.get(quiz_id)
         if not quiz_data:
             return response.Response(
-                {"error": "Quiz not found"},
-                status=status.HTTP_404_NOT_FOUND
+                {"error": "Quiz not found"}, status=status.HTTP_404_NOT_FOUND
             )
-            
-        return response.Response(quiz_data)
 
+        return response.Response(quiz_data)

@@ -37,7 +37,9 @@ class SandboxConsumer(AsyncWebsocketConsumer):
                 from .services import stream_python_execution
 
                 user_id = "anonymous"
-                if self.scope.get("user") and getattr(self.scope["user"], "is_authenticated", False):
+                if self.scope.get("user") and getattr(
+                    self.scope["user"], "is_authenticated", False
+                ):
                     user_id = str(self.scope["user"].id)
                 else:
                     user_id = self.channel_name
@@ -46,56 +48,63 @@ class SandboxConsumer(AsyncWebsocketConsumer):
                     await self.send(text_data=json.dumps(message_data))
 
                 await stream_python_execution(code, send_callback, user_id=user_id)
-            
+
             elif action == "debug_start":
                 code = text_data_json.get("code")
                 breakpoints = text_data_json.get("breakpoints", [])
                 from .services import start_debug_session
                 import os
                 import asyncio
-                
+
                 await self._cleanup_debug_session()
-                
+
                 async def send_callback(message_data):
                     await self.send(text_data=json.dumps(message_data))
-                    
-                self.debug_process, self.debug_file = await start_debug_session(code, breakpoints)
-                
+
+                self.debug_process, self.debug_file = await start_debug_session(
+                    code, breakpoints
+                )
+
                 async def read_debug_output():
                     try:
                         while True:
                             line = await self.debug_process.stdout.readline()
                             if not line:
                                 break
-                            
+
                             try:
                                 data = json.loads(line.decode("utf-8"))
                                 await send_callback(data)
                             except json.JSONDecodeError:
                                 # Normal print statements from user code
-                                await send_callback({"type": "execution_output", "output": line.decode("utf-8")})
+                                await send_callback(
+                                    {
+                                        "type": "execution_output",
+                                        "output": line.decode("utf-8"),
+                                    }
+                                )
                     except Exception:
                         pass
                     finally:
                         await self._cleanup_debug_session()
-                
+
                 self.debug_task = asyncio.create_task(read_debug_output())
-                
+
             elif action in ["debug_step", "debug_next", "debug_continue"]:
                 if self.debug_process and self.debug_process.stdin:
-                    cmd = action.split("_")[1] # step, next, continue
+                    cmd = action.split("_")[1]  # step, next, continue
                     self.debug_process.stdin.write(f"{cmd}\n".encode("utf-8"))
                     await self.debug_process.stdin.drain()
-                    
+
             elif action == "debug_stop":
                 await self._cleanup_debug_session()
-                
+
             elif action == "debug_breakpoint_add":
                 if self.debug_process and self.debug_process.stdin:
                     line = text_data_json.get("line")
                     self.debug_process.stdin.write(f"break {line}\n".encode("utf-8"))
                     await self.debug_process.stdin.drain()
-                    
+
             elif action == "debug_breakpoint_remove":
                 if self.debug_process and self.debug_process.stdin:
                     line = text_data_json.get("line")
@@ -106,17 +115,18 @@ class SandboxConsumer(AsyncWebsocketConsumer):
 
     async def _cleanup_debug_session(self):
         import os
+
         if self.debug_process:
             try:
                 self.debug_process.kill()
             except ProcessLookupError:
                 pass
             self.debug_process = None
-            
+
         if self.debug_task:
             self.debug_task.cancel()
             self.debug_task = None
-            
+
         if self.debug_file and os.path.exists(self.debug_file):
             try:
                 os.remove(self.debug_file)
