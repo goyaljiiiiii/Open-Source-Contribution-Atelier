@@ -70,7 +70,6 @@ INSTALLED_APPS = [
     "apps.recommendations",
     "apps.rbac",
     "apps.uploads",
-    
     "graphene_django",
     "apps.feature_flags",
 ]

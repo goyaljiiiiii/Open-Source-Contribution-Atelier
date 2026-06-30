@@ -1,5 +1,5 @@
-from rest_framework import permissions
 from apps.rbac.permissions import HasRole
+from rest_framework import permissions
 
 
 class IsAdminRole(permissions.BasePermission):

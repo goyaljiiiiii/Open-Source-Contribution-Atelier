@@ -31,4 +31,3 @@ export function openDB(): Promise<IDBDatabase> {
     };
   });
 }
-

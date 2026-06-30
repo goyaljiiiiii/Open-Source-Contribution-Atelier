@@ -1,6 +1,6 @@
 # Hello, JavaScript
 
-Welcome to the JavaScript/TypeScript Execution Sandbox! 
+Welcome to the JavaScript/TypeScript Execution Sandbox!
 
 JavaScript is the programming language of the web. In this lesson, we will learn how to write basic JavaScript functions and see the output directly in the browser using Web Workers.
 

@@ -769,7 +769,7 @@ class RecommendationsView(APIView):
         return Response(serializer.data)
 
 
-from .models import CodeSubmission, PeerReview
+from .models import CodeSubmission, ExerciseAttempt, PeerReview
 from .serializers import CodeSubmissionSerializer, PeerReviewSerializer
 
 
@@ -778,7 +778,7 @@ class CodeSubmissionView(APIView):
 
     def get(self, request):
         submissions = CodeSubmission.objects.filter(
-            status=CodeSubmission.Status.PENDING
+            status=CodeSubmission.Status.PENDING_REVIEW
         ).exclude(user=request.user)
         serializer = CodeSubmissionSerializer(submissions, many=True)
         return Response(serializer.data)
@@ -786,7 +786,18 @@ class CodeSubmissionView(APIView):
     def post(self, request):
         serializer = CodeSubmissionSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(user=request.user)
+            submission = serializer.save(user=request.user)
+            if submission.exercise:
+                eligible = (
+                    ExerciseAttempt.objects.filter(
+                        exercise=submission.exercise, is_correct=True
+                    )
+                    .values_list("user_id", flat=True)
+                    .distinct()
+                )
+                submission.assigned_reviewers.set(
+                    User.objects.filter(id__in=eligible).exclude(id=request.user.id)[:2]
+                )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -803,6 +814,12 @@ class PeerReviewView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        if not submission.assigned_reviewers.filter(id=request.user.id).exists():
+            return Response(
+                {"error": "You are not assigned to review this submission"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         if PeerReview.objects.filter(
             submission=submission, reviewer=request.user
         ).exists():
@@ -817,7 +834,27 @@ class PeerReviewView(APIView):
                 review = serializer.save(
                     submission=submission, reviewer=request.user, points_earned=10
                 )
-                submission.status = CodeSubmission.Status.REVIEWED
-                submission.save(update_fields=["status"])
+                review_count = PeerReview.objects.filter(submission=submission).count()
+                if review_count >= 2:
+                    reviews = list(
+                        PeerReview.objects.filter(submission=submission).values_list(
+                            "is_approved", flat=True
+                        )
+                    )
+                    if all(reviews):
+                        submission.status = CodeSubmission.Status.REVIEWED
+                        submission.save(update_fields=["status"])
+                        if submission.exercise:
+                            ExerciseAttempt.objects.get_or_create(
+                                user=submission.user,
+                                exercise=submission.exercise,
+                                defaults={
+                                    "submitted_command": "peer_review_passed",
+                                    "is_correct": True,
+                                },
+                            )
+                    elif not all(reviews):
+                        submission.status = CodeSubmission.Status.ESCALATED
+                        submission.save(update_fields=["status"])
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -7,6 +7,7 @@ from config.asgi import application
 
 
 @pytest.mark.asyncio
+@pytest.mark.asyncio
 async def test_sandbox_websocket_consumer():
     headers = [(b"origin", b"http://localhost"), (b"host", b"localhost")]
     communicator1 = WebsocketCommunicator(application, "/ws/sandbox/", headers=headers)

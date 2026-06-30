@@ -9,7 +9,6 @@ from apps.progress.models import (
     LessonProgress,
     QuizAttempt,
 )
-
 from apps.rbac.permissions import HasRole
 from apps.rbac.models import UserRole
 
@@ -24,16 +23,17 @@ from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import permissions, serializers, status
 from rest_framework.generics import ListAPIView
-from rest_framework.pagination import CursorPagination
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from rest_framework.views import APIView
 
 
-class LeaderboardPagination(CursorPagination):
+class LeaderboardPagination(PageNumberPagination):
     page_size = 20
-    ordering = ("-xp", "username", "id")
+    page_size_query_param = "page_size"
+    max_page_size = 100
 
 
 class LeaderboardSerializer(serializers.ModelSerializer):
@@ -53,6 +53,18 @@ class LeaderboardView(ListAPIView):
 
     serializer_class = LeaderboardSerializer
     pagination_class = LeaderboardPagination
+
+    def list(self, request, *args, **kwargs):
+        page = request.query_params.get("page", "1")
+        cache_key = f"leaderboard_page_{page}"
+
+        cached_data = cache.get(cache_key)
+        if cached_data is not None:
+            return Response(cached_data)
+
+        response = super().list(request, *args, **kwargs)
+        cache.set(cache_key, response.data, 300)
+        return response
 
     def get_queryset(self):
         timeframe = self.request.query_params.get("timeframe", "all")
@@ -595,11 +607,14 @@ class BuyStreakFreezeView(APIView):
             )
 
 
+<<<<<<< HEAD
 from apps.rbac.models import UserRole
 from django.db import models
 
 
 
+=======
+>>>>>>> pr-816
 class IsModeratorOrAdmin(permissions.BasePermission):
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:

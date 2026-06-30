@@ -136,7 +136,9 @@ class UserProfile(models.Model):
     cover_image = models.ImageField(upload_to="covers/", null=True, blank=True)
     last_password_change = models.DateTimeField(auto_now_add=True)
     timezone = models.CharField(
-        max_length=64, choices=get_timezone_choices, default="UTC"
+        max_length=64,
+        choices=get_timezone_choices(),
+        default="UTC",
     )
     twitter_url = models.URLField(max_length=500, blank=True, default="")
     linkedin_url = models.URLField(max_length=500, blank=True, default="")
@@ -156,10 +158,11 @@ class UserProfile(models.Model):
     def _convert_to_webp(self, image_field):
         """Helper method to convert an ImageField to WebP format."""
         if image_field and not image_field.name.lower().endswith(".webp"):
-            from PIL import Image
-            from io import BytesIO
-            from django.core.files.base import ContentFile
             import os
+            from io import BytesIO
+
+            from django.core.files.base import ContentFile
+            from PIL import Image
 
             img = Image.open(image_field)
 

@@ -19,7 +19,7 @@ Open source is built on the following key principles:
 
 ## ⚔️ Open Source vs. Closed Source
 
-| Feature          | 🔓 Open Source                                  | 🔐 Closed (Proprietary) Source                          |
+| Feature          | 🔓 Open Source                                  | 🔐 Closed (Proprietary) Source                       |
 | :--------------- | :---------------------------------------------- | :--------------------------------------------------- |
 | **Source Code**  | Publicly accessible to view and edit            | Locked; only visible to the owner company            |
 | **Development**  | Driven by community collaboration               | Driven by company teams and specifications           |

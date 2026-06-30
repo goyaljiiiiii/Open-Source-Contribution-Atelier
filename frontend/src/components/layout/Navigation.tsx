@@ -25,7 +25,7 @@ import { SyncStatusIndicator } from "../ui/SyncStatusIndicator";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
-  { to: "/lessons/what-is-open-source", label: "Lessons", icon: BookOpen },
+  { to: "/lessons/intro", label: "Lessons", icon: BookOpen },
   { to: "/challenges", label: "Challenges", icon: Trophy },
   { to: "/leaderboard", label: "Leaderboard", icon: TrendingUp },
   { to: "/community", label: "Community", icon: BriefcaseBusiness },

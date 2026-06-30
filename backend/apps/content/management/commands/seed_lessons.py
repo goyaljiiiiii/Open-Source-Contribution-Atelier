@@ -1,7 +1,7 @@
+from typing import Any, Dict, List
+
 from apps.content.models import Exercise, Lesson
 from django.core.management.base import BaseCommand
-
-from typing import Any, Dict, List
 
 LESSONS: List[Dict[str, Any]] = [
     {

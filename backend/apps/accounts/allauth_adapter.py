@@ -1,6 +1,8 @@
 import secrets
+
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.contrib.auth.models import User
+
 from .views import unique_username_from_value
 
 

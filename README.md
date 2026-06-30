@@ -89,6 +89,47 @@ npm run dev
 
 ---
 
+## 🐳 Docker (Full Stack)
+
+Spin up the entire stack (Postgres, Redis, Django backend, Celery worker, Vite frontend) with a single command:
+
+```bash
+docker compose up --build
+```
+
+This boots:
+
+| Service | URL | Description |
+|---|---|---|
+| **postgres** | `localhost:5432` | Database |
+| **redis** | `localhost:6379` | Celery broker + Channels cache |
+| **backend** | `http://localhost:8000/api/` | Django REST API with hot-reload |
+| **celery_worker** | — | Background task processor for email notifications |
+| **frontend** | `http://localhost:5173/` | Vite dev server with hot-reload |
+
+> [!TIP]
+> The Celery worker mounts the codebase as a volume (`./services/notifications_worker:/app`),
+> so code changes take effect immediately without rebuilding the image.
+> Restart the worker with `docker compose restart celery_worker` after editing `worker.py`.
+
+### Environment Variables
+
+The Docker backend reads these environment variables automatically. You can override them in `docker-compose.yml` or via a `.env` file:
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Key variables for Docker:
+
+| Variable | Default | Notes |
+|---|---|---|
+| `DATABASE_URL` | `postgres://atelier:atelier@postgres:5432/atelier` | Auto-configured |
+| `REDIS_URL` | `redis://redis:6379/0` | Auto-configured |
+| `DEBUG` | `True` | Development mode |
+
+---
+
 ## ☁️ Deployment (Vercel)
 
 This project is fully configured to be deployed on **Vercel** as a monorepo.

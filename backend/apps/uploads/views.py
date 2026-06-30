@@ -1,10 +1,12 @@
 import os
 import shutil
-from rest_framework import views, status, permissions
-from rest_framework.response import Response
+
 from django.conf import settings
-from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from rest_framework import permissions, status, views
+from rest_framework.response import Response
+
 from .models import UploadSession
 
 

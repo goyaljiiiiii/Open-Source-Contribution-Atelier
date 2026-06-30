@@ -479,7 +479,7 @@
         {
           "slug": "conflict-resolution",
           "title": "Conflict Resolution",
-          "description": "Fixing code overlaps and continuing the rebase process.",
+          "description": "When a conflict occurs, Git inserts markers into the file to indicate current and incoming changes. Resolve the conflict by editing the file, removing the markers, and keeping the desired code. Then stage the file and continue the rebase with `git rebase --continue`.",
           "difficulty": "advanced",
           "estimatedMinutes": 12,
           "points": 25,
@@ -488,7 +488,7 @@
           "conflictScenario": {
             "baseBranchName": "main",
             "featureBranchName": "feat/update-greeting",
-            "fileContent": "function greet(name) {\n<<<<<<< HEAD\n  return \"Greetings, \" + name;\n=======\n  return `Hello, ${name}!`;\n>>>>>>> feat/update-greeting\n}"
+            "fileContent": "function greet(name) {\n  return `Hello, ${name}!`;\n}"
           }
         },
         {

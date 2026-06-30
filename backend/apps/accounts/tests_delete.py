@@ -1,12 +1,13 @@
-from django.test import TestCase
-from django.contrib.auth import get_user_model
-from rest_framework.test import APIClient
-from rest_framework import status
-from apps.content.models import Comment, Lesson
+import uuid
+
 from apps.chat.models import Message
+from apps.content.models import Comment, Lesson
 from apps.notes.models import Note
 from apps.progress.models import Certificate
-import uuid
+from django.contrib.auth import get_user_model
+from django.test import TestCase
+from rest_framework import status
+from rest_framework.test import APIClient
 
 User = get_user_model()
 

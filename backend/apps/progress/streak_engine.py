@@ -12,8 +12,8 @@ import logging
 from datetime import date, timedelta
 from typing import Optional
 
-from django.db import transaction
 from django.contrib.auth.models import User
+from django.db import transaction
 
 from .models import STREAK_MILESTONES, StreakProfile
 

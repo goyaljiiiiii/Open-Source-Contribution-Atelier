@@ -7,8 +7,8 @@ self.addEventListener("message", async (event) => {
   let error = null;
 
   // Create interceptors for console
-  const intercept = (level: string) => {
-    return (...args: any[]) => {
+  const intercept = () => {
+    return (...args: unknown[]) => {
       const msg = args
         .map((a) => {
           if (a instanceof Error) {
@@ -47,13 +47,13 @@ self.addEventListener("message", async (event) => {
           throw e;
         }
       })();
-      `
+      `,
     );
 
     // 3. Execute
     await executionFn(customConsole);
-  } catch (err: any) {
-    error = err.toString();
+  } catch (err: unknown) {
+    error = err instanceof Error ? err.toString() : String(err);
   }
 
   // Send results back

@@ -10,7 +10,7 @@ export const PathwayPage: React.FC = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetchApi("/content/roadmap/")
+    fetchApi("/content/roadmap/", { suppressErrorToast: true })
       .then((data) => {
         if (data && data.track) {
           setLessons(data.track);

@@ -1,8 +1,10 @@
-from django.utils import timezone
 from datetime import timedelta
-from apps.progress.models import QuizAttempt, ExerciseAttempt, LessonProgress
-from apps.content.models import Lesson
+
 from apps.challenges.models import Challenge
+from apps.content.models import Lesson
+from apps.progress.models import ExerciseAttempt, LessonProgress, QuizAttempt
+from django.utils import timezone
+
 from .models import Recommendation
 
 

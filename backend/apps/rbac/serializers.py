@@ -1,6 +1,8 @@
-from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Permission, Role, UserRole, AuditLog
+from rest_framework import serializers
+
+from .models import AuditLog, Permission, Role, UserRole
+
 
 
 class PermissionSerializer(serializers.ModelSerializer):
