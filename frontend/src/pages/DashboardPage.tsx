@@ -665,6 +665,20 @@ export function DashboardPage() {
             </span>
             <h1 className="text-4xl sm:text-5xl font-black text-white drop-shadow-[3.5px_3.5px_0_#000] mb-4 dark:text-[#f0ebe2] dark:drop-shadow-none">
               Welcome to the Atelier, {user?.username}.
+            <h1 className="text-4xl sm:text-5xl font-black text-white drop-shadow-[3.5px_3.5px_0_#000] mb-4 dark:text-[#f0ebe2] dark:drop-shadow-none">
+              Welcome to the Atelier, {user?.username}.
+            </h1>
+            
+            {/* --- NEW BIO RENDERER START --- */}
+            {user?.bio_html && (
+              <div 
+                className="prose prose-sm prose-invert mb-6 text-white dark:text-[#f0ebe2] max-w-2xl bg-black/20 p-4 rounded-xl border-2 border-white/20 shadow-inner"
+                dangerouslySetInnerHTML={{ __html: user.bio_html }} 
+              />
+            )}
+            {/* --- NEW BIO RENDERER END --- */}
+
+            <p className="text-lg font-bold text-black bg-white/95 p-4 rounded-lg border-4 border-black shadow-card-sm inline-block max-w-xl leading-relaxed dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2]"></p>
             </h1>
             <p className="text-lg font-bold text-black bg-white/95 p-4 rounded-lg border-4 border-black shadow-card-sm inline-block max-w-xl leading-relaxed dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2]">
               You have completed {completedLessonsCount} of {totalLessonsCount}{" "}
