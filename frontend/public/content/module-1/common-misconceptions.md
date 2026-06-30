@@ -6,11 +6,7 @@
 
 ## 1️⃣ MYTH 1: "I need to be a coding genius."
 
-<<<<<<< HEAD
-**Reality**: Most open source contributions are small fixes, typo corrections, documentation improvements, or simple bug patches. You do not need to rewrite the entire project to help! Starting small is key, and you will eventually transition into
-=======
 **Reality**: Most open source contributions are small fixes, typo corrections, documentation improvements, or simple bug patches. You do not need to rewrite the entire project to help! Starting small is key, and you will eventually transition into more complex work.
->>>>>>> origin/main
 
 ---
 

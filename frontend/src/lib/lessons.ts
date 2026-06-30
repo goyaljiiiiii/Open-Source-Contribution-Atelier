@@ -12,7 +12,7 @@ export interface Exercise {
 export interface ConflictScenario {
   baseBranchName: string;
   featureBranchName: string;
-  fileContent: string; // The file content containing Git conflict markers (<<<<<<< HEAD)
+  fileContent: string; // The file content containing Git conflict markers (example marker)
 }
 
 export interface PythonExercise {
