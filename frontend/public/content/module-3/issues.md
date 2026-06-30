@@ -1,10 +1,10 @@
-# GitHub Issues
+# 📌 GitHub Issues
 
-Before writing any code, work in open source almost always begins inside an **Issue**.
+### Before writing any code, work in open source almost always begins inside an **Issue**.
 
 ---
 
-### What is an Issue?
+## What is an Issue?
 
 An **Issue** is a tracking ticket. It is used to record bugs, suggest new ideas, request documentation improvements, or discuss architectural shifts.
 
