@@ -21,6 +21,8 @@ import { PeerReviewPage } from "../pages/PeerReviewPage";
 import { useAuth } from "../features/auth/AuthContext";
 import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
 import { PathwayPage } from "../pages/PathwayPage";
+import { LearningPathPage } from "../pages/LearningPathPage";
+import AnalyticsDashboardPage from "../pages/AnalyticsDashboardPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -113,10 +115,26 @@ export function AppRouter() {
           }
         />
         <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute>
+              <AnalyticsDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/pathway"
           element={
             <ProtectedRoute>
               <PathwayPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/learning-path"
+          element={
+            <ProtectedRoute>
+              <LearningPathPage />
             </ProtectedRoute>
           }
         />

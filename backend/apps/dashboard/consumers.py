@@ -5,7 +5,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 
 class LeaderboardConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.group_name = "leaderboard_updates"
+        self.group_name = "leaderboard"
 
         # Join the leaderboard updates group
         await self.channel_layer.group_add(self.group_name, self.channel_name)

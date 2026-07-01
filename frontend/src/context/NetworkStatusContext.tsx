@@ -7,12 +7,7 @@
  *  - Wrap your app with <NetworkStatusProvider>
  *  - Consume with useNetworkStatus() from ./useNetworkStatus
  */
-import React, {
-  createContext,
-  useEffect,
-  useState,
-  ReactNode,
-} from "react";
+import React, { createContext, useEffect, useState, ReactNode } from "react";
 
 export interface NetworkStatusContextValue {
   isOnline: boolean;
@@ -24,7 +19,7 @@ export const NetworkStatusContext = createContext<NetworkStatusContextValue>({
 
 export function NetworkStatusProvider({ children }: { children: ReactNode }) {
   const [isOnline, setIsOnline] = useState<boolean>(
-    typeof navigator !== "undefined" ? navigator.onLine : true
+    typeof navigator !== "undefined" ? navigator.onLine : true,
   );
 
   useEffect(() => {

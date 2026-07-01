@@ -1,9 +1,5 @@
 from io import BytesIO
 
-from apps.challenges.models import Challenge
-from apps.challenges.serializers import ChallengeSerializer
-from apps.progress.models import LessonProgress
-from apps.search.models import SearchDocument
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.search import SearchQuery, SearchRank, TrigramSimilarity
 from django.core.cache import cache
@@ -21,6 +17,11 @@ from rest_framework import (
     viewsets,
 )
 from rest_framework.permissions import AllowAny
+
+from apps.challenges.models import Challenge
+from apps.challenges.serializers import ChallengeSerializer
+from apps.progress.models import LessonProgress
+from apps.search.models import SearchDocument
 
 from . import semantic_search
 from .models import Lesson, Organization
@@ -124,9 +125,7 @@ class SemanticSearchView(views.APIView):
                 embedding__isnull=False,
                 organization=request.user.organization,
             )
-            .annotate(
-                trigram_similarity=TrigramSimilarity("title", query)
-            )
+            .annotate(trigram_similarity=TrigramSimilarity("title", query))
             .prefetch_related("exercises")
         )
         if not lessons.exists():
@@ -275,3 +274,33 @@ class LessonPDFView(views.APIView):
         )
 
         return response_obj
+
+
+import json
+import os
+
+from django.conf import settings
+
+
+class QuizDetailView(views.APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, quiz_id):
+        # Look for quizzes.json in the data directory
+        quizzes_file = os.path.join(settings.BASE_DIR, "data", "quizzes.json")
+        try:
+            with open(quizzes_file, "r") as f:
+                quizzes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return response.Response(
+                {"error": "Quizzes data not available"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        quiz_data = quizzes.get(quiz_id)
+        if not quiz_data:
+            return response.Response(
+                {"error": "Quiz not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        return response.Response(quiz_data)

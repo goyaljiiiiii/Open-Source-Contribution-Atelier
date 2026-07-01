@@ -6,6 +6,7 @@ from .views import (
     GitHubOAuthStartView,
     GoogleLoginView,
     LoginView,
+    LogoutView,
     MagicLinkRequestView,
     MagicLinkVerifyView,
     MeView,
@@ -14,14 +15,20 @@ from .views import (
     PasswordResetConfirmView,
     PasswordResetRequestView,
     RefreshView,
+    SecureAccountDeleteView,
     SignupView,
     UserListView,
     UserStatisticsView,
-    SecureAccountDeleteView,
 )
 
 urlpatterns = [
     # ── Core Auth ──────────────────────────────────────────────────────────────
+    path("signup/", SignupView.as_view(), name="signup"),
+    path("login/", LoginView.as_view(), name="login"),
+    path("refresh/", RefreshView.as_view(), name="refresh"),
+    path("me/", MeView.as_view(), name="me"),
+    path("users/", UserListView.as_view(), name="user-list"),
+    path("logout/", LogoutView.as_view(), name="logout"),
     path("signup/", SignupView.as_view(), name="signup"),
     path("login/", LoginView.as_view(), name="login"),
     path("refresh/", RefreshView.as_view(), name="refresh"),

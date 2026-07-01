@@ -1,21 +1,23 @@
 import io
 import json
 import zipfile
+from datetime import timedelta
+
 import pytest
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from rest_framework.test import APIClient
+
+from apps.chat.models import Message
+from apps.content.models import Comment, Exercise, Lesson
+from apps.dashboard.models import Issue, StreakFreeze
 from apps.progress.models import (
-    LessonProgress,
-    ExerciseAttempt,
     CodeSubmission,
+    ExerciseAttempt,
+    LessonProgress,
     PeerReview,
     UserBadge,
 )
-from apps.dashboard.models import StreakFreeze, Issue
-from apps.content.models import Comment, Lesson, Exercise
-from apps.chat.models import Message
-from django.utils import timezone
-from datetime import timedelta
 
 User = get_user_model()
 

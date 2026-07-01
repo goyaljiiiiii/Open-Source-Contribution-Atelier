@@ -19,6 +19,10 @@ export const handlers = [
     return HttpResponse.json(mockContributorDashboardStats);
   }),
 
+  http.get(matchUrl("/api/auth/me/"), () => {
+    return HttpResponse.json(null);
+  }),
+
   http.get(matchUrl("/api/leaderboard/"), () => {
     return HttpResponse.json(mockLeaderboard);
   }),
@@ -44,6 +48,22 @@ export const handlers = [
   }),
 
   http.get(matchUrl("/api/content/organizations/"), () => {
+    return HttpResponse.json([]);
+  }),
+
+  http.get(matchUrl("/api/users/me/learning-path/"), () => {
+    return HttpResponse.json({});
+  }),
+
+  http.get(matchUrl("/api/notes/"), () => {
+    return HttpResponse.json([]);
+  }),
+
+  http.get(matchUrl("/api/challenges/today/"), () => {
+    return HttpResponse.json(null);
+  }),
+
+  http.get(matchUrl("/api/recommendations/"), () => {
     return HttpResponse.json([]);
   }),
 ];

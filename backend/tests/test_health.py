@@ -2,8 +2,9 @@ import json
 from unittest.mock import MagicMock, patch
 
 import pytest
-from config.health_view import health_view
 from django.test import RequestFactory
+
+from config.health_view import health_view
 
 
 @pytest.fixture
@@ -148,7 +149,7 @@ class TestRedisCheck:
 
         with (
             patch("config.health_view.os.getenv", return_value=""),
-            patch("config.health_view.settings.CELERY_BROKER_URL", ""),
+            patch("config.health_view.settings.Q_CLUSTER", {}),
         ):
             result = _check_redis()
 
