@@ -9,7 +9,15 @@
 A maintainer's review can result in one of three states on GitHub:
 
 - **✅ Approved**: Your changes look great, are tested, and are ready to merge.
+
+<img width="1838" height="592" alt="image" src="https://github.com/user-attachments/assets/c9552846-602d-4741-8cca-6c5f7b99ef24" />
+<br><br>
+
 - **🔧 Changes Requested**: The maintainer identified issues, design bugs, or missing tests. You _must_ update your code before merging.
+
+<img width="1630" height="860" alt="image" src="https://github.com/user-attachments/assets/4cee9299-3b0d-4456-b1ff-7fef9be5830d" />
+<br><br>
+
 - **💬 Comment**: General questions, suggestions, or clarifications without a formal block.
 
 ---
