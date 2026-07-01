@@ -26,7 +26,8 @@ export function CommunityPage() {
   // 1. Fetch backend community stats
   const { data: stats, isLoading } = useQuery({
     queryKey: ["communityStats"],
-    queryFn: () => fetchApi("/progress/community-stats/"),
+    queryFn: () =>
+      fetchApi("/progress/community-stats/", { suppressErrorToast: true }),
   });
 
   // 2. Fetch GitHub contributors for the leaderboard using infinite scroll

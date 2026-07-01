@@ -1,5 +1,3 @@
-from apps.content.models import Lesson
-from apps.content.serializers import LessonSerializer
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import Count, Min, Sum
@@ -11,6 +9,9 @@ from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
+
+from apps.content.models import Lesson
+from apps.content.serializers import LessonSerializer
 
 from .models import (
     Badge,
@@ -76,10 +77,25 @@ class MyProgressView(APIView):
                 difficulty="beginner",
             )
 
+        client_timestamp_ms = request.data.get("client_timestamp")
+
         try:
             progress = LessonProgress.objects.get(user=request.user, lesson=lesson)
             created = False
-            if progress.base_score != base_score or progress.completed != completed:
+
+            skip_update = False
+            if client_timestamp_ms:
+                import datetime
+
+                client_dt = datetime.datetime.fromtimestamp(
+                    client_timestamp_ms / 1000.0, tz=datetime.timezone.utc
+                )
+                if progress.updated_at > client_dt:
+                    skip_update = True
+
+            if not skip_update and (
+                progress.base_score != base_score or progress.completed != completed
+            ):
                 progress.completed = completed
                 progress.base_score = base_score
                 progress.multiplier_applied = multiplier
@@ -98,9 +114,9 @@ class MyProgressView(APIView):
             )
             created = True
 
-        from .tasks import evaluate_user_badges_task
+        from django_q.tasks import async_task
 
-        evaluate_user_badges_task.delay(request.user.id)
+        async_task("apps.progress.tasks.evaluate_user_badges_task", request.user.id)
 
         serializer = LessonProgressSerializer(progress)
 
@@ -144,7 +160,18 @@ class BulkSyncProgressView(APIView):
                     progress = LessonProgress.objects.get(
                         user=request.user, lesson=lesson
                     )
-                    if (
+                    client_timestamp_ms = item.get("client_timestamp")
+                    skip_update = False
+                    if client_timestamp_ms:
+                        import datetime
+
+                        client_dt = datetime.datetime.fromtimestamp(
+                            client_timestamp_ms / 1000.0, tz=datetime.timezone.utc
+                        )
+                        if progress.updated_at > client_dt:
+                            skip_update = True
+
+                    if not skip_update and (
                         progress.base_score != base_score
                         or progress.completed != completed
                     ):
@@ -165,9 +192,9 @@ class BulkSyncProgressView(APIView):
 
                 synced.append(progress.id)
 
-            from .tasks import evaluate_user_badges_task
+            from django_q.tasks import async_task
 
-            evaluate_user_badges_task.delay(request.user.id)
+            async_task("apps.progress.tasks.evaluate_user_badges_task", request.user.id)
 
         return Response(
             {"synced_count": len(synced), "progress_ids": synced},
@@ -269,7 +296,21 @@ class BulkProgressUpdateView(APIView):
 
                     if lesson.id in existing_progress:
                         prog = existing_progress[lesson.id]
-                        if prog.base_score != base_score or prog.completed != completed:
+
+                        client_timestamp_ms = item.get("client_timestamp")
+                        skip_update = False
+                        if client_timestamp_ms:
+                            import datetime
+
+                            client_dt = datetime.datetime.fromtimestamp(
+                                client_timestamp_ms / 1000.0, tz=datetime.timezone.utc
+                            )
+                            if prog.updated_at > client_dt:
+                                skip_update = True
+
+                        if not skip_update and (
+                            prog.base_score != base_score or prog.completed != completed
+                        ):
                             prog.completed = completed
                             prog.base_score = base_score
                             prog.multiplier_applied = multiplier
@@ -300,9 +341,9 @@ class BulkProgressUpdateView(APIView):
                     )
                     success_ids.extend([p.id for p in progress_to_update])
 
-                from .tasks import evaluate_user_badges_task
+                from django_q.tasks import async_task
 
-                evaluate_user_badges_task.delay(request.user.id)
+                async_task("apps.progress.tasks.evaluate_user_badges_task", request.user.id)
 
         except ValueError as ve:
             return Response(
@@ -749,7 +790,7 @@ class RecommendationsView(APIView):
         return Response(serializer.data)
 
 
-from .models import CodeSubmission, PeerReview
+from .models import CodeSubmission, ExerciseAttempt, PeerReview
 from .serializers import CodeSubmissionSerializer, PeerReviewSerializer
 
 
@@ -758,7 +799,7 @@ class CodeSubmissionView(APIView):
 
     def get(self, request):
         submissions = CodeSubmission.objects.filter(
-            status=CodeSubmission.Status.PENDING
+            status=CodeSubmission.Status.PENDING_REVIEW
         ).exclude(user=request.user)
         serializer = CodeSubmissionSerializer(submissions, many=True)
         return Response(serializer.data)
@@ -766,7 +807,18 @@ class CodeSubmissionView(APIView):
     def post(self, request):
         serializer = CodeSubmissionSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(user=request.user)
+            submission = serializer.save(user=request.user)
+            if submission.exercise:
+                eligible = (
+                    ExerciseAttempt.objects.filter(
+                        exercise=submission.exercise, is_correct=True
+                    )
+                    .values_list("user_id", flat=True)
+                    .distinct()
+                )
+                submission.assigned_reviewers.set(
+                    User.objects.filter(id__in=eligible).exclude(id=request.user.id)[:2]
+                )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -781,6 +833,12 @@ class PeerReviewView(APIView):
             return Response(
                 {"error": "Cannot review your own submission"},
                 status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not submission.assigned_reviewers.filter(id=request.user.id).exists():
+            return Response(
+                {"error": "You are not assigned to review this submission"},
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         if PeerReview.objects.filter(

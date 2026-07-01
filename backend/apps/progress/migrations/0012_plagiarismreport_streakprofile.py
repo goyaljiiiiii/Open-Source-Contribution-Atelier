@@ -8,39 +8,78 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('progress', '0011_merge_20260627_0810'),
+        ("progress", "0011_merge_20260627_0810"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='PlagiarismReport',
+            name="PlagiarismReport",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('similarity_score', models.FloatField()),
-                ('is_flagged', models.BooleanField(default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('matched_submission', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='matched_in_reports', to='progress.codesubmission')),
-                ('submission', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='plagiarism_reports', to='progress.codesubmission')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("similarity_score", models.FloatField()),
+                ("is_flagged", models.BooleanField(default=False)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "matched_submission",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="matched_in_reports",
+                        to="progress.codesubmission",
+                    ),
+                ),
+                (
+                    "submission",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="plagiarism_reports",
+                        to="progress.codesubmission",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-similarity_score'],
-                'unique_together': {('submission', 'matched_submission')},
+                "ordering": ["-similarity_score"],
+                "unique_together": {("submission", "matched_submission")},
             },
         ),
         migrations.CreateModel(
-            name='StreakProfile',
+            name="StreakProfile",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('current_streak', models.PositiveIntegerField(default=0)),
-                ('longest_streak', models.PositiveIntegerField(default=0)),
-                ('last_activity_date', models.DateField(blank=True, null=True)),
-                ('current_multiplier', models.FloatField(default=1.0)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='streak_profile', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("current_streak", models.PositiveIntegerField(default=0)),
+                ("longest_streak", models.PositiveIntegerField(default=0)),
+                ("last_activity_date", models.DateField(blank=True, null=True)),
+                ("current_multiplier", models.FloatField(default=1.0)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "user",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="streak_profile",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'indexes': [models.Index(fields=['user'], name='idx_streak_profile_user')],
+                "indexes": [
+                    models.Index(fields=["user"], name="idx_streak_profile_user")
+                ],
             },
         ),
     ]

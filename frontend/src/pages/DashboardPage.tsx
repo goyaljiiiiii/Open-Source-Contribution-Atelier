@@ -26,6 +26,7 @@ import {
   X,
   Lock,
   Bookmark,
+  Sparkles,
 } from "lucide-react";
 import {
   BarChart,
@@ -42,7 +43,9 @@ import {
 } from "recharts";
 import { OnboardingTour } from "../components/ui/OnboardingTour";
 import { NotesWidget } from "../components/ui/NotesWidget";
-
+import { RecommendationsList } from "../components/ui/RecommendationsList";
+import { ChallengeOfTheDayWidget } from "../components/ui/ChallengeOfTheDayWidget";
+import { DailyQuoteWidget } from "../components/ui/DailyQuoteWidget";
 const FACTS = [
   "Git was created in 2005 by Linus Torvalds because he was frustrated with the commercial tool they were using for Linux development.",
   "Modern servers run on Linux, browsers run on Chromium, and compilers run on open source languages: the internet is built on OSS.",
@@ -127,14 +130,14 @@ export function DashboardPage() {
     error: adminError,
   } = useQuery({
     queryKey: ["adminDashboardStats"],
-    queryFn: () => fetchApi("/dashboard/admin/"),
+    queryFn: () => fetchApi("/dashboard/admin/", { suppressErrorToast: true }),
     enabled: !!user?.is_staff,
   });
 
   // 3. Fetch paginated leaderboard for admin chart (only queries if user is staff)
   const { data: leaderboardData, isLoading: isLeaderboardLoading } = useQuery({
     queryKey: ["leaderboard", 1],
-    queryFn: () => fetchApi("/leaderboard/"),
+    queryFn: () => fetchApi("/leaderboard/", { suppressErrorToast: true }),
     enabled: !!user?.is_staff,
   });
 
@@ -145,7 +148,8 @@ export function DashboardPage() {
     error: contributorError,
   } = useQuery({
     queryKey: ["contributorDashboardStats"],
-    queryFn: () => fetchApi("/dashboard/contributor/"),
+    queryFn: () =>
+      fetchApi("/dashboard/contributor/", { suppressErrorToast: true }),
     enabled: !!user && !user.is_staff,
   });
 
@@ -157,6 +161,14 @@ export function DashboardPage() {
     queryFn: fetchLessonsApi,
     enabled: !user?.is_staff,
   });
+
+  // 6. Fetch personalized learning path
+  const { data: learningPathData, isLoading: isLearningPathLoading } =
+    useQuery<unknown>({
+      queryKey: ["learningPath"],
+      queryFn: () => fetchApi("/users/me/learning-path/"),
+      enabled: !!user && !user.is_staff,
+    });
 
   const isLoading = isAdminLoading || isContributorLoading || isLessonsLoading;
 
@@ -324,7 +336,8 @@ export function DashboardPage() {
   // Fetch user certificate if course is completed
   const { data: certificateData } = useQuery({
     queryKey: ["userCertificate"],
-    queryFn: () => fetchApi("/progress/certificate/"),
+    queryFn: () =>
+      fetchApi("/progress/certificate/", { suppressErrorToast: true }),
     enabled: !!user && !user.is_staff && completionPercentage === 100,
     retry: false,
   });
@@ -664,6 +677,17 @@ export function DashboardPage() {
             <h1 className="text-4xl sm:text-5xl font-black text-white drop-shadow-[3.5px_3.5px_0_#000] mb-4 dark:text-[#f0ebe2] dark:drop-shadow-none">
               Welcome to the Atelier, {user?.username}.
             </h1>
+
+            {/* --- NEW BIO RENDERER START --- */}
+            {user?.bio_html && (
+              <div
+                className="prose prose-sm prose-invert mb-6 text-white dark:text-[#f0ebe2] max-w-2xl bg-black/20 p-4 rounded-xl border-2 border-white/20 shadow-inner"
+                dangerouslySetInnerHTML={{ __html: user.bio_html }}
+              />
+            )}
+            {/* --- NEW BIO RENDERER END --- */}
+
+            <p className="text-lg font-bold text-black bg-white/95 p-4 rounded-lg border-4 border-black shadow-card-sm inline-block max-w-xl leading-relaxed dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2]"></p>
             <p className="text-lg font-bold text-black bg-white/95 p-4 rounded-lg border-4 border-black shadow-card-sm inline-block max-w-xl leading-relaxed dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2]">
               You have completed {completedLessonsCount} of {totalLessonsCount}{" "}
               course modules, earning{" "}
@@ -688,6 +712,10 @@ export function DashboardPage() {
             <span className="font-black text-black uppercase tracking-widest text-[9px] mt-1 dark:text-[#c4bbae]">
               Streak Days
             </span>
+            {/* Added longest streak display */}
+            <div className="absolute top-2 right-2 bg-surface-low border-2 border-black rounded-full px-2 py-0.5 text-[8px] font-black text-muted flex items-center gap-1 dark:bg-[#151411]">
+              <span className="text-[10px]">🏆</span> Max: {personal_stats.longest_streak || personal_stats.streak_days}
+            </div>
           </div>
 
           <div className="rounded-[2rem] border-4 border-black bg-white p-6 shadow-card flex flex-col justify-center items-center text-center dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none hover:-translate-y-0.5 transition-transform">
@@ -722,8 +750,9 @@ export function DashboardPage() {
         </div>
       </section>
 
-      {/* 2. Fact of the Day and Certificate Unlock */}
-      <section className="grid gap-6 md:grid-cols-[1.3fr_0.7fr]">
+      {/* 2. Fact of the Day, Quote, and Certificate Unlock */}
+      {/* Updated to grid-cols-3 to fit the new widget nicely */}
+      <section className="grid gap-6 md:grid-cols-[1fr_1fr_0.8fr]">
         <div
           id="tour-fact"
           className="rounded-2xl border-4 border-black bg-surface-low p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none flex items-start gap-4"
@@ -733,13 +762,16 @@ export function DashboardPage() {
           </div>
           <div>
             <h4 className="font-mono text-xs text-primary uppercase tracking-wider font-black mb-1">
-              Open Source Fact of the Day
+              Fact of the Day
             </h4>
             <p className="font-bold text-sm text-text leading-relaxed dark:text-[#c4bbae]">
               {factOfDay}
             </p>
           </div>
         </div>
+
+        {/* --- NEW DAILY QUOTE WIDGET --- */}
+        <DailyQuoteWidget />
 
         {/* Certificate Card */}
         <div
@@ -771,6 +803,91 @@ export function DashboardPage() {
           )}
         </div>
       </section>
+
+      {/* Personalized Next Step Widget */}
+      {learningPathData?.next_step && (
+        <section className="rounded-[2rem] border-4 border-black bg-white p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none space-y-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex items-start gap-4">
+              <div className="bg-[#ffcc00] p-3 rounded-2xl border-2 border-black flex-shrink-0 text-2xl dark:bg-[#ffcc00]/20 dark:text-[#ffcc00]">
+                🎯
+              </div>
+              <div>
+                <h3 className="font-black text-2xl dark:text-[#f0ebe2] flex items-center gap-2">
+                  Your Personalized Next Step
+                  <span className="font-mono text-xs bg-black text-white px-2 py-0.5 rounded-full uppercase dark:bg-[#2e2924]">
+                    {learningPathData.next_step.id}
+                  </span>
+                </h3>
+                <p className="font-bold text-sm text-muted dark:text-[#c4bbae] mt-1">
+                  Focus Module:{" "}
+                  <span className="text-text dark:text-[#f0ebe2] font-black">
+                    {learningPathData.next_step.title}
+                  </span>{" "}
+                  ({learningPathData.next_step.status})
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/learning-path"
+              className="w-full md:w-auto rounded-lg bg-[#c3c0ff] border-2 border-black px-4 py-2 text-xs font-black hover:-translate-y-0.5 shadow-card-sm transition-all text-center uppercase tracking-wider"
+            >
+              View Full Learning Path 🗺️
+            </Link>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-[1.5fr_1fr] pt-4 border-t-2 border-dashed border-black/10 dark:border-white/10">
+            {/* Left side: description and progress bar */}
+            <div className="space-y-4">
+              <p className="text-sm font-bold text-text dark:text-[#f0ebe2]">
+                {learningPathData.next_step.description}
+              </p>
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs font-black">
+                  <span>Module Progress</span>
+                  <span>
+                    {learningPathData.next_step.completed_lessons_count} /{" "}
+                    {learningPathData.next_step.lessons_count} lessons Completed
+                  </span>
+                </div>
+                <div className="w-full h-4 bg-surface-low border-2 border-black rounded-full overflow-hidden dark:bg-[#151411] dark:border-[#2e2924]">
+                  <div
+                    className="h-full bg-green-500 transition-all duration-500"
+                    style={{
+                      width: `${
+                        learningPathData.next_step.lessons_count > 0
+                          ? (learningPathData.next_step
+                              .completed_lessons_count /
+                              learningPathData.next_step.lessons_count) *
+                            100
+                          : 0
+                      }%`,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Right side: why this next panel */}
+            <div className="border-4 border-black p-4 rounded-xl bg-amber-50 dark:bg-[#1c1915] dark:border-[#2e2924] flex flex-col justify-between gap-3">
+              <div className="space-y-1">
+                <h4 className="font-black text-xs uppercase text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4" /> Why this next?
+                </h4>
+                <p className="text-xs font-bold text-black/85 dark:text-[#f0ebe2] leading-relaxed">
+                  {learningPathData.next_step.explanation}
+                </p>
+              </div>
+              <Link
+                to="/learning-path"
+                className="w-full text-center text-[10px] font-black text-white bg-black dark:bg-white dark:text-black py-2 rounded uppercase border-2 border-black shadow-card-sm hover:-translate-y-0.5 transition-transform"
+              >
+                Resume Module 🚀
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 3. Learning Queue Sidebar & Course Completion Chart */}
       <section className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
@@ -869,6 +986,17 @@ export function DashboardPage() {
             learning modules
           </div>
         </div>
+      </section>
+
+      {/* Recommended Content */}
+      <section className="rounded-[2.5rem] border-4 border-black bg-white p-6 sm:p-8 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none mt-6">
+        <h2 className="text-3xl font-black mb-6 flex items-center gap-3">
+          <span className="bg-accent text-white w-10 h-10 rounded-full border-2 border-black flex items-center justify-center text-lg">
+            ✨
+          </span>
+          Recommended For You
+        </h2>
+        <RecommendationsList />
       </section>
 
       {/* Read Later / Bookmarks */}

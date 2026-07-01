@@ -1,9 +1,10 @@
-from apps.dashboard.views import LeaderboardView
 from django.contrib import admin
 from django.urls import include, path
 from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from graphene_django.views import GraphQLView
+
+from apps.dashboard.views import LeaderboardView
 
 from .health_view import health_view
 from .version_view import version_view
@@ -26,6 +27,9 @@ urlpatterns = [
     path("api/webhooks/", include("apps.webhooks.urls")),
     path("api/notes/", include("apps.notes.urls")),
     path("api/chat/", include("apps.chat.urls")),
+    path("api/recommendations/", include("apps.recommendations.urls")),
+    path("api/rbac/", include("apps.rbac.urls")),
+    path("api/uploads/", include("apps.uploads.urls")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
         "api/docs/",
@@ -33,6 +37,7 @@ urlpatterns = [
         name="swagger-ui",
     ),
     path("api/graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
+    path("", include("django_prometheus.urls")),
 ]
 
 from django.conf import settings

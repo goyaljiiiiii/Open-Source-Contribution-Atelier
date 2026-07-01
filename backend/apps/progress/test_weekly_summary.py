@@ -2,11 +2,12 @@ from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
+from django.contrib.auth import get_user_model
+from django.utils import timezone
+
 from apps.content.models import Lesson
 from apps.progress.models import Badge, LessonProgress, UserBadge
 from apps.progress.tasks import send_weekly_progress_summary
-from django.contrib.auth import get_user_model
-from django.utils import timezone
 
 User = get_user_model()
 
@@ -84,8 +85,9 @@ def test_send_weekly_progress_summary_active_user(
     assert data["username"] == "active_user"
     assert data["lessons_completed"] == 1
     assert data["xp_earned"] == 20
-    assert data["badges_earned"] == 1
-    assert data["badge_names"] == ["Test Badge"]
+    assert data["badges_earned"] == 2
+    assert "Test Badge" in data["badge_names"]
+    assert len(data["badge_names"]) == 2
 
 
 @pytest.mark.django_db

@@ -27,6 +27,9 @@ const MarkdownRenderer = React.lazy(() =>
 import { GitGraph } from "../components/ui/GitGraph";
 import { NotePanel } from "../components/ui/NotePanel";
 import { PythonSandbox } from "../components/ui/PythonSandbox";
+import { CollabPythonSandbox } from "../components/ui/CollabPythonSandbox";
+import { JSSandbox } from "../components/ui/JSSandbox";
+import { InteractiveDebugger } from "../components/ui/InteractiveDebugger";
 import { TextToSpeechControls } from "../components/ui/TextToSpeechControls";
 
 import {
@@ -129,27 +132,83 @@ export function LessonPage() {
     },
   });
 
+  const quizAttemptMutation = useMutation({
+    mutationFn: (payload: {
+      question_id: string;
+      question_text: string;
+      selected_answer: string;
+      correct_answer: string;
+      is_correct: boolean;
+    }) => {
+      return fetchApi("/progress/quiz-attempts/", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+    },
+    onError: (err) => {
+      console.error("Failed to submit quiz attempt:", err);
+    },
+  });
+
   // 1. Fetch modules catalog & lessons
+  // First, try to find the lesson from the backend API. If the slug doesn't exist
+  // there (e.g. curriculum.json and seed data are out of sync), fall back to
+  // constructing a basic Lesson object from curriculum.json data.
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect */
     setIsLoading(true);
-    fetch("/content/curriculum.json")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.modules) {
-          setModules(data.modules);
-        }
-      })
-      .catch((err) => console.error("Error fetching curriculum catalog:", err));
 
-    fetchLessonsApi()
-      .then((data) => {
-        setLessonsList(data);
-        const found = data.find((l) => l.slug === slug);
+    Promise.all([
+      fetch("/content/curriculum.json").then((res) => res.json()),
+      fetchLessonsApi(),
+    ])
+      .then(([curriculumJson, lessonsData]) => {
+        setLessonsList(lessonsData);
+
+        if (curriculumJson && curriculumJson.modules) {
+          setModules(curriculumJson.modules);
+        }
+
+        // Try to find the lesson in the backend API data first
+        let found = lessonsData.find((l) => l.slug === slug);
+
+        // If not found in API, look it up in curriculum.json and build a Lesson
+        if (!found && curriculumJson?.modules) {
+          for (const mod of curriculumJson.modules) {
+            const curriculumLesson = mod.lessons.find(
+              (l: { slug: string; title: string; difficulty?: string }) =>
+                l.slug === slug,
+            );
+            if (curriculumLesson) {
+              found = {
+                slug: curriculumLesson.slug,
+                title: curriculumLesson.title,
+                description: curriculumLesson.description || "",
+                explanation: "",
+                expected: curriculumLesson.expected || "",
+                hint:
+                  curriculumLesson.hint || "Read the lesson content carefully.",
+                difficulty: curriculumLesson.difficulty || "beginner",
+                points: curriculumLesson.points || 15,
+                estimatedMinutes: curriculumLesson.estimatedMinutes || 10,
+                learningObjectives: [],
+                tips: [],
+                exercises: [],
+                quizzes: curriculumLesson.quizzes || [],
+                filePath: curriculumLesson.filePath,
+                category: mod.id || "general",
+                order: mod.lessons.indexOf(curriculumLesson),
+              } as Lesson;
+              break;
+            }
+          }
+        }
+
         if (!found) {
           navigate("/dashboard", { replace: true });
           return;
         }
+
         setLesson(found);
       })
       .catch(() => {
@@ -266,8 +325,18 @@ export function LessonPage() {
   const handleQuizOptionCheck = () => {
     if (selectedOption === null || !lesson || !lesson.quizzes) return;
     const currentQuiz = lesson.quizzes[currentQuizIndex];
+    const isCorrect = selectedOption === currentQuiz.answer;
 
-    if (selectedOption === currentQuiz.answer) {
+    // Send attempt to backend
+    quizAttemptMutation.mutate({
+      question_id: `${lesson.slug}-q${currentQuizIndex}`,
+      question_text: currentQuiz.question,
+      selected_answer: currentQuiz.options[selectedOption] || "",
+      correct_answer: currentQuiz.options[currentQuiz.answer] || "",
+      is_correct: isCorrect,
+    });
+
+    if (isCorrect) {
       setQuizFeedback("correct");
       if (currentQuizIndex === lesson.quizzes.length - 1) {
         setFeedback("correct");
@@ -326,7 +395,7 @@ export function LessonPage() {
   return (
     <div className="min-h-screen pt-20 flex flex-col lg:flex-row relative">
       {/* 1. Mobile Sidebar Toggle */}
-      <div className="lg:hidden bg-white border-b-4 border-black dark:bg-[#151411] dark:border-[#2e2924] p-4 flex items-center justify-between z-10">
+      <div className="lg:hidden bg-white border-b-4 border-black dark:bg-[#151411] dark:border-[#2e2924] p-4 flex items-center justify-between z-[80]">
         <button
           onClick={() => setIsSidebarOpen((prev) => !prev)}
           aria-expanded={isSidebarOpen}
@@ -344,7 +413,7 @@ export function LessonPage() {
       {/* Backdrop overlay — closes drawer on click-outside on mobile */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 z-10 bg-black/40 lg:hidden"
+          className="fixed inset-0 z-[90] bg-black/40 lg:hidden"
           aria-hidden="true"
           onClick={closeSidebar}
         />
@@ -354,7 +423,7 @@ export function LessonPage() {
       <aside
         id="course-sidebar"
         ref={sidebarRef}
-        className={`fixed top-0 left-0 h-full w-[300px] border-r-4 border-black bg-white dark:bg-[#151411] dark:border-[#2e2924] overflow-y-auto p-6 transition-transform duration-300 ease-in-out z-20 pt-20
+        className={`fixed top-0 left-0 h-full w-[300px] border-r-4 border-black bg-white dark:bg-[#151411] dark:border-[#2e2924] overflow-y-auto p-6 transition-transform duration-300 ease-in-out z-[100] pt-20
           ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
           lg:relative lg:top-auto lg:left-auto lg:h-auto lg:w-[320px] lg:flex-shrink-0 lg:translate-x-0 lg:block lg:max-h-[calc(100vh-80px)]`}
       >
@@ -506,17 +575,72 @@ export function LessonPage() {
                 <MarkdownRenderer content={markdownContent} />
               </React.Suspense>
             </article>
+            {/* Report Typo Button */}
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={() => alert("Thanks for reporting the typo")}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg font-bold border-2 border-black hover:opacity-90 transition"
+              >
+                Report Typo 🐛
+              </button>
+            </div>
 
             {/* Exercises & validation section */}
             <div className="pt-8 space-y-6">
               {lesson.pythonExercise ? (
                 <div className="mt-8">
-                  <PythonSandbox
-                    exercise={lesson.pythonExercise}
+                  {new URLSearchParams(window.location.search).get(
+                    "session",
+                  ) ? (
+                    <CollabPythonSandbox
+                      exercise={lesson.pythonExercise}
+                      roomId={
+                        new URLSearchParams(window.location.search).get(
+                          "session",
+                        )!
+                      }
+                      onSuccess={() => {
+                        syncProgress({
+                          lesson_slug: lesson.slug,
+                          score: lesson.points || 20,
+                          completed: true,
+                        });
+                      }}
+                    />
+                  ) : (
+                    <PythonSandbox
+                      exercise={lesson.pythonExercise}
+                      onSuccess={() => {
+                        syncProgress({
+                          lesson_slug: lesson.slug,
+                          score: lesson.points || 20,
+                          completed: true,
+                        });
+                      }}
+                    />
+                  )}
+                </div>
+              ) : lesson.jsExercise ? (
+                <div className="mt-8">
+                  <JSSandbox
+                    exercise={lesson.jsExercise}
                     onSuccess={() => {
                       syncProgress({
                         lesson_slug: lesson.slug,
                         score: lesson.points || 20,
+                        completed: true,
+                      });
+                    }}
+                  />
+                </div>
+              ) : lesson.debugExercise ? (
+                <div className="mt-8">
+                  <InteractiveDebugger
+                    exercise={lesson.debugExercise}
+                    onSuccess={() => {
+                      syncProgress({
+                        lesson_slug: lesson.slug,
+                        score: lesson.points || 30,
                         completed: true,
                       });
                     }}

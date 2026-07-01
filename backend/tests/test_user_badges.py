@@ -1,8 +1,9 @@
 import pytest
-from apps.content.models import Lesson
-from apps.progress.models import Badge, LessonProgress, UserBadge
 from django.contrib.auth.models import User
 from rest_framework.test import APIClient
+
+from apps.content.models import Lesson
+from apps.progress.models import Badge, LessonProgress, UserBadge
 
 
 def create_lesson(slug="intro"):
@@ -38,16 +39,13 @@ def test_authenticated_user_can_retrieve_badges_and_progress_points():
 
     assert response.status_code == 200
     assert response.data["progress_points"] == 100
-    assert response.data["badges"] == [
-        {
-            "id": badge.id,
-            "name": "First Steps",
-            "slug": "first-steps",
-            "description": "Completed your first lesson.",
-            "earned_at": response.data["badges"][0]["earned_at"],
-            "icon_url": None,
-        }
-    ]
+    # The signal from LessonProgress creation also awards "first-lesson" badge
+    # Badge order may vary; both the manually created "first-steps" and
+    # signal-created "first-lesson" badge should be present
+    slugs = [b["slug"] for b in response.data["badges"]]
+    assert "first-steps" in slugs
+    assert "first-lesson" in slugs
+    assert len(slugs) == 2
     assert response.data["badges"][0]["earned_at"]
 
 
@@ -90,7 +88,11 @@ def test_badges_endpoint_returns_only_authenticated_users_stats():
 
     assert response.status_code == 200
     assert response.data["progress_points"] == 40
-    assert [badge["slug"] for badge in response.data["badges"]] == ["own-badge"]
+    # The signal from creating LessonProgress awards the "first-lesson" badge
+    badge_slugs = [badge["slug"] for badge in response.data["badges"]]
+    assert "own-badge" in badge_slugs
+    assert "first-lesson" in badge_slugs
+    assert "other-badge" not in badge_slugs
 
 
 @pytest.mark.django_db

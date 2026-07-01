@@ -20,7 +20,8 @@ export function useBookmarks() {
 
   const { data: bookmarks = [], isLoading } = useQuery<BookmarkEntry[]>({
     queryKey: ["bookmarks"],
-    queryFn: () => fetchApi("/progress/bookmarks/"),
+    queryFn: () =>
+      fetchApi("/progress/bookmarks/", { suppressErrorToast: true }),
     staleTime: 1000 * 60 * 5,
   });
 
@@ -33,10 +34,16 @@ export function useBookmarks() {
       isBookmarked: boolean;
     }) => {
       if (isBookmarked) {
-        await fetchApi(`/progress/bookmarks/${slug}/`, { method: "DELETE" });
+        await fetchApi(`/progress/bookmarks/${slug}/`, {
+          method: "DELETE",
+          suppressErrorToast: true,
+        });
         return { action: "removed", slug };
       } else {
-        await fetchApi(`/progress/bookmarks/${slug}/`, { method: "POST" });
+        await fetchApi(`/progress/bookmarks/${slug}/`, {
+          method: "POST",
+          suppressErrorToast: true,
+        });
         return { action: "added", slug };
       }
     },

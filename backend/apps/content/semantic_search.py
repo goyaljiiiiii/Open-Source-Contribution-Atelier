@@ -91,10 +91,7 @@ class SemanticSearchService:
             )
 
             # Blend semantic relevance with typo-tolerant lexical similarity.
-            final_score = (
-                embedding_score * 0.7
-                + float(trigram_score) * 0.3
-            )
+            final_score = embedding_score * 0.7 + float(trigram_score) * 0.3
 
             combined_scores.append((idx, final_score))
 

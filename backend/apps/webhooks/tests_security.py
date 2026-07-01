@@ -1,11 +1,13 @@
 import json
+
 import pytest
 from django.http import HttpResponse, JsonResponse
 from django.test import RequestFactory
+
 from apps.webhooks.security import (
     compute_signature,
-    verify_signature,
     require_webhook_signature,
+    verify_signature,
 )
 
 SECRET = "my_super_secret_key"

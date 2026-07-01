@@ -73,12 +73,16 @@ class LessonProgressCreateSerializer(serializers.Serializer):
     completed = serializers.BooleanField(
         default=True, help_text="Whether the lesson is completed"
     )
+    client_timestamp = serializers.IntegerField(
+        required=False, help_text="Client timestamp for conflict resolution"
+    )
 
 
 class BulkLessonProgressSerializer(serializers.Serializer):
     lesson_slug = serializers.SlugField()
     score = serializers.IntegerField(default=100)
     completed = serializers.BooleanField(default=True)
+    client_timestamp = serializers.IntegerField(required=False)
 
 
 class BulkSyncSerializer(serializers.Serializer):
@@ -128,6 +132,7 @@ from .models import CodeSubmission, PeerReview
 
 class CodeSubmissionSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source="user.username")
+    client_timestamp = serializers.IntegerField(required=False, write_only=True)
 
     class Meta:
         model = CodeSubmission
@@ -135,10 +140,12 @@ class CodeSubmissionSerializer(serializers.ModelSerializer):
             "id",
             "user",
             "username",
+            "exercise",
             "title",
             "code_snippet",
             "description",
             "status",
+            "client_timestamp",
             "created_at",
         ]
         read_only_fields = ["id", "user", "username", "status", "created_at"]
@@ -156,6 +163,7 @@ class PeerReviewSerializer(serializers.ModelSerializer):
             "reviewer_username",
             "feedback",
             "rating",
+            "is_approved",
             "points_earned",
             "created_at",
         ]

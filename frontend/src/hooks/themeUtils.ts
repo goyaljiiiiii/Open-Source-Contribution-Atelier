@@ -41,7 +41,7 @@ export function getSystemPreference(): Theme | null {
 }
 
 export function getInitialTheme(): Theme {
-  return getStoredTheme() ?? "system";
+  return getStoredTheme() ?? getSystemPreference() ?? "light";
 }
 
 export function applyThemeToDOM(theme: Theme): void {

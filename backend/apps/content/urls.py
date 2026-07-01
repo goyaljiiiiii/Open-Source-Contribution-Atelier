@@ -5,6 +5,7 @@ from .views import (
     LessonPDFView,
     LessonViewSet,
     OrganizationListView,
+    QuizDetailView,
     RoadmapView,
     SearchView,
     SemanticSearchView,
@@ -24,4 +25,5 @@ urlpatterns = router.urls + [
         LessonPDFView.as_view(),
         name="lesson-pdf",
     ),
+    path("quizzes/<str:quiz_id>/", QuizDetailView.as_view(), name="quiz-detail"),
 ]

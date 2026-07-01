@@ -1,23 +1,34 @@
 from datetime import timedelta
 
-from apps.content.models import Lesson
-from apps.dashboard.models import Issue, PullRequest, StreakFreeze
-from apps.progress.models import ExerciseAttempt, LessonProgress
 from django.contrib.auth.models import User
 from django.core.cache import cache
-from django.db.models import Count, F, IntegerField, OuterRef, Subquery, Sum, Value
-from django.db.models.functions import Coalesce
+from django.db import models, transaction
+from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Sum, Value
+from django.db.models.functions import Coalesce, TruncDate
 from django.utils import timezone
-from rest_framework import permissions, serializers
-from rest_framework.generics import ListAPIView
-from rest_framework.pagination import CursorPagination
-from rest_framework.response import Response
+
+from apps.challenges.models import ChallengeCompletion
+from apps.content.models import Lesson
+from apps.dashboard.models import Issue, PullRequest, StreakFreeze
+from apps.progress.models import (
+    CodeSubmission,
+    ExerciseAttempt,
+    LessonProgress,
+    QuizAttempt,
+)
+from apps.rbac.permissions import HasRole
+
+from rest_framework import serializers, permissions, status
 from rest_framework.views import APIView
+from rest_framework.generics import ListAPIView
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
 
 
-class LeaderboardPagination(CursorPagination):
+class LeaderboardPagination(PageNumberPagination):
     page_size = 20
-    ordering = ("-xp", "username", "id")
+    page_size_query_param = "page_size"
+    max_page_size = 100
 
 
 class LeaderboardSerializer(serializers.ModelSerializer):
@@ -37,6 +48,18 @@ class LeaderboardView(ListAPIView):
 
     serializer_class = LeaderboardSerializer
     pagination_class = LeaderboardPagination
+
+    def list(self, request, *args, **kwargs):
+        page = request.query_params.get("page", "1")
+        cache_key = f"leaderboard_page_{page}"
+
+        cached_data = cache.get(cache_key)
+        if cached_data is not None:
+            return Response(cached_data)
+
+        response = super().list(request, *args, **kwargs)
+        cache.set(cache_key, response.data, 300)
+        return response
 
     def get_queryset(self):
         timeframe = self.request.query_params.get("timeframe", "all")
@@ -73,6 +96,13 @@ class LeaderboardView(ListAPIView):
             .values("total")
         )
 
+        challenge_bonus_xp = (
+            ChallengeCompletion.objects.filter(user=OuterRef("pk"))
+            .values("user")
+            .annotate(total=Sum("bonus_earned"))
+            .values("total")
+        )
+
         prs_merged = (
             PullRequest.objects.filter(**pr_filter)
             .values("user")
@@ -102,9 +132,12 @@ class LeaderboardView(ListAPIView):
                 issues_xp=Coalesce(
                     Subquery(issues_xp, output_field=IntegerField()), Value(0)
                 ),
+                challenge_xp=Coalesce(
+                    Subquery(challenge_bonus_xp, output_field=IntegerField()), Value(0)
+                ),
             )
             .annotate(
-                xp=F("lesson_xp") + F("issues_xp"),
+                xp=F("lesson_xp") + F("issues_xp") + F("challenge_xp"),
             )
             .order_by("-xp", "username", "id")
         )
@@ -233,13 +266,8 @@ class ContributorDashboardView(APIView):
 
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request):
-        user = request.user
-        cache_key = f"dashboard_contributor_stats_{user.id}"
-        data = cache.get(cache_key)
-
-        if data is None:
-            # 1. Personal stats
+    def _calculate_field(self, user, field):
+        if field == "personal_stats":
             issues_solved = Issue.objects.filter(
                 assigned_to=user, status=Issue.Status.SOLVED
             ).count()
@@ -257,7 +285,22 @@ class ContributorDashboardView(APIView):
                 assigned_to=user, status=Issue.Status.SOLVED
             ).aggregate(p_sum=Sum("points"), b_sum=Sum("bonus_points"))
             issues_xp = (issues_agg["p_sum"] or 0) + (issues_agg["b_sum"] or 0)
-            total_xp = lesson_xp + issues_xp
+            challenge_bonus_xp = (
+                ChallengeCompletion.objects.filter(user=user).aggregate(
+                    total=Sum("bonus_earned")
+                )["total"]
+                or 0
+            )
+            total_xp = lesson_xp + issues_xp + challenge_bonus_xp
+
+
+            # --- NEW CLEAN STREAK LOGIC ---
+            from apps.progress.models import StreakProfile
+
+            streak_profile, _ = StreakProfile.objects.get_or_create(user=user)
+            streak_days = streak_profile.current_streak
+            longest_streak = streak_profile.longest_streak
+            # ------------------------------
 
             # Calculate streak based on unique days of activity (attempts or completed lessons) and active/used freezes
             activity_days = set()
@@ -278,40 +321,41 @@ class ContributorDashboardView(APIView):
             streak_days = 0
             current_day = today
 
-            with transaction.atomic():
-                while True:
-                    if current_day < join_date:
-                        break
+            all_freezes = list(
+                StreakFreeze.objects.filter(user=user).order_by("purchased_at")
+            )
+            consumed_freezes_by_date = {
+                f.used_on_date: f for f in all_freezes if f.used_on_date is not None
+            }
+            unused_freezes = [f for f in all_freezes if f.used_on_date is None]
+            modified_freezes = []
 
-                    if current_day in activity_days:
+            while True:
+                if current_day < join_date:
+                    break
+
+                if current_day in activity_days:
+                    streak_days += 1
+                elif current_day == today:
+                    # If today has no activity, we just skip it (does not break the streak and does not count towards it)
+                    pass
+                else:
+                    # Check if there is already a consumed freeze for this date
+                    if current_day in consumed_freezes_by_date:
                         streak_days += 1
-                    elif current_day == today:
-                        # If today has no activity, we just skip it (does not break the streak and does not count towards it)
-                        pass
+                    elif unused_freezes:
+                        unused_freeze = unused_freezes.pop(0)
+                        unused_freeze.used_on_date = current_day
+                        modified_freezes.append(unused_freeze)
+                        consumed_freezes_by_date[current_day] = unused_freeze
+                        streak_days += 1
                     else:
-                        # Check if there is already a consumed freeze for this date
-                        consumed_freeze = StreakFreeze.objects.filter(
-                            user=user, used_on_date=current_day
-                        ).exists()
-                        if consumed_freeze:
-                            streak_days += 1
-                        else:
-                            # Check if there is an unused freeze to consume
-                            unused_freeze = (
-                                StreakFreeze.objects.filter(
-                                    user=user, used_on_date__isnull=True
-                                )
-                                .order_by("purchased_at")
-                                .first()
-                            )
-                            if unused_freeze:
-                                unused_freeze.used_on_date = current_day
-                                unused_freeze.save()
-                                streak_days += 1
-                            else:
-                                # No activity and no freeze available, the streak is broken
-                                break
-                    current_day -= timedelta(days=1)
+                        break
+                current_day -= timedelta(days=1)
+
+            if modified_freezes:
+                with transaction.atomic():
+                    StreakFreeze.objects.bulk_update(modified_freezes, ["used_on_date"])
 
             # Determine Rank based on user XP vs others
             lesson_xp_sub = (
@@ -328,24 +372,38 @@ class ContributorDashboardView(APIView):
                 .annotate(total=Sum("points") + Sum("bonus_points"))
                 .values("total")
             )
-
-            all_users = User.objects.filter(is_staff=False).annotate(
-                u_lxp=Coalesce(
-                    Subquery(lesson_xp_sub, output_field=IntegerField()), Value(0)
-                ),
-                u_ixp=Coalesce(
-                    Subquery(issues_xp_sub, output_field=IntegerField()), Value(0)
-                ),
+            challenge_xp_sub = (
+                ChallengeCompletion.objects.filter(user=OuterRef("pk"))
+                .values("user")
+                .annotate(total=Sum("bonus_earned"))
+                .values("total")
             )
 
-            user_ranks = [(u.id, u.u_lxp + u.u_ixp) for u in all_users]
-
-            user_ranks.sort(key=lambda x: x[1], reverse=True)
-            rank = 1
-            for index, (uid, u_xp) in enumerate(user_ranks):
-                if uid == user.id:
-                    rank = index + 1
-                    break
+            better_users_count = (
+                User.objects.filter(is_staff=False)
+                .annotate(
+                    u_lxp=Coalesce(
+                        Subquery(lesson_xp_sub, output_field=IntegerField()), Value(0)
+                    ),
+                    u_ixp=Coalesce(
+                        Subquery(issues_xp_sub, output_field=IntegerField()), Value(0)
+                    ),
+                    u_cxp=Coalesce(
+                        Subquery(challenge_xp_sub, output_field=IntegerField()),
+                        Value(0),
+                    ),
+                )
+                .annotate(
+                    user_total_xp=F("u_lxp") + F("u_ixp") + F("u_cxp"),
+                )
+                .filter(
+                    Q(user_total_xp__gt=total_xp)
+                    | Q(user_total_xp=total_xp, username__lt=user.username)
+                    | Q(user_total_xp=total_xp, username=user.username, id__lt=user.id)
+                )
+                .count()
+            )
+            rank = better_users_count + 1
 
             from apps.progress.models import UserBadge
 
@@ -361,22 +419,21 @@ class ContributorDashboardView(APIView):
                 or 0
             )
             available_points = total_xp - spent_points
-            unused_freezes = StreakFreeze.objects.filter(
-                user=user, used_on_date__isnull=True
-            ).count()
+            unused_freezes_count = len(unused_freezes)
 
-            personal_stats = {
+            return {
                 "issues_solved": issues_solved,
                 "prs_merged": prs_merged,
                 "total_xp": total_xp,
                 "streak_days": streak_days,
+                "longest_streak": longest_streak,  # ADDED THIS TO API
                 "rank": rank,
                 "earned_badges": earned_badges,
                 "available_points": available_points,
-                "unused_freezes": unused_freezes,
+                "unused_freezes": unused_freezes_count,
             }
 
-            # 2. Assigned Issues (Open or In Progress)
+        elif field == "assigned_issues":
             assigned_issues_qs = (
                 Issue.objects.filter(assigned_to=user)
                 .exclude(status=Issue.Status.SOLVED)
@@ -395,8 +452,9 @@ class ContributorDashboardView(APIView):
                         "created_at": issue.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
                     }
                 )
+            return assigned_issues
 
-            # 3. Recent PRs
+        elif field == "recent_prs":
             recent_prs_qs = (
                 PullRequest.objects.filter(user=user)
                 .select_related("issue")
@@ -419,8 +477,9 @@ class ContributorDashboardView(APIView):
                         ),
                     }
                 )
+            return recent_prs
 
-            # 4. Progress tracker
+        elif field == "progress_tracker":
             completed_lessons = LessonProgress.objects.filter(
                 user=user, completed=True
             ).count()
@@ -431,29 +490,47 @@ class ContributorDashboardView(APIView):
                 else 0
             )
 
-            progress_tracker = {
+            return {
                 "completed_lessons": completed_lessons,
                 "total_lessons": total_lessons,
                 "completion_percentage": completion_percentage,
             }
 
-            data = {
-                "personal_stats": personal_stats,
-                "assigned_issues": assigned_issues,
-                "recent_prs": recent_prs,
-                "progress_tracker": progress_tracker,
-            }
+    def get(self, request):
+        user = request.user
+        fields_param = request.query_params.get("fields")
+        if fields_param:
+            requested_fields = [f.strip() for f in fields_param.split(",") if f.strip()]
+        else:
+            requested_fields = [
+                "personal_stats",
+                "assigned_issues",
+                "recent_prs",
+                "progress_tracker",
+            ]
 
-            # Cache for 5 minutes
-            cache.set(cache_key, data, 300)
+        data = {}
+        for field in requested_fields:
+            if field not in [
+                "personal_stats",
+                "assigned_issues",
+                "recent_prs",
+                "progress_tracker",
+            ]:
+                continue
+
+            cache_key = f"dashboard_contributor_{field}_{user.id}"
+            field_data = cache.get(cache_key)
+            if field_data is None:
+                field_data = self._calculate_field(user, field)
+                cache.set(cache_key, field_data, 300)
+            data[field] = field_data
 
         return Response(data)
 
 
-from django.db import transaction
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
-
 
 
 class BuyStreakFreezeView(APIView):
@@ -521,7 +598,9 @@ class BuyStreakFreezeView(APIView):
             StreakFreeze.objects.create(user=user, cost=FREEZE_COST)
 
             # Invalidate cache for dashboard
-            cache.delete(f"dashboard_contributor_stats_{user.id}")
+            from apps.dashboard.signals import clear_dashboard_caches
+
+            clear_dashboard_caches(user_id=user.id)
 
             return Response(
                 {
@@ -531,3 +610,70 @@ class BuyStreakFreezeView(APIView):
                 },
                 status=status.HTTP_201_CREATED,
             )
+
+
+from django.db import models
+
+from apps.rbac.models import UserRole
+
+
+class IsModeratorOrAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        if request.user.is_superuser or request.user.is_staff:
+            return True
+        return UserRole.objects.filter(
+            user=request.user, role__name__in=["Moderator", "Administrator"]
+        ).exists()
+
+
+class ModeratorAnalyticsView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsModeratorOrAdmin]
+
+    def get(self, request):
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+
+        # 1. Registrations
+        registrations = (
+            User.objects.filter(date_joined__gte=thirty_days_ago)
+            .annotate(date=TruncDate("date_joined"))
+            .values("date")
+            .annotate(count=Count("id"))
+            .order_by("date")
+        )
+
+        # 2. Course Enrollments vs Completions
+        progress_stats = (
+            LessonProgress.objects.filter(updated_at__gte=thirty_days_ago)
+            .annotate(date=TruncDate("updated_at"))
+            .values("date")
+            .annotate(
+                completed=Count("id", filter=models.Q(completed=True)),
+                enrolled=Count("id"),
+            )
+            .order_by("date")
+        )
+
+        # 3. Quiz Performance
+        quiz_stats = (
+            QuizAttempt.objects.filter(created_at__gte=thirty_days_ago)
+            .values("is_correct")
+            .annotate(count=Count("id"))
+        )
+
+        # 4. Coding Challenges
+        challenge_stats = (
+            CodeSubmission.objects.filter(created_at__gte=thirty_days_ago)
+            .values("status")
+            .annotate(count=Count("id"))
+        )
+
+        return Response(
+            {
+                "registrations": list(registrations),
+                "progress_stats": list(progress_stats),
+                "quiz_stats": list(quiz_stats),
+                "challenge_stats": list(challenge_stats),
+            }
+        )

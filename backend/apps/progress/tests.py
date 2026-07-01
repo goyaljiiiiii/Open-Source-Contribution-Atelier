@@ -1,6 +1,5 @@
 import uuid
 
-from apps.content.models import Lesson
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.test import override_settings
