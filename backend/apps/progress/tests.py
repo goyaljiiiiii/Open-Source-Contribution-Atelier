@@ -8,7 +8,8 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import Certificate, LessonProgress, QuizAttempt
+from .models import Certificate, ImpactEvent, LessonProgress, QuizAttempt, UserBadge
+
 
 # ---------------------------------------------------------------------------
 # Shared helpers
@@ -584,6 +585,61 @@ class QuizAttemptTests(APITestCase):
         self.assertEqual(response.data["total_attempts"], 1)
         self.assertEqual(len(response.data["attempts"]), 1)
         self.assertEqual(response.data["attempts"][0]["question_id"], "q1")
+
+
+class ImpactBadgeEvaluatorTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="impactuser", password="pass")
+
+    def test_verified_event_awards_badge_and_no_duplicates(self):
+        # Import inside test to avoid circulars
+        from apps.progress.models import ImpactEvent
+        from apps.progress.badge_evaluator import BadgeEvaluator
+
+        event_key = "event|" + self.user.username + "|mentor_reviewed_submission|1"
+        ImpactEvent.objects.create(
+            event_key=event_key,
+            type=ImpactEvent.EventTypes.MENTOR_REVIEWED_SUBMISSION,
+            payload={"submission_id": 1, "review_id": 1, "reviewer_id": 2},
+            user=self.user,
+            verified=True,
+        )
+
+        BadgeEvaluator.evaluate(self.user)
+
+        badge = UserBadge.objects.filter(
+            user=self.user, badge__slug="project-impact-mentor-review-1"
+        )
+        self.assertEqual(badge.count(), 1)
+
+        # Re-evaluate should not duplicate
+        BadgeEvaluator.evaluate(self.user)
+        self.assertEqual(
+            UserBadge.objects.filter(
+                user=self.user, badge__slug="project-impact-mentor-review-1"
+            ).count(),
+            1,
+        )
+
+    def test_unverified_event_does_not_award_badge(self):
+        from apps.progress.models import ImpactEvent
+        from apps.progress.badge_evaluator import BadgeEvaluator
+
+        ImpactEvent.objects.create(
+            event_key="unverified|" + self.user.username,
+            type=ImpactEvent.EventTypes.MENTOR_REVIEWED_SUBMISSION,
+            payload={"submission_id": 1, "review_id": 1, "reviewer_id": 2},
+            user=self.user,
+            verified=False,
+        )
+
+        BadgeEvaluator.evaluate(self.user)
+
+        self.assertFalse(
+            UserBadge.objects.filter(
+                user=self.user, badge__slug="project-impact-mentor-review-1"
+            ).exists()
+        )
 
 
 class PeerReviewTests(APITestCase):

@@ -799,5 +799,26 @@ class PeerReviewView(APIView):
                 )
                 submission.status = CodeSubmission.Status.REVIEWED
                 submission.save(update_fields=["status"])
+
+                # Verified impact event: mentor-reviewed submission
+                from apps.progress.models import ImpactEvent
+
+                event_key = (
+                    f"{submission.user_id}|mentor_reviewed_submission|{submission.id}"
+                )
+                ImpactEvent.objects.get_or_create(
+                    event_key=event_key,
+                    defaults={
+                        "user": submission.user,
+                        "type": ImpactEvent.EventTypes.MENTOR_REVIEWED_SUBMISSION,
+                        "payload": {
+                            "submission_id": submission.id,
+                            "review_id": review.id,
+                            "reviewer_id": request.user.id,
+                        },
+                        "verified": True,
+                    },
+                )
+
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -243,6 +243,44 @@ class CodeSubmission(models.Model):
         return f"{self.title} by {self.user.username}"
 
 
+class ImpactEvent(models.Model):
+    class EventTypes(models.TextChoices):
+        CONTRIBUTION_CHECKLIST_COMPLETED = (
+            "contribution_checklist_completed",
+            "Contribution checklist completed",
+        )
+        MENTOR_REVIEWED_SUBMISSION = (
+            "mentor_reviewed_submission",
+            "Mentor-reviewed submission",
+        )
+        LEARNING_MILESTONE_REACHED = (
+            "learning_milestone_reached",
+            "Learning milestone reached",
+        )
+
+    class DoesNotExist(ObjectDoesNotExist):
+        pass
+
+    objects = models.Manager()
+
+    # Stable identifier for idempotency (computed from user + type + payload).
+    event_key = models.CharField(max_length=128, db_index=True, unique=True)
+
+    type = models.CharField(max_length=120, choices=EventTypes.choices, db_index=True)
+    payload = models.JSONField(default=dict, blank=True)
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="impact_events"
+    )
+    timestamp = models.DateTimeField(auto_now_add=True)
+    verified = models.BooleanField(default=False, db_index=True)
+
+    class Meta:
+        ordering = ["-timestamp"]
+
+    def __str__(self):
+        return f"ImpactEvent({self.type}) for {self.user_id} verified={self.verified}"
+
+
 class PeerReview(models.Model):
     objects = models.Manager()
     submission = models.ForeignKey(
