@@ -5,6 +5,7 @@ import { fetchApi } from "../lib/api";
 import SkeletonStatGrid from "../components/ui/skeletons/SkeletonStatGrid";
 import { Trophy, Award, Users, Star } from "lucide-react";
 import { useAuth } from "../features/auth/AuthContext";
+import VirtualizedLeaderboard from '../components/VirtualizedLeaderboard';
 
 export function CommunityPage() {
   const { user } = useAuth();
@@ -91,50 +92,10 @@ export function CommunityPage() {
           </h3>
 
           {loadingLeaderboard ? (
-            <p className="text-sm text-muted animate-pulse font-bold">Assembling standings...</p>
+             <p className="text-sm text-muted animate-pulse font-bold">Assembling standings...</p>
           ) : (
-            <div className="overflow-x-auto rounded-2xl border-4 border-black shadow-card-sm dark:border-[#2e2924]">
-              <table className="w-full border-collapse bg-white dark:bg-[#1f1c18] text-left text-sm font-bold">
-                <thead>
-                  <tr className="bg-surface-low border-b-4 border-black dark:bg-[#151411] dark:border-[#2e2924]">
-                    <th className="px-4 py-3 text-xs uppercase tracking-wider border-r-2 border-black dark:border-[#2e2924]">Rank</th>
-                    <th className="px-4 py-3 text-xs uppercase tracking-wider border-r-2 border-black dark:border-[#2e2924]">Contributor</th>
-                    <th className="px-4 py-3 text-xs uppercase tracking-wider border-r-2 border-black dark:border-[#2e2924]">Commits</th>
-                    <th className="px-4 py-3 text-xs uppercase tracking-wider">Estimated XP</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {leaderboard.map((item) => (
-                    <tr
-                      key={item.username}
-                      className={`border-b-2 border-black last:border-b-0 hover:bg-surface-lowest transition dark:border-[#2e2924] dark:hover:bg-black/10 ${
-                        user?.username === item.username ? "bg-accent/20" : ""
-                      }`}
-                    >
-                      <td className="px-4 py-3 border-r-2 border-black dark:border-[#2e2924] text-center font-black">
-                        {item.rank === 1 && "🥇"}
-                        {item.rank === 2 && "🥈"}
-                        {item.rank === 3 && "🥉"}
-                        {item.rank > 3 && `#${item.rank}`}
-                      </td>
-                      <td className="px-4 py-3 border-r-2 border-black dark:border-[#2e2924] flex items-center gap-2">
-                        <img src={item.avatar_url} alt={item.username} className="w-6 h-6 rounded-full border border-black" />
-                        <a href={item.html_url} target="_blank" rel="noreferrer" className="text-primary hover:underline">
-                          @{item.username}
-                        </a>
-                        {user?.username === item.username && (
-                          <span className="text-[8px] bg-black text-white px-1.5 py-0.5 rounded uppercase font-black tracking-wider dark:bg-[#2e2924]">You</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 border-r-2 border-black dark:border-[#2e2924]">{item.contributions}</td>
-                      <td className="px-4 py-3 text-primary font-black">{item.xp} XP</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+             <VirtualizedLeaderboard data={leaderboard} darkMode={false} />
+         )}
 
         {/* Dynamic Cohort Ranks Card */}
         <div className="rounded-3xl border-4 border-black bg-accent p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none flex flex-col justify-between">
