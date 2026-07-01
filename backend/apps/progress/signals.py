@@ -14,7 +14,7 @@ from .models import ExerciseAttempt, LessonProgress
 logger = logging.getLogger(__name__)
 
 
-feat/daily-coding-streaks-398
+
 def update_user_streak(user):
     """
     Core business logic to calculate and update daily coding streaks.
@@ -54,7 +54,7 @@ def update_user_streak(user):
         )
 
 
- main
+
 @receiver(post_save, sender=LessonProgress)
 def on_lesson_completed(sender, instance, created, **kwargs):
     if not instance.completed:
@@ -103,10 +103,7 @@ def on_lesson_completed(sender, instance, created, **kwargs):
     except Exception as exc:
         logger.error("Failed to push leaderboard update: %s", exc)
 
- feat/daily-coding-streaks-398
-
     # Evaluate achievements on lesson completion - Wrapped in on_commit to prevent mid-transaction evaluation
- main
     try:
         from django_q.tasks import async_task
 
