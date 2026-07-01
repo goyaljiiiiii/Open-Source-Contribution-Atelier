@@ -216,7 +216,6 @@ export function Navigation() {
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  aria-label="Clear search"
                   className="hover:text-text"
                   aria-label="Clear search"
                 >
