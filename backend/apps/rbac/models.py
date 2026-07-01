@@ -4,7 +4,7 @@ from django.db import models
 from apps.organizations.models import Organization
 
 
- feat/daily-coding-streaks-398
+ 
 
 
 
