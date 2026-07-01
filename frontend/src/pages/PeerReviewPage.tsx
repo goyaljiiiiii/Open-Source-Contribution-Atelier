@@ -119,8 +119,12 @@ export function PeerReviewPage() {
           </p>
         </div>
 
-        <div className="flex gap-4 border-b-2 border-black/10 dark:border-white/10 pb-4">
+        <div role="tablist" aria-label="Peer review sections" className="flex gap-4 border-b-2 border-black/10 dark:border-white/10 pb-4">
           <button
+            id="tab-submit"
+            role="tab"
+            aria-selected={activeTab === "submit"}
+            aria-controls="panel-submit"
             onClick={() => setActiveTab("submit")}
             className={`px-6 py-2 font-bold rounded-lg border-2 border-black transition-all ${
               activeTab === "submit"
@@ -131,6 +135,10 @@ export function PeerReviewPage() {
             Submit Code
           </button>
           <button
+            id="tab-review"
+            role="tab"
+            aria-selected={activeTab === "review"}
+            aria-controls="panel-review"
             onClick={() => setActiveTab("review")}
             className={`px-6 py-2 font-bold rounded-lg border-2 border-black transition-all ${
               activeTab === "review"
@@ -143,7 +151,7 @@ export function PeerReviewPage() {
         </div>
 
         {activeTab === "submit" && (
-          <div className="max-w-3xl bg-surface-low border-4 border-black rounded-2xl p-6 shadow-card dark:bg-[#1a1816] dark:border-[#2e2924]">
+          <div id="panel-submit" role="tabpanel" aria-labelledby="tab-submit" className="max-w-3xl bg-surface-low border-4 border-black rounded-2xl p-6 shadow-card dark:bg-[#1a1816] dark:border-[#2e2924]">
             <h2 className="text-2xl font-bold mb-6">Submit for Review</h2>
             {submitSuccess && (
               <div className="mb-6 p-4 bg-green-100 border-2 border-green-500 rounded-lg text-green-800 font-bold">
@@ -197,7 +205,7 @@ export function PeerReviewPage() {
         )}
 
         {activeTab === "review" && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div id="panel-review" role="tabpanel" aria-labelledby="tab-review" className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="bg-surface-low border-4 border-black rounded-2xl p-6 shadow-card dark:bg-[#1a1816] dark:border-[#2e2924]">
               <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
                 Pending Reviews
@@ -213,10 +221,12 @@ export function PeerReviewPage() {
               ) : (
                 <div className="space-y-4">
                   {pendingSubmissions.map((sub) => (
-                    <div
+                    <button
                       key={sub.id}
+                      type="button"
                       onClick={() => setSelectedSubmission(sub)}
-                      className={`p-4 border-2 border-black rounded-lg cursor-pointer transition-all ${
+                      aria-label={`Review submission by ${sub.username}: ${sub.title}`}
+                      className={`w-full text-left p-4 border-2 border-black rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black dark:focus-visible:ring-white ${
                         selectedSubmission?.id === sub.id
                           ? "bg-primary text-black shadow-card-sm -translate-y-1"
                           : "bg-surface hover:bg-black/5 dark:bg-[#2e2924] dark:border-black"
@@ -227,7 +237,7 @@ export function PeerReviewPage() {
                         By {sub.username} •{" "}
                         {new Date(sub.created_at).toLocaleDateString()}
                       </p>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}

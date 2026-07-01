@@ -127,10 +127,12 @@ export function ChunkedUploader() {
 
       {!file ? (
         <div className="border-4 border-dashed border-black/20 rounded-xl p-8 text-center relative hover:bg-surface-low transition-colors dark:border-white/10 dark:hover:bg-[#1f1c18]">
-          <input
-            type="file"
-            onChange={handleFileChange}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          <input 
+            type="file" 
+            onChange={handleFileChange} 
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+            aria-label="Upload file"
+
           />
           <Upload className="mx-auto mb-2 text-muted" size={32} />
           <p className="font-bold text-muted">Click or drag file to upload</p>
@@ -141,11 +143,8 @@ export function ChunkedUploader() {
             <div className="truncate pr-4 font-bold">
               {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
             </div>
-            {status !== "completed" && (
-              <button
-                onClick={cancelUpload}
-                className="text-red-500 hover:text-red-700 p-1"
-              >
+            {status !== 'completed' && (
+              <button onClick={cancelUpload} className="text-red-500 hover:text-red-700 p-1" aria-label="Cancel Upload">
                 <X size={20} strokeWidth={3} />
               </button>
             )}

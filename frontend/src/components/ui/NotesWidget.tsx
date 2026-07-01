@@ -137,15 +137,17 @@ export function NotesWidget() {
             <div className="flex gap-2">
               <button
                 onClick={handleNewNote}
+                aria-label="New note"
                 className="hover:bg-black/10 p-1 rounded transition-colors"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-5 h-5" aria-hidden="true" />
               </button>
               <button
                 onClick={() => setIsOpen(false)}
+                aria-label="Close notes"
                 className="hover:bg-black/10 p-1 rounded transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -211,11 +213,21 @@ export function NotesWidget() {
                   decryptedNotes.map((note) => (
                     <div
                       key={note.id}
-                      className="bg-white dark:bg-[#1f1c18] p-3 rounded-xl border-2 border-black dark:border-[#2e2924] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-1 transition-transform group cursor-pointer"
+                      role="button"
+                      tabIndex={0}
+                      className="bg-white dark:bg-[#1f1c18] p-3 rounded-xl border-2 border-black dark:border-[#2e2924] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-1 transition-transform group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black dark:focus-visible:ring-white"
                       onClick={() => {
                         setActiveNote(note);
                         setEditingTitle(note.title);
                         setEditingContent(note.plaintext);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setActiveNote(note);
+                          setEditingTitle(note.title);
+                          setEditingContent(note.plaintext);
+                        }
                       }}
                     >
                       <div className="flex justify-between items-start">
@@ -228,9 +240,10 @@ export function NotesWidget() {
                               e.stopPropagation();
                               deleteNoteMutation.mutate(note.id);
                             }}
+                            aria-label={`Delete note: ${note.title}`}
                             className="text-red-500 hover:bg-red-100 p-1 rounded"
                           >
-                            <Trash2 className="w-3 h-3" />
+                            <Trash2 className="w-3 h-3" aria-hidden="true" />
                           </button>
                         </div>
                       </div>

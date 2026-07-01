@@ -219,12 +219,12 @@ export function CommunityPage() {
               placeholder="Search contributor..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full sm:flex-1 border-4 border-black px-4 py-2 rounded-lg text-sm font-black bg-white text-black shadow-card-sm focus:outline-none focus:translate-x-0.5 focus:translate-y-0.5 focus:shadow-none transition-all dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2] placeholder-muted"
+              className="w-full sm:flex-1 border-4 border-black px-4 py-2 rounded-lg text-sm font-black bg-white text-black shadow-card-sm focus:outline-none focus-visible:ring-4 focus-visible:ring-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#151411] focus:translate-x-0.5 focus:translate-y-0.5 focus:shadow-none transition-all dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2] placeholder-muted"
             />
             <select
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value as "desc" | "asc")}
-              className="w-full sm:w-auto border-4 border-black px-4 py-2 rounded-lg text-sm font-black bg-[#ffb5e8] text-black shadow-card-sm focus:outline-none cursor-pointer dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2]"
+              className="w-full sm:w-auto border-4 border-black px-4 py-2 rounded-lg text-sm font-black bg-[#ffb5e8] text-black shadow-card-sm focus:outline-none focus-visible:ring-4 focus-visible:ring-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#151411] cursor-pointer dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2]"
             >
               <option value="desc">Highest XP</option>
               <option value="asc">Lowest XP</option>

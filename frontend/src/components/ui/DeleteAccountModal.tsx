@@ -57,6 +57,7 @@ export function DeleteAccountModal({
           onClick={onClose}
           aria-label="Close dialog"
           className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
+          aria-label="Close modal"
         >
           <X className="w-6 h-6" />
         </button>

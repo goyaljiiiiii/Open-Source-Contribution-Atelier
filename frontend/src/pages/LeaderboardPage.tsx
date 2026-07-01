@@ -173,10 +173,12 @@ export function LeaderboardPage() {
 
       {/* Filters and Controls */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-surface-low dark:bg-[#151411] p-4 rounded-2xl border-4 border-black dark:border-[#2e2924] shadow-card">
-        <div className="flex bg-white dark:bg-[#0f0e0c] border-2 border-black dark:border-[#2e2924] rounded-xl p-1 shadow-card-sm overflow-x-auto w-full md:w-auto hide-scrollbar">
+        <div role="group" aria-label="Filter leaderboard by timeframe" className="flex bg-white dark:bg-[#0f0e0c] border-2 border-black dark:border-[#2e2924] rounded-xl p-1 shadow-card-sm overflow-x-auto w-full md:w-auto hide-scrollbar">
           {timeframes.map((tf) => (
             <button
               key={tf.id}
+              type="button"
+              aria-pressed={timeframe === tf.id}
               onClick={() => setTimeframe(tf.id)}
               className={`px-6 py-2 rounded-lg text-sm font-black transition-all whitespace-nowrap ${
                 timeframe === tf.id
@@ -195,7 +197,7 @@ export function LeaderboardPage() {
             placeholder="Search contributor..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full md:w-64 border-4 border-black px-4 py-3 rounded-xl text-sm font-black bg-white text-black shadow-card focus:outline-none focus:translate-x-0.5 focus:translate-y-0.5 focus:shadow-none transition-all dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2] placeholder-muted"
+            className="w-full md:w-64 border-4 border-black px-4 py-3 rounded-xl text-sm font-black bg-white text-black shadow-card focus:outline-none focus-visible:ring-4 focus-visible:ring-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#151411] focus:translate-x-0.5 focus:translate-y-0.5 focus:shadow-none transition-all dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2] placeholder-muted"
           />
         </div>
       </div>

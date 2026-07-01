@@ -56,7 +56,7 @@ describe("PeerReviewPage Edge Cases", () => {
       { target: { value: "Check perf" } },
     );
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Submit Code" })[1]);
+    fireEvent.click(screen.getByRole("button", { name: "Submit Code" }));
 
     await waitFor(() => {
       expect(fetchSpy).toHaveBeenCalled();
@@ -100,7 +100,7 @@ describe("PeerReviewPage Edge Cases", () => {
 
     renderWithProviders(<PeerReviewPage />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Review Peers" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Review Peers" }));
 
     expect(await screen.findByText("Custom Submission 1")).toBeInTheDocument();
 

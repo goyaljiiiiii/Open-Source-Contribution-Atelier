@@ -218,6 +218,7 @@ export function Navigation() {
                   onClick={() => setSearchQuery("")}
                   aria-label="Clear search"
                   className="hover:text-text"
+                  aria-label="Clear search"
                 >
                   <X size={14} />
                 </button>
@@ -326,8 +327,8 @@ export function Navigation() {
               <Eye size={16} />
             </button>
             <button
-              aria-label="Notifications"
               className="relative rounded-lg bg-surface-low p-2 text-muted hover:text-text dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2]"
+              aria-label="Notifications"
             >
               <Bell size={16} />
               {badgeCount > 0 && (

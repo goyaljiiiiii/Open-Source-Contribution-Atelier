@@ -13,6 +13,16 @@
   h3 {
     font-family: "Inter", sans-serif;
   }
+
+  /* Global focus ring for accessibility. Ensures visibility against black borders. */
+  :focus-visible {
+    outline: none !important;
+    box-shadow: 0 0 0 2px #fdfbf7, 0 0 0 6px #FF3B30 !important;
+  }
+
+  html.dark :focus-visible {
+    box-shadow: 0 0 0 2px #0f0e0c, 0 0 0 6px #FF3B30 !important;
+  }
 }
 
 body {

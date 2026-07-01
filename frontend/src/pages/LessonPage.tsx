@@ -818,7 +818,7 @@ export function LessonPage() {
                         $
                       </span>
                       <input
-                        className="flex-1 min-w-0 rounded-lg border-4 border-black bg-surface-lowest px-4 py-2.5 text-text font-bold outline-none placeholder:text-muted/40 dark:bg-[#151411] dark:border-[#2e2924]"
+                        className="flex-1 min-w-0 rounded-lg border-4 border-black bg-surface-lowest px-4 py-2.5 text-text font-bold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#151411] placeholder:text-muted/40 dark:bg-[#151411] dark:border-[#2e2924]"
                         placeholder={
                           lesson.hint || "Type your git command here"
                         }
@@ -1020,7 +1020,7 @@ export function LessonPage() {
               </label>
               <RichTextEditor
                 id="help-message"
-                className="w-full rounded-lg border-4 border-black bg-white px-3 py-2 text-xs outline-none min-h-36 dark:bg-[#151411] dark:border-[#2e2924]"
+                className="w-full rounded-lg border-4 border-black bg-white px-3 py-2 text-xs focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#151411] min-h-36 dark:bg-[#151411] dark:border-[#2e2924]"
                 placeholder="Example: I'm stuck trying to stage feat/add-readme-badges, git status throws pathspec errors."
                 value={helpMessage}
                 onChange={setHelpMessage}

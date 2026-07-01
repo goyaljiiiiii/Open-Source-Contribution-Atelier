@@ -112,10 +112,12 @@ export function ChallengePage() {
           />
         </div>
 
-        <div className="flex gap-2">
+        <div role="group" aria-label="Filter by difficulty" className="flex gap-2">
           {difficulties.map((d) => (
             <button
               key={d}
+              type="button"
+              aria-pressed={difficulty === d}
               onClick={() => setDifficulty(difficulty === d ? null : d)}
               className={clsx(
                 "rounded-lg px-3 py-1.5 text-xs font-black capitalize transition-all border-2 border-black shadow-card-sm hover:-translate-y-0.5",

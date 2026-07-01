@@ -82,11 +82,11 @@ export function CoverUploadDropzone({
 
   return (
     <div className="w-full mb-8">
-      <label className="block text-sm font-medium text-gray-700 mb-2">
+      <p className="block text-sm font-medium text-gray-700 mb-2">
         Profile Cover Image
-      </label>
-      <div
-        className={`relative w-full h-40 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-200 overflow-hidden ${
+      </p>
+      <label
+        className={`relative w-full h-40 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-200 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 ${
           dragActive
             ? "border-indigo-500 bg-indigo-500/10 scale-[1.02]"
             : "border-gray-700 hover:border-gray-500 hover:bg-gray-800/50"
@@ -95,13 +95,12 @@ export function CoverUploadDropzone({
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
-        onClick={() => inputRef.current?.click()}
       >
         <input
           ref={inputRef}
           type="file"
           accept="image/*"
-          className="hidden"
+          className="sr-only"
           onChange={handleChange}
         />
 
@@ -121,7 +120,7 @@ export function CoverUploadDropzone({
               type="button"
               onClick={clearImage}
               className="absolute top-2 right-2 p-1.5 bg-red-500 rounded-full text-white hover:bg-red-600 transition-colors shadow-lg hover:scale-110 z-10"
-              title="Remove image"
+              aria-label="Remove cover image"
             >
               <X size={16} strokeWidth={3} />
             </button>
@@ -139,7 +138,7 @@ export function CoverUploadDropzone({
             </p>
           </div>
         )}
-      </div>
+      </label>
     </div>
   );
 }
