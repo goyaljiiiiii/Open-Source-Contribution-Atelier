@@ -68,6 +68,7 @@ export function NotePanel({ lessonSlug, onClose }: NotePanelProps) {
 
   return (
     <div
+      id="note-panel"
       className="fixed right-0 top-0 h-full bg-white dark:bg-[#151411] border-l-4 border-black dark:border-[#2e2924] flex flex-row z-30 shadow-[-5px_0px_15px_rgba(0,0,0,0.1)] transition-transform duration-300 lg:relative lg:top-auto lg:h-auto lg:shadow-none"
       style={{ width: `${width}px` }}
     >

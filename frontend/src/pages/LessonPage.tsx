@@ -540,7 +540,7 @@ export function LessonPage() {
                 }
                 disabled={toggleBookmark.isPending}
                 className="self-start sm:self-center ml-auto flex items-center justify-center p-2 rounded-xl border-4 border-black bg-surface-low hover:-translate-y-1 hover:shadow-card-sm transition-all"
-                title={
+                aria-label={
                   isBookmarked(lesson.slug)
                     ? "Remove from Read Later"
                     : "Save for later"
@@ -954,6 +954,8 @@ export function LessonPage() {
         <div className="border-t-4 border-black p-4 bg-white dark:bg-[#151411] dark:border-[#2e2924] flex justify-end gap-4 flex-shrink-0">
           <button
             onClick={() => setIsNotePanelOpen(!isNotePanelOpen)}
+            aria-expanded={isNotePanelOpen}
+            aria-controls="note-panel"
             className="px-4 py-2 bg-white text-text dark:bg-[#151411] dark:text-[#f0ebe2] font-black text-xs rounded-lg border-4 border-black shadow-card-sm hover:-translate-y-0.5 cursor-pointer"
           >
             {isNotePanelOpen ? "Close Notes 📝" : "Notes 📝"}
@@ -963,6 +965,8 @@ export function LessonPage() {
               setIsHelpPanelOpen(true);
               setHelpSuccessMessage("");
             }}
+            aria-expanded={isHelpPanelOpen}
+            aria-controls="help-panel"
             className="px-4 py-2 bg-white text-text dark:bg-[#151411] dark:text-[#f0ebe2] font-black text-xs rounded-lg border-4 border-black shadow-card-sm hover:-translate-y-0.5 cursor-pointer"
           >
             Request Mentor Support 📬
@@ -987,7 +991,7 @@ export function LessonPage() {
             className="flex-1 cursor-default"
             onClick={() => setIsHelpPanelOpen(false)}
           />
-          <aside className="h-full w-full max-w-md bg-surface-lowest border-l-4 border-black p-6 shadow-card space-y-4 dark:bg-[#0f0e0c] dark:border-[#2e2924]">
+          <aside id="help-panel" className="h-full w-full max-w-md bg-surface-lowest border-l-4 border-black p-6 shadow-card space-y-4 dark:bg-[#0f0e0c] dark:border-[#2e2924]">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-black">
