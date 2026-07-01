@@ -103,11 +103,15 @@ class CertificateVerificationSerializer(serializers.ModelSerializer):
 
 
 class QuizAttemptSerializer(serializers.ModelSerializer):
+    # Client-generated stable id for idempotency
+    client_attempt_id = serializers.CharField(write_only=False, required=True)
+
     class Meta:
         model = QuizAttempt
         fields = [
             "id",
             "user",
+            "client_attempt_id",
             "question_id",
             "question_text",
             "selected_answer",
