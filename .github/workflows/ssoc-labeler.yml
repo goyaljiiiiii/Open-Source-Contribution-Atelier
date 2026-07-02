@@ -24,9 +24,9 @@ jobs:
 
             // Check for ECSoC26 contributor checkbox
             if (body.includes('I am an ECSoC26 contributor')) {
-              if (!existing.includes('esc26')) {
-                labelsToAdd.push('esc26');
-                console.log(`Adding esc26 to issue #${num}`);
+              if (!existing.includes('ecsocs26')) {
+                labelsToAdd.push('ECSoC26');
+                console.log(`Adding ECSoC26 to issue #${num}`);
               }
             } else if (body.includes('I am a SSoC26 contributor')) {
               if (!existing.includes('ssoc26')) {
