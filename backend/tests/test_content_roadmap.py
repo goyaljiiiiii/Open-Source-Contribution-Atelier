@@ -1,10 +1,12 @@
 import pytest
 from django.contrib.auth.models import User
-from rest_framework.test import APIClient
-from django.core.exceptions import ValidationError
-from apps.content.models import Lesson, Exercise
-from apps.progress.models import LessonProgress
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
+from rest_framework.test import APIClient
+
+from apps.content.models import Exercise, Lesson
+from apps.progress.models import LessonProgress
+
 
 @pytest.fixture(autouse=True)
 def clear_cache_before_tests():
@@ -39,7 +41,7 @@ def test_roadmap_endpoint_for_anonymous_user():
     assert response.status_code == 200
     assert response.data["stats"]["total_lessons"] == 1
     assert response.data["track"][0]["slug"] == "intro-roadmap"
-    assert response.data["track"][0]["exercise_count"] == 1
+    assert response.data["track"][0]["exerciseCount"] == 1
     assert response.data["track"][0]["completed"] is False
     assert response.data["track"][0]["score"] == 0
 
@@ -70,6 +72,7 @@ def test_roadmap_endpoint_includes_user_progress():
     assert response.data["track"][0]["slug"] == "branching-roadmap"
     assert response.data["track"][0]["completed"] is True
     assert response.data["track"][0]["score"] == 95
+
 
 @pytest.mark.django_db
 def test_estimated_minutes_below_range_raises_validation_error():

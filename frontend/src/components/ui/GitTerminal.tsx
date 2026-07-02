@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { RotateCcw, Terminal, ChevronRight } from "lucide-react";
 import { useGitShell } from "../../hooks/useGitShell";
 import type { TerminalLine } from "../../hooks/useGitShell";
-import { useFailureAnimation } from '../../hooks/useFailureAnimation';
+import { useFailureAnimation } from "../../hooks/useFailureAnimation";
+import { Textarea } from "./Textarea";
 
 interface GitTerminalProps {
   /** Called when a lesson-objective command succeeds */
@@ -52,7 +53,9 @@ export function GitTerminal({
   title = "Git Sandbox Terminal",
   xp = 20,
 }: GitTerminalProps) {
+  const [isExecuting, setIsExecuting] = useState(false);
   const [inputVal, setInputVal] = useState("");
+  const [editorVal, setEditorVal] = useState("");
   const [completed, setCompleted] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -64,15 +67,26 @@ export function GitTerminal({
 
   const {
     lines,
+    shellState,
     runCmd,
     resetShell,
     navigateHistory,
     getHistoryEntry,
     historyIdx,
+    saveEditor,
+    closeEditor,
   } = useGitShell({ onObjectiveComplete: handleComplete });
 
+  useEffect(() => {
+    if (shellState.editorState) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setEditorVal(shellState.editorState.content);
+    }
+  }, [shellState.editorState]);
+
   // animation hook for terminal wrapper
-  const { ref: termRef, trigger: triggerTerm } = useFailureAnimation<HTMLDivElement>();
+  const { ref: termRef, trigger: triggerTerm } =
+    useFailureAnimation<HTMLDivElement>();
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -84,16 +98,19 @@ export function GitTerminal({
     const last = lines[lines.length - 1];
     if (last && last.kind === "error") {
       // animate-shake and animate-flash are Tailwind animation classes we added in tailwind.config
-      triggerTerm('animate-shake');
-      triggerTerm('animate-flash');
+      triggerTerm("animate-shake");
+      triggerTerm("animate-flash");
     }
   }, [lines, triggerTerm]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputVal.trim()) return;
+    if (!inputVal.trim() || isExecuting) return;
+    setIsExecuting(true);
+    await new Promise((resolve) => setTimeout(resolve, 800));
     runCmd(inputVal);
     setInputVal("");
+    setIsExecuting(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -116,7 +133,10 @@ export function GitTerminal({
   };
 
   return (
-    <div ref={termRef} className="flex flex-col bg-[#0f0f1d] rounded-lg shadow-card-lg border-2 border-black">
+    <div
+      ref={termRef}
+      className="flex flex-col bg-[#0f0f1d] rounded-lg shadow-card-lg border-2 border-black"
+    >
       {/* ── Title bar ─────────────────────────────────────────────── */}
       <div className="flex items-center justify-between px-4 py-2 bg-[#1a1a2e] border-b-4 border-black dark:border-[#2e2924]">
         <div className="flex items-center gap-3">
@@ -143,19 +163,59 @@ export function GitTerminal({
         </div>
       </div>
 
-      {/* ── Output area ───────────────────────────────────────────── */}
-      <div
-        className="bg-[#0d0d1a] min-h-[260px] max-h-[380px] overflow-y-auto p-4 space-y-1 cursor-text"
-        onClick={() => inputRef.current?.focus()}
-        role="log"
-        aria-label="Terminal output"
-        aria-live="polite"
-      >
-        {lines.map((line) => (
-          <LineRenderer key={line.id} line={line} />
-        ))}
-        <div ref={bottomRef} />
-      </div>
+      {/* ── Output area / Editor Overlay ───────────────────────────── */}
+      {shellState.editorState ? (
+        <div className="bg-[#1e1e1e] min-h-[260px] max-h-[380px] p-0 flex flex-col relative">
+          <div className="bg-gray-800 text-gray-300 text-xs px-3 py-1 font-mono flex justify-between items-center border-b border-gray-700">
+            <span>GNU nano - {shellState.editorState.file}</span>
+            <div className="flex gap-2">
+              <button
+                onClick={closeEditor}
+                className="hover:text-red-400 font-bold px-1 transition-colors"
+              >
+                ^C Exit
+              </button>
+              <button
+                onClick={() => saveEditor(editorVal)}
+                className="hover:text-green-400 font-bold px-1 transition-colors"
+              >
+                ^X Save & Exit
+              </button>
+            </div>
+          </div>
+          <Textarea
+            className="flex-1 w-full bg-transparent text-white font-mono text-sm p-4 outline-none min-h-[235px]"
+            value={editorVal}
+            onChange={(e) => setEditorVal(e.target.value)}
+            autoFocus
+            spellCheck={false}
+            autoResize={false}
+            onKeyDown={(e) => {
+              if (e.ctrlKey && e.key.toLowerCase() === "x") {
+                e.preventDefault();
+                saveEditor(editorVal);
+              }
+              if (e.ctrlKey && e.key.toLowerCase() === "c") {
+                e.preventDefault();
+                closeEditor();
+              }
+            }}
+          />
+        </div>
+      ) : (
+        <div
+          className="bg-[#0d0d1a] min-h-[260px] max-h-[380px] overflow-y-auto p-4 space-y-1 cursor-text"
+          onClick={() => inputRef.current?.focus()}
+          role="log"
+          aria-label="Terminal output"
+          aria-live="polite"
+        >
+          {lines.map((line) => (
+            <LineRenderer key={line.id} line={line} />
+          ))}
+          <div ref={bottomRef} />
+        </div>
+      )}
 
       {/* ── Completion banner ─────────────────────────────────────── */}
       {completed && (
@@ -185,36 +245,50 @@ export function GitTerminal({
       )}
 
       {/* ── Input row ─────────────────────────────────────────────── */}
-      <form
-        onSubmit={handleSubmit}
-        className="flex items-center gap-2 bg-[#0f0f1d] border-t-4 border-black dark:border-[#2e2924] px-4 py-3"
-      >
-        <ChevronRight size={14} className="text-emerald-400 shrink-0" />
-        <input
-          ref={inputRef}
-          id="git-terminal-input"
-          aria-label="Enter git command"
-          className="flex-1 bg-transparent font-mono text-sm text-white outline-none placeholder:text-gray-600 caret-emerald-400"
-          placeholder={
-            completed
-              ? "✅ Objective done – try more commands freely!"
-              : "Type a command…"
-          }
-          value={inputVal}
-          onChange={(e) => setInputVal(e.target.value)}
-          onKeyDown={handleKeyDown}
-          autoFocus
-          autoComplete="off"
-          spellCheck={false}
-        />
-        <button
-          type="submit"
-          disabled={!inputVal.trim()}
-          className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 text-white font-black text-xs rounded-lg border-2 border-black transition-all"
+      {!shellState.editorState && (
+        <form
+          onSubmit={handleSubmit}
+          className="flex items-center gap-2 bg-[#0f0f1d] border-t-4 border-black dark:border-[#2e2924] px-4 py-3"
         >
-          Run
-        </button>
-      </form>
+          <ChevronRight size={14} className="text-emerald-400 shrink-0" />
+          <input
+            ref={inputRef}
+            id="git-terminal-input"
+            aria-label="Enter git command"
+            className="flex-1 bg-transparent font-mono text-sm text-white outline-none placeholder:text-gray-600 caret-emerald-400"
+            placeholder={
+              completed
+                ? "✅ Objective done – try more commands freely!"
+                : "Type a command…"
+            }
+            value={inputVal}
+            onChange={(e) => setInputVal(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={isExecuting}
+            autoFocus
+            autoComplete="off"
+            spellCheck={false}
+          />
+          <button
+            type="submit"
+            disabled={!inputVal.trim() || isExecuting}
+            className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 text-white font-black text-xs rounded-lg border-2 border-black transition-all flex items-center justify-center min-w-[48px]"
+          >
+            {isExecuting ? (
+              <span
+                className="flex items-center gap-0.5 inline-flex"
+                aria-hidden="true"
+              >
+                <span className="w-1 h-1 bg-current rounded-full animate-bounce [animation-delay:-0.3s]" />
+                <span className="w-1 h-1 bg-current rounded-full animate-bounce [animation-delay:-0.15s]" />
+                <span className="w-1 h-1 bg-current rounded-full animate-bounce" />
+              </span>
+            ) : (
+              "Run"
+            )}
+          </button>
+        </form>
+      )}
     </div>
   );
 }

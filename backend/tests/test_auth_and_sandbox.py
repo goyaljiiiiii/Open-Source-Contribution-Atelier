@@ -1,10 +1,13 @@
+from unittest.mock import Mock, patch
+
 import pytest
 from django.contrib.auth.models import User
-from rest_framework.test import APIClient, APITestCase
 from rest_framework import status
-from unittest.mock import patch, Mock
+from rest_framework.test import APIClient, APITestCase
+
 from apps.content.models import Lesson
 from apps.progress.models import LessonProgress
+
 
 class UserProfileUpdateTests(APITestCase):
     def setUp(self):
@@ -29,6 +32,7 @@ class UserProfileUpdateTests(APITestCase):
         self.assertEqual(self.user.email, "new@example.com")
         self.assertTrue(self.user.check_password("NewPass456!"))
 
+
 @pytest.mark.django_db
 def test_signup_and_login_flow():
     client = APIClient()
@@ -37,7 +41,7 @@ def test_signup_and_login_flow():
         {
             "username": "mentor",
             "email": "mentor@example.com",
-            "password": "StrongPass123!",
+            "password": "Strongpass123!",
         },
         format="json",
     )
@@ -45,11 +49,46 @@ def test_signup_and_login_flow():
 
     login_response = client.post(
         "/api/auth/login/",
-        {"username": "mentor", "password": "StrongPass123!"},
+        {"username": "mentor", "password": "Strongpass123!"},
         format="json",
     )
     assert login_response.status_code == 200
     assert "access" in login_response.data
+
+
+@pytest.mark.django_db
+def test_refresh_token_returns_valid_access_token():
+    client = APIClient()
+
+    User.objects.create_user(
+        username="refresh_user",
+        email="refresh@example.com",
+        password="StrongPass123!",
+    )
+
+    login_response = client.post(
+        "/api/auth/login/",
+        {
+            "username": "refresh_user",
+            "password": "StrongPass123!",
+        },
+        format="json",
+    )
+
+    assert login_response.status_code == 200
+    assert "refresh" in login_response.data
+
+    refresh_response = client.post(
+        "/api/auth/refresh/",
+        {"refresh": login_response.data["refresh"]},
+        format="json",
+    )
+
+    assert refresh_response.status_code == 200
+    assert "access" in refresh_response.data
+    assert isinstance(refresh_response.data["access"], str)
+    assert len(refresh_response.data["access"]) > 0
+    assert refresh_response.data["access"].strip() != ""
 
 
 @pytest.mark.django_db
@@ -61,7 +100,7 @@ def test_signup_saves_email_as_lowercase():
         {
             "username": "mentor_lowercase",
             "email": "MENTOR@EXAMPLE.COM",
-            "password": "StrongPass123!",
+            "password": "Strongpass123!",
         },
         format="json",
     )
@@ -70,6 +109,7 @@ def test_signup_saves_email_as_lowercase():
 
     user = User.objects.get(username="mentor_lowercase")
     assert user.email == "mentor@example.com"
+
 
 @pytest.mark.django_db
 def test_login_with_email_identifier():
@@ -184,26 +224,23 @@ def test_me_endpoint():
     assert anonymous_response.status_code == 401
 
     user = User.objects.create_user(
-        username="testuser", 
-        email="testuser@example.com", 
-        password="strongpass123"
+        username="testuser", email="testuser@example.com", password="strongpass123"
     )
 
     # hitting a GET request with JWT
     client.force_authenticate(user=user)
-    auth_response = client.get("/api/auth/me/") 
+    auth_response = client.get("/api/auth/me/")
 
     assert auth_response.status_code == 200
     assert auth_response.data["id"] == user.id
     assert auth_response.data["username"] == "testuser"
     assert auth_response.data["email"] == "testuser@example.com"
     assert auth_response.data["is_staff"] is False
+
+
 @pytest.mark.django_db
 def test_progress_post_creates_dynamic_lesson_stub():
-    user = User.objects.create_user(
-        username="progress_user",
-        password="strongpass123"
-    )
+    user = User.objects.create_user(username="progress_user", password="strongpass123")
 
     client = APIClient()
     client.force_authenticate(user=user)
@@ -227,7 +264,60 @@ def test_progress_post_creates_dynamic_lesson_stub():
     assert lesson.content == "Dynamic content loaded from local file storage."
     assert lesson.difficulty == "beginner"
 
-    assert LessonProgress.objects.filter(
-        user=user,
-        lesson=lesson
-    ).exists()
+    assert LessonProgress.objects.filter(user=user, lesson=lesson).exists()
+
+
+@pytest.mark.django_db
+def test_signup_duplicate_email_returns_400():
+    """Registering with an already-used email address must return HTTP 400."""
+    client = APIClient()
+
+    # First signup – should succeed
+    User.objects.create_user(
+        username="existing_user",
+        email="taken@example.com",
+        password="AlreadyHere!9",
+    )
+
+    # Second signup with the same email – should be rejected
+    response = client.post(
+        "/api/auth/signup/",
+        {
+            "username": "new_user",
+            "email": "taken@example.com",
+            "password": "AnotherPass!9",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "errors" in response.data
+    assert "email" in response.data["errors"]
+    assert "already exists" in str(response.data["errors"]["email"]).lower()
+
+
+@pytest.mark.django_db
+def test_signup_duplicate_email_is_case_insensitive():
+    """Email uniqueness check must be case-insensitive (TAKEN@EXAMPLE.COM == taken@example.com)."""
+    client = APIClient()
+
+    User.objects.create_user(
+        username="existing_user2",
+        email="taken@example.com",
+        password="AlreadyHere!9",
+    )
+
+    # Try to register with the same email in a different case
+    response = client.post(
+        "/api/auth/signup/",
+        {
+            "username": "new_user2",
+            "email": "TAKEN@EXAMPLE.COM",
+            "password": "AnotherPass!9",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "errors" in response.data
+    assert "email" in response.data["errors"]

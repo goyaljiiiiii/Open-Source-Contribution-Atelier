@@ -14,12 +14,12 @@ export interface ProgressEntry {
 
 export function useUserProgress() {
   const queryClient = useQueryClient();
-  const { isLessonPendingCompleted, getPendingXP } = useLocalSync();
+  useLocalSync();
 
   // 1. Query to fetch all progress
   const { data: progress = [], isLoading } = useQuery<ProgressEntry[]>({
     queryKey: ["userProgress"],
-    queryFn: () => fetchApi("/progress/me/"),
+    queryFn: () => fetchApi("/progress/me/", { suppressErrorToast: true }),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
@@ -31,6 +31,7 @@ export function useUserProgress() {
       completed?: boolean;
     }) =>
       fetchApi("/progress/me/", {
+        suppressErrorToast: true,
         method: "POST",
         body: JSON.stringify(vars),
       }),
@@ -42,19 +43,41 @@ export function useUserProgress() {
 
   // 3. Convenience helpers
   const isLessonCompleted = (slug: string) => {
-    const isCompletedInBackend = progress.some((p) => p.lesson_slug === slug && p.completed);
+    const isCompletedInBackend = progress.some(
+      (p) => p.lesson_slug === slug && p.completed,
+    );
     if (isCompletedInBackend) return true;
 
-    return isLessonPendingCompleted(slug);
+    try {
+      const pending = JSON.parse(
+        localStorage.getItem("atelier_pending_sync") || "[]",
+      ) as { lesson_slug: string; score: number; completed: boolean }[];
+      return pending.some((p) => p.lesson_slug === slug && p.completed);
+    } catch {
+      return false;
+    }
   };
 
-const totalXP = useMemo(() => {
-  const backendXP = progress.reduce((acc, p) => acc + p.score, 0);
-  console.log("Backend XP:", backendXP, "Pending XP:", getPendingXP(progress));
-  return backendXP + getPendingXP(progress);
-}, [progress, getPendingXP]);
-
-console.log("Total XP:", totalXP);
+  const totalXP = useMemo(() => {
+    const backendXP = progress.reduce((acc, p) => acc + p.score, 0);
+    let pendingXP = 0;
+    try {
+      const pending = JSON.parse(
+        localStorage.getItem("atelier_pending_sync") || "[]",
+      ) as { lesson_slug: string; score: number; completed: boolean }[];
+      pending.forEach((p) => {
+        const inBackend = progress.some(
+          (bp) => bp.lesson_slug === p.lesson_slug,
+        );
+        if (!inBackend) {
+          pendingXP += p.score || 0;
+        }
+      });
+    } catch {
+      // Ignore invalid JSON in localStorage
+    }
+    return backendXP + pendingXP;
+  }, [progress]);
 
   return {
     progress,

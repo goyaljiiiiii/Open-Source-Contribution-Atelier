@@ -6,6 +6,9 @@ export default {
   theme: {
     extend: {
       colors: {
+        blue: {
+          500: "#2D6FE0",
+        },
         surface: "#FFF9F0",
         "surface-lowest": "#FFFFFF",
         "surface-low": "#FFEBC2",
@@ -35,20 +38,25 @@ export default {
       },
       keyframes: {
         shake: {
-          '0%': { transform: 'translateX(0)' },
-          '10%, 30%, 50%, 70%, 90%': { transform: 'translateX(-8px)' },
-          '20%, 40%, 60%, 80%': { transform: 'translateX(8px)' },
-          '100%': { transform: 'translateX(0)' },
+          "0%": { transform: "translateX(0)" },
+          "10%, 30%, 50%, 70%, 90%": { transform: "translateX(-8px)" },
+          "20%, 40%, 60%, 80%": { transform: "translateX(8px)" },
+          "100%": { transform: "translateX(0)" },
         },
         flash: {
-          '0%': { backgroundColor: 'transparent' },
-          '50%': { backgroundColor: 'rgba(255, 0, 0, 0.06)' }, // subtle red flash for errors
-          '100%': { backgroundColor: 'transparent' },
+          "0%": { backgroundColor: "transparent" },
+          "50%": { backgroundColor: "rgba(255, 0, 0, 0.06)" },
+          "100%": { backgroundColor: "transparent" },
+        },
+        shimmer: {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
         },
       },
       animation: {
-        'shake': 'shake 600ms cubic-bezier(.36,.07,.19,.97)',
-        'flash': 'flash 350ms ease-in-out',
+        shake: "shake 600ms cubic-bezier(.36,.07,.19,.97)",
+        flash: "flash 350ms ease-in-out",
+        shimmer: "shimmer 1.5s ease-in-out infinite",
       },
     },
   },

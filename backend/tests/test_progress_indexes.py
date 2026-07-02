@@ -45,7 +45,6 @@ class TestLessonProgressIndexes:
             # completed differs intentionally — uniqueness is on (user, lesson) alone
             LessonProgress.objects.create(user=user, lesson=lesson, completed=True)
 
-
     def test_no_unique_together_on_meta(self):
         """Confirm the deprecated unique_together has been removed."""
         assert LessonProgress._meta.unique_together == ()

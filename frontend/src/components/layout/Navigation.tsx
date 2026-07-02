@@ -4,38 +4,64 @@ import {
   BookOpen,
   BriefcaseBusiness,
   LayoutGrid,
+  MessageSquare,
   Search,
   Shield,
   TerminalSquare,
+  TrendingUp,
   Trophy,
   X,
   Sun,
   Moon,
+  Settings,
+  Eye,
 } from "lucide-react";
-import { Link, NavLink } from "react-router-dom";
-import { fetchApi } from "../../lib/api";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useTheme } from "../../hooks/useTheme";
 import { useAuth } from "../../features/auth/AuthContext";
 import { fetchLessonsApi } from "../../lib/lessons";
 import LogoutButtonWithConfirm from "./LogoutButtonWithConfirm";
+import { SyncStatusIndicator } from "../ui/SyncStatusIndicator";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
-  { to: "/lessons/what-is-open-source", label: "Lessons", icon: BookOpen },
+  { to: "/lessons/intro", label: "Lessons", icon: BookOpen },
   { to: "/challenges", label: "Challenges", icon: Trophy },
+  { to: "/leaderboard", label: "Leaderboard", icon: TrendingUp },
   { to: "/community", label: "Community", icon: BriefcaseBusiness },
+  { to: "/chat", label: "Chat", icon: MessageSquare },
+  { to: "/peer-review", label: "Peer Review", icon: Shield },
+  { to: "/profile", label: "Profile Settings", icon: Settings },
 ];
 
 export function Navigation() {
-  const { theme, toggleTheme } = useTheme();
-  const { user, logout } = useAuth();
+  const { theme, toggleTheme, setTheme } = useTheme();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<{
-    lessons: any[];
-    challenges: any[];
+    lessons: {
+      slug: string;
+      title: string;
+      description: string;
+      summary: string;
+    }[];
+    challenges: { slug: string; title: string; summary: string }[];
   } | null>(null);
   const [isSearching, setIsSearching] = useState(false);
-  const [lessonsCatalog, setLessonsCatalog] = useState<any[]>([]);
+  const [lessonsCatalog, setLessonsCatalog] = useState<
+    { slug: string; title: string; description: string }[]
+  >([]);
+  const [isStarting, setIsStarting] = useState(false);
+  const badgeCount = 0;
+
+  const handleStartSandbox = () => {
+    setIsStarting(true);
+    setTimeout(() => {
+      setIsStarting(false);
+      navigate("/sandbox");
+    }, 500);
+  };
 
   useEffect(() => {
     fetchLessonsApi().then((data) => setLessonsCatalog(data));
@@ -74,7 +100,10 @@ export function Navigation() {
         );
 
         setSearchResults({
-          lessons: filteredLessons,
+          lessons: filteredLessons.map((l) => ({
+            ...l,
+            summary: l.description,
+          })),
           challenges: filteredChallenges,
         });
         setIsSearching(false);
@@ -86,22 +115,12 @@ export function Navigation() {
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery, lessonsCatalog]);
 
-  useEffect(() => {
-    async function loadBadges() {
-      try {
-        const badges = await fetchApi("/progress/badges/");
-        setBadgeCount(badges.length);
-      } catch (error) {
-        console.error("Failed to load badges:", error);
-      }
-    }
-
-    loadBadges();
-  }, []);
-
   return (
     <>
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-[280px] border-r border-outline bg-surface-lowest/90 backdrop-blur-xl lg:flex lg:flex-col dark:bg-[#0f0e0c]/90 dark:border-[#2e2924]">
+      <aside
+        aria-label="Main sidebar"
+        className="fixed inset-y-0 left-0 z-20 hidden w-[280px] border-r border-outline bg-surface-lowest/90 backdrop-blur-xl lg:flex lg:flex-col dark:bg-[#0f0e0c]/90 dark:border-[#2e2924]"
+      >
         <div className="border-b border-outline px-6 py-5">
           <Link
             to="/"
@@ -118,7 +137,7 @@ export function Navigation() {
             </span>
           </p>
         </div>
-        <nav className="flex-1 px-4 py-6">
+        <nav aria-label="Sidebar navigation" className="flex-1 px-4 py-6">
           <div className="space-y-2">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -126,9 +145,10 @@ export function Navigation() {
                 <NavLink
                   key={item.to}
                   to={item.to}
+                  title={item.label}
                   className={({ isActive }) =>
                     [
-                      "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ease-in-out hover:scale-102 hover:shadow-card",
+                      "flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ease-in-out hover:scale-102 hover:shadow-card",
                       isActive
                         ? "bg-[linear-gradient(135deg,rgba(79,70,229,0.28),rgba(195,192,255,0.16))] text-text shadow-card dark:text-[#f0ebe2]"
                         : "text-muted hover:bg-surface-low hover:text-text dark:text-[#c4bbae] dark:hover:bg-[#151411] dark:hover:text-[#f0ebe2]",
@@ -149,18 +169,31 @@ export function Navigation() {
               <p className="mt-2 text-sm text-muted dark:text-[#c4bbae]">
                 Run guided Git practice without exposing the real shell.
               </p>
-              <Link
-                to="/lessons/what-is-open-source"
-                className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-primary-container px-4 py-3 text-sm font-semibold text-white shadow-card"
+              <button
+                onClick={handleStartSandbox}
+                className="w-full mt-4 flex items-center justify-center gap-2 rounded-lg bg-primary text-white border-4 border-black dark:border-[#2e2924] px-4 py-3 text-sm font-black shadow-card hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer disabled:opacity-50"
               >
-                <TerminalSquare size={15} />
-                Start sandbox
-              </Link>
+                {isStarting ? (
+                  <span
+                    className="flex items-center gap-1.5 inline-flex"
+                    aria-hidden="true"
+                  >
+                    <span className="w-2 h-2 bg-current rounded-full animate-bounce [animation-delay:-0.3s]" />
+                    <span className="w-2 h-2 bg-current rounded-full animate-bounce [animation-delay:-0.15s]" />
+                    <span className="w-2 h-2 bg-current rounded-full animate-bounce" />
+                  </span>
+                ) : (
+                  <>
+                    <TerminalSquare size={15} />
+                    Start sandbox
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </nav>
         <div className="border-t border-outline px-4 py-4 text-sm text-muted dark:border-[#2e2924] dark:text-[#c4bbae]">
-          <div className="flex items-center gap-3 rounded-xl px-4 py-3 hover:bg-surface-low dark:hover:bg-[#151411]">
+          <div className="flex items-center gap-3 rounded-lg px-4 py-3 hover:bg-surface-low dark:hover:bg-[#151411]">
             <Shield size={16} />
             Community-safe workflows
           </div>
@@ -170,18 +203,20 @@ export function Navigation() {
       <header className="fixed inset-x-0 top-0 z-10 border-b border-outline bg-surface/70 backdrop-blur-xl lg:left-[280px] dark:border-[#2e2924] dark:bg-[#0f0e0c]/70">
         <div className="flex items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-3 relative grow max-w-md">
-            <div className="flex items-center gap-2 rounded-xl bg-surface-low px-3 py-2 text-muted w-full border-2 border-transparent focus-within:border-primary/50 focus-within:bg-white transition-all shadow-sm dark:bg-[#151411] dark:text-[#c4bbae] dark:focus-within:bg-[#0f0e0c]">
+            <div className="flex items-center gap-2 rounded-lg bg-surface-low px-3 py-2 text-muted w-full border-2 border-transparent focus-within:border-primary/50 focus-within:bg-white transition-all shadow-sm dark:bg-[#151411] dark:text-[#c4bbae] dark:focus-within:bg-[#0f0e0c]">
               <Search size={15} />
               <input
                 type="text"
                 placeholder="Search lessons, issues..."
-                className="bg-transparent border-none outline-none text-sm w-full text-text placeholder:text-muted/50 dark:text-[#f0ebe2] dark:placeholder:text-[#c4bbae]/50"
+                aria-label="Search lessons and issues"
+                className="bg-transparent border-none outline-none text-sm w-full text-text placeholder:text-muted/75 dark:text-[#f0ebe2] dark:placeholder:text-[#c4bbae]/75"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
+                  aria-label="Clear search"
                   className="hover:text-text"
                 >
                   <X size={14} />
@@ -260,23 +295,55 @@ export function Navigation() {
           <div className="flex items-center gap-3">
             <Link
               to="/dashboard"
-              className="hidden rounded-xl px-3 py-2 text-sm font-medium text-primary md:inline-flex"
+              className="hidden rounded-lg px-3 py-2 text-sm font-medium text-primary md:inline-flex"
             >
               Dashboard
             </Link>
+            <SyncStatusIndicator />
             <button
-              className="rounded-xl bg-surface-low p-2 text-muted hover:text-text dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2]"
+              className="rounded-lg bg-surface-low p-2 text-muted hover:text-text border-2 border-black dark:border-[#2e2924] shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2]"
               onClick={toggleTheme}
-              aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+              aria-label={
+                theme === "light"
+                  ? "Switch to dark mode"
+                  : "Switch to light mode"
+              }
             >
               {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
             </button>
-            <button className="rounded-xl bg-surface-low p-2 text-muted hover:text-text dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2]">
+            <button
+              className={`rounded-lg p-2 border-2 border-black dark:border-[#2e2924] shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all ${
+                theme === "high-contrast"
+                  ? "bg-primary text-white"
+                  : "bg-surface-low text-muted hover:text-text dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2]"
+              }`}
+              onClick={() =>
+                setTheme(theme === "high-contrast" ? "light" : "high-contrast")
+              }
+              aria-label="Toggle High Contrast Mode"
+              title="High Contrast Mode"
+            >
+              <Eye size={16} />
+            </button>
+            <button
+              aria-label="Notifications"
+              className="relative rounded-lg bg-surface-low p-2 text-muted hover:text-text dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2]"
+            >
               <Bell size={16} />
+              {badgeCount > 0 && (
+                <span className="absolute right-1.5 top-1.5 flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75"></span>
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-accent"></span>
+                </span>
+              )}
             </button>
             {user ? (
               <div className="flex items-center gap-2">
-                <span className="font-bold text-sm text-text bg-white px-3 py-2 rounded-xl border-2 border-black dark:bg-[#151411] dark:text-[#f0ebe2] dark:border-[#2e2924] flex items-center gap-1.5 shadow-card-sm">
+                <Link
+                  to="/profile"
+                  className="font-bold text-sm text-text bg-white px-3 py-2 rounded-lg border-2 border-black dark:bg-[#151411] dark:text-[#f0ebe2] dark:border-[#2e2924] flex items-center gap-1.5 shadow-card-sm hover:bg-surface-low transition-colors dark:hover:bg-[#1f1c18]"
+                  title="Profile Settings"
+                >
                   👤{" "}
                   <span className="max-w-[80px] truncate">{user.username}</span>
                   {user.is_staff && (
@@ -284,16 +351,24 @@ export function Navigation() {
                       ADMIN
                     </span>
                   )}
-                </span>
+                </Link>
                 <LogoutButtonWithConfirm />
               </div>
             ) : (
-              <Link
-                to="/login"
-                className="rounded-xl bg-[linear-gradient(135deg,#4f46e5,#7c72ff)] px-4 py-2 text-sm font-semibold text-white shadow-card"
-              >
-                Admin Login
-              </Link>
+              <div className="flex items-center gap-3">
+                <Link
+                  to="/login"
+                  className="rounded-xl bg-white border-2 border-black px-4 py-2 text-sm font-bold text-text shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all dark:bg-[#151411] dark:text-[#f0ebe2] dark:border-[#2e2924]"
+                >
+                  Log In
+                </Link>
+                <Link
+                  to="/signup"
+                  className="rounded-xl bg-[#C3C0FF] border-2 border-black px-4 py-2 text-sm font-black text-black shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all dark:bg-[#C3C0FF] dark:border-white"
+                >
+                  Sign Up
+                </Link>
+              </div>
             )}
           </div>
         </div>
