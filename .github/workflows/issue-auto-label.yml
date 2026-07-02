@@ -37,7 +37,7 @@ jobs:
             // Detect ECSoC26 (accept "ecsoc26", "ssoc26", any case)
             if (text.match(/\b(ssoc26|ecsoc26)\b/)) {
               labels.push('ECSoC26');
-              difficultyChoices = ['easy', 'medium', 'difficult'];
+              difficultyChoices = []; // ECSoC26 difficulty is added by team separately
             } else if (text.includes('ssoc')) { // plain SSOC (no 26)
               labels.push('SSOC');
               difficultyChoices = ['easy', 'medium', 'hard'];
