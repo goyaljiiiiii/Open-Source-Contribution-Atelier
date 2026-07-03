@@ -237,3 +237,26 @@ export async function deleteProjectFile(fileId: string): Promise<void> {
   return fetchApi(`/sandbox/files/${fileId}/`, { method: "DELETE" });
 }
 
+export interface CodeReviewComment {
+  id: string;
+  thread: string;
+  user: { id: number; username: string };
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CodeReviewThread {
+  id: string;
+  session: string;
+  line_number: number;
+  is_resolved: boolean;
+  comments: CodeReviewComment[];
+  created_at: string;
+  updated_at: string;
+}
+
+export async function fetchCodeReviewThreads(sessionId: string): Promise<CodeReviewThread[]> {
+  return fetchApi(`/sandbox/review-threads/?session=${sessionId}`, { method: "GET" });
+}
+

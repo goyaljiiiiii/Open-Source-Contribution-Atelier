@@ -75,3 +75,18 @@ class CodeExecutionTraceViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         return CodeExecutionTrace.objects.filter(user=self.request.user)
 
+
+from .models import CodeReviewThread
+from .serializers import CodeReviewThreadSerializer
+
+class CodeReviewThreadViewSet(viewsets.ModelViewSet):
+    serializer_class = CodeReviewThreadSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = CodeReviewThread.objects.prefetch_related('comments', 'comments__user').all()
+        session_id = self.request.query_params.get('session', None)
+        if session_id is not None:
+            queryset = queryset.filter(session_id=session_id)
+        return queryset
+

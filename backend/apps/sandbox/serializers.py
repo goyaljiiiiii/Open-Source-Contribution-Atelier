@@ -42,3 +42,30 @@ class CodeExecutionTraceSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'code', 'trace_events', 'created_at']
         read_only_fields = ['id', 'user', 'created_at']
 
+
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
+class UserBasicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username']
+
+from .models import CodeReviewThread, CodeReviewComment
+
+class CodeReviewCommentSerializer(serializers.ModelSerializer):
+    user = UserBasicSerializer(read_only=True)
+    
+    class Meta:
+        model = CodeReviewComment
+        fields = ['id', 'thread', 'user', 'content', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
+
+class CodeReviewThreadSerializer(serializers.ModelSerializer):
+    comments = CodeReviewCommentSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = CodeReviewThread
+        fields = ['id', 'session', 'line_number', 'is_resolved', 'comments', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']
+

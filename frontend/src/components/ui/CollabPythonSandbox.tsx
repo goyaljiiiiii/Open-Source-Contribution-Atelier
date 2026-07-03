@@ -4,10 +4,12 @@ import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { MonacoBinding } from "y-monaco";
 import randomColor from "randomcolor";
-import { Play, RotateCcw, CheckCircle2, XCircle, Share2 } from "lucide-react";
+import { Play, RotateCcw, CheckCircle2, XCircle, Share2, MessageSquare } from "lucide-react";
 import { usePythonSandbox } from "../../hooks/usePythonSandbox";
 import { PythonExercise } from "../../lib/lessons";
 import { useAuth } from "../../features/auth/AuthContext";
+import { useCodeReviews } from "../../hooks/useCodeReviews";
+import { CodeReviewPanel } from "./CodeReviewPanel";
 
 interface CollabPythonSandboxProps {
   exercise: PythonExercise;
@@ -28,11 +30,16 @@ export function CollabPythonSandbox({
   >([]);
   const { runPythonCode, isExecuting, isReady } = usePythonSandbox();
   const { user } = useAuth();
+  
+  const { threads, addComment, resolveThread } = useCodeReviews(roomId);
+  const [activeLine, setActiveLine] = useState<number | null>(null);
 
-  const editorRef = useRef<{ getModel: () => unknown }>(null);
+  const editorRef = useRef<any>(null);
+  const monacoRef = useRef<any>(null);
   const ydocRef = useRef<Y.Doc | null>(null);
   const providerRef = useRef<WebsocketProvider | null>(null);
   const bindingRef = useRef<MonacoBinding | null>(null);
+  const decorationsRef = useRef<string[]>([]);
 
   useEffect(() => {
     // Setup Yjs
@@ -86,8 +93,9 @@ export function CollabPythonSandbox({
     };
   }, [roomId, user]);
 
-  const handleEditorDidMount = (editor: { getModel: () => unknown }) => {
+  const handleEditorDidMount = (editor: any, monaco: any) => {
     editorRef.current = editor;
+    monacoRef.current = monaco;
 
     if (ydocRef.current && providerRef.current) {
       const type = ydocRef.current.getText("monaco");
@@ -103,7 +111,34 @@ export function CollabPythonSandbox({
         type.insert(0, exercise.starterCode);
       }
     }
+
+    // Handle glyph margin clicks for comments
+    editor.onMouseDown((e: any) => {
+      if (e.target.type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN) {
+        const lineNumber = e.target.position.lineNumber;
+        setActiveLine(lineNumber);
+      }
+    });
   };
+
+  // Update Monaco decorations for unresolved threads
+  useEffect(() => {
+    if (!editorRef.current || !monacoRef.current) return;
+    
+    const editor = editorRef.current;
+    
+    const unresolvedThreads = threads.filter(t => !t.is_resolved);
+    const newDecorations = unresolvedThreads.map((thread) => ({
+      range: new monacoRef.current.Range(thread.line_number, 1, thread.line_number, 1),
+      options: {
+        isWholeLine: true,
+        glyphMarginClassName: 'review-glyph',
+        glyphMarginHoverMessage: { value: 'Code Review Comments' }
+      }
+    }));
+    
+    decorationsRef.current = editor.deltaDecorations(decorationsRef.current, newDecorations);
+  }, [threads]);
 
   const handleRun = async () => {
     if (isExecuting || !isReady || !ydocRef.current) return;
@@ -195,19 +230,39 @@ export function CollabPythonSandbox({
         </div>
       )}
 
-      <div className="h-[400px] w-full">
-        <Editor
-          height="100%"
-          defaultLanguage="python"
-          theme="vs-dark"
-          options={{
-            minimap: { enabled: false },
-            fontSize: 14,
-            fontFamily: '"Fira Code", "JetBrains Mono", monospace',
-            padding: { top: 16 },
-          }}
-          onMount={handleEditorDidMount}
-        />
+      <style>{`
+        .review-glyph {
+          background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%233b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>') no-repeat center center;
+          cursor: pointer;
+        }
+      `}</style>
+
+      <div className="h-[400px] w-full flex">
+        <div className="flex-1 min-w-0">
+          <Editor
+            height="100%"
+            defaultLanguage="python"
+            theme="vs-dark"
+            options={{
+              minimap: { enabled: false },
+              fontSize: 14,
+              fontFamily: '"Fira Code", "JetBrains Mono", monospace',
+              padding: { top: 16 },
+              glyphMargin: true,
+            }}
+            onMount={handleEditorDidMount}
+          />
+        </div>
+        
+        {activeLine !== null && (
+          <CodeReviewPanel 
+            activeLine={activeLine}
+            threads={threads}
+            onAddComment={addComment}
+            onResolveThread={resolveThread}
+            onClose={() => setActiveLine(null)}
+          />
+        )}
       </div>
 
       <div className="p-4 border-t-4 border-black dark:border-[#2e2924] bg-[#1e1e1e] text-white min-h-[120px] max-h-[300px] overflow-y-auto font-mono text-sm">
