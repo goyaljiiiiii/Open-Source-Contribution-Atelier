@@ -41,3 +41,25 @@ class CodeSnapshotViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+
+from .models import Project, ProjectFile
+from .serializers import ProjectSerializer, ProjectFileSerializer
+
+class ProjectViewSet(viewsets.ModelViewSet):
+    serializer_class = ProjectSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Project.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class ProjectFileViewSet(viewsets.ModelViewSet):
+    serializer_class = ProjectFileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return ProjectFile.objects.filter(project__user=self.request.user)
