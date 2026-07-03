@@ -268,3 +268,19 @@ class CodeSnippet(models.Model):
     def __str__(self):
         return self.title
 
+
+
+
+
+class BulkReplaceOperation(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="bulk_operations")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    previous_state = models.JSONField(help_text="Mapping of file_id to their original code content")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Bulk Replace in {self.project.name} by {self.user} at {self.created_at}"
