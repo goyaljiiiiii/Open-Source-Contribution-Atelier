@@ -266,3 +266,37 @@ class CodeSnippet(models.Model):
     def __str__(self):
         return self.title
 
+
+class WorkspaceSnapshot(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="snapshots")
+    name = models.CharField(max_length=255, help_text="Name of the snapshot")
+    description = models.TextField(blank=True, help_text="Optional description of the snapshot")
+    metadata = models.JSONField(default=dict, blank=True, help_text="Store editor layout, execution settings, etc.")
+    is_public = models.BooleanField(default=False, help_text="Whether this snapshot can be forked by anyone")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Snapshot {self.name} for {self.project.name}"
+
+
+class SnapshotFile(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    snapshot = models.ForeignKey(WorkspaceSnapshot, on_delete=models.CASCADE, related_name="files")
+    path = models.CharField(max_length=1024)
+    content = models.TextField(blank=True)
+    language = models.CharField(max_length=50, default="javascript")
+
+    class Meta:
+        ordering = ["path"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["snapshot", "path"], name="unique_snapshot_file_path"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.path} ({self.snapshot.name})"

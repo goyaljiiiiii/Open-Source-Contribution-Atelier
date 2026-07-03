@@ -96,3 +96,22 @@ class CodeSnippetSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
+
+from .models import WorkspaceSnapshot, SnapshotFile
+
+class SnapshotFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SnapshotFile
+        fields = ['id', 'snapshot', 'path', 'content', 'language']
+        read_only_fields = ['id']
+
+class WorkspaceSnapshotSerializer(serializers.ModelSerializer):
+    files = SnapshotFileSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = WorkspaceSnapshot
+        fields = ['id', 'project', 'name', 'description', 'metadata', 'is_public', 'files', 'created_at']
+        read_only_fields = ['id', 'created_at']
+
+    def create(self, validated_data):
+        return super().create(validated_data)

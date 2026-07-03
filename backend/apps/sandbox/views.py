@@ -91,6 +91,71 @@ class CodeReviewThreadViewSet(viewsets.ModelViewSet):
         return queryset
 
 
+from rest_framework.decorators import action
+from django.db import transaction
+from .models import WorkspaceSnapshot, SnapshotFile
+from .serializers import WorkspaceSnapshotSerializer, SnapshotFileSerializer
+
+class WorkspaceSnapshotViewSet(viewsets.ModelViewSet):
+    serializer_class = WorkspaceSnapshotSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        from django.db.models import Q
+        return WorkspaceSnapshot.objects.filter(Q(project__user=self.request.user) | Q(is_public=True)).distinct()
+
+    def perform_create(self, serializer):
+        project_id = self.request.data.get('project')
+        with transaction.atomic():
+            snapshot = serializer.save()
+            project = snapshot.project
+            
+            for pfile in project.files.all():
+                SnapshotFile.objects.create(
+                    snapshot=snapshot,
+                    path=pfile.path,
+                    content=pfile.content,
+                    language=pfile.language
+                )
+
+    @action(detail=True, methods=['post'])
+    def restore(self, request, pk=None):
+        snapshot = self.get_object()
+        project = snapshot.project
+        
+        with transaction.atomic():
+            project.files.all().delete()
+            
+            for sfile in snapshot.files.all():
+                ProjectFile.objects.create(
+                    project=project,
+                    path=sfile.path,
+                    content=sfile.content,
+                    language=sfile.language
+                )
+                
+        return Response({'status': 'restored'})
+
+    @action(detail=True, methods=['post'])
+    def fork(self, request, pk=None):
+        snapshot = self.get_object()
+        
+        with transaction.atomic():
+            new_project = Project.objects.create(
+                user=request.user,
+                name=f"Fork of {snapshot.name}"
+            )
+            
+            for sfile in snapshot.files.all():
+                ProjectFile.objects.create(
+                    project=new_project,
+                    path=sfile.path,
+                    content=sfile.content,
+                    language=sfile.language
+                )
+                
+        from .serializers import ProjectSerializer
+        return Response(ProjectSerializer(new_project).data, status=status.HTTP_201_CREATED)
 from .models import SnippetCollection, CodeSnippet
 from .serializers import SnippetCollectionSerializer, CodeSnippetSerializer
 
