@@ -121,7 +121,6 @@ class CodeSnapshot(models.Model):
     def __str__(self):
         return f"Snapshot by {self.user} at {self.timestamp}"
 
-
 class Project(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
@@ -170,3 +169,4 @@ class ProjectFile(models.Model):
 
     def __str__(self):
         return f"{self.path} ({self.project.name})"
+
