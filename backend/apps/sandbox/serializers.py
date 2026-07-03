@@ -98,13 +98,6 @@ class CodeSnippetSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 from .models import TemplateCategory, ProjectTemplate, TemplateFile
-from django.contrib.auth import get_user_model
-User = get_user_model()
-
-class UserBasicSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'username']
 
 class TemplateCategorySerializer(serializers.ModelSerializer):
     class Meta:
