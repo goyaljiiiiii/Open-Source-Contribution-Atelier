@@ -1,6 +1,10 @@
+
 """
 Search models for full-text search, embeddings, and analytics.
 """
+
+
+from django.conf import settings
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -108,6 +112,7 @@ class SearchDocument(models.Model):
 
     def __str__(self):
         return f"SearchDoc: {self.title} ({self.content_type.name})"
+
     
     # ============================================================
     # Search Methods
@@ -417,3 +422,28 @@ class SearchAnalytics(models.Model):
             analytics.save()
         
         return analytics
+
+
+
+class SearchAnalytics(models.Model):
+    query = models.CharField(max_length=500, db_index=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    result_count = models.IntegerField(default=0)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        verbose_name_plural = "search analytics"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["query", "created_at"]),
+        ]
+
+    def __str__(self):
+        return f"Search: {self.query} ({self.result_count} results)"
+
