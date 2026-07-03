@@ -11,6 +11,8 @@ router.register(r"traces", CodeExecutionTraceViewSet, basename="trace")
 router.register(r"review-threads", CodeReviewThreadViewSet, basename="review-thread")
 router.register(r"snippet-collections", SnippetCollectionViewSet, basename="snippet-collection")
 router.register(r"snippets", CodeSnippetViewSet, basename="snippet")
+from .views import WorkspaceLayoutViewSet
+router.register(r"workspace-layouts", WorkspaceLayoutViewSet, basename="workspace-layout")
 
 urlpatterns = [
     path("verify/", SandboxVerifyView.as_view(), name="sandbox-verify"),

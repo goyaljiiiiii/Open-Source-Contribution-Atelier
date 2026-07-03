@@ -191,3 +191,12 @@ class CodeSnippetViewSet(viewsets.ModelViewSet):
         return queryset
 
 
+from .models import WorkspaceLayout
+from .serializers import WorkspaceLayoutSerializer
+
+class WorkspaceLayoutViewSet(viewsets.ModelViewSet):
+    serializer_class = WorkspaceLayoutSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return WorkspaceLayout.objects.filter(user=self.request.user)

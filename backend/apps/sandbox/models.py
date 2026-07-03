@@ -267,9 +267,6 @@ class CodeSnippet(models.Model):
         return self.title
 
 
-
-
-
 class BulkReplaceOperation(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="bulk_operations")
@@ -282,3 +279,25 @@ class BulkReplaceOperation(models.Model):
 
     def __str__(self):
         return f"Bulk Replace in {self.project.name} by {self.user} at {self.created_at}"
+
+
+class WorkspaceLayout(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="workspace_layouts")
+    name = models.CharField(max_length=255, default="Default")
+    layout_data = models.JSONField(help_text="JSON representation of the layout configuration")
+    is_active = models.BooleanField(default=True, help_text="Whether this is the currently active layout")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+
+    def __str__(self):
+        return f"{self.name} Layout for {self.user}"
+
+    def save(self, *args, **kwargs):
+        if self.is_active:
+            # Unset active status for all other layouts belonging to the same user
+            WorkspaceLayout.objects.filter(user=self.user, is_active=True).exclude(pk=self.pk).update(is_active=False)
+        super().save(*args, **kwargs)
