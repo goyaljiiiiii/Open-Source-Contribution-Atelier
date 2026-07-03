@@ -326,3 +326,32 @@ export async function deleteSnippet(id: string): Promise<void> {
   return fetchApi(`/sandbox/snippets/${id}/`, { method: "DELETE" });
 }
 
+// ---------------------- WORKSPACE LAYOUT ----------------------
+
+export interface WorkspaceLayout {
+  id: string;
+  user: number;
+  name: string;
+  layout_data: any;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function fetchWorkspaceLayouts(): Promise<WorkspaceLayout[]> {
+  return fetchApi("/sandbox/workspace-layouts/", { method: "GET" });
+}
+
+export async function saveWorkspaceLayout(layout: Partial<WorkspaceLayout>): Promise<WorkspaceLayout> {
+  if (layout.id) {
+    return fetchApi(`/sandbox/workspace-layouts/${layout.id}/`, {
+      method: "PUT",
+      body: JSON.stringify(layout),
+    });
+  } else {
+    return fetchApi("/sandbox/workspace-layouts/", {
+      method: "POST",
+      body: JSON.stringify(layout),
+    });
+  }
+}
