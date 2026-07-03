@@ -864,7 +864,7 @@ class PeerReviewView(APIView):
 class LessonBookmarkView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-def get(self, request, slug=None):
+    def get(self, request, slug=None):
         bookmarks = LessonBookmark.objects.filter(user=request.user).select_related("lesson")
         data = [
             {
@@ -874,7 +874,7 @@ def get(self, request, slug=None):
                 "lesson_title": b.lesson.title,
                 "lesson_difficulty": b.lesson.difficulty,
                 "lesson_category": getattr(b.lesson, "category", ""),
-                "lesson_estimated_minutes": getattr(b.lesson, "estimatedMinutes", 10),
+                "lesson_estimated_minutes": b.lesson.estimated_minutes,
                 "lesson_summary": getattr(b.lesson, "summary", ""),
                 "created_at": b.created_at.isoformat(),
             }
@@ -890,4 +890,4 @@ def get(self, request, slug=None):
     def delete(self, request, slug=None):
         bookmark = get_object_or_404(LessonBookmark, user=request.user, lesson__slug=slug)
         bookmark.delete()
-        return Response({"status": "removed"}, status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_204_NO_CONTENT)
