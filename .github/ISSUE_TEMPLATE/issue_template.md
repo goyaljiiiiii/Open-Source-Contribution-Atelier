@@ -27,8 +27,8 @@
 - [ ] I am a SSoC26 contributor
 - [ ] I am an ECSoC26 contributor
 ### Program Tags (Admin Projects)
-- [ ] `ECSOC`  <!-- Elite Coders Summer of Code -->
-- [ ] `SSOC`   <!-- Summer of Code (other program) -->
+- [ ] `ECSoC26`  <!-- Elite Coders Summer of Code -->
+- [ ] `ssoc26`   <!-- Summer of Code (other program) -->
 
 ---
 ### Bonus Tags (Admins only – optional)

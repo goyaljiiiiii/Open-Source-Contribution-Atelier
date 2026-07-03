@@ -44,6 +44,7 @@ class CodeSnapshotViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
 
+
 from .models import Project, ProjectFile
 from .serializers import ProjectSerializer, ProjectFileSerializer
 

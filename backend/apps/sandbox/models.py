@@ -121,6 +121,7 @@ class CodeSnapshot(models.Model):
     def __str__(self):
         return f"Snapshot by {self.user} at {self.timestamp}"
 
+
 class Project(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
@@ -191,6 +192,7 @@ class CodeExecutionTrace(models.Model):
     def __str__(self):
         username = self.user.get_username() if self.user else "Anonymous"
         return f"Trace by {username} at {self.created_at}"
+
 
 
 class CodeReviewThread(models.Model):
@@ -267,6 +269,7 @@ class CodeSnippet(models.Model):
         return self.title
 
 
+
 class BulkReplaceOperation(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="bulk_operations")
@@ -279,8 +282,6 @@ class BulkReplaceOperation(models.Model):
 
     def __str__(self):
         return f"Bulk Replace in {self.project.name} by {self.user} at {self.created_at}"
-
-
 class WorkspaceLayout(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="workspace_layouts")

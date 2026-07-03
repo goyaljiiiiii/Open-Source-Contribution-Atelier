@@ -97,7 +97,6 @@ class CodeSnippetSerializer(serializers.ModelSerializer):
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
 
-
 from .models import WorkspaceLayout
 
 class WorkspaceLayoutSerializer(serializers.ModelSerializer):
