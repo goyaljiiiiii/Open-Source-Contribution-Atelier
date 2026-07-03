@@ -21,9 +21,6 @@ from .serializers import (
     UserRoleSerializer,
 )
 
-main
-
-
 class RoleListView(generics.ListAPIView):
     queryset = Role.objects.all()
     serializer_class = RoleSerializer
