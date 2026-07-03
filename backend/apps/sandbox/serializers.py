@@ -96,3 +96,40 @@ class CodeSnippetSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
+
+from .models import TemplateCategory, ProjectTemplate, TemplateFile
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
+class UserBasicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username']
+
+class TemplateCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TemplateCategory
+        fields = ['id', 'name', 'description']
+
+class TemplateFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TemplateFile
+        fields = ['id', 'template', 'path', 'content']
+        read_only_fields = ['id']
+
+class ProjectTemplateSerializer(serializers.ModelSerializer):
+    files = TemplateFileSerializer(many=True, read_only=True)
+    author = UserBasicSerializer(read_only=True)
+    
+    class Meta:
+        model = ProjectTemplate
+        fields = [
+            'id', 'category', 'name', 'description', 'language', 'tags', 
+            'author', 'is_public', 'is_official', 'use_count', 
+            'files', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'use_count', 'created_at', 'updated_at']
+
+    def create(self, validated_data):
+        validated_data['author'] = self.context['request'].user
+        return super().create(validated_data)

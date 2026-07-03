@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from .views import SandboxVerifyView, CodeSnapshotViewSet, ProjectViewSet, ProjectFileViewSet, CodeExecutionTraceViewSet, CodeReviewThreadViewSet, SnippetCollectionViewSet, CodeSnippetViewSet
+from .views import SandboxVerifyView, CodeSnapshotViewSet, ProjectViewSet, ProjectFileViewSet, CodeExecutionTraceViewSet, CodeReviewThreadViewSet, SnippetCollectionViewSet, CodeSnippetViewSet, TemplateCategoryViewSet, ProjectTemplateViewSet
 
 router = DefaultRouter()
 router.register(r"snapshots", CodeSnapshotViewSet, basename="snapshot")
@@ -11,6 +11,8 @@ router.register(r"traces", CodeExecutionTraceViewSet, basename="trace")
 router.register(r"review-threads", CodeReviewThreadViewSet, basename="review-thread")
 router.register(r"snippet-collections", SnippetCollectionViewSet, basename="snippet-collection")
 router.register(r"snippets", CodeSnippetViewSet, basename="snippet")
+router.register(r"template-categories", TemplateCategoryViewSet, basename="template-category")
+router.register(r"templates", ProjectTemplateViewSet, basename="template")
 
 urlpatterns = [
     path("verify/", SandboxVerifyView.as_view(), name="sandbox-verify"),

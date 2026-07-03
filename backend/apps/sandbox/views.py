@@ -124,3 +124,50 @@ class CodeSnippetViewSet(viewsets.ModelViewSet):
             
         return queryset
 
+
+from .models import TemplateCategory, ProjectTemplate, TemplateFile
+from .serializers import TemplateCategorySerializer, ProjectTemplateSerializer
+from django.db import transaction
+from rest_framework import status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
+class TemplateCategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = TemplateCategorySerializer
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = TemplateCategory.objects.all()
+
+class ProjectTemplateViewSet(viewsets.ModelViewSet):
+    serializer_class = ProjectTemplateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        from django.db.models import Q
+        return ProjectTemplate.objects.filter(Q(is_public=True) | Q(author=self.request.user))
+
+    @action(detail=True, methods=['post'])
+    def instantiate(self, request, pk=None):
+        template = self.get_object()
+        
+        with transaction.atomic():
+            project = Project.objects.create(
+                user=request.user,
+                name=f"{template.name} Project"
+            )
+            
+            template_files = TemplateFile.objects.filter(template=template)
+            project_files = []
+            for tf in template_files:
+                project_files.append(ProjectFile(
+                    project=project,
+                    path=tf.path,
+                    content=tf.content,
+                    language=template.language
+                ))
+            
+            ProjectFile.objects.bulk_create(project_files)
+            
+            template.use_count += 1
+            template.save(update_fields=['use_count'])
+            
+        return Response({"project_id": project.id}, status=status.HTTP_201_CREATED)

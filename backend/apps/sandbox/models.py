@@ -266,3 +266,51 @@ class CodeSnippet(models.Model):
     def __str__(self):
         return self.title
 
+
+class TemplateCategory(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=255, unique=True)
+    description = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        ordering = ["name"]
+        
+    def __str__(self):
+        return self.name
+
+class ProjectTemplate(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    category = models.ForeignKey(TemplateCategory, on_delete=models.SET_NULL, null=True, related_name="templates")
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    language = models.CharField(max_length=50, default="javascript")
+    tags = models.JSONField(default=list, blank=True)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="created_templates")
+    is_public = models.BooleanField(default=True, help_text="Whether this template is visible to all users")
+    is_official = models.BooleanField(default=False, help_text="Whether this is an official system template")
+    use_count = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ["-is_official", "-use_count", "name"]
+        
+    def __str__(self):
+        return self.name
+
+class TemplateFile(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    template = models.ForeignKey(ProjectTemplate, on_delete=models.CASCADE, related_name="files")
+    path = models.CharField(max_length=1024)
+    content = models.TextField(blank=True)
+    
+    class Meta:
+        ordering = ["path"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["template", "path"], name="unique_template_file_path"
+            )
+        ]
+        
+    def __str__(self):
+        return f"{self.path} ({self.template.name})"
