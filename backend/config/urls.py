@@ -5,9 +5,15 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from graphene_django.views import GraphQLView
 
 from apps.dashboard.views import LeaderboardView
-
 from .health_view import health_view
 from .version_view import version_view
+
+# Import OAuth views
+try:
+    from apps.accounts.oauth_views import GoogleLoginView, GoogleLoginCallbackView
+except ImportError:
+    GoogleLoginView = None
+    GoogleLoginCallbackView = None
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -30,25 +36,18 @@ urlpatterns = [
     path("api/recommendations/", include("apps.recommendations.urls")),
     path("api/rbac/", include("apps.rbac.urls")),
     path("api/uploads/", include("apps.uploads.urls")),
+    path("api/organizations/", include("apps.organizations.urls")),
+    path("api/feature-flags/", include("apps.feature_flags.urls")),
+    
+    # Google OAuth URLs (only if views exist)
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
-    path(
-        "api/docs/",
-        SpectacularSwaggerView.as_view(url_name="schema"),
-        name="swagger-ui",
-    ),
-    path("api/graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
-    path("", include("django_prometheus.urls")),
-]
+    path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path("graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
+    ]
 
-from django.conf import settings
-from django.conf.urls.static import static
-
-if settings.DEBUG:
-    from apps.feature_flags.debug_view import feature_flags_debug_view
-
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    urlpatterns.append(
-        path(
-            "debug/feature-flags/", feature_flags_debug_view, name="debug-feature-flags"
-        )
-    )
+    # Add Google OAuth URLs only if views are available
+    if GoogleLoginView and GoogleLoginCallbackView:
+          urlpatterns += [
+          path('api/auth/google/', GoogleLoginView.as_view(), name='google_login'),
+          path('api/auth/google/callback/', GoogleLoginCallbackView.as_view(), name='google_callback'),
+          ]

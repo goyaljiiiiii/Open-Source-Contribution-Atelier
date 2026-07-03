@@ -13,6 +13,7 @@ import { CodeEditor } from "./CodeEditor";
 import { SnippetLibraryModal } from "./SnippetLibraryModal";
 import { SnapshotManagerModal } from "./SnapshotManagerModal";
 import { Library, Camera } from "lucide-react";
+import { SearchPanel } from './SearchPanel';
 
 export function ProjectWorkspace() {
   const [project, setProject] = useState<Project | null>(null);
@@ -152,6 +153,14 @@ export function ProjectWorkspace() {
         onCreateFile={handleCreateFile}
         onDeleteFile={handleDeleteFile}
       />
+      <div className="w-[300px] border-r border-gray-800">
+        <SearchPanel 
+          project={project} 
+          onMatchClick={(fileId, line) => {
+            setActiveFileId(fileId);
+          }}
+        />
+      </div>
 
       <div className="flex-1 flex flex-col h-full bg-[#1e1e1e]">
         {activeFile ? (
