@@ -1,38 +1,34 @@
 <!-- 
   IMPORTANT: Please review the guidelines below. 
-  PRs that do not contain proof of manual testing or do not link to a valid issue will be closed automatically.
+  PRs that do not link to a valid issue or do not contain verification/testing proof will not be merged.
 -->
 
-> Please checkmark if you are contributing under SSoC 2026:
-- [ ] I am a SSoC26 contributor
-
-## 🏷 Required ECSOC Label
-- [ ] Add the `ECSoC26` label to this PR before merging.
-
 ## 📋 Description of Changes
-
-- 
+<!-- Clearly describe what you have solved, what was done, and why these changes were made. -->
 - 
 
 ## 🔗 Related Issue
+<!-- Link the related issue that this PR resolves. For example: Closes #123 -->
 Closes #
 
 ## 🧪 Proof of Manual Testing (MANDATORY)
 <details>
-<summary><b>Click to expand and paste screenshots / logs</b></summary>
+<summary><b>Click to expand and paste screenshots / logs / gifs</b></summary>
 
-### Visual Changes (UI/Frontend)
-<!-- Paste images/gifs here -->
+### Frontend / UI Changes
+<!-- Paste screenshots or gifs demonstrating the visual changes, if applicable. -->
 
-### API / Terminal / Test Logs
+### Backend / API / CLI Logs
+<!-- Paste commands and output demonstrating that the logic runs successfully. -->
 ```bash
-# Paste command output here showing the changes run successfully
+# Paste terminal logs here
 ```
 </details>
 
 ## ⚙️ Verification Logs (Automated Tests)
+<!-- Show the results of running tests locally. -->
 ```bash
-# Paste verification command output here
+# Paste test run results here
 ```
 
 ## 📝 Pre-Submission Checklist
@@ -42,5 +38,3 @@ Closes #
 - [ ] I have verified that all existing tests pass and added new tests if applicable.
 - [ ] I have formatted my changes locally (`cd frontend && npm run format` and `cd backend && black . && isort .`).
 - [ ] No API keys, credentials, or sensitive configurations are committed.
-
-
