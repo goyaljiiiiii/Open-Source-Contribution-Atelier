@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("content", "0007_lessonthread_lessoncomment_and_more"),
-        ("progress", "0020_merge_20260703_0718"),
+        ("progress", "0020_merge_20260703_0835"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
