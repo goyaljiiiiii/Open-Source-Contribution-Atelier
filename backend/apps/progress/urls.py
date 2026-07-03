@@ -9,7 +9,6 @@ from .views import (
     CommunityStatsView,
     ContributorTimelineView,
     HelpRequestListCreateView,
-    LessonBookmarkView,
     MentorHelpRequestListView,
     MyCertificateView,
     MyProgressView,
@@ -44,8 +43,6 @@ urlpatterns = [
         CertificateVerificationView.as_view(),
         name="verify-certificate",
     ),
-    path("bookmarks/", LessonBookmarkView.as_view(), name="lesson-bookmarks"),
-    path("bookmarks/<str:slug>/", LessonBookmarkView.as_view(), name="lesson-bookmark-detail"),
     path("code-submissions/", CodeSubmissionView.as_view(), name="code-submissions"),
     path(
         "code-submissions/<int:submission_id>/reviews/",
