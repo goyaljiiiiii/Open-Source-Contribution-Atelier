@@ -1,8 +1,3 @@
-"""
-Database backup script -dumps PostgreSQL database to a file and uploads it to S3 bucket.
-Run: python scripts/backup_db.py
-"""
-
 import os
 import subprocess
 import boto3
@@ -10,24 +5,25 @@ from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
 
-#Load environment variables from .env file
+# Load environment variables from .env file
 load_dotenv()
 
 class DatabaseBackup:
     def __init__(self):
+        # Database config
         self.db_name = os.getenv("DB_NAME")
         self.db_user = os.getenv("DB_USER")
         self.db_password = os.getenv("DB_PASSWORD")
         self.db_host = os.getenv("DB_HOST")
         self.db_port = os.getenv("DB_PORT")
 
-        #S3 configuration
-        self.s3_bucket_name = os.getenv("S3_BUCKET_NAME")
+        # S3 configuration - FIXED
+        self.s3_bucket = os.getenv("S3_BUCKET_NAME")  # Changed from s3_bucket_name
+        self.s3_region = os.getenv("AWS_REGION", "us-east-1")  # Added
         self.s3_access_key = os.getenv("S3_ACCESS_KEY")
         self.s3_secret_key = os.getenv("S3_SECRET_KEY")
-        self.s3_bucket_name = os.getenv("S3_BUCKET_NAME")
 
-         # Backup config
+        # Backup config
         self.backup_dir = Path(__file__).resolve().parent.parent / 'backups'
         self.backup_dir.mkdir(exist_ok=True)
         self.retention_days = int(os.getenv('BACKUP_RETENTION_DAYS', 30))
@@ -70,6 +66,10 @@ class DatabaseBackup:
     def upload_to_s3(self, filepath):
         if not self.s3_bucket:
             print("⚠️ S3 bucket not configured, skipping upload")
+            return False
+        
+        if not self.s3_access_key or not self.s3_secret_key:
+            print("⚠️ AWS credentials not configured, skipping upload")
             return False
         
         try:
