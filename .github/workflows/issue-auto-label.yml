@@ -1,10 +1,10 @@
 name: Issue Auto‑Label (Program & Difficulty)
 
 # Runs when an issue is opened or edited.
-# Automatically adds ECSoC26 or SSOC label based on keywords in title/body.
+# Automatically adds ECSoC26 or ssoc26 label based on keywords in title/body.
 # Then adds a difficulty tag:
-#   • ECSoC26 → easy | medium | difficult
-#   • SSOC   → easy | medium | hard
+#   • ECSoC26
+#   • ssoc26   → easy | medium | hard
 # The difficulty is chosen randomly; you can replace the logic with any
 # deterministic rule you prefer.
 
@@ -34,12 +34,12 @@ jobs:
             const text = `${issue.title}\n${issue.body || ''}`.toLowerCase();
             const labels = [];
             let difficultyChoices = [];
-            // Detect ECSoC26 (accept "ecsoc26", "ssoc26", any case)
-            if (text.match(/\b(ssoc26|ecsoc26)\b/)) {
+            // Detect ECSoC26 or ssoc26
+            if (text.match(/\b(ecsoc26)\b/)) {
               labels.push('ECSoC26');
               difficultyChoices = []; // ECSoC26 difficulty is added by team separately
-            } else if (text.includes('ssoc')) { // plain SSOC (no 26)
-              labels.push('SSOC');
+            } else if (text.match(/\b(ssoc26|ssoc)\b/)) {
+              labels.push('ssoc26');
               difficultyChoices = ['easy', 'medium', 'hard'];
             }
             if (difficultyChoices.length) {
