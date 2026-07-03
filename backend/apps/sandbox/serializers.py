@@ -32,3 +32,13 @@ class ProjectSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
+
+
+from .models import CodeExecutionTrace
+
+class CodeExecutionTraceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CodeExecutionTrace
+        fields = ['id', 'user', 'code', 'trace_events', 'created_at']
+        read_only_fields = ['id', 'user', 'created_at']
+

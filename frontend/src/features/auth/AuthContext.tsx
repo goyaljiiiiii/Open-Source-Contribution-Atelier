@@ -112,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email: 'admin@example.com',
       is_staff: true
     });
-    safeSetItem("accessToken", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzgzMDUyMDI3LCJpYXQiOjE3ODMwNTAyMjcsImp0aSI6IjA4MTI1MzQzNzBkZTQ0NTI4ODNiN2E4YWI4YjE5ZTZkIiwidXNlcl9pZCI6IjEyIn0.h-i75oqBiLvipkNZUFNb8VlYITBl8DsgX5WliUAl6cc");
+    safeSetItem("accessToken", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzgzMDUzNTQyLCJpYXQiOjE3ODMwNTE3NDIsImp0aSI6IjBiOTcyZWU3NmIxNDQ1MzE5NDNmYjBjM2ExYmEwNTgwIiwidXNlcl9pZCI6IjEyIn0.8S-hs8P4m009-Y6fxp3TzXLzAWbKnWLgTBld1EV3wRU");
     setIsLoading(false);
   }, []);
 
