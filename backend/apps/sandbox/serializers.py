@@ -1,5 +1,9 @@
 from rest_framework import serializers
-from .models import CodeSnapshot, Project, ProjectFile
+from .models import (
+    CodeSnapshot, Project, ProjectFile, 
+    CodeReviewThread, CodeReviewComment,
+    SnippetCollection, CodeSnippet
+)
 
 class CodeSnapshotSerializer(serializers.ModelSerializer):
     is_auto = serializers.BooleanField(default=True, required=False)
@@ -41,4 +45,55 @@ class CodeExecutionTraceSerializer(serializers.ModelSerializer):
         model = CodeExecutionTrace
         fields = ['id', 'user', 'code', 'trace_events', 'created_at']
         read_only_fields = ['id', 'user', 'created_at']
+
+
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
+class UserBasicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username']
+
+class CodeReviewCommentSerializer(serializers.ModelSerializer):
+    user = UserBasicSerializer(read_only=True)
+    
+    class Meta:
+        model = CodeReviewComment
+        fields = ['id', 'thread', 'user', 'content', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
+
+class CodeReviewThreadSerializer(serializers.ModelSerializer):
+    comments = CodeReviewCommentSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = CodeReviewThread
+        fields = ['id', 'session', 'line_number', 'is_resolved', 'comments', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class SnippetCollectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SnippetCollection
+        fields = ['id', 'user', 'name', 'description', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
+
+    def create(self, validated_data):
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)
+
+
+class CodeSnippetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CodeSnippet
+        fields = [
+            'id', 'user', 'collection', 'title', 'description', 
+            'code', 'language', 'is_favorite', 'tags', 
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
+
+    def create(self, validated_data):
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)
 

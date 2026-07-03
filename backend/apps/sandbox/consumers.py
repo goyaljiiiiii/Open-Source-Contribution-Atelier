@@ -81,12 +81,9 @@ class SandboxConsumer(AsyncWebsocketConsumer):
                 code = text_data_json.get("code")
                 breakpoints = text_data_json.get("breakpoints", [])
                 import asyncio
-
-
                 import os
 
                 from .services import start_debug_session
-
 
                 await self._cleanup_debug_session()
 
@@ -142,6 +139,53 @@ class SandboxConsumer(AsyncWebsocketConsumer):
                     line = text_data_json.get("line")
                     self.debug_process.stdin.write(f"clear {line}\n".encode("utf-8"))
                     await self.debug_process.stdin.drain()
+
+            elif action == "search_project":
+                project_id = text_data_json.get("project_id")
+                query = text_data_json.get("query")
+                is_regex = text_data_json.get("is_regex", False)
+                match_case = text_data_json.get("match_case", False)
+                
+                if not query:
+                    await self.send(text_data=json.dumps({"action": "search_done"}))
+                    return
+                
+                from .models import ProjectFile
+                from asgiref.sync import sync_to_async
+                import re
+
+                @sync_to_async
+                def fetch_files():
+                    return list(ProjectFile.objects.filter(project_id=project_id))
+                    
+                files = await fetch_files()
+                
+                flags = 0 if match_case else re.IGNORECASE
+                try:
+                    pattern = re.compile(query if is_regex else re.escape(query), flags)
+                except re.error:
+                    await self.send(text_data=json.dumps({"action": "search_error", "error": "Invalid regex"}))
+                    return
+
+                for f in files:
+                    matches = []
+                    lines = f.content.split('\n')
+                    for i, line in enumerate(lines):
+                        for m in pattern.finditer(line):
+                            matches.append({
+                                "line": i + 1,
+                                "content": line.strip(),
+                                "start": m.start(),
+                                "end": m.end()
+                            })
+                    if matches:
+                        await self.send(text_data=json.dumps({
+                            "action": "search_result",
+                            "file_id": str(f.id),
+                            "path": f.path,
+                            "matches": matches
+                        }))
+                await self.send(text_data=json.dumps({"action": "search_done"}))
         except Exception:
             pass
 
@@ -197,6 +241,84 @@ class CollabConsumer(AsyncWebsocketConsumer):
                     "sender_channel_name": self.channel_name,
                 },
             )
+        elif text_data:
+            try:
+                data = json.loads(text_data)
+                action = data.get("action")
+                
+                from .models import CollabSession, CodeReviewThread, CodeReviewComment
+                from .serializers import CodeReviewThreadSerializer, CodeReviewCommentSerializer
+                from asgiref.sync import sync_to_async
+                
+                user = self.scope.get("user")
+                if not user or not user.is_authenticated:
+                    return # Only logged in users can comment
+
+                if action == "add_comment":
+                    thread_id = data.get("thread_id")
+                    line_number = data.get("line_number")
+                    content = data.get("content")
+                    
+                    if not content:
+                        return
+                    
+                    @sync_to_async
+                    def create_comment():
+                        session, _ = CollabSession.objects.get_or_create(id=self.room_id)
+                        if thread_id:
+                            thread = CodeReviewThread.objects.get(id=thread_id)
+                        else:
+                            thread = CodeReviewThread.objects.create(session=session, line_number=line_number)
+                        
+                        comment = CodeReviewComment.objects.create(thread=thread, user=user, content=content)
+                        return thread, comment
+                    
+                    thread, comment = await create_comment()
+                    
+                    @sync_to_async
+                    def serialize_thread():
+                        return CodeReviewThreadSerializer(thread).data
+                    
+                    thread_data = await serialize_thread()
+                    
+                    await self.channel_layer.group_send(
+                        self.room_group_name,
+                        {
+                            "type": "collab_text_message",
+                            "text_data": json.dumps({
+                                "action": "thread_updated",
+                                "thread": thread_data
+                            }),
+                            "sender_channel_name": self.channel_name,
+                        },
+                    )
+                
+                elif action == "resolve_thread":
+                    thread_id = data.get("thread_id")
+                    
+                    @sync_to_async
+                    def resolve_thread():
+                        thread = CodeReviewThread.objects.get(id=thread_id)
+                        thread.is_resolved = True
+                        thread.save()
+                        return CodeReviewThreadSerializer(thread).data
+                    
+                    thread_data = await resolve_thread()
+                    
+                    await self.channel_layer.group_send(
+                        self.room_group_name,
+                        {
+                            "type": "collab_text_message",
+                            "text_data": json.dumps({
+                                "action": "thread_updated",
+                                "thread": thread_data
+                            }),
+                            "sender_channel_name": self.channel_name,
+                        },
+                    )
+
+            except Exception as e:
+                print("Error in CollabConsumer receive:", e)
 
     async def collab_message(self, event):
         bytes_data = event.get("bytes_data")
@@ -204,3 +326,7 @@ class CollabConsumer(AsyncWebsocketConsumer):
 
         if self.channel_name != sender_channel_name:
             await self.send(bytes_data=bytes_data)
+
+    async def collab_text_message(self, event):
+        text_data = event.get("text_data")
+        await self.send(text_data=text_data)
