@@ -864,7 +864,7 @@ class PeerReviewView(APIView):
 class LessonBookmarkView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request):
+def get(self, request, slug=None):
         bookmarks = LessonBookmark.objects.filter(user=request.user).select_related("lesson")
         data = [
             {
