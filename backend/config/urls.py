@@ -58,9 +58,24 @@ urlpatterns = [
     path("api/uploads/", include("apps.uploads.urls")),
     
     # ============================================================
-    # RBAC (Role-Based Access Control) - ADDED
+    # RBAC (Role-Based Access Control)
     # ============================================================
     path("api/rbac/", include("apps.rbac.urls")),
+    
+    # ============================================================
+    # DOMAIN EVENTS
+    # ============================================================
+    path("api/events/", include("apps.events.urls")),
+    
+    # ============================================================
+    # GRAPHQL FEDERATION GATEWAY
+    # ============================================================
+    path("api/graphql/", include("apps.graphql_gateway.urls")),
+    
+    # ============================================================
+    # LEGACY GRAPHQL (Keep for backward compatibility)
+    # ============================================================
+    path("api/graphql/legacy/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
     
     # ============================================================
     # API DOCUMENTATION
@@ -71,11 +86,6 @@ urlpatterns = [
         SpectacularSwaggerView.as_view(url_name="schema"),
         name="swagger-ui",
     ),
-    
-    # ============================================================
-    # GRAPHQL
-    # ============================================================
-    path("api/graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
     
     # ============================================================
     # PROMETHEUS METRICS
