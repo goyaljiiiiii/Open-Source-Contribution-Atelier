@@ -1,89 +1,51 @@
 /**
- * Sandbox component for secure code execution.
+ * Sandbox component for secure JavaScript/TypeScript code execution.
  * 
- * @file Sandbox.jsx
- * @location frontend/src/components/Sandbox/Sandbox.jsx
+ * @file Sandbox.tsx
+ * @location frontend/src/components/Sandbox/Sandbox.tsx
  */
 
-import React from 'react';
-import useSandbox from '../../hooks/useSandbox';
+import React, { useState } from 'react';
+import useJSSandbox, { EXAMPLES } from '../../hooks/useJSSandbox';
 import './Sandbox.css';
 
-const Sandbox = ({ initialCode = '' }) => {
+interface SandboxProps {
+  initialCode?: string;
+  className?: string;
+}
+
+const Sandbox: React.FC<SandboxProps> = ({ 
+  initialCode = EXAMPLES['Hello World'],
+  className = '',
+}) => {
+  const [code, setCode] = useState<string>(initialCode);
+  const [selectedExample, setSelectedExample] = useState<string>('Hello World');
+
   const {
-    code,
-    setCode,
-    output,
-    isRunning,
+    isExecuting,
     isReady,
-    executionTime,
     status,
+    executionTime,
     error,
+    output,
     workerStatus,
-    outputRef,
-    runCode,
+    runJSCode,
     clearOutput,
     stopExecution,
     resetSandbox,
-  } = useSandbox(initialCode);
+    loadExample,
+  } = useJSSandbox({
+    timeout: 5000,
+    maxWorkers: 4,
+  });
 
-  // Examples
-  const examples = {
-    'Hello World': `console.log('Hello, World!');
-console.log('Welcome to the Open Source Contribution Atelier!');`,
-
-    'Functions': `function calculateSum(a, b) {
-  return a + b;
-}
-
-function calculateProduct(a, b) {
-  return a * b;
-}
-
-const sum = calculateSum(5, 3);
-const product = calculateProduct(5, 3);
-
-console.log('Sum:', sum);
-console.log('Product:', product);
-console.log('Sum + Product:', sum + product);`,
-
-    'Arrays': `const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
-console.log('Original array:', numbers);
-
-// Map: square each number
-const squared = numbers.map(n => n * n);
-console.log('Squared:', squared);
-
-// Filter: even numbers
-const even = numbers.filter(n => n % 2 === 0);
-console.log('Even numbers:', even);
-
-// Reduce: sum
-const sum = numbers.reduce((acc, n) => acc + n, 0);
-console.log('Sum:', sum);`,
-
-    'Async/Await': `async function fetchData() {
-  console.log('Fetching data...');
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  return { data: 'Sample data', timestamp: new Date().toISOString() };
-}
-
-async function main() {
-  console.log('Starting...');
-  const result = await fetchData();
-  console.log('Data received:', result);
-  console.log('Done!');
-}
-
-main();`,
+  const handleRun = async (): Promise<void> => {
+    await runJSCode(code);
   };
 
-  const loadExample = (name) => {
-    if (examples[name]) {
-      setCode(examples[name]);
-      clearOutput();
-    }
+  const handleExampleSelect = (name: string): void => {
+    setSelectedExample(name);
+    setCode(loadExample(EXAMPLES[name]));
   };
 
   if (!isReady) {
@@ -96,7 +58,7 @@ main();`,
   }
 
   return (
-    <div className="sandbox-container">
+    <div className={`sandbox-container ${className}`}>
       {/* Header */}
       <div className="sandbox-header">
         <div className="sandbox-title">
@@ -111,11 +73,11 @@ main();`,
             {status === 'error' && '❌ Error'}
             {status === 'timeout' && '⏰ Timeout'}
           </span>
-          {executionTime && (
+          {executionTime !== null && (
             <span className="execution-time">⏱️ {executionTime.toFixed(2)}ms</span>
           )}
           <span className="worker-status">
-            🧵 {workerStatus.availableWorkers || 0}/{workerStatus.totalWorkers || 0}
+            🧵 {workerStatus.availableWorkers}/{workerStatus.totalWorkers}
           </span>
         </div>
       </div>
@@ -128,11 +90,11 @@ main();`,
             <div className="examples-dropdown">
               <button className="examples-btn">📚 Examples</button>
               <div className="examples-menu">
-                {Object.keys(examples).map((name) => (
+                {Object.keys(EXAMPLES).map((name) => (
                   <button
                     key={name}
-                    onClick={() => loadExample(name)}
-                    className="example-item"
+                    onClick={() => handleExampleSelect(name)}
+                    className={`example-item ${selectedExample === name ? 'active' : ''}`}
                   >
                     {name}
                   </button>
@@ -142,7 +104,7 @@ main();`,
             <button
               onClick={resetSandbox}
               className="reset-btn"
-              disabled={isRunning}
+              disabled={isExecuting}
             >
               🗑️ Reset
             </button>
@@ -152,8 +114,8 @@ main();`,
             value={code}
             onChange={(e) => setCode(e.target.value)}
             spellCheck={false}
-            disabled={isRunning}
-            placeholder="// Write your JavaScript code here..."
+            disabled={isExecuting}
+            placeholder="// Write your JavaScript/TypeScript code here..."
           />
         </div>
 
@@ -165,11 +127,11 @@ main();`,
               <button
                 onClick={clearOutput}
                 className="clear-output-btn"
-                disabled={isRunning}
+                disabled={isExecuting}
               >
                 Clear
               </button>
-              {isRunning && (
+              {isExecuting && (
                 <button
                   onClick={stopExecution}
                   className="stop-btn"
@@ -179,7 +141,7 @@ main();`,
               )}
             </div>
           </div>
-          <div className="output-content" ref={outputRef}>
+          <div className="output-content">
             {output.length === 0 && (
               <div className="output-empty">
                 <span>▶️ Run your code to see output here</span>
@@ -202,11 +164,11 @@ main();`,
       <div className="sandbox-footer">
         <div className="sandbox-actions">
           <button
-            onClick={runCode}
-            disabled={isRunning || !code.trim()}
-            className={`run-btn ${isRunning ? 'running' : ''}`}
+            onClick={handleRun}
+            disabled={isExecuting || !code.trim()}
+            className={`run-btn ${isExecuting ? 'running' : ''}`}
           >
-            {isRunning ? '⏳ Running...' : '▶ Run Code'}
+            {isExecuting ? '⏳ Running...' : '▶ Run Code'}
           </button>
           {error && (
             <div className="sandbox-error">
