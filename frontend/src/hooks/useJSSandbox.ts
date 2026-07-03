@@ -249,6 +249,9 @@ export function useJSSandbox(options: UseJSSandboxOptions = {}): UseJSSandboxRet
       }
     }, 2000);
 
+
+    setIsReady(true);
+
     return () => {
       isMounted.current = false;
       if (statusInterval.current) {
