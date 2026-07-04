@@ -39,6 +39,7 @@ urlpatterns = [
     path("api/uploads/", include("apps.uploads.urls")),
     path("api/organizations/", include("apps.organizations.urls")),
     path("api/feature-flags/", include("apps.feature_flags.urls")),
+    path("api/issues/", include("apps.issues.urls")),
     
     # Google OAuth URLs (only if views exist)
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),

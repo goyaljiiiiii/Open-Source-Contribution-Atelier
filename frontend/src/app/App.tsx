@@ -6,6 +6,8 @@ import ScrollToTop from "../components/ScrollToTop";
 import { queryClient } from "../lib/queryClient";
 import { CommandPalette } from "../components/CommandPalette";
 
+import ReportIssueButton from "../components/ui/ReportIssueButton";
+
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -28,6 +30,7 @@ export function App() {
         <AppRouter />
         <ScrollToTop />
         <CommandPalette />
+        <ReportIssueButton />
       </BrowserRouter>
     </QueryClientProvider>
   );

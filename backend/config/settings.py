@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     "apps.uploads",
     "graphene_django",
     "apps.feature_flags",
+    "apps.issues",
     "django_q",
 ]
 
