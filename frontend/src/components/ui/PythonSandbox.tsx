@@ -6,7 +6,7 @@ import "prismjs/themes/prism-tomorrow.css"; // Dark theme
 import { Play, RotateCcw, CheckCircle2, XCircle, Users, Activity } from "lucide-react";
 import { usePythonSandbox } from "../../hooks/usePythonSandbox";
 import { PythonExercise } from "../../lib/lessons";
-import { useTimelineEngine, TraceEvent } from "../../hooks/useTimelineEngine";
+import { useTimelineEngine } from "../../hooks/useTimelineEngine";
 import { ExecutionTimelineVisualizer } from "./ExecutionTimelineVisualizer";
 
 interface PythonSandboxProps {
@@ -31,7 +31,7 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
     setError(null);
     setIsSuccess(false);
     timelineEngine.clearTrace();
-  }, [exercise]);
+  }, [exercise, timelineEngine]);
 
   const handleRun = async () => {
     if (isExecuting || !isReady) return;

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { CodeSnapshot } from "../../lib/api";
 import { Clock, Bookmark, ChevronRight, Check } from "lucide-react";
 

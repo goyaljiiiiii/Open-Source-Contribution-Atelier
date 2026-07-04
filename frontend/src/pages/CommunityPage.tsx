@@ -304,7 +304,7 @@ export function CommunityPage() {
         </div>
 
         {/* Dynamic Cohort Ranks Card */}
-        <div className="rounded-2xl border-4 border-black bg-accent p-4 sm:p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none flex flex-col justify-between">
+        <div className="rounded-2xl border-4 border-black bg-accent p-4 sm:p-6 shadow-card dark:bg-[linear-gradient(145deg,#8a6212,#4b3412_68%,#241c12)] dark:border-[#c18b2a] dark:shadow-card flex flex-col justify-between">
           <div className="space-y-4">
             <h3 className="text-2xl font-black flex items-center gap-2 text-black dark:text-[#f0ebe2]">
               <Award size={22} /> Your Standings

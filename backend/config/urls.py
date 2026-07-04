@@ -5,6 +5,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from graphene_django.views import GraphQLView
 
 from apps.dashboard.views import LeaderboardView
+
 from .health_view import health_view
 from .version_view import version_view
 
@@ -32,6 +33,10 @@ urlpatterns = [
     path("api/organizations/", include("apps.organizations.urls")),
     path("api/feature-flags/", include("apps.feature_flags.urls")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
-    path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path(
+        "api/docs/",
+        SpectacularSwaggerView.as_view(url_name="schema"),
+        name="swagger-ui",
+    ),
     path("graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
 ]

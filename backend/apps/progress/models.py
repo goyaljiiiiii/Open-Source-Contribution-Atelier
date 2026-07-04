@@ -319,9 +319,7 @@ class StreakProfile(models.Model):
 
 
 class LessonBookmark(models.Model):
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="bookmarks"
-    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="bookmarks")
     lesson = models.ForeignKey(
         "content.Lesson", on_delete=models.CASCADE, related_name="bookmarks"
     )
