@@ -24,12 +24,12 @@ class UnifiedSearchView(generics.ListAPIView):
         search_query = SearchQuery(query)
         fts_qs = SearchDocument.objects.filter(search_vector=search_query).annotate(
             rank=SearchRank("search_vector", search_query)
-        ).distinct()  # ✅ Add distinct()
+        ).distinct() 
 
         # 2. Fuzzy matching (typo tolerance) using Trigram Similarity on Title
         trigram_qs = SearchDocument.objects.annotate(
             similarity=TrigramSimilarity("title", query)
-        ).filter(similarity__gt=0.3).distinct()  # ✅ Add distinct()
+        ).filter(similarity__gt=0.3).distinct() 
 
         if fts_qs.exists():
             return fts_qs.order_by("-rank")[:50]
