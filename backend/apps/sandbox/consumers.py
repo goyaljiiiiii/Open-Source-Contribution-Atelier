@@ -139,6 +139,53 @@ class SandboxConsumer(AsyncWebsocketConsumer):
                     line = text_data_json.get("line")
                     self.debug_process.stdin.write(f"clear {line}\n".encode("utf-8"))
                     await self.debug_process.stdin.drain()
+
+            elif action == "search_project":
+                project_id = text_data_json.get("project_id")
+                query = text_data_json.get("query")
+                is_regex = text_data_json.get("is_regex", False)
+                match_case = text_data_json.get("match_case", False)
+                
+                if not query:
+                    await self.send(text_data=json.dumps({"action": "search_done"}))
+                    return
+                
+                from .models import ProjectFile
+                from asgiref.sync import sync_to_async
+                import re
+
+                @sync_to_async
+                def fetch_files():
+                    return list(ProjectFile.objects.filter(project_id=project_id))
+                    
+                files = await fetch_files()
+                
+                flags = 0 if match_case else re.IGNORECASE
+                try:
+                    pattern = re.compile(query if is_regex else re.escape(query), flags)
+                except re.error:
+                    await self.send(text_data=json.dumps({"action": "search_error", "error": "Invalid regex"}))
+                    return
+
+                for f in files:
+                    matches = []
+                    lines = f.content.split('\n')
+                    for i, line in enumerate(lines):
+                        for m in pattern.finditer(line):
+                            matches.append({
+                                "line": i + 1,
+                                "content": line.strip(),
+                                "start": m.start(),
+                                "end": m.end()
+                            })
+                    if matches:
+                        await self.send(text_data=json.dumps({
+                            "action": "search_result",
+                            "file_id": str(f.id),
+                            "path": f.path,
+                            "matches": matches
+                        }))
+                await self.send(text_data=json.dumps({"action": "search_done"}))
         except Exception:
             pass
 
