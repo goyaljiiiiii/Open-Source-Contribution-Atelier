@@ -17,6 +17,7 @@ except ImportError:
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("", include("django_prometheus.urls")),
     path("health/", health_view, name="health"),
     path("api/version/", version_view, name="version"),
     path("api/leaderboard/", LeaderboardView.as_view(), name="leaderboard"),
@@ -43,11 +44,11 @@ urlpatterns = [
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     path("graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
-    ]
+]
 
-    # Add Google OAuth URLs only if views are available
-    if GoogleLoginView and GoogleLoginCallbackView:
-          urlpatterns += [
-          path('api/auth/google/', GoogleLoginView.as_view(), name='google_login'),
-          path('api/auth/google/callback/', GoogleLoginCallbackView.as_view(), name='google_callback'),
-          ]
+# Add Google OAuth URLs only if views are available
+if GoogleLoginView and GoogleLoginCallbackView:
+    urlpatterns += [
+        path('api/auth/google/', GoogleLoginView.as_view(), name='google_login'),
+        path('api/auth/google/callback/', GoogleLoginCallbackView.as_view(), name='google_callback'),
+    ]
