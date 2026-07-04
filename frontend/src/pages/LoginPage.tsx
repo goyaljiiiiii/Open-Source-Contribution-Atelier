@@ -44,6 +44,7 @@ export function LoginPage() {
 
   return (
     <AuthPageShell
+      mode="login"
       title="Oh, you again?"
       subtitle="Welcome back to your favorite distraction-free zone. Drop your details below."
     >

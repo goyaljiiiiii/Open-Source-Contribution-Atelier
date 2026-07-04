@@ -987,11 +987,14 @@ class PeerReviewView(APIView):
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class LessonBookmarkView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, slug=None):
-        bookmarks = LessonBookmark.objects.filter(user=request.user).select_related("lesson")
+        bookmarks = LessonBookmark.objects.filter(user=request.user).select_related(
+            "lesson"
+        )
         data = [
             {
                 "id": b.id,
@@ -1010,10 +1013,17 @@ class LessonBookmarkView(APIView):
 
     def post(self, request, slug=None):
         lesson = get_object_or_404(Lesson, slug=slug)
-        bookmark, created = LessonBookmark.objects.get_or_create(user=request.user, lesson=lesson)
-        return Response({"status": "added"}, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+        bookmark, created = LessonBookmark.objects.get_or_create(
+            user=request.user, lesson=lesson
+        )
+        return Response(
+            {"status": "added"},
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
 
     def delete(self, request, slug=None):
-        bookmark = get_object_or_404(LessonBookmark, user=request.user, lesson__slug=slug)
+        bookmark = get_object_or_404(
+            LessonBookmark, user=request.user, lesson__slug=slug
+        )
         bookmark.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

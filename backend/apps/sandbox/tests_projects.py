@@ -2,9 +2,11 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
+
 from .models import Project, ProjectFile
 
 User = get_user_model()
+
 
 class ProjectTests(APITestCase):
     def setUp(self):
@@ -37,12 +39,12 @@ class ProjectTests(APITestCase):
     def test_create_project_file(self):
         project = Project.objects.create(user=self.user1, name="Proj1")
         self.client.force_authenticate(user=self.user1)
-        
+
         data = {
             "project": str(project.id),
             "path": "src/index.js",
             "content": "console.log('test')",
-            "language": "javascript"
+            "language": "javascript",
         }
         response = self.client.post(self.file_url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -51,12 +53,12 @@ class ProjectTests(APITestCase):
     def test_duplicate_file_path_constraint(self):
         project = Project.objects.create(user=self.user1, name="Proj1")
         ProjectFile.objects.create(project=project, path="src/index.js")
-        
+
         self.client.force_authenticate(user=self.user1)
         data = {
             "project": str(project.id),
             "path": "src/index.js",
-            "content": "new content"
+            "content": "new content",
         }
         response = self.client.post(self.file_url, data)
         # Should fail due to UniqueConstraint

@@ -4,7 +4,7 @@ import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { MonacoBinding } from "y-monaco";
 import randomColor from "randomcolor";
-import { Play, RotateCcw, CheckCircle2, XCircle, Share2, MessageSquare, Library } from "lucide-react";
+import { Play, RotateCcw, CheckCircle2, XCircle, Share2, Library } from "lucide-react";
 import { usePythonSandbox } from "../../hooks/usePythonSandbox";
 import { PythonExercise } from "../../lib/lessons";
 import { useAuth } from "../../features/auth/AuthContext";
@@ -36,8 +36,8 @@ export function CollabPythonSandbox({
   const { threads, addComment, resolveThread } = useCodeReviews(roomId);
   const [activeLine, setActiveLine] = useState<number | null>(null);
 
-  const editorRef = useRef<any>(null);
-  const monacoRef = useRef<any>(null);
+  const editorRef = useRef<Parameters<NonNullable<Parameters<typeof Editor>[0]>>[0] | null>(null);
+  const monacoRef = useRef<Parameters<NonNullable<Parameters<typeof Editor>[0]>>[1] | null>(null);
   const ydocRef = useRef<Y.Doc | null>(null);
   const providerRef = useRef<WebsocketProvider | null>(null);
   const bindingRef = useRef<MonacoBinding | null>(null);
@@ -95,7 +95,7 @@ export function CollabPythonSandbox({
     };
   }, [roomId, user]);
 
-  const handleEditorDidMount = (editor: any, monaco: any) => {
+  const handleEditorDidMount = (editor: Parameters<NonNullable<Parameters<typeof Editor>[0]>>[0], monaco: Parameters<NonNullable<Parameters<typeof Editor>[0]>>[1]) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
 
@@ -115,7 +115,7 @@ export function CollabPythonSandbox({
     }
 
     // Handle glyph margin clicks for comments
-    editor.onMouseDown((e: any) => {
+    editor.onMouseDown((e: Parameters<NonNullable<Parameters<typeof editor.onMouseDown>[0]>>[0]) => {
       if (e.target.type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN) {
         const lineNumber = e.target.position.lineNumber;
         setActiveLine(lineNumber);

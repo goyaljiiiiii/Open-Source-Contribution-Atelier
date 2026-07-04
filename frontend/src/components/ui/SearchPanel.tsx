@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Replace, ReplaceAll, CornerDownRight, X, Loader2 } from 'lucide-react';
+import { Search, Replace, CornerDownRight, Loader2 } from 'lucide-react';
 import { Project } from '../../lib/api';
 
 interface SearchResult {

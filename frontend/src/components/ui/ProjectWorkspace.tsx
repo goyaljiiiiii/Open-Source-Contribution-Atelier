@@ -123,7 +123,7 @@ export function ProjectWorkspace() {
       <div className="w-[300px] border-r border-gray-800">
         <SearchPanel 
           project={project} 
-          onMatchClick={(fileId, line) => {
+          onMatchClick={(fileId) => {
             setActiveFileId(fileId);
           }}
         />
