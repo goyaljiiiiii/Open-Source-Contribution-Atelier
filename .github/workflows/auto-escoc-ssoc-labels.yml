@@ -1,4 +1,4 @@
-name: Auto‑add ECSoC26 / SSOC Labels to PRs
+name: Auto‑add ECSoC26 / ssoc26 Labels to PRs
 
 # Runs whenever a PR is opened, edited or synchronized (e.g., new commits)
 # It scans the PR description for the explicit mention of the labels and adds them.
@@ -24,7 +24,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Detect ECSoC26 or SSOC mentions
+      - name: Detect ECSoC26 or ssoc26 mentions
         id: detect
         uses: actions/github-script@v6
         with:
@@ -35,8 +35,8 @@ jobs:
             if (body.includes('ecsoc26') || body.includes('ecsoc')) {
               labels.push('ECSoC26');
             }
-            if (body.includes('ssoc')) {
-              labels.push('SSOC');
+            if (body.includes('ssoc26')) {
+              labels.push('ssoc26');
             }
             core.setOutput('labels', JSON.stringify(labels));
 

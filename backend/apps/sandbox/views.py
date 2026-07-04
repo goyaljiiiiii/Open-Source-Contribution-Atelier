@@ -1,4 +1,5 @@
 from rest_framework import permissions, serializers, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -43,6 +44,7 @@ class CodeSnapshotViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
 
+
 from .models import Project, ProjectFile
 from .serializers import ProjectSerializer, ProjectFileSerializer
 
@@ -55,6 +57,71 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    @action(detail=True, methods=["post"])
+    def replace(self, request, pk=None):
+        project = self.get_object()
+        query = request.data.get("query")
+        replacement = request.data.get("replacement")
+        is_regex = request.data.get("is_regex", False)
+        match_case = request.data.get("match_case", False)
+        
+        if not query:
+            return Response({"error": "Query is required"}, status=400)
+            
+        import re
+        flags = 0 if match_case else re.IGNORECASE
+        try:
+            pattern = re.compile(query if is_regex else re.escape(query), flags)
+        except re.error:
+            return Response({"error": "Invalid regular expression"}, status=400)
+            
+        files = ProjectFile.objects.filter(project=project)
+        previous_state = {}
+        updated_files = []
+        
+        from django.db import transaction
+        from .models import BulkReplaceOperation
+        with transaction.atomic():
+            for f in files:
+                if pattern.search(f.content):
+                    previous_state[str(f.id)] = f.content
+                    f.content = pattern.sub(replacement, f.content)
+                    updated_files.append(f)
+            
+            if previous_state:
+                BulkReplaceOperation.objects.create(
+                    project=project,
+                    user=request.user,
+                    previous_state=previous_state
+                )
+                ProjectFile.objects.bulk_update(updated_files, ["content"])
+                
+        return Response({"modified_count": len(updated_files)})
+
+    @action(detail=True, methods=["post"])
+    def undo_replace(self, request, pk=None):
+        project = self.get_object()
+        from .models import BulkReplaceOperation
+        operation = BulkReplaceOperation.objects.filter(project=project, user=request.user).order_by("-created_at").first()
+        
+        if not operation:
+            return Response({"error": "No recent operation to undo"}, status=400)
+            
+        from django.db import transaction
+        with transaction.atomic():
+            files_to_update = []
+            for file_id, content in operation.previous_state.items():
+                f = ProjectFile.objects.filter(id=file_id).first()
+                if f:
+                    f.content = content
+                    files_to_update.append(f)
+            
+            if files_to_update:
+                ProjectFile.objects.bulk_update(files_to_update, ["content"])
+            operation.delete()
+            
+        return Response({"restored_count": len(files_to_update)})
 
 
 class ProjectFileViewSet(viewsets.ModelViewSet):
@@ -123,4 +190,5 @@ class CodeSnippetViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(title__icontains=search)
             
         return queryset
+
 
