@@ -1,3 +1,11 @@
+/**
+ * WebWorker for secure JavaScript/TypeScript code execution in isolated thread.
+ * Uses Sucrase for TypeScript transpilation.
+ * 
+ * @file jsWorker.ts
+ * @location frontend/src/workers/jsWorker.ts
+ */
+
 import { transform } from "sucrase";
 import { instrumentJS } from "../lib/jsTracer";
 import { TraceEvent } from "../hooks/useTimelineEngine";
@@ -10,20 +18,16 @@ self.addEventListener("message", async (event) => {
   const traceEvents: TraceEvent[] = [];
   let stepCounter = 0;
 
-  // Create interceptors for console
-  const intercept = () => {
-    return (...args: unknown[]) => {
-      const msg = args
-        .map((a) => {
-          if (a instanceof Error) {
-            return a.toString();
-          }
-          return typeof a === "object" ? JSON.stringify(a, null, 2) : String(a);
-        })
-        .join(" ");
-      output += `${msg}\n`;
-    };
-  };
+interface WorkerResponse {
+  id: string;
+  type: 'result' | 'error' | 'timeout' | 'console' | 'warning';
+  results?: string;
+  error?: string;
+  executionTime?: number;
+  method?: string;
+  args?: any[];
+  message?: string;
+}
 
   const customConsole = {
     log: intercept(),
@@ -36,9 +40,9 @@ self.addEventListener("message", async (event) => {
     },
   };
 
-  try {
-    // 1. Transpile TS to JS using sucrase
-    const compiled = transform(code, { transforms: ["typescript"] }).code;
+// ============================================================
+// Console Interceptor
+// ============================================================
 
     if (action === "execute_trace") {
       // 2a. Instrument for tracing
@@ -120,3 +124,27 @@ self.addEventListener("message", async (event) => {
     }
   }
 });
+
+// ============================================================
+// Error Handlers
+// ============================================================
+
+self.addEventListener('error', (error: ErrorEvent) => {
+  self.postMessage({
+    type: 'error',
+    error: error.message || 'Worker error occurred',
+  } as WorkerResponse);
+});
+
+self.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
+  self.postMessage({
+    type: 'error',
+    error: event.reason?.message || 'Unhandled promise rejection',
+  } as WorkerResponse);
+});
+
+// ============================================================
+// Export for TypeScript
+// ============================================================
+
+export type { WorkerMessage, WorkerResponse };
