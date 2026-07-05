@@ -352,8 +352,8 @@ export function useJSSandbox(options: UseJSSandboxOptions = {}): UseJSSandboxRet
           return;
         }
 
-        setIsExecuting(true);
-        const executionId = Date.now().toString();
+        setExecutionTime(result.executionTime || null);
+        setIsExecuting(false);
 
         const handleMessage = (event: MessageEvent) => {
           if (event.data.id === executionId) {
@@ -362,18 +362,16 @@ export function useJSSandbox(options: UseJSSandboxOptions = {}): UseJSSandboxRet
           }
         };
 
-        const cleanup = () => {
-          if (timeoutRef.current !== null) {
-            window.clearTimeout(timeoutRef.current);
-            timeoutRef.current = null;
-          }
-          if (workerRef.current) {
-            workerRef.current.removeEventListener("message", handleMessage);
-          }
-          setIsExecuting(false);
-        };
+        return result;
+      } catch (err: any) {
+        if (!isMounted.current) {
+          return { output: '', error: err.message };
+        }
 
-        workerRef.current.addEventListener("message", handleMessage);
+        const errorMessage = err.message || 'Unknown error occurred';
+        setStatus('timeout');
+        setError(errorMessage);
+        setIsExecuting(false);
 
         timeoutRef.current = window.setTimeout(() => {
           if (workerRef.current) {
