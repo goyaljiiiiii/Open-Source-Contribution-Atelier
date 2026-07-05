@@ -239,11 +239,11 @@ class SandboxConsumer(AsyncWebsocketConsumer):
 class CollabConsumer(AsyncWebsocketConsumer):
     """
     Handles real-time WebSocket communication for collaborative pair-programming sessions.
-    
-    This consumer manages a channel layer group unique to each `room_id`. It handles the 
+
+    This consumer manages a channel layer group unique to each `room_id`. It handles the
     distribution of code changes, cursor movements, and code review comments between clients.
-    State is managed per connection by tracking the `room_group_name`. Reconnection strategies 
-    and ping/pong heartbeats are managed by the client and the underlying ASGI server (Daphne), 
+    State is managed per connection by tracking the `room_group_name`. Reconnection strategies
+    and ping/pong heartbeats are managed by the client and the underlying ASGI server (Daphne),
     while this consumer focuses on application-level message brokering.
     """
 
