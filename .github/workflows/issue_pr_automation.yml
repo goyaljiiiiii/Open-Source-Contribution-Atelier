@@ -26,6 +26,7 @@ jobs:
       - name: Add labels & assign author
         id: automate
         uses: actions/github-script@v7
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
             const issue = context.payload.issue;
@@ -78,6 +79,7 @@ jobs:
       - name: Assign first commenter (if none already)
         id: assigner
         uses: actions/github-script@v7
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
             const comment = context.payload.comment;
@@ -108,6 +110,7 @@ jobs:
       - name: Copy labels from referenced issue(s) and assign PR creator
         id: pr_sync
         uses: actions/github-script@v7
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
             const pr = context.payload.pull_request;
@@ -153,6 +156,7 @@ jobs:
 
       - name: Find stale assignees and comment
         uses: actions/github-script@v7
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
             const owner = context.repo.owner;
@@ -192,6 +196,7 @@ jobs:
 
       - name: Unassign stale issues after no response
         uses: actions/github-script@v7
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
             const owner = context.repo.owner;
