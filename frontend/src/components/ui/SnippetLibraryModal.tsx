@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useSnippets } from '../../hooks/useSnippets';
 import { 
   X, BookOpen, Star, Folder, Plus, Search, 
-  Trash2, Edit2, Download, Upload, Code2, 
+  Trash2, Download, Upload, Code2, 
   Copy, ArrowRightSquare
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -20,7 +20,7 @@ export function SnippetLibraryModal({ isOpen, onClose, onInsertCode }: SnippetLi
     searchQuery, setSearchQuery,
     showFavoritesOnly, setShowFavoritesOnly,
     addCollection, removeCollection,
-    addSnippet, editSnippet, removeSnippet, toggleFavorite,
+    addSnippet, removeSnippet, toggleFavorite,
     exportData, importData
   } = useSnippets();
 

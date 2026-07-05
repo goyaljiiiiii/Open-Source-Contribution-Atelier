@@ -117,7 +117,7 @@ export function CodeSandbox() {
       const snap = await saveSandboxSnapshot(code, label, false);
       setSnapshots((prev) => [snap, ...prev]);
       toast.success("Bookmark saved!");
-    } catch (err) {
+    } catch {
       toast.error("Failed to save bookmark");
     }
   };
