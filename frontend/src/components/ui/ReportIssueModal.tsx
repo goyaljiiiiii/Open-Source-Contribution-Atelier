@@ -19,8 +19,6 @@ export default function ReportIssueModal({ open, onClose, urlPath = window.locat
   const [issueType, setIssueType] = useState("Bug");
   const [image, setImage] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastType, setToastType] = useState<"success" | "error" | "info">("info");
 
   useEffect(() => {
     if (!open) {
@@ -63,7 +61,7 @@ export default function ReportIssueModal({ open, onClose, urlPath = window.locat
       setTimeout(() => {
         onClose();
       }, 1000);
-    } catch (error) {
+    } catch {
       toast.error("Failed to submit issue. Please try again.");
     } finally {
       setIsSubmitting(false);

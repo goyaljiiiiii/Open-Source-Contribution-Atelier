@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Terminal as TerminalIcon, Plus, X, Play, Search, Trash2 } from 'lucide-react';
+import { Terminal as TerminalIcon, Plus, X, Trash2 } from 'lucide-react';
 import { 
   TerminalSession, TerminalCommand, fetchTerminalSessions, 
   createTerminalSession, deleteTerminalSession, executeTerminalCommand 

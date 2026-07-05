@@ -1,6 +1,6 @@
 import { renderHook, act } from "@testing-library/react";
 import { describe, it, expect, beforeEach } from "vitest";
-import { useRecentCommands, RecentCommand } from "../hooks/useRecentCommands";
+import { useRecentCommands } from "../hooks/useRecentCommands";
 
 describe("useRecentCommands", () => {
   const STORAGE_KEY = "ca_recent_commands";
