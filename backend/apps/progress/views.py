@@ -2,7 +2,9 @@ from datetime import datetime
 
 from django.contrib.auth.models import User
 from django.db import transaction
-from django.db.models import Count, Min, Sum
+from apps.progress.constants import XP_PER_LEVEL
+from apps.progress.models import XPEvent
+from apps.progress.constants import XP_PER_LEVEL
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import permissions, status
@@ -108,6 +110,17 @@ class MyProgressView(APIView):
                 progress.score = int(base_score * multiplier)
                 progress.organization = request.user.organization
                 progress.save()
+                # Record XP event
+                old_score = getattr(progress, "score", 0) if not created else 0
+                xp_delta = progress.score - old_score
+                XPEvent.objects.create(
+                    user=request.user,
+                    source_type="lesson",
+                    source_id=lesson.id,
+                    base_points=base_score,
+                    multiplier=multiplier,
+                    xp_delta=xp_delta,
+                )
         except LessonProgress.DoesNotExist:
             progress = LessonProgress.objects.create(
                 user=request.user,
@@ -118,7 +131,16 @@ class MyProgressView(APIView):
                 score=int(base_score * multiplier),
                 organization=request.user.organization,
             )
-            created = True
+                # Record XP event for new progress
+                XPEvent.objects.create(
+                    user=request.user,
+                    source_type="lesson",
+                    source_id=lesson.id,
+                    base_points=base_score,
+                    multiplier=multiplier,
+                    xp_delta=progress.score,
+                )
+                created = True
 
         from django_q.tasks import async_task
 
@@ -187,6 +209,15 @@ class BulkSyncProgressView(APIView):
                         progress.multiplier_applied = multiplier
                         progress.score = int(base_score * multiplier)
                         progress.save()
+                # Record XP event for bulk sync update
+                XPEvent.objects.create(
+                    user=request.user,
+                    source_type="lesson",
+                    source_id=lesson.id,
+                    base_points=base_score,
+                    multiplier=multiplier,
+                    xp_delta=progress.score,
+                )
                 except LessonProgress.DoesNotExist:
                     progress = LessonProgress.objects.create(
                         user=request.user,
