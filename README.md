@@ -1,9 +1,9 @@
 <div align="center">
-  <img src="https://img.shields.io/badge/status-active-brightgreen?style=for-the-badge" alt="Status" />
-  <img src="https://img.shields.io/github/license/goyaljiiiiii/Open-Source-Contribution-Atelier?style=for-the-badge" alt="License" />
-  <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
-  <img src="https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white" alt="Django" />
-  <img src="https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel" />
+[![CI](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/actions/workflows/ci.yml/badge.svg)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/actions/workflows/ci.yml)
+[![Dependabot](https://img.shields.io/badge/Dependabot-enabled-brightgreen?logo=dependabot)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/network/updates)
+[![Release](https://img.shields.io/github/v/release/nandinigoyaldev/Open-Source-Contribution-Atelier?include_prereleases&label=release)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/releases)
+[![Coverage](https://img.shields.io/coveralls/github/nandinigoyaldev/Open-Source-Contribution-Atelier?logo=coveralls)](https://coveralls.io/github/nandinigoyaldev/Open-Source-Contribution-Atelier)
+[![License](https://img.shields.io/github/license/nandinigoyaldev/Open-Source-Contribution-Atelier?style=for-the-badge)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/blob/main/LICENSE)
 </div>
 
 <br />
