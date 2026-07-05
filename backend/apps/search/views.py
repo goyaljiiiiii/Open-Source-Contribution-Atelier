@@ -1,4 +1,5 @@
 from django.contrib.postgres.search import SearchQuery, SearchRank, TrigramSimilarity
+from django.db.models import query
 from rest_framework import generics
 from rest_framework.permissions import AllowAny
 
@@ -38,19 +39,16 @@ class UnifiedSearchView(generics.ListAPIView):
         if not query:
             return SearchDocument.objects.none()
 
-        # 1. Exact/Prefix matching with Full-Text Search
+        # Exact/Prefix matching with Full-Text Search
         search_query = SearchQuery(query)
         fts_qs = SearchDocument.objects.filter(search_vector=search_query).annotate(
             rank=SearchRank("search_vector", search_query)
-        )
+        ).distinct() 
 
-        # 2. Fuzzy matching (typo tolerance) using Trigram Similarity on Title
+        # Fuzzy matching (typo tolerance) using Trigram Similarity on Title
         trigram_qs = SearchDocument.objects.annotate(
             similarity=TrigramSimilarity("title", query)
-        ).filter(similarity__gt=0.3)
-
-        # Combine the results. In a real highly-scaled system we might union them,
-        # but for simplicity and maximum relevance we prioritize FTS, then fallback to Trigram.
+        ).filter(similarity__gt=0.3).distinct() 
 
         if fts_qs.exists():
             return fts_qs.order_by("-rank")[:50]
