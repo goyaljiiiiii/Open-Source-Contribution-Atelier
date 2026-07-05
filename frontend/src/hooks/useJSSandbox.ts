@@ -1,10 +1,5 @@
-/**
- * React hook for JavaScript sandbox execution using WebWorkers.
- * 
- * @file useJSSandbox.ts
- * @location frontend/src/hooks/useJSSandbox.ts
- */
-
+import { useCallback } from "react";
+import { useSandboxCore } from "./useSandboxCore";
 import { TraceEvent } from "./useTimelineEngine";
 
 export interface JSExecutionResult {
@@ -12,34 +7,6 @@ export interface JSExecutionResult {
   error: string | null;
   trace_events?: TraceEvent[];
 }
-
-export interface UseJSSandboxOptions {
-  timeout?: number;
-  maxWorkers?: number;
-  autoInit?: boolean;
-}
-
-export interface UseJSSandboxReturn {
-  // State
-  isExecuting: boolean;
-  isReady: boolean;
-  status: 'idle' | 'running' | 'completed' | 'error' | 'timeout';
-  executionTime: number | null;
-  error: string | null;
-  output: SandboxOutput[];
-  workerStatus: WorkerStatus;
-  
-  // Actions
-  runJSCode: (code: string, timeoutMs?: number) => Promise<JSExecutionResult>;
-  clearOutput: () => void;
-  stopExecution: () => void;
-  resetSandbox: () => void;
-  loadExample: (exampleCode: string) => string;
-}
-
-// ============================================================
-// Example Codes
-// ============================================================
 
 export const EXAMPLES: Record<string, string> = {
   'Hello World': `// Hello World Example
@@ -181,221 +148,52 @@ try {
 }`,
 };
 
-// ============================================================
-// Hook Implementation
-// ============================================================
+export function useJSSandbox() {
+  const createWorker = useCallback(
+    () =>
+      new Worker(new URL("../workers/jsWorker.ts", import.meta.url), {
+        type: "module",
+      }),
+    []
+  );
 
-/**
- * Hook for using the JavaScript sandbox with WebWorker support.
- * 
- * @param options - Configuration options
- * @returns Sandbox state and actions
- * 
- * @example
- * ```tsx
- * const { runJSCode, isExecuting, isReady, status, output } = useJSSandbox({
- *   timeout: 5000,
- *   maxWorkers: 4,
- * });
- * ```
- */
-export function useJSSandbox(options: UseJSSandboxOptions = {}): UseJSSandboxReturn {
-  const {
-    timeout: defaultTimeout = 5000,
-    maxWorkers = 4,
-    autoInit = true,
-  } = options;
+  const { executeCode, isExecuting, isReady } = useSandboxCore(createWorker);
 
-  // State
-  const [isExecuting, setIsExecuting] = useState<boolean>(false);
-  const [isReady, setIsReady] = useState<boolean>(false);
-  const [status, setStatus] = useState<'idle' | 'running' | 'completed' | 'error' | 'timeout'>('idle');
-  const [executionTime, setExecutionTime] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [output, setOutput] = useState<SandboxOutput[]>([]);
-  const [workerStatus, setWorkerStatus] = useState<WorkerStatus>({
-    totalWorkers: 0,
-    busyWorkers: 0,
-    availableWorkers: 0,
-    activeExecutions: 0,
-  });
-
-  // Refs
-  const manager = useRef(sandboxManager);
-  const isMounted = useRef<boolean>(true);
-  const statusInterval = useRef<number | null>(null);
-
-  // ============================================================
-  // Initialize Sandbox
-  // ============================================================
-
-  useEffect(() => {
-    isMounted.current = true;
-
-    if (autoInit) {
-      manager.current.init(maxWorkers);
-      setIsReady(true);
-    }
-
-    // Update worker status periodically
-    statusInterval.current = window.setInterval(() => {
-      if (isMounted.current) {
-        setWorkerStatus(manager.current.getStatus());
-      }
-    }, 2000);
-
-
-    setIsReady(true);
-
-    return () => {
-      isMounted.current = false;
-      if (statusInterval.current) {
-        clearInterval(statusInterval.current);
-      }
-      manager.current.cleanup();
-    };
-  }, [autoInit, maxWorkers]);
-
-  // ============================================================
-  // Core Functions
-  // ============================================================
-
-  /**
-   * Run JavaScript code in the sandbox.
-   */
   const runJSCode = useCallback(
-    async (code: string, timeoutMs: number = defaultTimeout): Promise<JSExecutionResult> => {
-      if (!code.trim()) {
-        return { output: '', error: 'No code to execute' };
-      }
-
-      setIsExecuting(true);
-      setStatus('running');
-      setError(null);
-      setExecutionTime(null);
-
-      const timestamp = new Date().toLocaleTimeString();
-      setOutput((prev) => [
-        ...prev,
-        { type: 'info', content: '▶️ Running code...', timestamp } as SandboxOutput,
-      ]);
-
-      try {
-        const result = await manager.current.execute(code, timeoutMs);
-
-        if (!isMounted.current) {
-          return result;
+    (code: string, timeoutMs: number = 5000): Promise<JSExecutionResult> => {
+      return executeCode<JSExecutionResult>(
+        { code, action: "execute_code" },
+        timeoutMs,
+        (data) => ({
+          output: data.output || data.results || "",
+          error: data.error || null,
+        }),
+        {
+          output: "",
+          error: "Execution Timeout: The code took too long to run and was terminated.",
         }
-
-        setExecutionTime(result.executionTime || null);
-        setIsExecuting(false);
-
-        if (result.error) {
-          setStatus('error');
-          setError(result.error);
-          setOutput((prev) => [
-            ...prev,
-            {
-              type: 'error',
-              content: `❌ ${result.error}`,
-              timestamp: new Date().toLocaleTimeString(),
-            } as SandboxOutput,
-          ]);
-        } else {
-          setStatus('completed');
-          setOutput((prev) => [
-            ...prev,
-            {
-              type: 'info',
-              content: `✅ Execution completed in ${(result.executionTime || 0).toFixed(2)}ms`,
-              timestamp: new Date().toLocaleTimeString(),
-            } as SandboxOutput,
-            {
-              type: 'result',
-              content: result.output || '✅ Execution completed (no output)',
-              timestamp: new Date().toLocaleTimeString(),
-            } as SandboxOutput,
-          ]);
-        }
-
-        return result;
-      } catch (err: any) {
-        if (!isMounted.current) {
-          return { output: '', error: err.message };
-        }
-
-        const errorMessage = err.message || 'Unknown error occurred';
-        setStatus('timeout');
-        setError(errorMessage);
-        setIsExecuting(false);
-
-        setOutput((prev) => [
-          ...prev,
-          {
-            type: 'timeout',
-            content: `⏰ ${errorMessage}`,
-            timestamp: new Date().toLocaleTimeString(),
-          } as SandboxOutput,
-        ]);
-
-        workerRef.current.postMessage({ id: executionId, code, action: "execute_code" });
-      });
+      );
     },
-    [defaultTimeout]
+    [executeCode]
   );
 
   const traceJSCode = useCallback(
     (code: string, timeoutMs: number = 10000): Promise<TraceEvent[]> => {
-      return new Promise((resolve) => {
-        if (!workerRef.current) {
-          resolve([]);
-          return;
-        }
-
-        setExecutionTime(result.executionTime || null);
-        setIsExecuting(false);
-
-        const handleMessage = (event: MessageEvent) => {
-          if (event.data.id === executionId) {
-            cleanup();
-            resolve(event.data.trace_events || []);
-          }
-        };
-
-        return result;
-      } catch (err: any) {
-        if (!isMounted.current) {
-          return { output: '', error: err.message };
-        }
-
-        const errorMessage = err.message || 'Unknown error occurred';
-        setStatus('timeout');
-        setError(errorMessage);
-        setIsExecuting(false);
-
-        timeoutRef.current = window.setTimeout(() => {
-          if (workerRef.current) {
-            workerRef.current.terminate();
-            workerRef.current = new Worker(
-              new URL("../workers/jsWorker.ts", import.meta.url),
-              { type: "module" },
-            );
-          }
-          cleanup();
-          resolve([{
-            step: 0,
-            line: 0,
-            event: "error",
-            locals: {},
-            stdout: "",
-            error: "Execution Timeout: Code took too long to run."
-          }]);
-        }, timeoutMs);
-
-        workerRef.current.postMessage({ id: executionId, code, action: "execute_trace" });
-      });
+      return executeCode<TraceEvent[]>(
+        { code, action: "execute_trace" },
+        timeoutMs,
+        (data) => data.trace_events || [],
+        [{
+          step: 0,
+          line: 0,
+          event: "error",
+          locals: {},
+          stdout: "",
+          error: "Execution Timeout: Code took too long to run."
+        }]
+      );
     },
-    []
+    [executeCode]
   );
 
   return { runJSCode, traceJSCode, isExecuting, isReady };
