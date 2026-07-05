@@ -198,6 +198,9 @@ export function ProjectWorkspace() {
             Select a file to edit
           </div>
         )}
+        <div className="h-1/3 min-h-[250px] max-h-[50%] flex flex-col border-t border-gray-800">
+          <TerminalWorkspace projectId={project?.id} />
+        </div>
       </div>
 
       <SnippetLibraryModal
