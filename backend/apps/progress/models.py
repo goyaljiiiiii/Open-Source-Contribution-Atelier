@@ -62,6 +62,37 @@ class UserBadge(models.Model):
         ]
 
 
+
+class XPEvent(models.Model):
+    """Tracks XP changes for a user from various source actions."""
+
+    SOURCE_CHOICES = [
+        ("lesson", "Lesson"),
+        ("exercise", "Exercise"),
+        ("pr", "Pull Request"),
+        ("issue", "Issue"),
+        ("review", "Review"),
+        ("badge", "Badge"),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="xp_events")
+    source_type = models.CharField(max_length=20, choices=SOURCE_CHOICES)
+    source_id = models.PositiveIntegerField(null=True, blank=True)
+    base_points = models.PositiveIntegerField()
+    multiplier = models.FloatField(default=1.0)
+    xp_delta = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["user", "source_type"], name="idx_xp_user_source"),
+            models.Index(fields=["-created_at"], name="idx_xp_created_desc"),
+        ]
+
+    def __str__(self):
+        return f"XPEvent(user={self.user.username}, source={self.source_type}, delta={self.xp_delta})"
+
 class LessonProgress(models.Model):
     objects = models.Manager()
     organization = models.ForeignKey(
