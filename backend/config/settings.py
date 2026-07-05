@@ -394,3 +394,18 @@ LOGGING = {
 }
 
 GRAPHENE = {"SCHEMA": "config.schema.schema"}
+
+# ──────────────────────────────────────────
+# Curriculum JSON Path
+# ──────────────────────────────────────────
+# Path to the curriculum.json file used for module definitions and learning paths.
+# Default resolves to frontend/public/content/curriculum.json relative to project root.
+# Override with CURRICULUM_JSON_PATH env var for Docker/production deployments.
+CURRICULUM_JSON_PATH = os.getenv(
+    "CURRICULUM_JSON_PATH",
+    str(
+        (
+            BASE_DIR / ".." / "frontend" / "public" / "content" / "curriculum.json"
+        ).resolve()
+    ),
+)

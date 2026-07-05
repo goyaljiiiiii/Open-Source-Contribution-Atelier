@@ -157,10 +157,21 @@ export function LessonPage() {
   useEffect(() => {
     setIsLoading(true);
 
-    Promise.all([
-      fetch("/content/curriculum.json").then((res) => res.json()),
-      fetchLessonsApi(),
-    ])
+    // Fetch curriculum.json for module structure and fallback lesson data
+    const curriculumPromise = fetch("/content/curriculum.json")
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .catch((err) => {
+        console.warn("[LessonPage] Failed to load curriculum.json:", err);
+        return null;
+      });
+
+    // Fetch lessons from the backend API
+    const lessonsPromise = fetchLessonsApi();
+
+    Promise.all([curriculumPromise, lessonsPromise])
       .then(([curriculumJson, lessonsData]) => {
         setLessonsList(lessonsData);
 
@@ -204,13 +215,15 @@ export function LessonPage() {
         }
 
         if (!found) {
+          // Lesson slug doesn't exist in either data source — redirect to dashboard
           navigate("/dashboard", { replace: true });
           return;
         }
 
         setLesson(found);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("[LessonPage] Unexpected error loading lesson:", err);
         navigate("/dashboard", { replace: true });
       })
       .finally(() => {

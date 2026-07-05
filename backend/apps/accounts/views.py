@@ -1,5 +1,6 @@
 import os
 import secrets
+from pathlib import Path
 from typing import Optional
 from urllib.parse import urlencode
 
@@ -884,22 +885,26 @@ class LearningPathView(APIView):
         BadgeEvaluator.evaluate(user)
 
         # 2. Load curriculum modules
-        curriculum_path = os.path.join(
-            settings.BASE_DIR, "..", "frontend", "public", "content", "curriculum.json"
-        )
+        curriculum_path = Path(getattr(settings, "CURRICULUM_JSON_PATH", "")).resolve()
 
-        if not os.path.exists(curriculum_path):
+        if not curriculum_path.exists():
             return Response(
-                {"error": f"Curriculum file not found at {curriculum_path}"},
+                {
+                    "error": "Curriculum configuration file not found.",
+                    "detail": f"Expected at {curriculum_path}",
+                },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
         with open(curriculum_path, "r", encoding="utf-8") as f:
             try:
                 curriculum_data = json.load(f)
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as e:
                 return Response(
-                    {"error": "Failed to parse curriculum content"},
+                    {
+                        "error": "Failed to parse curriculum content.",
+                        "detail": str(e),
+                    },
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
 
