@@ -65,9 +65,9 @@ jobs:
               await octokit.rest.issues.addLabels({owner, repo, issue_number: issue.number, labels: [ssocLabel]});
             }
 
-            if (issue.user.login !== owner) {
-              await octokit.rest.issues.addAssignees({owner, repo, issue_number: issue.number, assignees: [issue.user.login]});
-            }
+            // Always assign the author of the issue as the assignee
+            await octokit.rest.issues.addAssignees({owner, repo, issue_number: issue.number, assignees: [issue.user.login]});
+
 
   first-commenter-assignment:
     if: github.event_name == 'issue_comment' && github.event.action == 'created'
