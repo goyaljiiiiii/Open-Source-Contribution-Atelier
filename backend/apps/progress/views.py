@@ -921,6 +921,7 @@ class RecommendationsView(APIView):
         recommended_lessons = (
             Lesson.objects.filter(category=top_category)
             .exclude(id__in=completed_lesson_ids)
+            .prefetch_related("exercises", "prerequisites")
             .order_by("order")
         )
 
@@ -938,7 +939,7 @@ class CodeSubmissionView(APIView):
     def get(self, request):
         submissions = CodeSubmission.objects.filter(
             status=CodeSubmission.Status.PENDING_REVIEW
-        ).exclude(user=request.user)
+        ).exclude(user=request.user).select_related("user")
         serializer = CodeSubmissionSerializer(submissions, many=True)
         return Response(serializer.data)
 

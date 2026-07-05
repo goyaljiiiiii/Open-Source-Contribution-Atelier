@@ -11,6 +11,7 @@ from .version_view import version_view
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("", include("django_prometheus.urls")),
     path("health/", health_view, name="health"),
     path("api/version/", version_view, name="version"),
     path("api/leaderboard/", LeaderboardView.as_view(), name="leaderboard"),
