@@ -2,11 +2,12 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "react-hot-toast"; // <-- YEH HUMNE ADD KIYA HAI
 import { AppRouter } from "./router";
-import ScrollToTop from "../components/ScrollToTop";
 import { queryClient } from "../lib/queryClient";
 import { ThemeProvider } from './context/ThemeContext';
 import { ThemeToggle } from './components/ui/ThemeToggle';
 import { CommandPalette } from "../components/CommandPalette";
+
+import ReportIssueButton from "../components/ui/ReportIssueButton";
 
 export function App() {
   return (
@@ -36,6 +37,7 @@ export function App() {
         <ScrollToTop />
         </ThemeProvider>
         <CommandPalette />
+        <ReportIssueButton />
       </BrowserRouter>
     </QueryClientProvider>
   );

@@ -1,9 +1,29 @@
 from django.contrib.postgres.search import SearchQuery, SearchRank, TrigramSimilarity
+from django.db.models import query
 from rest_framework import generics
-from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
 
-from .models import SearchDocument
-from .serializers import SearchDocumentSerializer
+from .models import SearchAnalytics, SearchDocument
+from .serializers import SearchAnalyticsSerializer, SearchDocumentSerializer
+
+
+class TrackSearchView(generics.CreateAPIView):
+    queryset = SearchAnalytics.objects.all()
+    serializer_class = SearchAnalyticsSerializer
+    permission_classes = [AllowAny]
+
+    def perform_create(self, serializer):
+        ip_address = self.get_client_ip()
+        serializer.save(
+            user=self.request.user if self.request.user.is_authenticated else None,
+            ip_address=ip_address,
+        )
+
+    def get_client_ip(self):
+        x_forwarded_for = self.request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            return x_forwarded_for.split(",")[0].strip()
+        return self.request.META.get("REMOTE_ADDR")
 
 
 class UnifiedSearchView(generics.ListAPIView):
@@ -19,19 +39,16 @@ class UnifiedSearchView(generics.ListAPIView):
         if not query:
             return SearchDocument.objects.none()
 
-        # 1. Exact/Prefix matching with Full-Text Search
+        # Exact/Prefix matching with Full-Text Search
         search_query = SearchQuery(query)
         fts_qs = SearchDocument.objects.filter(search_vector=search_query).annotate(
             rank=SearchRank("search_vector", search_query)
-        )
+        ).distinct() 
 
-        # 2. Fuzzy matching (typo tolerance) using Trigram Similarity on Title
+        # Fuzzy matching (typo tolerance) using Trigram Similarity on Title
         trigram_qs = SearchDocument.objects.annotate(
             similarity=TrigramSimilarity("title", query)
-        ).filter(similarity__gt=0.3)
-
-        # Combine the results. In a real highly-scaled system we might union them,
-        # but for simplicity and maximum relevance we prioritize FTS, then fallback to Trigram.
+        ).filter(similarity__gt=0.3).distinct() 
 
         if fts_qs.exists():
             return fts_qs.order_by("-rank")[:50]

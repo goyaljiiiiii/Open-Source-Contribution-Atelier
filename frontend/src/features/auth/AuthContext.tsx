@@ -105,24 +105,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const checkUser = useCallback(async () => {
-    try {
-      const token = safeGetItem("accessToken");
-      if (!token) {
-        setUser(null);
-        return;
-      }
-
-      try {
-        const data = await fetchApi("/auth/me/");
-        setUser(data);
-      } catch {
-        setUser(null);
-      }
-    } catch {
-      setUser(null);
-    } finally {
+    const token = safeGetItem("accessToken");
+    if (!token) {
       setIsLoading(false);
+      return;
     }
+    try {
+      const data = await fetchApi("/auth/me/", { requireAuth: true });
+      setUser(data as User);
+    } catch {
+      safeRemoveItem("accessToken");
+      safeRemoveItem("refreshToken");
+    }
+    setIsLoading(false);
   }, []);
 
   useEffect(() => {
