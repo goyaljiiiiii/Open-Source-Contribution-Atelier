@@ -253,7 +253,6 @@ ACCOUNT_UNIQUE_EMAIL = True
 INSTALLED_APPS += [
     "channels",
     "apps.notifications.apps.NotificationsConfig",
-    "drf_spectacular",
     "apps.dashboard.apps.DashboardConfig",
     "apps.chat.apps.ChatConfig",
     "django.contrib.postgres",
