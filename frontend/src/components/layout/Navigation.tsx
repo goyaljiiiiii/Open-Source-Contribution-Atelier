@@ -20,12 +20,13 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useTheme } from "../../hooks/useTheme";
 import { useAuth } from "../../features/auth/AuthContext";
 import { fetchLessonsApi } from "../../lib/lessons";
+import api from "../../api";
 import LogoutButtonWithConfirm from "./LogoutButtonWithConfirm";
 import { SyncStatusIndicator } from "../ui/SyncStatusIndicator";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
-  { to: "/lessons/intro", label: "Lessons", icon: BookOpen },
+  { to: "/lessons/what-is-open-source", label: "Lessons", icon: BookOpen },
   { to: "/challenges", label: "Challenges", icon: Trophy },
   { to: "/leaderboard", label: "Leaderboard", icon: TrendingUp },
   { to: "/community", label: "Community", icon: BriefcaseBusiness },
@@ -99,14 +100,20 @@ export function Navigation() {
             ch.summary.toLowerCase().includes(query),
         );
 
-        setSearchResults({
+        const results = {
           lessons: filteredLessons.map((l) => ({
             ...l,
             summary: l.description,
           })),
           challenges: filteredChallenges,
-        });
+        };
+        setSearchResults(results);
         setIsSearching(false);
+
+        const totalResults = results.lessons.length + results.challenges.length;
+        api
+          .post("/search/track/", { query, result_count: totalResults })
+          .catch(() => {});
       } else {
         setSearchResults(null);
       }
@@ -119,7 +126,7 @@ export function Navigation() {
     <>
       <aside
         aria-label="Main sidebar"
-        className="fixed inset-y-0 left-0 z-20 hidden w-[280px] border-r border-outline bg-surface-lowest/90 backdrop-blur-xl lg:flex lg:flex-col dark:bg-[#0f0e0c]/90 dark:border-[#2e2924]"
+        className="fixed inset-y-0 left-0 z-40 hidden w-[280px] border-r border-outline bg-surface-lowest/95 backdrop-blur-xl lg:flex lg:flex-col dark:bg-[#0f0e0c]/95 dark:border-[#2e2924]"
       >
         <div className="border-b border-outline px-6 py-5">
           <Link
@@ -200,11 +207,11 @@ export function Navigation() {
         </div>
       </aside>
 
-      <header className="fixed inset-x-0 top-0 z-10 border-b border-outline bg-surface/70 backdrop-blur-xl lg:left-[280px] dark:border-[#2e2924] dark:bg-[#0f0e0c]/70">
+      <header className="fixed inset-x-0 top-0 z-30 border-b border-outline bg-surface/95 backdrop-blur-xl lg:left-[280px] dark:border-[#2e2924] dark:bg-[#0f0e0c]/95">
         <div className="flex items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex min-w-0 items-center gap-3 relative grow max-w-md">
-            <div className="flex items-center gap-2 rounded-lg bg-surface-low px-3 py-2 text-muted w-full border-2 border-transparent focus-within:border-primary/50 focus-within:bg-white transition-all shadow-sm dark:bg-[#151411] dark:text-[#c4bbae] dark:focus-within:bg-[#0f0e0c]">
-              <Search size={15} />
+            <div className="flex min-w-0 items-center gap-3 relative grow max-w-md">
+            <div className="flex items-center gap-2 rounded-lg bg-surface-low px-3 py-2 text-muted w-full border-2 border-black dark:border-[#2e2924] shadow-card-sm focus-within:bg-white transition-all dark:bg-[#151411] dark:text-[#c4bbae] dark:focus-within:bg-[#0f0e0c]">
+              <Search size={15} className="shrink-0" />
               <input
                 type="text"
                 placeholder="Search lessons, issues..."
@@ -217,7 +224,7 @@ export function Navigation() {
                 <button
                   onClick={() => setSearchQuery("")}
                   aria-label="Clear search"
-                  className="hover:text-text"
+                  className="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-[#2e2924] hover:text-text"
                 >
                   <X size={14} />
                 </button>
