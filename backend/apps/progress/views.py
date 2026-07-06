@@ -14,7 +14,7 @@ from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
-
+from django.http import HttpResponse
 from apps.content.models import Lesson
 from apps.content.serializers import LessonSerializer
 
@@ -924,6 +924,23 @@ class CodeSubmissionView(APIView):
                 )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserProgressPDFExportView(APIView):
+    """
+    Generates and returns a PDF report of the authenticated user's
+    progress, achievements, certificates, and coding activity.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from apps.progress.services.pdf_report_service import PDFReportGenerator
+        generator = PDFReportGenerator(request.user)
+        pdf_bytes = generator.generate()
+
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = 'attachment; filename="progress_report.pdf"'
+        return response
 
 
 class PeerReviewView(APIView):

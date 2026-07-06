@@ -45,12 +45,12 @@ urlpatterns = [
     # ============================================================
     # DOMAIN EVENTS
     # ============================================================
-    path("api/events/", include("apps.events.urls")),
+    # path("api/events/", include("apps.events.urls")),
     
     # ============================================================
     # GRAPHQL FEDERATION GATEWAY
     # ============================================================
-    path("api/graphql/", include("apps.graphql_gateway.urls")),
+    # path("api/graphql/", include("apps.graphql_gateway.urls")),
     
     # ============================================================
     # LEGACY GRAPHQL (Keep for backward compatibility)

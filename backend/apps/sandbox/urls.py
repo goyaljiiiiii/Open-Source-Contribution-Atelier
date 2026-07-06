@@ -22,7 +22,7 @@ router.register(
     r"snippet-collections", SnippetCollectionViewSet, basename="snippet-collection"
 )
 router.register(r"snippets", CodeSnippetViewSet, basename="snippet")
-router.register(r"workspace-snapshots", WorkspaceSnapshotViewSet, basename="workspace-snapshot")
+# router.register(r"workspace-snapshots", WorkspaceSnapshotViewSet, basename="workspace-snapshot")
 
 urlpatterns = [
     path("verify/", SandboxVerifyView.as_view(), name="sandbox-verify"),
