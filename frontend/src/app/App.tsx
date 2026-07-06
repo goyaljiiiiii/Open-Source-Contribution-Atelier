@@ -6,6 +6,7 @@ import { queryClient } from "../lib/queryClient";
 import { CommandPalette } from "../components/CommandPalette";
 
 import ReportIssueButton from "../components/ui/ReportIssueButton";
+import { NotificationProvider } from "../features/notifications/NotificationContext";
 
 export function App() {
   return (
@@ -26,9 +27,11 @@ export function App() {
             },
           }}
         />
-        <AppRouter />
-        <CommandPalette />
-        <ReportIssueButton />
+        <NotificationProvider>
+          <AppRouter />
+          <CommandPalette />
+          <ReportIssueButton />
+        </NotificationProvider>
       </BrowserRouter>
     </QueryClientProvider>
   );
