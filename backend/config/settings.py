@@ -127,6 +127,8 @@ DATABASES = {
     ),
 }
 
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 DATABASE_ROUTERS = ["config.db_router.PrimaryReplicaRouter"]
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -251,6 +253,10 @@ INSTALLED_APPS += [
     "apps.search.apps.SearchConfig",
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'http://localhost:5173',
+]
 
 # ──────────────────────────────────────────
 # Redis Availability and Configuration (Dynamic Fallbacks)
