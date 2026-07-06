@@ -14,7 +14,7 @@ from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
-
+from django.http import HttpResponse
 from apps.content.models import Lesson
 from apps.content.serializers import LessonSerializer
 
@@ -131,16 +131,16 @@ class MyProgressView(APIView):
                 score=int(base_score * multiplier),
                 organization=request.user.organization,
             )
-                # Record XP event for new progress
-                XPEvent.objects.create(
-                    user=request.user,
-                    source_type="lesson",
-                    source_id=lesson.id,
-                    base_points=base_score,
-                    multiplier=multiplier,
-                    xp_delta=progress.score,
-                )
-                created = True
+            # Record XP event for new progress
+            XPEvent.objects.create(
+                user=request.user,
+                source_type="lesson",
+                source_id=lesson.id,
+                base_points=base_score,
+                multiplier=multiplier,
+                xp_delta=progress.score,
+            )
+            created = True
 
         from django_q.tasks import async_task
 
@@ -209,15 +209,15 @@ class BulkSyncProgressView(APIView):
                         progress.multiplier_applied = multiplier
                         progress.score = int(base_score * multiplier)
                         progress.save()
-                # Record XP event for bulk sync update
-                XPEvent.objects.create(
-                    user=request.user,
-                    source_type="lesson",
-                    source_id=lesson.id,
-                    base_points=base_score,
-                    multiplier=multiplier,
-                    xp_delta=progress.score,
-                )
+                    # Record XP event for bulk sync update
+                    XPEvent.objects.create(
+                        user=request.user,
+                        source_type="lesson",
+                        source_id=lesson.id,
+                        base_points=base_score,
+                        multiplier=multiplier,
+                        xp_delta=progress.score,
+                    )
                 except LessonProgress.DoesNotExist:
                     progress = LessonProgress.objects.create(
                         user=request.user,
@@ -960,6 +960,23 @@ class CodeSubmissionView(APIView):
                 )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserProgressPDFExportView(APIView):
+    """
+    Generates and returns a PDF report of the authenticated user's
+    progress, achievements, certificates, and coding activity.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from apps.progress.services.pdf_report_service import PDFReportGenerator
+        generator = PDFReportGenerator(request.user)
+        pdf_bytes = generator.generate()
+
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = 'attachment; filename="progress_report.pdf"'
+        return response
 
 
 class PeerReviewView(APIView):
