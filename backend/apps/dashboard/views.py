@@ -162,7 +162,7 @@ class AdminDashboardView(APIView):
         if data is None:
             # 1. Calculate system-wide stats
             total_issues = Issue.objects.count()
-            solved_issues = Issue.objects.select_related('assigned_to', 'created_by').filter(**issue_filter)
+            solved_issues = Issue.objects.filter(status=Issue.Status.SOLVED).count()
             open_issues = Issue.objects.filter(status=Issue.Status.OPEN).count()
             in_progress_issues = Issue.objects.filter(
                 status=Issue.Status.IN_PROGRESS
