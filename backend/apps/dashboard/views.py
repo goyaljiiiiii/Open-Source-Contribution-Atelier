@@ -83,7 +83,7 @@ class LeaderboardView(ListAPIView):
             pr_filter["updated_at__gte"] = start_date
 
         lesson_progress = (
-            LessonProgress.objects.select_related('user', 'lesson').filter(updated_at__gte=thirty_days_ago)
+            LessonProgress.objects.filter(**lesson_progress_filter)
             .values("user")
             .annotate(total=Sum("score"))
             .values("total")
