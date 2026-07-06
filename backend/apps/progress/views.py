@@ -2,6 +2,7 @@ from datetime import datetime
 
 from django.contrib.auth.models import User
 from django.db import transaction
+from django.db.models import Count, Min, Sum
 from apps.progress.constants import XP_PER_LEVEL
 from apps.progress.models import XPEvent
 from apps.progress.constants import XP_PER_LEVEL
