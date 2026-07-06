@@ -50,6 +50,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_filters",
+    "celery_prometheus_exporter",
+    "drf_spectacular",
     "corsheaders",
     "rest_framework",
     "rest_framework_simplejwt",
@@ -73,6 +75,7 @@ INSTALLED_APPS = [
     "apps.uploads",
     "graphene_django",
     "apps.feature_flags",
+    "apps.issues",
     "django_q",
 ]
 
@@ -203,7 +206,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ),
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_SCHEMA_CLASS": "config.openapi.ThrottleAutoSchema",
     "EXCEPTION_HANDLER": "apps.accounts.exceptions.throttle_exception_handler",
 }
 
@@ -246,7 +249,6 @@ ACCOUNT_UNIQUE_EMAIL = True
 INSTALLED_APPS += [
     "channels",
     "apps.notifications.apps.NotificationsConfig",
-    "drf_spectacular",
     "apps.dashboard.apps.DashboardConfig",
     "apps.chat.apps.ChatConfig",
     "django.contrib.postgres",
@@ -324,6 +326,9 @@ else:
         }
     }
 
+# Cache timeout for Search API (in seconds) - Default: 1 hour
+SEARCH_CACHE_TIMEOUT = 60 * 60
+
 # ──────────────────────────────────────────
 # Django-Q Configuration
 # ──────────────────────────────────────────
@@ -393,3 +398,18 @@ LOGGING = {
 }
 
 GRAPHENE = {"SCHEMA": "config.schema.schema"}
+
+# ──────────────────────────────────────────
+# Curriculum JSON Path
+# ──────────────────────────────────────────
+# Path to the curriculum.json file used for module definitions and learning paths.
+# Default resolves to frontend/public/content/curriculum.json relative to project root.
+# Override with CURRICULUM_JSON_PATH env var for Docker/production deployments.
+CURRICULUM_JSON_PATH = os.getenv(
+    "CURRICULUM_JSON_PATH",
+    str(
+        (
+            BASE_DIR / ".." / "frontend" / "public" / "content" / "curriculum.json"
+        ).resolve()
+    ),
+)

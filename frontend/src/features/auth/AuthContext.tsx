@@ -34,41 +34,35 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function sanitizeStorageData(value: string): string {
+  if (!value) return value;
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
+function safeSetItem(key: string, value: string) {
+  try {
+    localStorage.setItem(key, sanitizeStorageData(value));
+  } catch {
+    /* localStorage unavailable */
+  }
+}
+
+function safeRemoveItem(key: string) {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    /* localStorage unavailable */
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  function safeGetItem(key: string): string | null {
-    try {
-      return localStorage.getItem(key);
-    } catch {
-      return null;
-    }
-  }
-  function sanitizeStorageData(value: string): string {
-    if (!value) return value;
-    return value
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#x27;");
-  }
-
-  function safeSetItem(key: string, value: string) {
-    try {
-      localStorage.setItem(key, sanitizeStorageData(value));
-    } catch {
-      /* localStorage unavailable */
-    }
-  }
-  function safeRemoveItem(key: string) {
-    try {
-      localStorage.removeItem(key);
-    } catch {
-      /* localStorage unavailable */
-    }
-  }
 
   const login = (tokens: { access: string; refresh: string }) => {
     safeSetItem("accessToken", tokens.access);
@@ -105,24 +99,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const checkUser = useCallback(async () => {
-    try {
-      const token = safeGetItem("accessToken");
-      if (!token) {
-        setUser(null);
-        return;
-      }
-
-      try {
-        const data = await fetchApi("/auth/me/");
-        setUser(data);
-      } catch {
-        setUser(null);
-      }
-    } catch {
-      setUser(null);
-    } finally {
+    const token = safeGetItem("accessToken");
+    if (!token) {
       setIsLoading(false);
+      return;
     }
+    try {
+      const data = await fetchApi("/auth/me/", { requireAuth: true });
+      setUser(data as User);
+    } catch {
+      safeRemoveItem("accessToken");
+      safeRemoveItem("refreshToken");
+    }
+    setIsLoading(false);
   }, []);
 
   useEffect(() => {

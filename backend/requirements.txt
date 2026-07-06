@@ -28,3 +28,4 @@ black>=24.0.0
 django-allauth>=0.60.0
 python-dotenv>=1.0.0
 boto3>=1.34.0
+celery-prometheus-exporter>=1.7.0

@@ -23,6 +23,7 @@ import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
 import { PathwayPage } from "../pages/PathwayPage";
 import { LearningPathPage } from "../pages/LearningPathPage";
 import AnalyticsDashboardPage from "../pages/AnalyticsDashboardPage";
+import TemplateMarketplacePage from "../pages/TemplateMarketplacePage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -175,6 +176,14 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <SandboxPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/templates"
+          element={
+            <ProtectedRoute>
+              <TemplateMarketplacePage />
             </ProtectedRoute>
           }
         />

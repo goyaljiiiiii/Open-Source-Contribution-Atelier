@@ -1,46 +1,38 @@
-<!-- 
-  IMPORTANT: Please review the guidelines below. 
-  PRs that do not contain proof of manual testing or do not link to a valid issue will be closed automatically.
--->
+## Description
+Please include a summary of the changes and the related issue. List any dependencies that are required for this change.
 
-> Please checkmark if you are contributing under SSoC 2026:
-- [ ] I am a SSoC26 contributor
+Fixes # (issue number)
 
-## 🏷 Required ECSOC Label
-- [ ] Add the `ECSoC26` label to this PR before merging.
+## Type of Change
+Please delete options that are not relevant.
 
-## 📋 Description of Changes
+- [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
+- [ ] ✨ New feature (non-breaking change which adds functionality)
+- [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] 📝 Documentation update (no code changes)
+- [ ] ⚙️ CI/CD or build pipeline change
+- [ ] ⚡ Performance optimization
+- [ ] 🛠️ Refactoring (no functional changes)
 
-- 
-- 
+## How Has This Been Tested?
+Please describe the tests that you ran to verify your changes. Provide instructions so we can reproduce.
 
-## 🔗 Related Issue
-Closes #
+### Automated Tests
+- Run backend tests: `cd backend && pytest`
+- Run frontend tests: `cd frontend && npm run test`
+- Alternatively, run the unified verification script: `./verify.sh`
 
-## 🧪 Proof of Manual Testing (MANDATORY)
-<details>
-<summary><b>Click to expand and paste screenshots / logs</b></summary>
+### Manual Verification
+- Describe any manual testing performed (e.g. user flow verification, edge case testing).
+- Add screenshots / screen recordings for visual frontend changes.
 
-### Visual Changes (UI/Frontend)
-<!-- Paste images/gifs here -->
+## Pre-Push Checklist
+Before pushing your branch, please confirm the following:
 
-### API / Terminal / Test Logs
-```bash
-# Paste command output here showing the changes run successfully
-```
-</details>
-
-## ⚙️ Verification Logs (Automated Tests)
-```bash
-# Paste verification command output here
-```
-
-## 📝 Pre-Submission Checklist
-- [ ] My PR title follows the Conventional Commits format (e.g. `feat: ...`, `fix: ...`, `docs: ...`, `refactor: ...`).
-- [ ] My branch name starts with a standard prefix (`feat/`, `fix/`, `docs/`, `refactor/`).
-- [ ] I have linked a related issue in the "Related Issue" section above.
-- [ ] I have verified that all existing tests pass and added new tests if applicable.
-- [ ] I have formatted my changes locally (`cd frontend && npm run format` and `cd backend && black . && isort .`).
-- [ ] No API keys, credentials, or sensitive configurations are committed.
-
-
+- [ ] My code follows the style guidelines of this project
+- [ ] I have performed a self-review of my own code
+- [ ] I have commented my code, particularly in hard-to-understand areas
+- [ ] I have made corresponding changes to the documentation
+- [ ] My changes generate no new warnings or console errors
+- [ ] I have run `git diff` locally and verified my changes
+- [ ] I have run `./verify.sh` (or manually completed all 5 steps of the pre-push checklist in `AGENTS.md`) and everything passes
