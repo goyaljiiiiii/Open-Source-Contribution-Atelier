@@ -625,7 +625,8 @@ class ModeratorAnalyticsView(APIView):
         thirty_days_ago = timezone.now() - timedelta(days=30)
 
         # 1. Registrations
-        registrations = User.objects.select_related('profile').filter(date_joined__gte=thirty_days_ago)
+        registrations = (
+            User.objects.select_related('profile').filter(date_joined__gte=thirty_days_ago)
             .annotate(date=TruncDate("date_joined"))
             .values("date")
             .annotate(count=Count("id"))
