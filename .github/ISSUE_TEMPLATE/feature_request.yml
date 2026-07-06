@@ -38,3 +38,9 @@ body:
       description: Add any other context, mockup screenshots, or external references.
     validations:
       required: false
+  - type: checkboxes
+    id: program
+    attributes:
+      label: Contributor Program
+      options:
+        - label: I am contributing under SSoC 2026 / ECSoC 2026

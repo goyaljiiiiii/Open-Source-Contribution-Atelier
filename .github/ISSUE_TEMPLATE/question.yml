@@ -31,3 +31,9 @@ body:
       description: Add any links, screenshots, code snippets, or other details.
     validations:
       required: false
+  - type: checkboxes
+    id: program
+    attributes:
+      label: Contributor Program
+      options:
+        - label: I am contributing under SSoC 2026 / ECSoC 2026

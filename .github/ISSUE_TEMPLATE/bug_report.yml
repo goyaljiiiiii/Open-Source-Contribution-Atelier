@@ -54,3 +54,9 @@ body:
       description: Add screenshots, video, or logs to help explain your problem.
     validations:
       required: false
+  - type: checkboxes
+    id: program
+    attributes:
+      label: Contributor Program
+      options:
+        - label: I am contributing under SSoC 2026 / ECSoC 2026
