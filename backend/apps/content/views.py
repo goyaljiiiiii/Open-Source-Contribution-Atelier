@@ -200,6 +200,7 @@ class RoadmapView(views.APIView):
                     "summary": lesson.summary,
                     "difficulty": lesson.difficulty,
                     "estimatedMinutes": lesson.estimated_minutes,
+                    "readingTime": lesson.reading_time,
                     "order": lesson.order,
                     "exerciseCount": len(lesson.exercises.all()),
                     "prerequisites": [p.slug for p in lesson.prerequisites.all()],
