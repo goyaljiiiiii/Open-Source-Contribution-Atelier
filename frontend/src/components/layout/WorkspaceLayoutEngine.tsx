@@ -1,7 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Layout, Model, TabNode, IJsonModel, Action } from 'flexlayout-react';
 import 'flexlayout-react/style/dark.css';
-import { Settings, Save, LayoutTemplate, RotateCcw } from 'lucide-react';
+import { Save, LayoutTemplate, RotateCcw } from 'lucide-react';
 
 const DEFAULT_LAYOUT: IJsonModel = {
   global: {
