@@ -82,8 +82,7 @@ class LeaderboardView(ListAPIView):
             issue_filter["updated_at__gte"] = start_date
             pr_filter["updated_at__gte"] = start_date
 
-        lesson_xp = (
-            LessonProgress.objects.filter(**lesson_progress_filter)
+        lesson_progress = LessonProgress.objects.select_related('user', 'lesson').filter(updated_at__gte=thirty_days_ago)
             .values("user")
             .annotate(total=Sum("score"))
             .values("total")
@@ -158,7 +157,7 @@ class AdminDashboardView(APIView):
         if data is None:
             # 1. Calculate system-wide stats
             total_issues = Issue.objects.count()
-            solved_issues = Issue.objects.filter(status=Issue.Status.SOLVED).count()
+            solved_issues = Issue.objects.select_related('assigned_to', 'created_by').filter(**issue_filter)
             open_issues = Issue.objects.filter(status=Issue.Status.OPEN).count()
             in_progress_issues = Issue.objects.filter(
                 status=Issue.Status.IN_PROGRESS
@@ -309,9 +308,7 @@ class ContributorDashboardView(APIView):
             )
             for dt in attempts:
                 activity_days.add(timezone.localdate(dt))
-            progress_entries = LessonProgress.objects.filter(
-                user=user, completed=True
-            ).values_list("updated_at", flat=True)
+            progress_entries = LessonProgress.objects.select_related('user', 'lesson').filter(user=user)
             for dt in progress_entries:
                 activity_days.add(timezone.localdate(dt))
 
@@ -480,9 +477,7 @@ class ContributorDashboardView(APIView):
             return recent_prs
 
         elif field == "progress_tracker":
-            completed_lessons = LessonProgress.objects.filter(
-                user=user, completed=True
-            ).count()
+            completed_lessons = LessonProgress.objects.select_related('user', 'lesson').filter(user=user, completed=True).count()
             total_lessons = Lesson.objects.count()
             completion_percentage = (
                 int((completed_lessons / total_lessons) * 100)
@@ -583,9 +578,7 @@ class BuyStreakFreezeView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            unused_freezes = StreakFreeze.objects.filter(
-                user=user, used_on_date__isnull=True
-            ).count()
+            unused_freezes = StreakFreeze.objects.select_related('user').filter(user=user, used_on_date__isnull=True).count()
             if unused_freezes >= 3:
                 return Response(
                     {
@@ -635,8 +628,7 @@ class ModeratorAnalyticsView(APIView):
         thirty_days_ago = timezone.now() - timedelta(days=30)
 
         # 1. Registrations
-        registrations = (
-            User.objects.filter(date_joined__gte=thirty_days_ago)
+        registrations = User.objects.select_related('profile').filter(date_joined__gte=thirty_days_ago)
             .annotate(date=TruncDate("date_joined"))
             .values("date")
             .annotate(count=Count("id"))
