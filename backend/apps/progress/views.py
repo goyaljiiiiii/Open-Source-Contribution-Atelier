@@ -66,9 +66,14 @@ class MyProgressView(APIView):
 
     def post(self, request):
         lesson_slug = request.data.get("lesson_slug")
-        from apps.progress.models import XPMultiplierEvent
+        from apps.progress.models import XPMultiplierEvent, LessonProgressSync
+
+        idempotency_key = request.data.get("idempotency_key")
+
+        client_timestamp_ms = request.data.get("client_timestamp")
 
         multiplier = XPMultiplierEvent.get_active_multiplier()
+
         base_score = request.data.get("score", 100)
         completed = request.data.get("completed", True)
 
@@ -77,61 +82,99 @@ class MyProgressView(APIView):
                 slug=lesson_slug, organization=request.user.organization
             )
         except Lesson.DoesNotExist:
-            lesson = Lesson.objects.create(
-                slug=lesson_slug,
-                title=lesson_slug.replace("-", " ").title(),
-                summary="Dynamic learning module",
-                content="Dynamic content loaded from local file storage.",
-                difficulty="beginner",
+            return Response(
+                {"error": "Lesson not found"},
+                status=status.HTTP_404_NOT_FOUND,
             )
 
         client_timestamp_ms = request.data.get("client_timestamp")
 
-        try:
-            progress = LessonProgress.objects.get(user=request.user, lesson=lesson)
-            created = False
-
-            skip_update = False
-            if client_timestamp_ms:
-                import datetime
-
-                client_dt = datetime.datetime.fromtimestamp(
-                    client_timestamp_ms / 1000.0, tz=datetime.timezone.utc
+        with transaction.atomic():
+            # Idempotency: if this (user, lesson, key) was already processed,
+            # return existing progress state without re-applying multiplier.
+            if idempotency_key:
+                sync_row = (
+                    LessonProgressSync.objects.select_related("lesson")
+                    .filter(
+                        user=request.user,
+                        lesson=lesson,
+                        idempotency_key=idempotency_key,
+                    )
+                    .first()
                 )
-                if progress.updated_at > client_dt:
-                    skip_update = True
+                if sync_row is not None:
+                    progress, _ = LessonProgress.objects.get_or_create(
+                        user=request.user,
+                        lesson=lesson,
+                        defaults={
+                            "organization": request.user.organization,
+                            "completed": sync_row.completed,
+                            "base_score": sync_row.base_score,
+                            "multiplier_applied": sync_row.multiplier_applied,
+                            "score": sync_row.score,
+                        },
+                    )
+                    serializer = LessonProgressSerializer(progress)
+                    async_task = __import__("django_q.tasks", fromlist=["async_task"]).async_task
+                    async_task(
+                        "apps.progress.tasks.evaluate_user_badges_task",
+                        request.user.id,
+                    )
+                    return Response(
+                        serializer.data,
+                        status=status.HTTP_200_OK,
+                    )
 
-            if not skip_update and (
-                progress.base_score != base_score or progress.completed != completed
-            ):
-                progress.completed = completed
-                progress.base_score = base_score
-                progress.multiplier_applied = multiplier
-                progress.score = int(base_score * multiplier)
-                progress.organization = request.user.organization
-                progress.save()
-                # Record XP event
-                old_score = getattr(progress, "score", 0) if not created else 0
-                xp_delta = progress.score - old_score
-                XPEvent.objects.create(
+            try:
+                progress = LessonProgress.objects.get(user=request.user, lesson=lesson)
+                created = False
+
+                skip_update = False
+                if client_timestamp_ms:
+                    import datetime
+
+                    client_dt = datetime.datetime.fromtimestamp(
+                        client_timestamp_ms / 1000.0, tz=datetime.timezone.utc
+                    )
+                    if progress.updated_at > client_dt:
+                        skip_update = True
+
+                if not skip_update and (
+                    progress.base_score != base_score
+                    or progress.completed != completed
+                ):
+                    old_score = progress.score
+                    progress.completed = completed
+                    progress.base_score = base_score
+                    progress.multiplier_applied = multiplier
+                    progress.score = int(base_score * multiplier)
+                    progress.organization = request.user.organization
+                    progress.save()
+
+                    # XP side-effect only when we actually applied.
+                    xp_delta = progress.score - old_score
+                    if xp_delta != 0:
+                        XPEvent.objects.create(
+                            user=request.user,
+                            source_type="lesson",
+                            source_id=lesson.id,
+                            base_points=base_score,
+                            multiplier=multiplier,
+                            xp_delta=xp_delta,
+                        )
+
+            except LessonProgress.DoesNotExist:
+                created = True
+                progress = LessonProgress.objects.create(
                     user=request.user,
-                    source_type="lesson",
-                    source_id=lesson.id,
-                    base_points=base_score,
-                    multiplier=multiplier,
-                    xp_delta=xp_delta,
+                    lesson=lesson,
+                    completed=completed,
+                    base_score=base_score,
+                    multiplier_applied=multiplier,
+                    score=int(base_score * multiplier),
+                    organization=request.user.organization,
                 )
-        except LessonProgress.DoesNotExist:
-            progress = LessonProgress.objects.create(
-                user=request.user,
-                lesson=lesson,
-                completed=completed,
-                base_score=base_score,
-                multiplier_applied=multiplier,
-                score=int(base_score * multiplier),
-                organization=request.user.organization,
-            )
-                # Record XP event for new progress
+
                 XPEvent.objects.create(
                     user=request.user,
                     source_type="lesson",
@@ -140,9 +183,20 @@ class MyProgressView(APIView):
                     multiplier=multiplier,
                     xp_delta=progress.score,
                 )
-                created = True
 
-        from django_q.tasks import async_task
+            # Write idempotency ledger AFTER progress state is committed.
+            if idempotency_key:
+                LessonProgressSync.objects.create(
+                    user=request.user,
+                    lesson=lesson,
+                    idempotency_key=idempotency_key,
+                    completed=progress.completed,
+                    base_score=progress.base_score,
+                    multiplier_applied=progress.multiplier_applied,
+                    score=progress.score,
+                    client_timestamp_ms=client_timestamp_ms,
+                    server_updated_at=timezone.now(),
+                )
 
         async_task("apps.progress.tasks.evaluate_user_badges_task", request.user.id)
 
@@ -152,6 +206,7 @@ class MyProgressView(APIView):
             serializer.data,
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
         )
+
 
 
 class BulkSyncProgressView(APIView):

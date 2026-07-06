@@ -93,6 +93,55 @@ class XPEvent(models.Model):
     def __str__(self):
         return f"XPEvent(user={self.user.username}, source={self.source_type}, delta={self.xp_delta})"
 
+class LessonProgressSync(models.Model):
+    """Idempotency ledger for lesson progress sync requests.
+
+    Stores the result snapshot for a single (user, lesson, idempotency_key)
+    so that client retries or out-of-order delivery do not re-apply the
+    multiplier / side-effects.
+    """
+
+    objects = models.Manager()
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="lesson_progress_syncs",
+    )
+    lesson = models.ForeignKey(
+        Lesson,
+        on_delete=models.CASCADE,
+        related_name="progress_syncs",
+    )
+
+    idempotency_key = models.CharField(max_length=255)
+
+    # Snapshot of applied state
+    completed = models.BooleanField(default=False)
+    base_score = models.PositiveIntegerField(default=0)
+    multiplier_applied = models.FloatField(default=1.0)
+    score = models.PositiveIntegerField(default=0)
+
+    client_timestamp_ms = models.BigIntegerField(null=True, blank=True)
+
+    # When the server applied this sync item
+    server_updated_at = models.DateTimeField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "lesson", "idempotency_key"],
+                name="unique_user_lesson_sync_key",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["user", "lesson"], name="idx_lp_sync_user_lesson"),
+            models.Index(fields=["idempotency_key"], name="idx_lp_sync_key"),
+        ]
+
+
 class LessonProgress(models.Model):
     objects = models.Manager()
     organization = models.ForeignKey(
@@ -225,7 +274,10 @@ class Certificate(models.Model):
         max_length=255, default="Open Source Contribution Course"
     )
     verification_hash = models.CharField(
-        max_length=64, unique=True, default=uuid.uuid4, db_index=True
+        max_length=64,
+        unique=True,
+        default=uuid.uuid4,
+        db_index=True,
     )
     issued_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
