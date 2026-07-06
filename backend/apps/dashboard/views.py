@@ -146,10 +146,14 @@ class LeaderboardView(ListAPIView):
 class AdminDashboardView(APIView):
     """
     API view for Admin Dashboard stats.
-    Only users with is_staff=True can access this.
+    Only users with 'Admin' role can access this.
     """
 
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    def get_permissions(self):
+        from apps.rbac.permissions import HasAnyRole
+        from rest_framework import permissions
+
+        return [permissions.IsAuthenticated(), HasAnyRole(["Admin"])]
 
     def get(self, request):
         cache_key = "dashboard_admin_stats_v2"
@@ -616,19 +620,12 @@ from django.db import models
 from apps.rbac.models import UserRole
 
 
-class IsModeratorOrAdmin(permissions.BasePermission):
-    def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-        if request.user.is_superuser or request.user.is_staff:
-            return True
-        return UserRole.objects.filter(
-            user=request.user, role__name__in=["Moderator", "Administrator"]
-        ).exists()
-
-
 class ModeratorAnalyticsView(APIView):
-    permission_classes = [permissions.IsAuthenticated, IsModeratorOrAdmin]
+    def get_permissions(self):
+        from apps.rbac.permissions import HasAnyRole
+        from rest_framework import permissions
+
+        return [permissions.IsAuthenticated(), HasAnyRole(["Admin", "Moderator"])]
 
     def get(self, request):
         thirty_days_ago = timezone.now() - timedelta(days=30)

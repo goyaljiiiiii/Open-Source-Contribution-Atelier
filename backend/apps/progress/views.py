@@ -937,9 +937,11 @@ class CodeSubmissionView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        submissions = CodeSubmission.objects.filter(
-            status=CodeSubmission.Status.PENDING_REVIEW
-        ).exclude(user=request.user).select_related("user")
+        submissions = (
+            CodeSubmission.objects.filter(status=CodeSubmission.Status.PENDING_REVIEW)
+            .exclude(user=request.user)
+            .select_related("user")
+        )
         serializer = CodeSubmissionSerializer(submissions, many=True)
         return Response(serializer.data)
 
@@ -967,10 +969,12 @@ class UserProgressPDFExportView(APIView):
     Generates and returns a PDF report of the authenticated user's
     progress, achievements, certificates, and coding activity.
     """
+
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         from apps.progress.services.pdf_report_service import PDFReportGenerator
+
         generator = PDFReportGenerator(request.user)
         pdf_bytes = generator.generate()
 

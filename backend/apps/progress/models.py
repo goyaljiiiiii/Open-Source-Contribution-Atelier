@@ -62,7 +62,6 @@ class UserBadge(models.Model):
         ]
 
 
-
 class XPEvent(models.Model):
     """Tracks XP changes for a user from various source actions."""
 
@@ -92,6 +91,7 @@ class XPEvent(models.Model):
 
     def __str__(self):
         return f"XPEvent(user={self.user.username}, source={self.source_type}, delta={self.xp_delta})"
+
 
 class LessonProgress(models.Model):
     objects = models.Manager()

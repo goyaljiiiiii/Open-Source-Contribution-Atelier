@@ -27,7 +27,7 @@ def index_model_for_search(app_label, model_name, object_id, title, body_text):
         search_vector=SearchVector("title", weight="A")
         + SearchVector("body_text", weight="B")
     )
-    
+
     bump_search_cache_version()
 
 

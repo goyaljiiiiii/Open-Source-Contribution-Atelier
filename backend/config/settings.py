@@ -129,10 +129,10 @@ DATABASES = {
 }
 
 for key in DATABASES:
-    if DATABASES[key]['ENGINE'] == 'django.db.backends.sqlite3':
-        DATABASES[key]['ENGINE'] = 'django_prometheus.db.backends.sqlite3'
-    elif DATABASES[key]['ENGINE'] == 'django.db.backends.postgresql':
-        DATABASES[key]['ENGINE'] = 'django_prometheus.db.backends.postgresql'
+    if DATABASES[key]["ENGINE"] == "django.db.backends.sqlite3":
+        DATABASES[key]["ENGINE"] = "django_prometheus.db.backends.sqlite3"
+    elif DATABASES[key]["ENGINE"] == "django.db.backends.postgresql":
+        DATABASES[key]["ENGINE"] = "django_prometheus.db.backends.postgresql"
 
 DATABASE_ROUTERS = ["config.db_router.PrimaryReplicaRouter"]
 

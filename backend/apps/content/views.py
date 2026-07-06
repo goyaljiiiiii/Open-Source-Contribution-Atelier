@@ -44,8 +44,20 @@ def get_active_lessons():
 
 
 # --- Existing Views ---
-class LessonViewSet(viewsets.ReadOnlyModelViewSet):
+class LessonViewSet(viewsets.ModelViewSet):
+    queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
+
+    def get_permissions(self):
+        from apps.rbac.permissions import HasPermission
+
+        if self.action in ["create"]:
+            return [permissions.IsAuthenticated(), HasPermission("create_content")]
+        elif self.action in ["update", "partial_update"]:
+            return [permissions.IsAuthenticated(), HasPermission("edit_content")]
+        elif self.action in ["destroy"]:
+            return [permissions.IsAuthenticated(), HasPermission("delete_content")]
+        return [permissions.AllowAny()]
 
     def list(self, request, *args, **kwargs):
         lessons = get_active_lessons()
