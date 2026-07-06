@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, FolderGit2, Code2, Play, X, Star, FileCode, Users } from 'lucide-react';
+import { Search, FolderGit2, Code2, Play, X, FileCode, Users } from 'lucide-react';
 import api from '../api';
 
 // Types based on backend serializers
