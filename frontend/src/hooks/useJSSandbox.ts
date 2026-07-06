@@ -338,8 +338,7 @@ export function useJSSandbox(options: UseJSSandboxOptions = {}): UseJSSandboxRet
           } as SandboxOutput,
         ]);
 
-        workerRef.current.postMessage({ id: executionId, code, action: "execute_code" });
-      });
+      }
     },
     [defaultTimeout]
   );
@@ -352,8 +351,16 @@ export function useJSSandbox(options: UseJSSandboxOptions = {}): UseJSSandboxRet
           return;
         }
 
-        setExecutionTime(result.executionTime || null);
-        setIsExecuting(false);
+        const executionId = Date.now().toString();
+
+        const cleanup = () => {
+          if (workerRef.current) {
+            workerRef.current.removeEventListener("message", handleMessage);
+          }
+          if (timeoutRef.current) {
+            window.clearTimeout(timeoutRef.current);
+          }
+        };
 
         const handleMessage = (event: MessageEvent) => {
           if (event.data.id === executionId) {
@@ -361,17 +368,6 @@ export function useJSSandbox(options: UseJSSandboxOptions = {}): UseJSSandboxRet
             resolve(event.data.trace_events || []);
           }
         };
-
-        return result;
-      } catch (err: any) {
-        if (!isMounted.current) {
-          return { output: '', error: err.message };
-        }
-
-        const errorMessage = err.message || 'Unknown error occurred';
-        setStatus('timeout');
-        setError(errorMessage);
-        setIsExecuting(false);
 
         timeoutRef.current = window.setTimeout(() => {
           if (workerRef.current) {
