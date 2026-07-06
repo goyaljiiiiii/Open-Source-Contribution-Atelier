@@ -312,7 +312,9 @@ class ContributorDashboardView(APIView):
             )
             for dt in attempts:
                 activity_days.add(timezone.localdate(dt))
-            progress_entries = LessonProgress.objects.select_related('user', 'lesson').filter(user=user)
+            progress_entries = LessonProgress.objects.filter(user=user).values_list(
+                "updated_at", flat=True
+            )
             for dt in progress_entries:
                 activity_days.add(timezone.localdate(dt))
 
