@@ -149,6 +149,16 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+#Github App Configuration
+GITHUB_APP={
+    'APP_ID': os.getenv('GITHUB_APP_ID'),
+    'PRIVATE_KEY_PATH': os.getenv('GITHUB_PRIVATE_KEY_PATH'),
+    'CLIENT_ID': os.getenv('GITHUB_CLIENT_ID'),
+    'CLIENT_SECRET': os.getenv('GITHUB_CLIENT_SECRET'),
+    'WEBHOOK_SECRET': os.getenv('GITHUB_WEBHOOK_SECRET'),
+}
+GITHUB_INSTALLATION_ID=os.getenv('GITHUB_INSTALLATION_ID)
+
 # ── Email Configuration ────────────────────────────────────────────────────────
 # Default: console backend (prints emails to stdout) — safe for dev/CI.
 # Override EMAIL_BACKEND in production env with a real SMTP backend.
