@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import Editor from "@monaco-editor/react";
+import Editor, { Monaco } from "@monaco-editor/react";
+import type { editor } from "monaco-editor";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { MonacoBinding } from "y-monaco";
@@ -36,10 +37,8 @@ export function CollabPythonSandbox({
   const { threads, addComment, resolveThread } = useCodeReviews(roomId);
   const [activeLine, setActiveLine] = useState<number | null>(null);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const editorRef = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const monacoRef = useRef<any>(null);
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  const monacoRef = useRef<Monaco | null>(null);
   const ydocRef = useRef<Y.Doc | null>(null);
   const providerRef = useRef<WebsocketProvider | null>(null);
   const bindingRef = useRef<MonacoBinding | null>(null);
@@ -97,8 +96,7 @@ export function CollabPythonSandbox({
     };
   }, [roomId, user]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleEditorDidMount = (editor: any, monaco: any) => {
+  const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor, monaco: Monaco) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
 
@@ -118,9 +116,8 @@ export function CollabPythonSandbox({
     }
 
     // Handle glyph margin clicks for comments
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    editor.onMouseDown((e: any) => {
-      if (e.target.type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN) {
+    editor.onMouseDown((e: editor.IEditorMouseEvent) => {
+      if (e.target.type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN && e.target.position) {
         const lineNumber = e.target.position.lineNumber;
         setActiveLine(lineNumber);
       }
