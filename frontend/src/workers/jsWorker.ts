@@ -24,7 +24,7 @@ interface WorkerResponse {
   error?: string;
   executionTime?: number;
   method?: string;
-  args?: any[];
+  args?: unknown[];
   message?: string;
 }
 
