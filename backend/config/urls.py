@@ -3,6 +3,7 @@ from django.urls import include, path
 from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from graphene_django.views import GraphQLView
+from django.urls import path, include
 
 from apps.dashboard.views import LeaderboardView
 
@@ -17,6 +18,7 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     path("api/auth/", include("apps.accounts.urls")),
     path("api/users/", include("apps.accounts.user_urls")),
+    path('', include('django_prometheus.urls')),
     path("api/content/", include("apps.content.urls")),
     path("api/progress/", include("apps.progress.urls")),
    
