@@ -127,7 +127,7 @@ class LeaderboardView(ListAPIView):
                     Subquery(issues_solved, output_field=IntegerField()), Value(0)
                 ),
                 lesson_xp=Coalesce(
-                    Subquery(lesson_xp, output_field=IntegerField()), Value(0)
+                    Subquery(lesson_progress, output_field=IntegerField()), Value(0)
                 ),
                 issues_xp=Coalesce(
                     Subquery(issues_xp, output_field=IntegerField()), Value(0)
