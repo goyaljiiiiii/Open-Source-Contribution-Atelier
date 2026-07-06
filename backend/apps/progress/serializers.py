@@ -132,6 +132,7 @@ class QuizAttemptSerializer(serializers.ModelSerializer):
             "correct_answer",
             "is_correct",
             "time_taken_seconds",
+            "client_timestamp",
             "created_at",
         ]
         read_only_fields = ["id", "user", "created_at"]
