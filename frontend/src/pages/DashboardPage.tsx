@@ -92,22 +92,10 @@ export function DashboardPage() {
 
   const { user } = useAuth();
   const { progress, isLessonCompleted } = useUserProgress();
-  const { bookmarks, isLoading: isLoadingBookmarks } = useBookmarks();
+  const { bookmarks, isLoading: isLoadingBookmarks, toggleBookmark } = useBookmarks();
 
   const [tourKey, setTourKey] = useState(0);
-  const [showScrollTop, setShowScrollTop] = useState(false);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 300);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
   // 1. Fetch static modules catalog
   const [curriculumData, setCurriculumData] = useState<ModuleData[]>([]);
   useEffect(() => {
@@ -176,7 +164,6 @@ export function DashboardPage() {
 
   useEffect(() => {
     if (isLoading) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowSkeleton(true);
       return;
     }
@@ -268,7 +255,6 @@ export function DashboardPage() {
     if (user && !user.is_staff) {
       const isBoarded = localStorage.getItem("atelier_onboarded");
       if (!isBoarded) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setShowOnboarding(true);
       }
     }
@@ -830,7 +816,7 @@ export function DashboardPage() {
             </div>
             <Link
               to="/learning-path"
-              className="w-full md:w-auto rounded-lg bg-[#c3c0ff] border-2 border-black px-4 py-2 text-xs font-black hover:-translate-y-0.5 shadow-card-sm transition-all text-center uppercase tracking-wider"
+              className="w-full md:w-auto rounded-lg bg-accent text-black border-2 border-black px-4 py-2 text-xs font-black hover:-translate-y-0.5 shadow-card-sm transition-all text-center uppercase tracking-wider"
             >
               View Full Learning Path 🗺️
             </Link>
@@ -880,7 +866,7 @@ export function DashboardPage() {
               </div>
               <Link
                 to="/learning-path"
-                className="w-full text-center text-[10px] font-black text-white bg-black dark:bg-white dark:text-black py-2 rounded uppercase border-2 border-black shadow-card-sm hover:-translate-y-0.5 transition-transform"
+                className="w-full text-center text-[10px] font-black text-white bg-tertiary dark:bg-[#ff9500] py-2 rounded uppercase border-2 border-black shadow-card-sm hover:-translate-y-0.5 transition-transform"
               >
                 Resume Module 🚀
               </Link>
@@ -967,7 +953,7 @@ export function DashboardPage() {
                     dataKey="value"
                   >
                     <Cell fill="#ff3b30" stroke="#000" strokeWidth={2} />
-                    <Cell fill="#fdfbf7" stroke="#e0e0e0" strokeWidth={2} />
+                    <Cell fill="#FFEBC2" stroke="#000" strokeWidth={2} />
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
@@ -1019,10 +1005,24 @@ export function DashboardPage() {
                   <h3 className="font-black text-lg leading-tight dark:text-[#f0ebe2] pr-4">
                     {bookmark.lesson_title}
                   </h3>
-                  <Bookmark
-                    className="fill-primary text-primary shrink-0"
-                    size={20}
-                  />
+                  <button
+                    type="button"
+                    aria-label="Remove bookmark"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleBookmark.mutate({
+                        slug: bookmark.lesson_slug,
+                        isBookmarked: true,
+                      });
+                    }}
+                    className="shrink-0"
+                  >
+                    <Bookmark
+                      className="fill-primary text-primary hover:opacity-60 transition-opacity"
+                      size={20}
+                    />
+                  </button>
                 </div>
                 <div className="flex justify-between items-center mt-auto pt-4">
                   <span className="font-black text-[10px] bg-black text-white px-2 py-0.5 rounded-full uppercase dark:bg-[#2e2924]">
@@ -1334,15 +1334,6 @@ export function DashboardPage() {
             </div>
           </div>
         </div>
-      )}
-      {showScrollTop && (
-        <button
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          aria-label="Scroll to top"
-          className="fixed bottom-6 right-6 z-50 rounded-lg bg-primary text-white border-4 border-black px-4 py-3 font-black shadow-card-sm hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-card-sm cursor-pointer"
-        >
-          ↑ Top
-        </button>
       )}
     </div>
   );

@@ -86,6 +86,8 @@ class SearchView(views.APIView):
             objects = model_class.objects.filter(
                 id__in=object_ids, organization=request.user.organization
             )
+            if model_class == Lesson:
+                objects = objects.prefetch_related("exercises", "prerequisites")
             # Sort them in the exact order returned by FTS
             ordered_objects = sorted(objects, key=lambda x: object_ids.index(x.id))
             return ordered_objects
@@ -187,7 +189,7 @@ class RoadmapView(views.APIView):
                     "difficulty": lesson.difficulty,
                     "estimatedMinutes": lesson.estimated_minutes,
                     "order": lesson.order,
-                    "exerciseCount": lesson.exercises.count(),
+                    "exerciseCount": len(lesson.exercises.all()),
                     "prerequisites": [p.slug for p in lesson.prerequisites.all()],
                     "completed": completed,
                     "score": score,

@@ -6,6 +6,11 @@ from django.db import models, transaction
 from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce, TruncDate
 from django.utils import timezone
+from rest_framework import permissions, serializers, status
+from rest_framework.generics import ListAPIView
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from apps.challenges.models import ChallengeCompletion
 from apps.content.models import Lesson
@@ -15,14 +20,9 @@ from apps.progress.models import (
     ExerciseAttempt,
     LessonProgress,
     QuizAttempt,
+    XPEvent,
 )
 from apps.rbac.permissions import HasRole
-
-from rest_framework import serializers, permissions, status
-from rest_framework.views import APIView
-from rest_framework.generics import ListAPIView
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.response import Response
 
 
 class LeaderboardPagination(PageNumberPagination):
@@ -240,8 +240,8 @@ class PublicLandingStatsView(APIView):
             total_users = User.objects.filter(is_staff=False).count()
             total_lessons_solved = LessonProgress.objects.filter(completed=True).count()
             total_xp = (
-                LessonProgress.objects.filter(completed=True).aggregate(
-                    total=Sum("score")
+                XPEvent.objects.filter(source_type="lesson").aggregate(
+                    total=Sum("xp_delta")
                 )["total"]
                 or 0
             )
@@ -276,8 +276,8 @@ class ContributorDashboardView(APIView):
             ).count()
 
             lesson_xp = (
-                LessonProgress.objects.filter(user=user, completed=True).aggregate(
-                    total=Sum("score")
+                XPEvent.objects.filter(user=user, source_type="lesson").aggregate(
+                    total=Sum("xp_delta")
                 )["total"]
                 or 0
             )
@@ -292,7 +292,6 @@ class ContributorDashboardView(APIView):
                 or 0
             )
             total_xp = lesson_xp + issues_xp + challenge_bonus_xp
-
 
             # --- NEW CLEAN STREAK LOGIC ---
             from apps.progress.models import StreakProfile
@@ -359,9 +358,9 @@ class ContributorDashboardView(APIView):
 
             # Determine Rank based on user XP vs others
             lesson_xp_sub = (
-                LessonProgress.objects.filter(user=OuterRef("pk"), completed=True)
+                XPEvent.objects.filter(user=OuterRef("pk"), source_type="lesson")
                 .values("user")
-                .annotate(total=Sum("score"))
+                .annotate(total=Sum("xp_delta"))
                 .values("total")
             )
             issues_xp_sub = (
