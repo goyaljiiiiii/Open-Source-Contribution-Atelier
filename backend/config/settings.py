@@ -50,7 +50,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     'django_filters',
-    'django_prometheus',
     'celery_prometheus_exporter',
     "drf_spectacular",
     "corsheaders",
