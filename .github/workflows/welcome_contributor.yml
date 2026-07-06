@@ -49,5 +49,32 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const octokit = github.getOctokit(process.env.GITHUB_TOKEN);
-            const commentBody = `🎉 Thanks for the pull request, @${pr.user.login}!\n\nPlease ensure you have followed the [Contribution Guide](https://github.com/${owner}/${repo}/blob/main/CONTRIBUTING.md) and that your code passes all CI checks. We’ll review it soon. Happy hacking!`;
+            
+            const isFirstTime = pr.author_association === 'FIRST_TIME_CONTRIBUTOR';
+            let commentBody = '';
+            
+            if (isFirstTime) {
+              commentBody = `🎉 **Welcome to the community, @${pr.user.login}!** This is your first pull request to this repository! 🚀 We're thrilled to have you here.\n\nPlease ensure you have followed the [Contribution Guide](https://github.com/${owner}/${repo}/blob/main/CONTRIBUTING.md) and that your code passes all CI checks. We’ll review it soon. Happy hacking!`;
+              try {
+                // Ensure the first-time-contributor label exists
+                const labelName = 'first-time-contributor';
+                try {
+                  await octokit.rest.issues.getLabel({owner, repo, name: labelName});
+                } catch (e) {
+                  await octokit.rest.issues.createLabel({
+                    owner,
+                    repo,
+                    name: labelName,
+                    color: 'bfd4f2',
+                    description: 'PR submitted by a first-time contributor'
+                  });
+                }
+                await octokit.rest.issues.addLabels({owner, repo, issue_number: pr.number, labels: [labelName]});
+              } catch (e) {
+                console.warn(`Could not add first-time-contributor label: ${e}`);
+              }
+            } else {
+              commentBody = `🎉 Thanks for the pull request, @${pr.user.login}!\n\nPlease ensure you have followed the [Contribution Guide](https://github.com/${owner}/${repo}/blob/main/CONTRIBUTING.md) and that your code passes all CI checks. We’ll review it soon. Happy hacking!`;
+            }
+            
             await octokit.rest.issues.createComment({owner, repo, issue_number: pr.number, body: commentBody});
