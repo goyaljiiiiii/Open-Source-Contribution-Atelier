@@ -9,70 +9,115 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('progress', '0023_lessonprogresssync'),
+        ("progress", "0023_lessonprogresssync"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='PlagiarismReport',
+            name="PlagiarismReport",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('similarity_score', models.FloatField()),
-                ('is_flagged', models.BooleanField(default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("similarity_score", models.FloatField()),
+                ("is_flagged", models.BooleanField(default=False)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
             options={
-                'ordering': ['-similarity_score'],
+                "ordering": ["-similarity_score"],
             },
         ),
         migrations.CreateModel(
-            name='XPEvent',
+            name="XPEvent",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('source_type', models.CharField(choices=[('lesson', 'Lesson'), ('exercise', 'Exercise'), ('pr', 'Pull Request'), ('issue', 'Issue'), ('review', 'Review'), ('badge', 'Badge')], max_length=20)),
-                ('source_id', models.PositiveIntegerField(blank=True, null=True)),
-                ('base_points', models.PositiveIntegerField()),
-                ('multiplier', models.FloatField(default=1.0)),
-                ('xp_delta', models.IntegerField()),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "source_type",
+                    models.CharField(
+                        choices=[
+                            ("lesson", "Lesson"),
+                            ("exercise", "Exercise"),
+                            ("pr", "Pull Request"),
+                            ("issue", "Issue"),
+                            ("review", "Review"),
+                            ("badge", "Badge"),
+                        ],
+                        max_length=20,
+                    ),
+                ),
+                ("source_id", models.PositiveIntegerField(blank=True, null=True)),
+                ("base_points", models.PositiveIntegerField()),
+                ("multiplier", models.FloatField(default=1.0)),
+                ("xp_delta", models.IntegerField()),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
             options={
-                'ordering': ['-created_at'],
+                "ordering": ["-created_at"],
             },
         ),
         migrations.AlterUniqueTogether(
-            name='userbadge',
+            name="userbadge",
             unique_together=set(),
         ),
         migrations.AddConstraint(
-            model_name='userbadge',
-            constraint=models.UniqueConstraint(fields=('user', 'badge'), name='unique_user_badge_award'),
+            model_name="userbadge",
+            constraint=models.UniqueConstraint(
+                fields=("user", "badge"), name="unique_user_badge_award"
+            ),
         ),
         migrations.AddField(
-            model_name='xpevent',
-            name='user',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='xp_events', to=settings.AUTH_USER_MODEL),
+            model_name="xpevent",
+            name="user",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="xp_events",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='plagiarismreport',
-            name='matched_submission',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='matched_in_reports', to='progress.codesubmission'),
+            model_name="plagiarismreport",
+            name="matched_submission",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="matched_in_reports",
+                to="progress.codesubmission",
+            ),
         ),
         migrations.AddField(
-            model_name='plagiarismreport',
-            name='submission',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='plagiarism_reports', to='progress.codesubmission'),
+            model_name="plagiarismreport",
+            name="submission",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="plagiarism_reports",
+                to="progress.codesubmission",
+            ),
         ),
         migrations.AddIndex(
-            model_name='xpevent',
-            index=models.Index(fields=['user', 'source_type'], name='idx_xp_user_source'),
+            model_name="xpevent",
+            index=models.Index(
+                fields=["user", "source_type"], name="idx_xp_user_source"
+            ),
         ),
         migrations.AddIndex(
-            model_name='xpevent',
-            index=models.Index(fields=['-created_at'], name='idx_xp_created_desc'),
+            model_name="xpevent",
+            index=models.Index(fields=["-created_at"], name="idx_xp_created_desc"),
         ),
         migrations.AlterUniqueTogether(
-            name='plagiarismreport',
-            unique_together={('submission', 'matched_submission')},
+            name="plagiarismreport",
+            unique_together={("submission", "matched_submission")},
         ),
     ]

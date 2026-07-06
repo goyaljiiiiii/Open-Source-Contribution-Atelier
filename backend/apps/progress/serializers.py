@@ -83,7 +83,6 @@ class LessonProgressCreateSerializer(serializers.Serializer):
     )
 
 
-
 class BulkLessonProgressSerializer(serializers.Serializer):
     lesson_slug = serializers.SlugField()
     score = serializers.IntegerField(default=100)
@@ -94,7 +93,6 @@ class BulkLessonProgressSerializer(serializers.Serializer):
         required=False,
         help_text="Client-generated idempotency key per completion attempt",
     )
-
 
 
 class BulkSyncSerializer(serializers.Serializer):

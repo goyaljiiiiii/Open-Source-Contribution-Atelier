@@ -150,19 +150,18 @@ class BadgeEvaluator:
         # Calculate streak based on deterministic daily activity ledger
         from apps.progress.models import DailyActivity
 
-        streak_days = DailyActivity.objects.filter(user=user).values_list(
-            "date", flat=True
-        ).distinct().count()
+        streak_days = (
+            DailyActivity.objects.filter(user=user)
+            .values_list("date", flat=True)
+            .distinct()
+            .count()
+        )
 
         # Fetch user's already earned badge slugs
 
         earned_slugs = set(
             UserBadge.objects.filter(user=user).values_list("badge__slug", flat=True)
         )
-
-
-
-
 
         for badge_slug, rule in BADGE_RULES.items():
 

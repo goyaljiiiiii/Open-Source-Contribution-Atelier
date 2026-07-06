@@ -6,11 +6,10 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('sandbox', '0009_bulkreplaceoperation'),
-        ('sandbox', '0009_workspacelayout'),
-        ('sandbox', '0009_workspacesnapshot_snapshotfile'),
-        ('sandbox', '0011_alter_terminalcommand_command'),
+        ("sandbox", "0009_bulkreplaceoperation"),
+        ("sandbox", "0009_workspacelayout"),
+        ("sandbox", "0009_workspacesnapshot_snapshotfile"),
+        ("sandbox", "0011_alter_terminalcommand_command"),
     ]
 
-    operations = [
-    ]
+    operations = []

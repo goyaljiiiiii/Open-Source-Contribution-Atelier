@@ -6,33 +6,33 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('sandbox', '0012_merge_20260706_1159'),
+        ("sandbox", "0012_merge_20260706_1159"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='terminalsession',
+            name="terminalsession",
             options={},
         ),
         migrations.DeleteModel(
-            name='ProjectTemplate',
+            name="ProjectTemplate",
         ),
         migrations.DeleteModel(
-            name='SnapshotFile',
+            name="SnapshotFile",
         ),
         migrations.DeleteModel(
-            name='TemplateCategory',
+            name="TemplateCategory",
         ),
         migrations.DeleteModel(
-            name='TemplateFile',
+            name="TemplateFile",
         ),
         migrations.DeleteModel(
-            name='TerminalCommand',
+            name="TerminalCommand",
         ),
         migrations.DeleteModel(
-            name='WorkspaceLayout',
+            name="WorkspaceLayout",
         ),
         migrations.DeleteModel(
-            name='WorkspaceSnapshot',
+            name="WorkspaceSnapshot",
         ),
     ]

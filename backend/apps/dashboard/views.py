@@ -483,7 +483,11 @@ class ContributorDashboardView(APIView):
             return recent_prs
 
         elif field == "progress_tracker":
-            completed_lessons = LessonProgress.objects.select_related('user', 'lesson').filter(user=user, completed=True).count()
+            completed_lessons = (
+                LessonProgress.objects.select_related("user", "lesson")
+                .filter(user=user, completed=True)
+                .count()
+            )
             total_lessons = Lesson.objects.count()
             completion_percentage = (
                 int((completed_lessons / total_lessons) * 100)
@@ -584,7 +588,11 @@ class BuyStreakFreezeView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            unused_freezes = StreakFreeze.objects.select_related('user').filter(user=user, used_on_date__isnull=True).count()
+            unused_freezes = (
+                StreakFreeze.objects.select_related("user")
+                .filter(user=user, used_on_date__isnull=True)
+                .count()
+            )
             if unused_freezes >= 3:
                 return Response(
                     {
@@ -628,7 +636,8 @@ class ModeratorAnalyticsView(APIView):
 
         # 1. Registrations
         registrations = (
-            User.objects.select_related('profile').filter(date_joined__gte=thirty_days_ago)
+            User.objects.select_related("profile")
+            .filter(date_joined__gte=thirty_days_ago)
             .annotate(date=TruncDate("date_joined"))
             .values("date")
             .annotate(count=Count("id"))

@@ -13,7 +13,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="LessonProgressSync",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("idempotency_key", models.CharField(max_length=255)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 (
@@ -44,7 +52,9 @@ class Migration(migrations.Migration):
             ],
             options={
                 "indexes": [
-                    models.Index(fields=["user", "lesson"], name="idx_lp_sync_user_lesson"),
+                    models.Index(
+                        fields=["user", "lesson"], name="idx_lp_sync_user_lesson"
+                    ),
                     models.Index(fields=["idempotency_key"], name="idx_lp_sync_key"),
                 ],
                 "constraints": [
@@ -56,4 +66,3 @@ class Migration(migrations.Migration):
             },
         ),
     ]
-

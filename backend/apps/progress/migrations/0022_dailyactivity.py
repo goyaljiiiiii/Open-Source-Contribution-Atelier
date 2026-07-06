@@ -15,9 +15,20 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="DailyActivity",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("date", models.DateField()),
-                ("activity_type", models.CharField(blank=True, max_length=64, null=True)),
+                (
+                    "activity_type",
+                    models.CharField(blank=True, max_length=64, null=True),
+                ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 (
                     "user",
@@ -30,14 +41,17 @@ class Migration(migrations.Migration):
             ],
             options={
                 "indexes": [
-                    models.Index(fields=["user", "date"], name="idx_daily_activity_user_date"),
+                    models.Index(
+                        fields=["user", "date"], name="idx_daily_activity_user_date"
+                    ),
                     models.Index(fields=["-date"], name="idx_daily_activity_date_desc"),
                 ],
             },
         ),
         migrations.AddConstraint(
             model_name="dailyactivity",
-            constraint=models.UniqueConstraint(fields=["user", "date"], name="unique_user_daily_activity"),
+            constraint=models.UniqueConstraint(
+                fields=["user", "date"], name="unique_user_daily_activity"
+            ),
         ),
     ]
-

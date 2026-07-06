@@ -93,6 +93,7 @@ class XPEvent(models.Model):
     def __str__(self):
         return f"XPEvent(user={self.user.username}, source={self.source_type}, delta={self.xp_delta})"
 
+
 class LessonProgressSync(models.Model):
     """Idempotency ledger for lesson progress sync requests.
 
@@ -140,7 +141,6 @@ class LessonProgressSync(models.Model):
             models.Index(fields=["user", "lesson"], name="idx_lp_sync_user_lesson"),
             models.Index(fields=["idempotency_key"], name="idx_lp_sync_key"),
         ]
-
 
 
 class LessonProgress(models.Model):
@@ -405,14 +405,18 @@ class DailyActivity(models.Model):
     class DoesNotExist(ObjectDoesNotExist):
         pass
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="daily_activities")
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="daily_activities"
+    )
     date = models.DateField()
     activity_type = models.CharField(max_length=64, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["user", "date"], name="unique_user_daily_activity")
+            models.UniqueConstraint(
+                fields=["user", "date"], name="unique_user_daily_activity"
+            )
         ]
         indexes = [
             models.Index(fields=["user", "date"], name="idx_daily_activity_user_date"),
@@ -444,7 +448,9 @@ class DailyActivity(models.Model):
 
             if created:
                 yesterday = date - timezone.timedelta(days=1)
-                yesterday_exists = cls.objects.filter(user=user, date=yesterday).exists()
+                yesterday_exists = cls.objects.filter(
+                    user=user, date=yesterday
+                ).exists()
 
                 if yesterday_exists:
                     streak_profile.current_streak = streak_profile.current_streak + 1
@@ -455,15 +461,16 @@ class DailyActivity(models.Model):
                 streak_profile.longest_streak = max(
                     streak_profile.longest_streak, streak_profile.current_streak
                 )
-                streak_profile.save(update_fields=[
-                    "current_streak",
-                    "longest_streak",
-                    "last_activity_date",
-                    "updated_at",
-                ])
+                streak_profile.save(
+                    update_fields=[
+                        "current_streak",
+                        "longest_streak",
+                        "last_activity_date",
+                        "updated_at",
+                    ]
+                )
 
             return created, streak_profile
-
 
 
 class LessonBookmark(models.Model):

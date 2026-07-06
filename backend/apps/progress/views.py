@@ -116,7 +116,9 @@ class MyProgressView(APIView):
                         },
                     )
                     serializer = LessonProgressSerializer(progress)
-                    async_task = __import__("django_q.tasks", fromlist=["async_task"]).async_task
+                    async_task = __import__(
+                        "django_q.tasks", fromlist=["async_task"]
+                    ).async_task
                     async_task(
                         "apps.progress.tasks.evaluate_user_badges_task",
                         request.user.id,
@@ -141,8 +143,7 @@ class MyProgressView(APIView):
                         skip_update = True
 
                 if not skip_update and (
-                    progress.base_score != base_score
-                    or progress.completed != completed
+                    progress.base_score != base_score or progress.completed != completed
                 ):
                     old_score = progress.score
                     progress.completed = completed
@@ -207,7 +208,6 @@ class MyProgressView(APIView):
             serializer.data,
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
         )
-
 
 
 class BulkSyncProgressView(APIView):

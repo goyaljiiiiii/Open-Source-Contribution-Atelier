@@ -23,4 +23,5 @@ class FeatureFlagAdmin(admin.ModelAdmin):
         if len(obj.description) > 50:
             return obj.description[:50] + "..."
         return obj.description
+
     description_short.short_description = "Description"
