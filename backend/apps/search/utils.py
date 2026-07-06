@@ -1,11 +1,13 @@
 from django.core.cache import cache
 
+
 def get_search_cache_version():
     """
     Retrieves the current search cache version.
     Defaults to 1 if not set.
     """
     return cache.get("search_api_version", 1)
+
 
 def bump_search_cache_version():
     """

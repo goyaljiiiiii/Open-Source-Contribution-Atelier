@@ -931,10 +931,12 @@ class UserProgressPDFExportView(APIView):
     Generates and returns a PDF report of the authenticated user's
     progress, achievements, certificates, and coding activity.
     """
+
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         from apps.progress.services.pdf_report_service import PDFReportGenerator
+
         generator = PDFReportGenerator(request.user)
         pdf_bytes = generator.generate()
 

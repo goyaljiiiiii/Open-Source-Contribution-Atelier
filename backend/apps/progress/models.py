@@ -62,7 +62,6 @@ class UserBadge(models.Model):
         ]
 
 
-
 class XPEvent(models.Model):
     """Tracks XP changes for a user from various source actions."""
 
@@ -140,6 +139,7 @@ class LessonProgressSync(models.Model):
             models.Index(fields=["user", "lesson"], name="idx_lp_sync_user_lesson"),
             models.Index(fields=["idempotency_key"], name="idx_lp_sync_key"),
         ]
+
 
 
 class LessonProgress(models.Model):
