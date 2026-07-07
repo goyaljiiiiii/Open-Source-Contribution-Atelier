@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { fetchApi } from "../lib/api";
+import { CodeDiffViewer } from "../components/ui/CodeDiffViewer";
 
 interface CodeSubmission {
   id: number;
@@ -17,6 +18,7 @@ export function PeerReviewPage() {
 
   // Submit Tab State
   const [title, setTitle] = useState("");
+  const [originalCodeSnippet, setOriginalCodeSnippet] = useState("");
   const [codeSnippet, setCodeSnippet] = useState("");
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,11 +63,15 @@ export function PeerReviewPage() {
         body: JSON.stringify({
           title,
           code_snippet: codeSnippet,
-          description,
+          description: JSON.stringify({
+            text: description,
+            originalCode: originalCodeSnippet,
+          }),
         }),
       });
       setSubmitSuccess(true);
       setTitle("");
+      setOriginalCodeSnippet("");
       setCodeSnippet("");
       setDescription("");
     } catch (error) {
@@ -104,6 +110,21 @@ export function PeerReviewPage() {
       setIsReviewing(false);
     }
   };
+
+  let parsedDescription = selectedSubmission?.description || "";
+  let parsedOriginalCode = "";
+
+  if (selectedSubmission?.description) {
+    try {
+      const parsed = JSON.parse(selectedSubmission.description);
+      if (typeof parsed === "object" && parsed !== null && "text" in parsed) {
+        parsedDescription = parsed.text;
+        parsedOriginalCode = parsed.originalCode || "";
+      }
+    } catch (e) {
+      // Legacy simple text format
+    }
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-surface dark:bg-[#0a0908] text-black dark:text-white transition-colors duration-200">
@@ -162,7 +183,17 @@ export function PeerReviewPage() {
                 />
               </div>
               <div>
-                <label className="block font-bold mb-2">Code Snippet</label>
+                <label className="block font-bold mb-2">Original Code Snippet (Optional)</label>
+                <textarea
+                  rows={6}
+                  value={originalCodeSnippet}
+                  onChange={(e) => setOriginalCodeSnippet(e.target.value)}
+                  className="w-full px-4 py-2 border-2 border-black rounded-lg font-mono text-sm focus:ring-2 focus:ring-primary dark:bg-black dark:border-[#2e2924]"
+                  placeholder="Paste the original or base code here for comparison..."
+                />
+              </div>
+              <div>
+                <label className="block font-bold mb-2">Updated Code Snippet</label>
                 <textarea
                   required
                   rows={8}
@@ -237,17 +268,22 @@ export function PeerReviewPage() {
                 <h2 className="text-2xl font-bold mb-4">
                   Reviewing: {selectedSubmission.title}
                 </h2>
-                <div className="bg-black text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto mb-6">
-                  <pre>{selectedSubmission.code_snippet}</pre>
+                <div className="mb-6">
+                  <CodeDiffViewer
+                    originalCode={parsedOriginalCode}
+                    modifiedCode={selectedSubmission.code_snippet}
+                    title="Code Changes"
+                    fileName="submission.code"
+                  />
                 </div>
 
-                {selectedSubmission.description && (
+                {parsedDescription && (
                   <div className="mb-6">
                     <h4 className="font-bold text-sm uppercase opacity-70 mb-1">
                       Author Notes
                     </h4>
-                    <p className="p-3 bg-surface border-l-4 border-primary rounded">
-                      {selectedSubmission.description}
+                    <p className="p-3 bg-surface border-l-4 border-primary rounded whitespace-pre-wrap">
+                      {parsedDescription}
                     </p>
                   </div>
                 )}
