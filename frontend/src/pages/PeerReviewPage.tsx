@@ -37,7 +37,7 @@ export function PeerReviewPage() {
 
   const fetchPendingSubmissions = async () => {
     try {
-      const response = await fetchApi("/api/progress/code-submissions/");
+      const response = await fetchApi("/progress/code-submissions/");
       setPendingSubmissions(
         Array.isArray(response) ? response : response.results || [],
       );
@@ -58,7 +58,7 @@ export function PeerReviewPage() {
     setSubmitSuccess(false);
 
     try {
-      await fetchApi("/api/progress/code-submissions/", {
+      await fetchApi("/progress/code-submissions/", {
         method: "POST",
         body: JSON.stringify({
           title,
@@ -90,7 +90,7 @@ export function PeerReviewPage() {
 
     try {
       await fetchApi(
-        `/api/progress/code-submissions/${selectedSubmission.id}/reviews/`,
+        `/progress/code-submissions/${selectedSubmission.id}/reviews/`,
         {
           method: "POST",
           body: JSON.stringify({
