@@ -7,12 +7,13 @@ import {
   createProjectFile,
   updateProjectFile,
   deleteProjectFile,
+  exportWorkspaceZip,
 } from "../../lib/api";
 import { ProjectExplorer } from "./ProjectExplorer";
 import { CodeEditor } from "./CodeEditor";
 import { SnippetLibraryModal } from "./SnippetLibraryModal";
 import { SnapshotManagerModal } from "./SnapshotManagerModal";
-import { Library, Camera } from "lucide-react";
+import { Library, Camera, Download } from "lucide-react";
 import { SearchPanel } from './SearchPanel';
 import { TerminalWorkspace } from "./Terminal";
 
@@ -173,6 +174,20 @@ export function ProjectWorkspace() {
                 {activeFile.path}
               </span>
               <div className="flex items-center gap-2">
+                <button
+                  onClick={async () => {
+                    if (project) {
+                      try {
+                        await exportWorkspaceZip(project.id);
+                      } catch (err) {
+                        console.error("Failed to export workspace", err);
+                      }
+                    }
+                  }}
+                  className="flex items-center gap-2 px-2 py-1 text-xs font-bold text-gray-300 border border-gray-600 rounded hover:bg-gray-700 transition-colors"
+                >
+                  <Download className="w-3 h-3" /> Export
+                </button>
                 <button
                   onClick={() => setIsSnapshotManagerOpen(true)}
                   className="flex items-center gap-2 px-2 py-1 text-xs font-bold text-gray-300 border border-gray-600 rounded hover:bg-gray-700 transition-colors"

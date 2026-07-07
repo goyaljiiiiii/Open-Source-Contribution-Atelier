@@ -26,6 +26,7 @@ const MarkdownRenderer = React.lazy(() =>
 );
 import { GitGraph } from "../components/ui/GitGraph";
 import { NotePanel } from "../components/ui/NotePanel";
+import { LessonFeedbackWidget } from "../components/ui/LessonFeedbackWidget";
 import { PythonSandbox } from "../components/ui/PythonSandbox";
 import { CollabPythonSandbox } from "../components/ui/CollabPythonSandbox";
 import { JSSandbox } from "../components/ui/JSSandbox";
@@ -1070,6 +1071,9 @@ export function LessonPage() {
           </aside>
         </div>
       )}
+
+      {/* Lesson Feedback Widget */}
+      {lesson && <LessonFeedbackWidget lessonSlug={lesson.slug} />}
     </div>
   );
 }

@@ -75,3 +75,55 @@ class ProjectTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["path"], "f1.txt")
+
+
+class ProjectExportTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="testuser", password="password")
+        self.project = Project.objects.create(user=self.user, name="Test Project")
+        self.export_url = f"/api/sandbox/projects/{self.project.id}/export_zip/"
+
+    def test_export_zip_unauthenticated(self):
+        response = self.client.get(self.export_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_export_zip_with_files(self):
+        ProjectFile.objects.create(
+            project=self.project, path="src/index.js", content="console.log('hello');"
+        )
+        ProjectFile.objects.create(
+            project=self.project, path="src/style.css", content="body { margin: 0; }"
+        )
+
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(self.export_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response["Content-Type"], "application/zip")
+        self.assertIn("attachment", response["Content-Disposition"])
+        self.assertIn("Test_Project-export.zip", response["Content-Disposition"])
+
+        # Verify ZIP contents
+        import io
+        import zipfile
+        buffer = io.BytesIO(response.content)
+        with zipfile.ZipFile(buffer, "r") as zf:
+            names = zf.namelist()
+            self.assertIn("src/index.js", names)
+            self.assertIn("src/style.css", names)
+            self.assertIn("README.md", names)
+
+    def test_export_zip_empty_project(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(self.export_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response["Content-Type"], "application/zip")
+
+    def test_export_zip_forbidden_for_other_user(self):
+        other_user = User.objects.create_user(username="other", password="password")
+        other_project = Project.objects.create(user=other_user, name="Other Project")
+
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(f"/api/sandbox/projects/{other_project.id}/export_zip/")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

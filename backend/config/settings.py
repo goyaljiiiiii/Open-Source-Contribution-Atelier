@@ -82,6 +82,7 @@ INSTALLED_APPS = [
     "apps.webhooks",
     "apps.notes",
     "apps.recommendations",
+    "apps.cache",
     "apps.rbac",
     "apps.uploads",
     "graphene_django",
@@ -178,6 +179,12 @@ GITHUB_APP={
     'WEBHOOK_SECRET': os.getenv('GITHUB_WEBHOOK_SECRET'),
 }
 GITHUB_INSTALLATION_ID=os.getenv('GITHUB_INSTALLATION_ID')
+
+# ── Discord Integration ────────────────────────────────────────────────────────
+# Discord webhook URL for achievement announcements
+DISCORD_WEBHOOK_URL = os.getenv('DISCORD_WEBHOOK_URL')
+# Whether to enable Discord announcements (can be disabled per environment)
+DISCORD_ANNOUNCEMENTS_ENABLED = os.getenv('DISCORD_ANNOUNCEMENTS_ENABLED', 'true').lower() == 'true'
 
 # ── Email Configuration ────────────────────────────────────────────────────────
 # Default: console backend (prints emails to stdout) — safe for dev/CI.
