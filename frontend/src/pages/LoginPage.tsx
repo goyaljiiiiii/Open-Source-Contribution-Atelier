@@ -47,7 +47,6 @@ export function LoginPage() {
       mode="login"
       title="Oh, you again?"
       subtitle="Welcome back to your favorite distraction-free zone. Drop your details below."
-      mode="login"
     >
       <form className="space-y-6 pt-2" onSubmit={handleSubmit}>
         {error && (

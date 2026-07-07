@@ -10,6 +10,9 @@ const dirname = typeof __dirname !== "undefined"
   : path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  worker: {
+    format: "es",
+  },
   plugins: [
     react(),
     VitePWA({
@@ -67,4 +70,4 @@ export default defineConfig({
       include: ["workbox-precaching", "workbox-routing", "workbox-strategies", "workbox-expiration"],
     },
   },
-});
+} as any);

@@ -71,5 +71,5 @@ export function useSandboxCore(createWorker: () => Worker) {
     [initWorker]
   );
 
-  return { executeCode, isExecuting, isReady, workerRef };
+  return { executeCode, isExecuting, isReady, workerRef, initWorker };
 }

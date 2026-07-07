@@ -14,6 +14,7 @@ import { SnippetLibraryModal } from "./SnippetLibraryModal";
 import { SnapshotManagerModal } from "./SnapshotManagerModal";
 import { Library, Camera } from "lucide-react";
 import { SearchPanel } from './SearchPanel';
+import { TerminalWorkspace } from "./Terminal";
 
 export function ProjectWorkspace() {
   const [project, setProject] = useState<Project | null>(null);

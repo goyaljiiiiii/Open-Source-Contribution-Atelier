@@ -22,7 +22,7 @@ export function usePythonSandbox() {
       return executeCode<PythonExecutionResult>(
         { pythonCode: code },
         timeoutMs,
-        (data) => ({
+        (data: any) => ({
           output: data.results || "",
           error: data.error || null,
         }),

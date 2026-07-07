@@ -83,8 +83,8 @@ export function CollabPythonSandbox({
     awareness.on("change", () => {
       const states = Array.from(awareness.getStates().values());
       const users = states
-        .map((state: { user?: { name: string; color: string } }) => state.user)
-        .filter(Boolean);
+        .map((state: any) => state.user)
+        .filter((u): u is { name: string; color: string } => !!u);
       setActiveUsers(users);
     });
 
@@ -105,7 +105,7 @@ export function CollabPythonSandbox({
 
       bindingRef.current = new MonacoBinding(
         type,
-        editor.getModel(),
+        editor.getModel()!,
         new Set([editor]),
         providerRef.current.awareness,
       );
@@ -126,13 +126,13 @@ export function CollabPythonSandbox({
 
   // Update Monaco decorations for unresolved threads
   useEffect(() => {
-    if (!editorRef.current || !monacoRef.current) return;
-    
     const editor = editorRef.current;
+    const monaco = monacoRef.current;
+    if (!editor || !monaco) return;
     
     const unresolvedThreads = threads.filter(t => !t.is_resolved);
     const newDecorations = unresolvedThreads.map((thread) => ({
-      range: new monacoRef.current.Range(thread.line_number, 1, thread.line_number, 1),
+      range: new monaco.Range(thread.line_number, 1, thread.line_number, 1),
       options: {
         isWholeLine: true,
         glyphMarginClassName: 'review-glyph',
