@@ -31,6 +31,7 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 ALLOWED_HOSTS.append(".vercel.app")
+ALLOWED_HOSTS.append(".hf.space")
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
     for origin in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
