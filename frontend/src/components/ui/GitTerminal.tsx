@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { RotateCcw, Terminal, ChevronRight } from "lucide-react";
+import { RotateCcw, Terminal, ChevronRight, BookOpen } from "lucide-react";
 import { useGitShell } from "../../hooks/useGitShell";
 import type { TerminalLine } from "../../hooks/useGitShell";
 import { useTerminalAutocomplete } from "../../hooks/useTerminalAutocomplete";
 import { useFailureAnimation } from "../../hooks/useFailureAnimation";
 import { Textarea } from "./Textarea";
+import { GitCheatSheet } from "./GitCheatSheet";
 
 interface GitTerminalProps {
   /** Called when a lesson-objective command succeeds */
@@ -58,6 +59,7 @@ export function GitTerminal({
   const [inputVal, setInputVal] = useState("");
   const [editorVal, setEditorVal] = useState("");
   const [completed, setCompleted] = useState(false);
+  const [showCheatSheet, setShowCheatSheet] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -199,6 +201,14 @@ export function GitTerminal({
           <span className="text-xs font-black text-yellow-300 bg-black/40 px-2 py-0.5 rounded-full">
             {xp} XP
           </span>
+          <button
+            onClick={() => setShowCheatSheet(true)}
+            title="Git Cheat Sheet"
+            className="text-gray-400 hover:text-white transition-colors p-1 rounded flex items-center gap-1 text-xs"
+          >
+            <BookOpen size={13} />
+            <span className="hidden sm:inline">Cheat Sheet</span>
+          </button>
           <button
             onClick={handleReset}
             title="Reset terminal"
@@ -369,6 +379,13 @@ export function GitTerminal({
           </button>
         </form>
       )}
+
+      {/* ── Git Cheat Sheet Modal ─────────────────────────────────── */}
+      <GitCheatSheet
+        isOpen={showCheatSheet}
+        onClose={() => setShowCheatSheet(false)}
+        onInsertCommand={(command) => setInputVal(command)}
+      />
     </div>
   );
 }

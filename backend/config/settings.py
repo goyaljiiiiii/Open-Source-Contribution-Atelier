@@ -53,7 +53,6 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = True
 
 INSTALLED_APPS = [
-    "django_prometheus",
     "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -84,6 +83,7 @@ INSTALLED_APPS = [
     "apps.notes",
     "apps.cache.apps.CacheConfig",
     "apps.recommendations",
+    "apps.cache",
     "apps.rbac",
     "apps.uploads",
     "graphene_django",
@@ -98,9 +98,11 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.middleware.gzip.GZipMiddleware",
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -178,6 +180,12 @@ GITHUB_APP={
     'WEBHOOK_SECRET': os.getenv('GITHUB_WEBHOOK_SECRET'),
 }
 GITHUB_INSTALLATION_ID=os.getenv('GITHUB_INSTALLATION_ID')
+
+# ── Discord Integration ────────────────────────────────────────────────────────
+# Discord webhook URL for achievement announcements
+DISCORD_WEBHOOK_URL = os.getenv('DISCORD_WEBHOOK_URL')
+# Whether to enable Discord announcements (can be disabled per environment)
+DISCORD_ANNOUNCEMENTS_ENABLED = os.getenv('DISCORD_ANNOUNCEMENTS_ENABLED', 'true').lower() == 'true'
 
 # ── Email Configuration ────────────────────────────────────────────────────────
 # Default: console backend (prints emails to stdout) — safe for dev/CI.
