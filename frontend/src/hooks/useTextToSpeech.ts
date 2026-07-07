@@ -60,8 +60,18 @@ export function useTextToSpeech(text: string) {
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
 
-    // Optional: Choose a reasonable voice if needed, here we use default
-    // utterance.rate = 1.0;
+    // Find a natural-sounding English voice
+    const voices = window.speechSynthesis.getVoices();
+    const premiumEnglishVoice = voices.find(
+      (v) =>
+        (v.name.includes("Natural") || v.name.includes("Google") || v.name.includes("Microsoft")) &&
+        v.lang.startsWith("en"),
+    );
+    const standardEnglishVoice = voices.find((v) => v.lang.startsWith("en"));
+    
+    utterance.voice = premiumEnglishVoice || standardEnglishVoice || null;
+    utterance.rate = 0.95; // Slightly slower than 1.0 for better clarity
+    utterance.pitch = 1.0;
 
     utterance.onend = () => {
       setIsPlaying(false);
