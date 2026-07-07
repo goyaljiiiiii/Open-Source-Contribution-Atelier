@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { Search, Upload } from "lucide-react";
 import { SectionCard } from "../components/ui/SectionCard";
 import { challengeCards, type Difficulty } from "../lib/data";
+import { useNavigate } from "react-router-dom";
 import clsx from "clsx";
 import { useAuth } from "../features/auth/AuthContext";
 import { fetchApi } from "../lib/api";
@@ -10,6 +11,7 @@ const difficulties: Difficulty[] = ["beginner", "intermediate", "advanced"];
 
 export function ChallengePage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState("");
@@ -134,7 +136,10 @@ export function ChallengePage() {
         {filtered.map((item) => (
           <SectionCard key={item.title} eyebrow={item.badge} title={item.title}>
             <p className="text-sm leading-6 text-muted">{item.summary}</p>
-            <button className="mt-5 rounded-lg bg-surface-low border-2 border-black px-4 py-2 text-sm font-black text-black shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer dark:bg-[#ffd166] dark:text-[#14100a] dark:border-[#b9851d] dark:hover:bg-[#ffe08a]">
+             <button
+              onClick={() => navigate("/sandbox")}
+              className="mt-5 rounded-lg bg-surface-low border-2 border-black px-4 py-2 text-sm font-black text-black shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer dark:bg-[#ffd166] dark:text-[#14100a] dark:border-[#b9851d] dark:hover:bg-[#ffe08a]"
+            >
               Open challenge
             </button>
           </SectionCard>
