@@ -1,7 +1,6 @@
 import os
 from datetime import timedelta
 from pathlib import Path
-from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 import dj_database_url
 
@@ -50,9 +49,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    'django_filters',
-    'django_prometheus',
-    'celery_prometheus_exporter',
+    "django_filters",
+    "celery_prometheus_exporter",
     "drf_spectacular",
     "corsheaders",
     "rest_framework",
@@ -77,6 +75,7 @@ INSTALLED_APPS = [
     "apps.uploads",
     "graphene_django",
     "apps.feature_flags",
+    "apps.issues",
     "django_q",
 ]
 
@@ -131,6 +130,8 @@ DATABASES = {
     ),
 }
 
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 DATABASE_ROUTERS = ["config.db_router.PrimaryReplicaRouter"]
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -150,6 +151,16 @@ STATIC_URL = "/static/"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+#Github App Configuration
+GITHUB_APP={
+    'APP_ID': os.getenv('GITHUB_APP_ID'),
+    'PRIVATE_KEY_PATH': os.getenv('GITHUB_PRIVATE_KEY_PATH'),
+    'CLIENT_ID': os.getenv('GITHUB_CLIENT_ID'),
+    'CLIENT_SECRET': os.getenv('GITHUB_CLIENT_SECRET'),
+    'WEBHOOK_SECRET': os.getenv('GITHUB_WEBHOOK_SECRET'),
+}
+GITHUB_INSTALLATION_ID=os.getenv('GITHUB_INSTALLATION_ID)
 
 # ── Email Configuration ────────────────────────────────────────────────────────
 # Default: console backend (prints emails to stdout) — safe for dev/CI.
@@ -205,7 +216,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ),
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_SCHEMA_CLASS": "config.openapi.ThrottleAutoSchema",
     "EXCEPTION_HANDLER": "apps.accounts.exceptions.throttle_exception_handler",
 }
 
@@ -248,13 +259,16 @@ ACCOUNT_UNIQUE_EMAIL = True
 INSTALLED_APPS += [
     "channels",
     "apps.notifications.apps.NotificationsConfig",
-    "drf_spectacular",
     "apps.dashboard.apps.DashboardConfig",
     "apps.chat.apps.ChatConfig",
     "django.contrib.postgres",
     "apps.search.apps.SearchConfig",
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'http://localhost:5173',
+]
 
 # ──────────────────────────────────────────
 # Redis Availability and Configuration (Dynamic Fallbacks)
@@ -291,7 +305,6 @@ def is_redis_available(url):
 ENV_REDIS_URL = os.getenv("REDIS_URL", "")
 CHECK_REDIS_URL = ENV_REDIS_URL or "redis://127.0.0.1:6379"
 
-
 if is_redis_available(CHECK_REDIS_URL):
     REDIS_URL = CHECK_REDIS_URL
     CHANNEL_LAYERS = {
@@ -322,6 +335,9 @@ else:
             "LOCATION": "atelier-unique-cache",
         }
     }
+
+# Cache timeout for Search API (in seconds) - Default: 1 hour
+SEARCH_CACHE_TIMEOUT = 60 * 60
 
 # ──────────────────────────────────────────
 # Django-Q Configuration
@@ -392,3 +408,18 @@ LOGGING = {
 }
 
 GRAPHENE = {"SCHEMA": "config.schema.schema"}
+
+# ──────────────────────────────────────────
+# Curriculum JSON Path
+# ──────────────────────────────────────────
+# Path to the curriculum.json file used for module definitions and learning paths.
+# Default resolves to frontend/public/content/curriculum.json relative to project root.
+# Override with CURRICULUM_JSON_PATH env var for Docker/production deployments.
+CURRICULUM_JSON_PATH = os.getenv(
+    "CURRICULUM_JSON_PATH",
+    str(
+        (
+            BASE_DIR / ".." / "frontend" / "public" / "content" / "curriculum.json"
+        ).resolve()
+    ),
+)
