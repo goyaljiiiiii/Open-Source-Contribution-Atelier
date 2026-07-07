@@ -3,7 +3,7 @@ name: Welcome Contributor Automation
 on:
   issues:
     types: [opened]
-  pull_request:
+  pull_request_target:
     types: [opened]
 
 permissions:
@@ -34,7 +34,7 @@ jobs:
             await github.rest.issues.createComment({owner, repo, issue_number: issue.number, body: commentBody});
 
   welcome-pull-request:
-    if: github.event_name == 'pull_request' && github.event.action == 'opened'
+    if: github.event_name == 'pull_request_target' && github.event.action == 'opened'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository

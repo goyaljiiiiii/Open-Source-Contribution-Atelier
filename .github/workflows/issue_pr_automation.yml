@@ -5,7 +5,7 @@ on:
     types: [opened]
   issue_comment:
     types: [created]
-  pull_request:
+  pull_request_target:
     types: [opened]
   schedule:
     - cron: '0 0 * * *'   # run daily at midnight UTC
@@ -132,7 +132,7 @@ jobs:
 
 
   pr-label-copy:
-    if: github.event_name == 'pull_request' && github.event.action == 'opened'
+    if: github.event_name == 'pull_request_target' && github.event.action == 'opened'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -148,7 +148,7 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
 
-            const issueNums = [...pr.body.matchAll(/#(\d+)/g)].map(m => parseInt(m[1],10));
+            const issueNums = [...(pr.body || '').matchAll(/#(\d+)/g)].map(m => parseInt(m[1],10));
             console.log(`Found referenced issue numbers: ${issueNums.join(', ')}`);
 
             const allLabels = new Set();
@@ -243,15 +243,44 @@ jobs:
               if (now - commentTime < fortyEightHours) continue;
 
               const assigneeLogin = issue.assignees[0]?.login;
+              if (!assigneeLogin) {
+                await github.rest.issues.removeLabel({owner, repo, issue_number: issue.number, name: 'awaiting-response'});
+                continue;
+              }
+
+              // 1. Check if the assignee has commented on the issue since the bot's comment
               const recentAssigneeComment = comments.find(c => c.user.login === assigneeLogin && new Date(c.created_at) > commentTime);
               if (recentAssigneeComment) {
                 await github.rest.issues.removeLabel({owner, repo, issue_number: issue.number, name: 'awaiting-response'});
                 continue;
               }
 
-              if (assigneeLogin) {
-                await github.rest.issues.removeAssignees({owner, repo, issue_number: issue.number, assignees: [assigneeLogin]});
-                await github.rest.issues.createComment({owner, repo, issue_number: issue.number, body: `⏰ No response from @${assigneeLogin} within 48 hours. The assignee has been removed.`});
+              // 2. Check if there are any PRs referencing this issue authored by the assignee
+              const searchQuery = `repo:${owner}/${repo} is:pr ${issue.number}`;
+              const prsRes = await octokit.request('GET /search/issues', {q: searchQuery, per_page: 10});
+              const prs = prsRes.data.items || [];
+              const hasAssigneePr = prs.some(pr => pr.user.login === assigneeLogin);
+              if (hasAssigneePr) {
+                await github.rest.issues.removeLabel({owner, repo, issue_number: issue.number, name: 'awaiting-response'});
+                continue;
               }
+
+              // 3. Check if the assignee has commented on any referencing PRs since the bot's comment
+              let respondedOnPr = false;
+              for (const pr of prs) {
+                const prComments = await octokit.paginate(github.rest.issues.listComments, {owner, repo, issue_number: pr.number, per_page: 100});
+                const recentPrComment = prComments.find(c => c.user.login === assigneeLogin && new Date(c.created_at) > commentTime);
+                if (recentPrComment) {
+                  respondedOnPr = true;
+                  break;
+                }
+              }
+              if (respondedOnPr) {
+                await github.rest.issues.removeLabel({owner, repo, issue_number: issue.number, name: 'awaiting-response'});
+                continue;
+              }
+
+              await github.rest.issues.removeAssignees({owner, repo, issue_number: issue.number, assignees: [assigneeLogin]});
+              await github.rest.issues.createComment({owner, repo, issue_number: issue.number, body: `⏰ No response from @${assigneeLogin} within 48 hours. The assignee has been removed.`});
               await github.rest.issues.removeLabel({owner, repo, issue_number: issue.number, name: 'awaiting-response'});
             }
