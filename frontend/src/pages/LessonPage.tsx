@@ -155,13 +155,23 @@ export function LessonPage() {
   // there (e.g. curriculum.json and seed data are out of sync), fall back to
   // constructing a basic Lesson object from curriculum.json data.
   useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect */
     setIsLoading(true);
 
-    Promise.all([
-      fetch("/content/curriculum.json").then((res) => res.json()),
-      fetchLessonsApi(),
-    ])
+    // Fetch curriculum.json for module structure and fallback lesson data
+    const curriculumPromise = fetch("/content/curriculum.json")
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .catch((err) => {
+        console.warn("[LessonPage] Failed to load curriculum.json:", err);
+        return null;
+      });
+
+    // Fetch lessons from the backend API
+    const lessonsPromise = fetchLessonsApi();
+
+    Promise.all([curriculumPromise, lessonsPromise])
       .then(([curriculumJson, lessonsData]) => {
         setLessonsList(lessonsData);
 
@@ -205,32 +215,31 @@ export function LessonPage() {
         }
 
         if (!found) {
+          // Lesson slug doesn't exist in either data source — redirect to dashboard
           navigate("/dashboard", { replace: true });
           return;
         }
 
         setLesson(found);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("[LessonPage] Unexpected error loading lesson:", err);
         navigate("/dashboard", { replace: true });
       })
       .finally(() => {
         setIsLoading(false);
       });
-    /* eslint-enable react-hooks/set-state-in-effect */
   }, [slug, navigate]);
 
   // 2. Fetch markdown content and reset interactive state when lesson changes
   useEffect(() => {
     if (!lesson) return;
 
-    /* eslint-disable react-hooks/set-state-in-effect */
     setFeedback("");
     setInput("");
     setShowHint(false);
     setTerminalOutput("");
     setRepoState(createInitialRepo());
-    /* eslint-enable react-hooks/set-state-in-effect */
 
     // Reset Quiz state
     setCurrentQuizIndex(0);
