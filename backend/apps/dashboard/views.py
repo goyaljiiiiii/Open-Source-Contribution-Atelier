@@ -82,7 +82,8 @@ class LeaderboardView(ListAPIView):
             issue_filter["updated_at__gte"] = start_date
             pr_filter["updated_at__gte"] = start_date
 
-        lesson_progress = LessonProgress.objects.select_related('user', 'lesson').filter(updated_at__gte=thirty_days_ago)
+        lesson_progress = (
+            LessonProgress.objects.filter(**lesson_progress_filter)
             .values("user")
             .annotate(total=Sum("score"))
             .values("total")
@@ -628,7 +629,9 @@ class ModeratorAnalyticsView(APIView):
         thirty_days_ago = timezone.now() - timedelta(days=30)
 
         # 1. Registrations
-        registrations = User.objects.select_related('profile').filter(date_joined__gte=thirty_days_ago)
+        registrations = (
+            User.objects.select_related('profile')
+            .filter(date_joined__gte=thirty_days_ago)
             .annotate(date=TruncDate("date_joined"))
             .values("date")
             .annotate(count=Count("id"))

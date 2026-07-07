@@ -42,7 +42,6 @@ if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
 
 INSTALLED_APPS = [
-    "django_prometheus",
     "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -85,9 +84,11 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.middleware.gzip.GZipMiddleware",
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -248,7 +249,6 @@ ACCOUNT_UNIQUE_EMAIL = True
 INSTALLED_APPS += [
     "channels",
     "apps.notifications.apps.NotificationsConfig",
-    "drf_spectacular",
     "apps.dashboard.apps.DashboardConfig",
     "apps.chat.apps.ChatConfig",
     "django.contrib.postgres",
