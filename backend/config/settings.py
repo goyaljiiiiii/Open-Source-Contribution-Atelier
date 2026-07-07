@@ -16,10 +16,22 @@ def load_dotenv(dotenv_path: Path) -> None:
         if not line or line.startswith("#") or "=" not in line:
             continue
         key, value = line.split("=", 1)
-        os.environ.setdefault(key.strip(), value.strip())
+        val_stripped = value.strip()
+        if (val_stripped.startswith('"') and val_stripped.endswith('"')) or (val_stripped.startswith("'") and val_stripped.endswith("'")):
+            val_stripped = val_stripped[1:-1].strip()
+        if val_stripped:
+            os.environ.setdefault(key.strip(), val_stripped)
 
 
 load_dotenv(BASE_DIR / ".env")
+
+print("DEBUG - DATABASE_URL present:", "DATABASE_URL" in os.environ)
+if "DATABASE_URL" in os.environ:
+    print("DEBUG - DATABASE_URL length:", len(os.environ["DATABASE_URL"]))
+    print("DEBUG - DATABASE_URL prefix:", os.environ["DATABASE_URL"][:15])
+print("DEBUG - REDIS_URL present:", "REDIS_URL" in os.environ)
+if "REDIS_URL" in os.environ:
+    print("DEBUG - REDIS_URL prefix:", os.environ["REDIS_URL"][:15])
 
 SECRET_KEY = os.getenv(
     "SECRET_KEY", "django-insecure-dev-key-not-for-production-use-32bytes!!"
@@ -31,6 +43,7 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 ALLOWED_HOSTS.append(".vercel.app")
+ALLOWED_HOSTS.append(".hf.space")
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
     for origin in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
@@ -160,7 +173,7 @@ GITHUB_APP={
     'CLIENT_SECRET': os.getenv('GITHUB_CLIENT_SECRET'),
     'WEBHOOK_SECRET': os.getenv('GITHUB_WEBHOOK_SECRET'),
 }
-GITHUB_INSTALLATION_ID=os.getenv('GITHUB_INSTALLATION_ID)
+GITHUB_INSTALLATION_ID=os.getenv('GITHUB_INSTALLATION_ID')
 
 # ── Email Configuration ────────────────────────────────────────────────────────
 # Default: console backend (prints emails to stdout) — safe for dev/CI.
@@ -280,7 +293,7 @@ def is_redis_available(url):
     try:
         if not url:
             return False
-        clean_url = url.replace("redis://", "")
+        clean_url = url.replace("rediss://", "").replace("redis://", "")
         host_port = clean_url.split("/")[0]
         if "@" in host_port:
             host_port = host_port.split("@")[1]
