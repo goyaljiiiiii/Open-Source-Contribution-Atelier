@@ -160,7 +160,7 @@ GITHUB_APP={
     'CLIENT_SECRET': os.getenv('GITHUB_CLIENT_SECRET'),
     'WEBHOOK_SECRET': os.getenv('GITHUB_WEBHOOK_SECRET'),
 }
-GITHUB_INSTALLATION_ID=os.getenv('GITHUB_INSTALLATION_ID)
+GITHUB_INSTALLATION_ID=os.getenv('GITHUB_INSTALLATION_ID')
 
 # ── Email Configuration ────────────────────────────────────────────────────────
 # Default: console backend (prints emails to stdout) — safe for dev/CI.
