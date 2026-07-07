@@ -16,10 +16,12 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+import SkeletonContributorDashboard from "../components/ui/skeletons/SkeletonContributorDashboard";
+
 export function LandingPage() {
   const { t } = useTranslation();
   // Safely obtain login function; if AuthContext is not provided, default to a no-op.
-  let login = () => {};
+  let login: (tokens: { access: string; refresh: string }) => void = () => {};
   try {
     const auth = useAuth();
     login = auth.login;

@@ -48,7 +48,7 @@ export function useCodeReviews(roomId: string) {
               }
             });
           }
-        } catch (e) {
+        } catch {
           // Ignore parse errors or non-review messages
         }
       }
