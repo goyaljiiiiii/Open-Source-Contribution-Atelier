@@ -1,5 +1,8 @@
 Django>=5.0,<5.1
 djangorestframework>=3.15.0
+djangorestframework-simplejwt>=5.5.0
+celery>=5.3.0
+django-picklefield>=3.2
 django-cors-headers>=4.4.0
 django-filter>=24.3
 psycopg[binary]>=3.2.0
