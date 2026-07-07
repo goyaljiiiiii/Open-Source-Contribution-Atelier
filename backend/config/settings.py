@@ -251,10 +251,24 @@ SITE_ID = 1
 
 SOCIALACCOUNT_PROVIDERS = {
     "github": {
+        "APP": {
+            "client_id": os.getenv("GITHUB_OAUTH_CLIENT_ID"),
+            "secret": os.getenv("GITHUB_OAUTH_CLIENT_SECRET"),
+        },
         "SCOPE": [
             "user",
             "repo",
             "read:user",
+        ],
+    },
+    "google": {
+        "APP": {
+            "client_id": os.getenv("GOOGLE_CLIENT_ID"),
+            "secret": os.getenv("GOOGLE_CLIENT_SECRET", ""),
+        },
+        "SCOPE": [
+            "profile",
+            "email",
         ],
     }
 }
