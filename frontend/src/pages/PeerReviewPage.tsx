@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { fetchApi } from "../lib/api";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface CodeSubmission {
   id: number;
@@ -13,6 +14,7 @@ interface CodeSubmission {
 }
 
 export function PeerReviewPage() {
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"submit" | "review">("submit");
 
   // Submit Tab State
@@ -23,9 +25,6 @@ export function PeerReviewPage() {
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
   // Review Tab State
-  const [pendingSubmissions, setPendingSubmissions] = useState<
-    CodeSubmission[]
-  >([]);
   const [selectedSubmission, setSelectedSubmission] =
     useState<CodeSubmission | null>(null);
   const [feedback, setFeedback] = useState("");
@@ -33,22 +32,14 @@ export function PeerReviewPage() {
   const [isReviewing, setIsReviewing] = useState(false);
   const [reviewSuccess, setReviewSuccess] = useState(false);
 
-  const fetchPendingSubmissions = async () => {
-    try {
+  const { data: pendingSubmissions = [], refetch: fetchPendingSubmissions, isLoading: isLoadingSubmissions } = useQuery({
+    queryKey: ["pendingSubmissions"],
+    queryFn: async () => {
       const response = await fetchApi("/progress/code-submissions/");
-      setPendingSubmissions(
-        Array.isArray(response) ? response : response.results || [],
-      );
-    } catch (error) {
-      console.error("Failed to fetch submissions", error);
-    }
-  };
-
-  useEffect(() => {
-    if (activeTab === "review") {
-      fetchPendingSubmissions();
-    }
-  }, [activeTab]);
+      return Array.isArray(response) ? response : response.results || [];
+    },
+    enabled: activeTab === "review",
+  });
 
   const handleSubmitCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -205,7 +196,11 @@ export function PeerReviewPage() {
                 </span>
               </h2>
 
-              {pendingSubmissions.length === 0 ? (
+              {isLoadingSubmissions ? (
+                <div className="text-center py-10 font-bold opacity-50 animate-pulse">
+                  Loading pending reviews...
+                </div>
+              ) : pendingSubmissions.length === 0 ? (
                 <div className="text-center py-10 font-bold opacity-50">
                   No pending submissions found. Check back later!
                 </div>
