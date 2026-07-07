@@ -50,8 +50,7 @@ CORS_ALLOWED_ORIGINS = [
     if origin.strip()
 ]
 CORS_ALLOW_CREDENTIALS = True
-if DEBUG:
-    CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = True
 
 INSTALLED_APPS = [
     "django_prometheus",
@@ -137,7 +136,7 @@ DATABASES = {
     ),
     "replica": dj_database_url.config(
         env="REPLICA_DATABASE_URL",
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",  # Falls back to local sqlite in dev
+        default=os.getenv("DATABASE_URL") or f"sqlite:///{BASE_DIR / 'db.sqlite3'}",  # Falls back to primary in production if replica env is unset
         conn_max_age=600,
         conn_health_checks=True,
     ),
@@ -251,10 +250,24 @@ SITE_ID = 1
 
 SOCIALACCOUNT_PROVIDERS = {
     "github": {
+        "APP": {
+            "client_id": os.getenv("GITHUB_OAUTH_CLIENT_ID"),
+            "secret": os.getenv("GITHUB_OAUTH_CLIENT_SECRET"),
+        },
         "SCOPE": [
             "user",
             "repo",
             "read:user",
+        ],
+    },
+    "google": {
+        "APP": {
+            "client_id": os.getenv("GOOGLE_CLIENT_ID"),
+            "secret": os.getenv("GOOGLE_CLIENT_SECRET", ""),
+        },
+        "SCOPE": [
+            "profile",
+            "email",
         ],
     }
 }
