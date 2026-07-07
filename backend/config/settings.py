@@ -1,8 +1,12 @@
 import os
+import sys
 from datetime import timedelta
 from pathlib import Path
 
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
+
+TESTING = "test" in sys.argv or "pytest" in sys.modules
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -17,7 +21,9 @@ def load_dotenv(dotenv_path: Path) -> None:
             continue
         key, value = line.split("=", 1)
         val_stripped = value.strip()
-        if (val_stripped.startswith('"') and val_stripped.endswith('"')) or (val_stripped.startswith("'") and val_stripped.endswith("'")):
+        if (val_stripped.startswith('"') and val_stripped.endswith('"')) or (
+            val_stripped.startswith("'") and val_stripped.endswith("'")
+        ):
             val_stripped = val_stripped[1:-1].strip()
         if val_stripped:
             os.environ.setdefault(key.strip(), val_stripped)
@@ -37,20 +43,102 @@ SECRET_KEY = os.getenv(
     "SECRET_KEY", "django-insecure-dev-key-not-for-production-use-32bytes!!"
 )
 DEBUG = os.getenv("DEBUG", "False") == "True"
+fix/security-headers
+
+# ──────────────────────────────────────────
+# Security Headers
+# ──────────────────────────────────────────
+
+# Prevent browsers from MIME-sniffing responses away from their declared
+# Content-Type.
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# Prevent application pages from being embedded in frames.
+X_FRAME_OPTIONS = "DENY"
+
+# Keep HSTS disabled for local development. Production defaults to one year.
+SECURE_HSTS_SECONDS = int(
+    os.getenv(
+        "SECURE_HSTS_SECONDS",
+        "0" if DEBUG else "31536000",
+    )
+)
+
+SECURE_HSTS_INCLUDE_SUBDOMAINS = (
+    os.getenv(
+        "SECURE_HSTS_INCLUDE_SUBDOMAINS",
+        "True",
+    ).lower()
+    in {"1", "true", "yes", "on"}
+)
+
+# HSTS preload is opt-in because enabling it has long-lived operational impact.
+SECURE_HSTS_PRELOAD = (
+    os.getenv(
+        "SECURE_HSTS_PRELOAD",
+        "False",
+    ).lower()
+    in {"1", "true", "yes", "on"}
+)
+
+# Restrictive default Content Security Policy.
+# Allow jsDelivr because the API documentation UI loads its assets from there.
+CONTENT_SECURITY_POLICY = os.getenv(
+    "CONTENT_SECURITY_POLICY",
+    (
+        "default-src 'self'; "
+        "base-uri 'self'; "
+        "object-src 'none'; "
+        "frame-ancestors 'none'; "
+        "form-action 'self'; "
+        "script-src 'self' https://cdn.jsdelivr.net; "
+        "style-src 'self' https://cdn.jsdelivr.net; "
+        "img-src 'self' data: https://cdn.jsdelivr.net; "
+        "font-src 'self' data: https://cdn.jsdelivr.net; "
+        "connect-src 'self'; "
+        "media-src 'self'; "
+        "worker-src 'self'; "
+        "manifest-src 'self'; "
+        "upgrade-insecure-requests"
+    ),
+)
+
+TESTING = "test" in sys.argv or "pytest" in sys.modules
+ main
+
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
     if host.strip()
 ]
-ALLOWED_HOSTS.append(".vercel.app")
-ALLOWED_HOSTS.append(".hf.space")
+
+ fix/insecure-docker-compose
+if not DEBUG and not TESTING and not ALLOWED_HOSTS:
+    raise ImproperlyConfigured("ALLOWED_HOSTS cannot be empty in production.")
+
+if not DEBUG and not ALLOWED_HOSTS:
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured("ALLOWED_HOSTS must not be empty in production.")
+main
+
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
     for origin in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
     if origin.strip()
 ]
+
+if not DEBUG and not TESTING and not CORS_ALLOWED_ORIGINS:
+ fix/insecure-docker-compose
+    raise ImproperlyConfigured("CORS_ALLOWED_ORIGINS cannot be empty in production.")
+
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = True
+
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured("CORS_ALLOWED_ORIGINS must not be empty in production.")
+
+CORS_ALLOW_CREDENTIALS = True
+# CORS_ALLOW_ALL_ORIGINS defaults to False; rely on CORS_ALLOWED_ORIGINS allowlist.
+main
 
 INSTALLED_APPS = [
     "daphne",
@@ -81,12 +169,15 @@ INSTALLED_APPS = [
     "apps.organizations",
     "apps.webhooks",
     "apps.notes",
+    "apps.cache.apps.CacheConfig",
     "apps.recommendations",
+    "apps.cache",
     "apps.rbac",
     "apps.uploads",
     "graphene_django",
     "apps.feature_flags",
     "apps.issues",
+    "apps.cache",
     "django_q",
 ]
 
@@ -94,6 +185,7 @@ MIDDLEWARE = [
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "config.security_middleware.ContentSecurityPolicyMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.middleware.gzip.GZipMiddleware",
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
@@ -138,13 +230,14 @@ DATABASES = {
     ),
     "replica": dj_database_url.config(
         env="REPLICA_DATABASE_URL",
-        default=os.getenv("DATABASE_URL") or f"sqlite:///{BASE_DIR / 'db.sqlite3'}",  # Falls back to primary in production if replica env is unset
+        default=os.getenv("DATABASE_URL")
+        or f"sqlite:///{BASE_DIR / 'db.sqlite3'}",  # Falls back to primary in production if replica env is unset
         conn_max_age=600,
         conn_health_checks=True,
     ),
 }
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 DATABASE_ROUTERS = ["config.db_router.PrimaryReplicaRouter"]
 
@@ -169,15 +262,21 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-#Github App Configuration
-GITHUB_APP={
-    'APP_ID': os.getenv('GITHUB_APP_ID'),
-    'PRIVATE_KEY_PATH': os.getenv('GITHUB_PRIVATE_KEY_PATH'),
-    'CLIENT_ID': os.getenv('GITHUB_CLIENT_ID'),
-    'CLIENT_SECRET': os.getenv('GITHUB_CLIENT_SECRET'),
-    'WEBHOOK_SECRET': os.getenv('GITHUB_WEBHOOK_SECRET'),
+# Github App Configuration
+GITHUB_APP = {
+    "APP_ID": os.getenv("GITHUB_APP_ID"),
+    "PRIVATE_KEY_PATH": os.getenv("GITHUB_PRIVATE_KEY_PATH"),
+    "CLIENT_ID": os.getenv("GITHUB_CLIENT_ID"),
+    "CLIENT_SECRET": os.getenv("GITHUB_CLIENT_SECRET"),
+    "WEBHOOK_SECRET": os.getenv("GITHUB_WEBHOOK_SECRET"),
 }
-GITHUB_INSTALLATION_ID=os.getenv('GITHUB_INSTALLATION_ID')
+GITHUB_INSTALLATION_ID = os.getenv("GITHUB_INSTALLATION_ID")
+
+# ── Discord Integration ────────────────────────────────────────────────────────
+# Discord webhook URL for achievement announcements
+DISCORD_WEBHOOK_URL = os.getenv('DISCORD_WEBHOOK_URL')
+# Whether to enable Discord announcements (can be disabled per environment)
+DISCORD_ANNOUNCEMENTS_ENABLED = os.getenv('DISCORD_ANNOUNCEMENTS_ENABLED', 'true').lower() == 'true'
 
 # ── Email Configuration ────────────────────────────────────────────────────────
 # Default: console backend (prints emails to stdout) — safe for dev/CI.
@@ -274,7 +373,7 @@ SOCIALACCOUNT_PROVIDERS = {
             "profile",
             "email",
         ],
-    }
+    },
 }
 
 SOCIALACCOUNT_AUTO_SIGNUP = True
@@ -297,8 +396,8 @@ INSTALLED_APPS += [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:8000',
-    'http://localhost:5173',
+    "http://localhost:8000",
+    "http://localhost:5173",
 ]
 
 # ──────────────────────────────────────────

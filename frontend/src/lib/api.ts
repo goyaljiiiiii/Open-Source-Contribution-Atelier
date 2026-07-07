@@ -520,3 +520,33 @@ export async function executeTerminalCommand(
     body: JSON.stringify({ command }),
   });
 }
+
+export async function exportWorkspaceZip(projectId: string): Promise<void> {
+  const token = localStorage.getItem("accessToken");
+  const response = await fetch(`${API_BASE}/sandbox/projects/${projectId}/export_zip/`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to export workspace");
+  }
+
+  // Get filename from Content-Disposition header
+  const contentDisposition = response.headers.get("Content-Disposition") || "";
+  const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+  const filename = filenameMatch ? filenameMatch[1] : "workspace-export.zip";
+
+  // Create blob and download
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+}

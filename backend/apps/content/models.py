@@ -205,3 +205,54 @@ class Organization(models.Model):
 
     def __str__(self) -> str:
         return str(self.name)
+
+
+class LessonFeedback(models.Model):
+    """Stores user feedback for lessons including star ratings and optional comments."""
+
+    objects = SoftDeleteManager()
+    all_objects = models.Manager()
+
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="lesson_feedbacks"
+    )
+    lesson = models.ForeignKey(
+        Lesson, on_delete=models.CASCADE, related_name="feedbacks"
+    )
+    rating = models.PositiveSmallIntegerField(
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(5),
+        ],
+        help_text="Star rating from 1 to 5"
+    )
+    comment = models.TextField(
+        blank=True,
+        help_text="Optional written feedback"
+    )
+    is_deleted = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        unique_together = ["user", "lesson"]
+        indexes = [
+            models.Index(fields=["lesson", "is_deleted"], name="idx_feedback_les_del"),
+            models.Index(fields=["user", "lesson"], name="idx_feedback_user_les"),
+        ]
+
+    def delete(self, using=None, keep_parents=False, hard=False):
+        if hard:
+            return super().delete(using=using, keep_parents=keep_parents)
+        self.is_deleted = True
+        self.save(update_fields=["is_deleted"])
+        return (1, {self._meta.label: 1})
+
+    def restore(self):
+        self.is_deleted = False
+        self.save(update_fields=["is_deleted"])
+
+    def __str__(self):
+        status = "[DELETED] " if self.is_deleted else ""
+        return f"{status}Feedback by {self.user.username} for {self.lesson.title}: {self.rating} stars"

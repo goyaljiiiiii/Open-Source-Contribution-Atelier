@@ -130,6 +130,46 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         return Response({"restored_count": len(files_to_update)})
 
+    @action(detail=True, methods=["get"])
+    def export_zip(self, request, pk=None):
+        """Export project workspace as a ZIP file."""
+        import io
+        import zipfile
+        from django.http import HttpResponse
+
+        project = self.get_object()
+        files = ProjectFile.objects.filter(project=project)
+
+        # Create ZIP in memory
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            for file in files:
+                # Normalize path to avoid issues
+                file_path = file.path.lstrip("/")
+                zip_file.writestr(file_path, file.content)
+
+            # Add a README file
+            readme_content = f"""# {project.name}
+
+This workspace was exported from Open Source Contribution Atelier.
+
+Project: {project.name}
+Exported at: {project.updated_at}
+Total files: {files.count()}
+
+## Files
+"""
+            for file in files:
+                readme_content += f"- {file.path}\n"
+            zip_file.writestr("README.md", readme_content)
+
+        # Prepare response
+        buffer.seek(0)
+        filename = f"{project.name.replace(' ', '_')}-export.zip"
+        response = HttpResponse(buffer.getvalue(), content_type="application/zip")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
 
 class ProjectFileViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectFileSerializer
