@@ -1,8 +1,11 @@
 import os
+import sys
 from datetime import timedelta
 from pathlib import Path
 
 import dj_database_url
+
+TESTING = "test" in sys.argv or "pytest" in sys.modules
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -49,8 +52,13 @@ CORS_ALLOWED_ORIGINS = [
     for origin in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
     if origin.strip()
 ]
+
+if not DEBUG and not TESTING and not CORS_ALLOWED_ORIGINS:
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured("CORS_ALLOWED_ORIGINS must not be empty in production.")
+
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS_ALLOW_ALL_ORIGINS defaults to False; rely on CORS_ALLOWED_ORIGINS allowlist.
 
 INSTALLED_APPS = [
     "daphne",
