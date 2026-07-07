@@ -6,6 +6,8 @@ from pathlib import Path
 import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 
+TESTING = "test" in sys.argv or "pytest" in sys.modules
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -49,8 +51,14 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
+ fix/insecure-docker-compose
 if not DEBUG and not TESTING and not ALLOWED_HOSTS:
     raise ImproperlyConfigured("ALLOWED_HOSTS cannot be empty in production.")
+
+if not DEBUG and not ALLOWED_HOSTS:
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured("ALLOWED_HOSTS must not be empty in production.")
+main
 
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
@@ -59,12 +67,19 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 if not DEBUG and not TESTING and not CORS_ALLOWED_ORIGINS:
+ fix/insecure-docker-compose
     raise ImproperlyConfigured("CORS_ALLOWED_ORIGINS cannot be empty in production.")
 
 CORS_ALLOW_CREDENTIALS = True
 
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured("CORS_ALLOWED_ORIGINS must not be empty in production.")
+
+CORS_ALLOW_CREDENTIALS = True
+# CORS_ALLOW_ALL_ORIGINS defaults to False; rely on CORS_ALLOWED_ORIGINS allowlist.
+main
+
 INSTALLED_APPS = [
-    "django_prometheus",
     "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -93,7 +108,9 @@ INSTALLED_APPS = [
     "apps.organizations",
     "apps.webhooks",
     "apps.notes",
+    "apps.cache.apps.CacheConfig",
     "apps.recommendations",
+    "apps.cache",
     "apps.rbac",
     "apps.uploads",
     "graphene_django",
@@ -109,9 +126,11 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.middleware.gzip.GZipMiddleware",
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -190,6 +209,12 @@ GITHUB_APP = {
     "WEBHOOK_SECRET": os.getenv("GITHUB_WEBHOOK_SECRET"),
 }
 GITHUB_INSTALLATION_ID = os.getenv("GITHUB_INSTALLATION_ID")
+
+# ── Discord Integration ────────────────────────────────────────────────────────
+# Discord webhook URL for achievement announcements
+DISCORD_WEBHOOK_URL = os.getenv('DISCORD_WEBHOOK_URL')
+# Whether to enable Discord announcements (can be disabled per environment)
+DISCORD_ANNOUNCEMENTS_ENABLED = os.getenv('DISCORD_ANNOUNCEMENTS_ENABLED', 'true').lower() == 'true'
 
 # ── Email Configuration ────────────────────────────────────────────────────────
 # Default: console backend (prints emails to stdout) — safe for dev/CI.
