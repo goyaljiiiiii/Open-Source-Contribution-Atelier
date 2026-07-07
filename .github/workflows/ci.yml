@@ -1,0 +1,79 @@
+name: CI Checks (Hugging Face & Vercel)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Frontend Build (Vercel emulator)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Frontend Deps
+        run: cd frontend && npm install
+
+      - name: Run Frontend Build
+        id: frontend_build
+        run: cd frontend && npm run build
+        continue-on-error: true
+
+      # Backend Tests (Hugging Face emulator)
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Backend Deps
+        run: |
+          cd backend
+          pip install -r requirements.txt
+        continue-on-error: true
+
+      - name: Run Backend Tests
+        id: backend_tests
+        run: |
+          cd backend
+          python manage.py test
+        continue-on-error: true
+
+      # Comment on PR if any checks failed
+      - name: Comment on PR
+        if: steps.frontend_build.outcome == 'failure' || steps.backend_tests.outcome == 'failure'
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const frontendOutcome = "${{ steps.frontend_build.outcome }}";
+            const backendOutcome = "${{ steps.backend_tests.outcome }}";
+            
+            let message = "### ⚠️ CI Check Failures\n\nSome of your checks failed. Please fix them before requesting maintainer review.\n\n";
+            
+            if (frontendOutcome === 'failure') {
+              message += "❌ **Vercel Frontend Build Failed**\nYour changes failed to compile/build in the React frontend. Run `npm run build` locally in the `frontend/` directory to debug and fix errors.\n\n";
+            }
+            
+            if (backendOutcome === 'failure') {
+              message += "❌ **Hugging Face Django Tests Failed**\nYour changes failed backend Django tests. Run `pytest` or `python manage.py test` locally in the `backend/` directory to debug and fix errors.\n\n";
+            }
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: message
+            });
+            
+            // Mark job as failed if any of the checks failed
+            core.setFailed("CI Checks failed. See PR comments for details.");
