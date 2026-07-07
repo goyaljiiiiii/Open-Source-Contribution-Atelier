@@ -202,7 +202,22 @@ We welcome contributions of all levels suitable for **SSoC 2026** and long-term 
 |---|---|
 | 📋 [CONTRIBUTING.md](.github/CONTRIBUTING.md) | Forking, branching guidelines, commit conventions, and review cycles |
 | 💬 [CODE_OF_CONDUCT.md](.github/CODE_OF_CONDUCT.md) | Community participation guidelines |
+| 🔒 [SECURITY.md](.github/SECURITY.md) | Responsible vulnerability disclosure policy |
 | 📖 [Content Guide](docs/CONTENT_GUIDE.md) | How to add lessons, modules, and quizzes (zero code changes!) |
+
+---
+
+## 🤝 Contributors
+
+Thanks to all the amazing people who have contributed to this project! 💜
+
+<a href="https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=nandinigoyaldev/Open-Source-Contribution-Atelier&max=100&columns=12" />
+</a>
+
+<br/>
+
+> Want to see your avatar here? Check the [Contributing Guide](.github/CONTRIBUTING.md) and pick an issue to get started!
 
 ---
 
@@ -214,6 +229,7 @@ If you find this project helpful, please consider giving it a ⭐ star on GitHub
 
 [![Star this repo](https://img.shields.io/badge/⭐_Star_this_Repo-FFD700?style=for-the-badge&logo=github&logoColor=black)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier)
 [![Fork this repo](https://img.shields.io/badge/🍴_Fork_this_Repo-45B7D1?style=for-the-badge&logo=github&logoColor=white)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/fork)
+[![Sponsor](https://img.shields.io/badge/💖_Sponsor-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/nandinigoyaldev)
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:FF6B6B,50:4ECDC4,100:45B7D1&height=100&section=footer" width="100%" />
 
