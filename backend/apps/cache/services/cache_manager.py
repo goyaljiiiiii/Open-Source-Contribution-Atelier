@@ -346,8 +346,13 @@ def invalidate_cache_on_save(sender, instance, created, **kwargs):
     """
     Invalidate cache when a model is saved.
     """
+    if sender._meta.app_label in ["migrations", "contenttypes", "sessions", "admin", "sites", "auth"]:
+        return
     manager = CacheManager()
-    manager.invalidate_dependencies(instance)
+    try:
+        manager.invalidate_dependencies(instance)
+    except Exception:
+        pass
 
 
 @receiver(post_delete)
@@ -355,8 +360,13 @@ def invalidate_cache_on_delete(sender, instance, **kwargs):
     """
     Invalidate cache when a model is deleted.
     """
+    if sender._meta.app_label in ["migrations", "contenttypes", "sessions", "admin", "sites", "auth"]:
+        return
     manager = CacheManager()
-    manager.invalidate_dependencies(instance)
+    try:
+        manager.invalidate_dependencies(instance)
+    except Exception:
+        pass
 
 
 @receiver(m2m_changed)
@@ -368,12 +378,18 @@ def invalidate_cache_on_m2m_change(
     """
     if action in ["post_add", "post_remove", "post_clear"]:
         manager = CacheManager()
-        manager.invalidate_dependencies(instance)
+        try:
+            manager.invalidate_dependencies(instance)
+        except Exception:
+            pass
 
         # Also invalidate for related objects
         for pk in pk_set:
             try:
                 related = model.objects.get(pk=pk)
-                manager.invalidate_dependencies(related)
+                try:
+                    manager.invalidate_dependencies(related)
+                except Exception:
+                    pass
             except model.DoesNotExist:
                 pass
