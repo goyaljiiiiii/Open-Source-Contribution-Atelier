@@ -15,6 +15,8 @@ from django.utils.text import slugify
 from django_filters.rest_framework import DjangoFilterBackend
 from django_q.tasks import async_task
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
+from drf_spectacular.types import OpenApiTypes
 from rest_framework import filters, generics, permissions, status
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
@@ -91,6 +93,50 @@ class SignupView(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [SignupThrottle]
 
+@extend_schema(
+    summary="Register a new user",
+    description="Create a new user account with username, email, and password",
+    request=UserCreateSchema,
+    responses={
+        201: OpenApiResponse(description="User created successfully"),
+        400: OpenApiResponse(description="Validation error"),
+    },
+    examples=[
+        OpenApiExample(
+            name="Valid Registration",
+            value={
+                "username": "johndoe",
+                "email": "john@example.com",
+                "password": "SecurePass123"
+            }
+        )
+    ]
+)
+def register(request):
+    # ... view logic
+
+@extend_schema(
+    summary="Login user",
+    description="Authenticate user and return JWT token",
+    request=UserLoginSchema,
+    responses={
+        200: OpenApiResponse(description="Login successful", response=LoginResponseSchema),
+        401: OpenApiResponse(description="Invalid credentials"),
+    }
+)
+def login(request):
+    # ... view logic
+
+@extend_schema(
+    summary="Get user profile",
+    description="Returns current user profile information",
+    responses={
+        200: UserProfileSchema,
+        401: OpenApiResponse(description="Unauthorized"),
+    }
+)
+def get_profile(request):
+    # ... view logic
 
 class MeView(APIView):
     permission_classes = [IsAuthenticated]  # check jwt authentication

@@ -26,11 +26,13 @@ const MarkdownRenderer = React.lazy(() =>
 );
 import { GitGraph } from "../components/ui/GitGraph";
 import { NotePanel } from "../components/ui/NotePanel";
+import { LessonFeedbackWidget } from "../components/ui/LessonFeedbackWidget";
 import { PythonSandbox } from "../components/ui/PythonSandbox";
 import { CollabPythonSandbox } from "../components/ui/CollabPythonSandbox";
 import { JSSandbox } from "../components/ui/JSSandbox";
 import { InteractiveDebugger } from "../components/ui/InteractiveDebugger";
 import { TextToSpeechControls } from "../components/ui/TextToSpeechControls";
+import { ReadingProgressTracker } from "../components/ui/ReadingProgressTracker";
 
 import {
   createInitialRepo,
@@ -520,6 +522,7 @@ export function LessonPage() {
             style={{ width: `${scrollProgress}%` }}
           />
         </div>
+        <ReadingProgressTracker lessonSlug={lesson.slug} containerSelector=".prose" />
 
         <div
           ref={mainContentRef}
@@ -1068,6 +1071,9 @@ export function LessonPage() {
           </aside>
         </div>
       )}
+
+      {/* Lesson Feedback Widget */}
+      {lesson && <LessonFeedbackWidget lessonSlug={lesson.slug} />}
     </div>
   );
 }
