@@ -412,3 +412,52 @@ export async function forkWorkspaceSnapshot(id: string): Promise<Project> {
     method: "POST",
   });
 }
+
+// ---------------------- TERMINAL API ----------------------
+
+export interface TerminalCommand {
+  id: string;
+  session: string;
+  command: string;
+  output: string;
+  is_error: boolean;
+  execution_time: number;
+  created_at: string;
+}
+
+export interface TerminalSession {
+  id: string;
+  name: string;
+  project: string | null;
+  commands?: TerminalCommand[];
+  created_at: string;
+  updated_at: string;
+}
+
+export async function fetchTerminalSessions(): Promise<TerminalSession[]> {
+  return fetchApi("/sandbox/terminal-sessions/", { method: "GET" });
+}
+
+export async function createTerminalSession(data: {
+  name: string;
+  project: string | null;
+}): Promise<TerminalSession> {
+  return fetchApi("/sandbox/terminal-sessions/", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteTerminalSession(id: string): Promise<void> {
+  return fetchApi(`/sandbox/terminal-sessions/${id}/`, { method: "DELETE" });
+}
+
+export async function executeTerminalCommand(
+  sessionId: string,
+  command: string,
+): Promise<TerminalCommand> {
+  return fetchApi(`/sandbox/terminal-sessions/${sessionId}/execute/`, {
+    method: "POST",
+    body: JSON.stringify({ command }),
+  });
+}

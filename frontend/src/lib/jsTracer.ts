@@ -99,7 +99,7 @@ export function instrumentJS(code: string): string {
             },
           };
 
-          newBody.push(traceNode);
+          newBody.push(traceNode as any);
           newBody.push(child);
         }
         node.body = newBody;

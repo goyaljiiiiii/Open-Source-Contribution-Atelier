@@ -152,7 +152,7 @@ export function DashboardPage() {
 
   // 6. Fetch personalized learning path
   const { data: learningPathData, isLoading: isLearningPathLoading } =
-    useQuery<unknown>({
+    useQuery<any>({
       queryKey: ["learningPath"],
       queryFn: () => fetchApi("/users/me/learning-path/"),
       enabled: !!user && !user.is_staff,
