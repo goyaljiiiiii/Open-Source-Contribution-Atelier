@@ -16,7 +16,11 @@ def load_dotenv(dotenv_path: Path) -> None:
         if not line or line.startswith("#") or "=" not in line:
             continue
         key, value = line.split("=", 1)
-        os.environ.setdefault(key.strip(), value.strip())
+        val_stripped = value.strip()
+        if (val_stripped.startswith('"') and val_stripped.endswith('"')) or (val_stripped.startswith("'") and val_stripped.endswith("'")):
+            val_stripped = val_stripped[1:-1].strip()
+        if val_stripped:
+            os.environ.setdefault(key.strip(), val_stripped)
 
 
 load_dotenv(BASE_DIR / ".env")
