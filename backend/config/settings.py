@@ -83,6 +83,7 @@ INSTALLED_APPS = [
     "apps.webhooks",
     "apps.notes",
     "apps.recommendations",
+    "apps.cache",
     "apps.rbac",
     "apps.uploads",
     "graphene_django",

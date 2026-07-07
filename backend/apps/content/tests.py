@@ -1,7 +1,7 @@
 import pytest
 from rest_framework.test import APIClient
 
-from apps.content.models import Lesson
+from apps.content.models import Lesson, LessonFeedback
 
 
 @pytest.mark.django_db
