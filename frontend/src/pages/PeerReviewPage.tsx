@@ -32,7 +32,7 @@ export function PeerReviewPage() {
   const [isReviewing, setIsReviewing] = useState(false);
   const [reviewSuccess, setReviewSuccess] = useState(false);
 
-  const { data: pendingSubmissions = [], refetch: fetchPendingSubmissions, isLoading: isLoadingSubmissions } = useQuery({
+  const { data: pendingSubmissions = [], refetch: fetchPendingSubmissions, isLoading: isLoadingSubmissions } = useQuery<CodeSubmission[]>({
     queryKey: ["pendingSubmissions"],
     queryFn: async () => {
       const response = await fetchApi("/progress/code-submissions/");
