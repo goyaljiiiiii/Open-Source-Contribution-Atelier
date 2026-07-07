@@ -37,6 +37,65 @@ SECRET_KEY = os.getenv(
     "SECRET_KEY", "django-insecure-dev-key-not-for-production-use-32bytes!!"
 )
 DEBUG = os.getenv("DEBUG", "False") == "True"
+
+# ──────────────────────────────────────────
+# Security Headers
+# ──────────────────────────────────────────
+
+# Prevent browsers from MIME-sniffing responses away from their declared
+# Content-Type.
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# Prevent application pages from being embedded in frames.
+X_FRAME_OPTIONS = "DENY"
+
+# Keep HSTS disabled for local development. Production defaults to one year.
+SECURE_HSTS_SECONDS = int(
+    os.getenv(
+        "SECURE_HSTS_SECONDS",
+        "0" if DEBUG else "31536000",
+    )
+)
+
+SECURE_HSTS_INCLUDE_SUBDOMAINS = (
+    os.getenv(
+        "SECURE_HSTS_INCLUDE_SUBDOMAINS",
+        "True",
+    ).lower()
+    in {"1", "true", "yes", "on"}
+)
+
+# HSTS preload is opt-in because enabling it has long-lived operational impact.
+SECURE_HSTS_PRELOAD = (
+    os.getenv(
+        "SECURE_HSTS_PRELOAD",
+        "False",
+    ).lower()
+    in {"1", "true", "yes", "on"}
+)
+
+# Restrictive default Content Security Policy.
+# Allow jsDelivr because the API documentation UI loads its assets from there.
+CONTENT_SECURITY_POLICY = os.getenv(
+    "CONTENT_SECURITY_POLICY",
+    (
+        "default-src 'self'; "
+        "base-uri 'self'; "
+        "object-src 'none'; "
+        "frame-ancestors 'none'; "
+        "form-action 'self'; "
+        "script-src 'self' https://cdn.jsdelivr.net; "
+        "style-src 'self' https://cdn.jsdelivr.net; "
+        "img-src 'self' data: https://cdn.jsdelivr.net; "
+        "font-src 'self' data: https://cdn.jsdelivr.net; "
+        "connect-src 'self'; "
+        "media-src 'self'; "
+        "worker-src 'self'; "
+        "manifest-src 'self'; "
+        "upgrade-insecure-requests"
+    ),
+)
+
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
@@ -95,6 +154,7 @@ MIDDLEWARE = [
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "config.security_middleware.ContentSecurityPolicyMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.middleware.gzip.GZipMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",

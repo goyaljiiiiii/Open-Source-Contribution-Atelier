@@ -1,7 +1,10 @@
 from django.contrib import admin
 from django.urls import path, include, re_path
 from django.views.decorators.csrf import csrf_exempt
-from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularSwaggerSplitView,
+)
 from graphene_django.views import GraphQLView
 from django.urls import path, include
 
@@ -60,7 +63,7 @@ urlpatterns = [
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
         "api/docs/",
-        SpectacularSwaggerView.as_view(url_name="schema"),
+        SpectacularSwaggerSplitView.as_view(url_name="schema"),
         name="swagger-ui",
     ),
     # ============================================================
@@ -82,7 +85,7 @@ if settings.DEBUG:
         path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
         path(
             "api/docs/",
-            SpectacularSwaggerView.as_view(url_name="schema"),
+            SpectacularSwaggerSplitView.as_view(url_name="schema"),
             name="swagger-ui",
         ),
         path("graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
