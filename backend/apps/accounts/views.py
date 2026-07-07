@@ -1,5 +1,6 @@
 import os
 import secrets
+from pathlib import Path
 from typing import Optional
 from urllib.parse import urlencode
 
@@ -14,6 +15,8 @@ from django.utils.text import slugify
 from django_filters.rest_framework import DjangoFilterBackend
 from django_q.tasks import async_task
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
+from drf_spectacular.types import OpenApiTypes
 from rest_framework import filters, generics, permissions, status
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
@@ -90,6 +93,50 @@ class SignupView(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [SignupThrottle]
 
+@extend_schema(
+    summary="Register a new user",
+    description="Create a new user account with username, email, and password",
+    request=UserCreateSchema,
+    responses={
+        201: OpenApiResponse(description="User created successfully"),
+        400: OpenApiResponse(description="Validation error"),
+    },
+    examples=[
+        OpenApiExample(
+            name="Valid Registration",
+            value={
+                "username": "johndoe",
+                "email": "john@example.com",
+                "password": "SecurePass123"
+            }
+        )
+    ]
+)
+def register(request):
+    # ... view logic
+
+@extend_schema(
+    summary="Login user",
+    description="Authenticate user and return JWT token",
+    request=UserLoginSchema,
+    responses={
+        200: OpenApiResponse(description="Login successful", response=LoginResponseSchema),
+        401: OpenApiResponse(description="Invalid credentials"),
+    }
+)
+def login(request):
+    # ... view logic
+
+@extend_schema(
+    summary="Get user profile",
+    description="Returns current user profile information",
+    responses={
+        200: UserProfileSchema,
+        401: OpenApiResponse(description="Unauthorized"),
+    }
+)
+def get_profile(request):
+    # ... view logic
 
 class MeView(APIView):
     permission_classes = [IsAuthenticated]  # check jwt authentication
@@ -380,7 +427,7 @@ from .permissions import IsAdminOrModeratorRole
 
 @extend_schema(responses=UserListSerializer(many=True))
 class UserListView(generics.ListAPIView):
-    queryset = User.objects.all().order_by("id")
+    queryset = User.objects.select_related("profile").order_by("id")
     permission_classes = [permissions.IsAuthenticated, IsAdminOrModeratorRole]
     serializer_class = UserListSerializer
     pagination_class = LimitOffsetPagination
@@ -884,22 +931,26 @@ class LearningPathView(APIView):
         BadgeEvaluator.evaluate(user)
 
         # 2. Load curriculum modules
-        curriculum_path = os.path.join(
-            settings.BASE_DIR, "..", "frontend", "public", "content", "curriculum.json"
-        )
+        curriculum_path = Path(getattr(settings, "CURRICULUM_JSON_PATH", "")).resolve()
 
-        if not os.path.exists(curriculum_path):
+        if not curriculum_path.exists():
             return Response(
-                {"error": f"Curriculum file not found at {curriculum_path}"},
+                {
+                    "error": "Curriculum configuration file not found.",
+                    "detail": f"Expected at {curriculum_path}",
+                },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
         with open(curriculum_path, "r", encoding="utf-8") as f:
             try:
                 curriculum_data = json.load(f)
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as e:
                 return Response(
-                    {"error": "Failed to parse curriculum content"},
+                    {
+                        "error": "Failed to parse curriculum content.",
+                        "detail": str(e),
+                    },
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
 

@@ -17,9 +17,12 @@ from .views import (
     PeerReviewView,
     QuizAttemptView,
     RecommendationsView,
+    UserProgressPDFExportView,
+    ReadingProgressView,
 )
 
 urlpatterns = [
+    path("export/pdf/", UserProgressPDFExportView.as_view(), name="export-pdf"),
     path("badges/", BadgeListView.as_view(), name="badges"),
     path("me/", MyProgressView.as_view(), name="my-progress"),
     path("bulk-sync/", BulkSyncProgressView.as_view(), name="bulk-sync"),
@@ -47,11 +50,16 @@ urlpatterns = [
         name="verify-certificate",
     ),
     path("bookmarks/", LessonBookmarkView.as_view(), name="lesson-bookmarks"),
-    path("bookmarks/<str:slug>/", LessonBookmarkView.as_view(), name="lesson-bookmark-detail"),
+    path(
+        "bookmarks/<str:slug>/",
+        LessonBookmarkView.as_view(),
+        name="lesson-bookmark-detail",
+    ),
     path("code-submissions/", CodeSubmissionView.as_view(), name="code-submissions"),
     path(
         "code-submissions/<int:submission_id>/reviews/",
         PeerReviewView.as_view(),
         name="peer-reviews",
     ),
+    path("reading-position/", ReadingProgressView.as_view(), name="reading-position"),
 ]

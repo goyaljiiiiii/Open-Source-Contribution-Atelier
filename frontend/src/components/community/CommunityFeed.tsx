@@ -90,8 +90,8 @@ export function CommunityFeed() {
   );
 
   return (
-    <div className="rounded-2xl border-4 border-black bg-white p-4 sm:p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924]">
-      <h3 className="text-2xl font-black mb-6 flex items-center gap-2 text-text dark:text-[#f0ebe2]">
+    <div className="rounded-2xl border-4 border-black bg-white p-4 sm:p-6 shadow-card dark:bg-[#1a1a24] dark:border-[#3a3a45]">
+      <h3 className="text-2xl font-black mb-6 flex items-center gap-2 text-text dark:text-[#eef2f6]">
         <Clock className="text-accent w-6 h-6" /> Community Activity
       </h3>
 
@@ -111,23 +111,23 @@ export function CommunityFeed() {
               <div
                 key={entry.id}
                 ref={isLast ? lastElementRef : null}
-                className="flex items-start gap-3 p-3 rounded-xl border-2 border-black/10 dark:border-[#2e2924]/50 hover:border-accent/50 transition-colors"
+                className="flex items-start gap-3 p-3 rounded-xl border-2 border-black/10 dark:border-[#3a3a45]/50 hover:border-accent/50 transition-colors"
               >
                 <div className="mt-0.5 text-accent dark:text-accent/80">
                   <FeedIcon type={entry.type} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-text dark:text-[#f0ebe2] truncate">
+                  <p className="text-sm font-bold text-text dark:text-[#eef2f6] truncate">
                     <span className="text-primary">@{entry.username}</span>{" "}
                     {entry.title}
                   </p>
                   {entry.description && (
-                    <p className="text-xs text-muted dark:text-[#c4bbae] mt-0.5 line-clamp-2">
+                    <p className="text-xs text-muted dark:text-[#94a3b8] mt-0.5 line-clamp-2">
                       {entry.description}
                     </p>
                   )}
                 </div>
-                <span className="text-[10px] font-bold text-muted dark:text-[#c4bbae] flex-shrink-0 whitespace-nowrap pt-0.5">
+                <span className="text-[10px] font-bold text-muted dark:text-[#94a3b8] flex-shrink-0 whitespace-nowrap pt-0.5">
                   {timeAgo(entry.created_at)}
                 </span>
               </div>

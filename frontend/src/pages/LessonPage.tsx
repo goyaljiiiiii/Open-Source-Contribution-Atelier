@@ -26,11 +26,13 @@ const MarkdownRenderer = React.lazy(() =>
 );
 import { GitGraph } from "../components/ui/GitGraph";
 import { NotePanel } from "../components/ui/NotePanel";
+import { LessonFeedbackWidget } from "../components/ui/LessonFeedbackWidget";
 import { PythonSandbox } from "../components/ui/PythonSandbox";
 import { CollabPythonSandbox } from "../components/ui/CollabPythonSandbox";
 import { JSSandbox } from "../components/ui/JSSandbox";
 import { InteractiveDebugger } from "../components/ui/InteractiveDebugger";
 import { TextToSpeechControls } from "../components/ui/TextToSpeechControls";
+import { ReadingProgressTracker } from "../components/ui/ReadingProgressTracker";
 
 import {
   createInitialRepo,
@@ -157,10 +159,21 @@ export function LessonPage() {
   useEffect(() => {
     setIsLoading(true);
 
-    Promise.all([
-      fetch("/content/curriculum.json").then((res) => res.json()),
-      fetchLessonsApi(),
-    ])
+    // Fetch curriculum.json for module structure and fallback lesson data
+    const curriculumPromise = fetch("/content/curriculum.json")
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .catch((err) => {
+        console.warn("[LessonPage] Failed to load curriculum.json:", err);
+        return null;
+      });
+
+    // Fetch lessons from the backend API
+    const lessonsPromise = fetchLessonsApi();
+
+    Promise.all([curriculumPromise, lessonsPromise])
       .then(([curriculumJson, lessonsData]) => {
         setLessonsList(lessonsData);
 
@@ -204,13 +217,15 @@ export function LessonPage() {
         }
 
         if (!found) {
+          // Lesson slug doesn't exist in either data source — redirect to dashboard
           navigate("/dashboard", { replace: true });
           return;
         }
 
         setLesson(found);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("[LessonPage] Unexpected error loading lesson:", err);
         navigate("/dashboard", { replace: true });
       })
       .finally(() => {
@@ -507,6 +522,7 @@ export function LessonPage() {
             style={{ width: `${scrollProgress}%` }}
           />
         </div>
+        <ReadingProgressTracker lessonSlug={lesson.slug} containerSelector=".prose" />
 
         <div
           ref={mainContentRef}
@@ -780,6 +796,7 @@ export function LessonPage() {
                   {feedback === "error" && (
                     <div
                       role="alert"
+                      aria-live="assertive"
                       className="mt-6 text-red-700 font-bold bg-red-50 p-4 rounded-lg border-4 border-red-600"
                     >
                       ❌ The resolved output doesn't quite match what was
@@ -862,6 +879,7 @@ export function LessonPage() {
                     {feedback === "correct" && (
                       <div
                         role="status"
+                        aria-live="assertive"
                         className="text-green-700 font-bold bg-green-50 p-4 rounded-lg border-4 border-green-600 animate-bounce"
                       >
                         ✅ Correct! Progress synchronized to the Atelier server.
@@ -871,6 +889,7 @@ export function LessonPage() {
                     {feedback === "error" && (
                       <div
                         role="alert"
+                        aria-live="assertive"
                         className="text-red-700 font-bold bg-red-50 p-4 rounded-lg border-4 border-red-600"
                       >
                         ❌ Not quite. Command output did not match sandbox
@@ -1023,6 +1042,7 @@ export function LessonPage() {
               {helpRequestMutation.isError && (
                 <div
                   role="alert"
+                  aria-live="assertive"
                   className="text-red-700 text-xs font-black bg-red-50 p-2 rounded-lg border-2 border-red-700"
                 >
                   Couldn&apos;t submit request. Re-run backend server checks.
@@ -1051,6 +1071,9 @@ export function LessonPage() {
           </aside>
         </div>
       )}
+
+      {/* Lesson Feedback Widget */}
+      {lesson && <LessonFeedbackWidget lessonSlug={lesson.slug} />}
     </div>
   );
 }

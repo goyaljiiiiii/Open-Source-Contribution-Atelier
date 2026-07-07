@@ -4,6 +4,7 @@ from rest_framework.test import APIClient
 
 from apps.content.models import Lesson
 from apps.progress.models import Badge, LessonProgress, UserBadge
+from apps.progress.tasks import evaluate_achievements_task
 
 
 def create_lesson(slug="intro"):
@@ -31,6 +32,7 @@ def test_authenticated_user_can_retrieve_badges_and_progress_points():
     LessonProgress.objects.create(
         user=user, lesson=create_lesson("branching"), completed=True, score=25
     )
+    evaluate_achievements_task(user.id)
 
     client = APIClient()
     client.force_authenticate(user=user)
@@ -77,6 +79,8 @@ def test_badges_endpoint_returns_only_authenticated_users_stats():
     LessonProgress.objects.create(
         user=other_user, lesson=create_lesson("other"), completed=True, score=90
     )
+    evaluate_achievements_task(user.id)
+    evaluate_achievements_task(other_user.id)
 
     client = APIClient()
     client.force_authenticate(user=user)
