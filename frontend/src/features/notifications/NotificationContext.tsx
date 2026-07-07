@@ -16,6 +16,8 @@ import {
   AppNotification,
 } from "./notificationSlice";
 
+export type { AppNotification };
+
 interface NotificationContextType {
   notifications: AppNotification[];
   unreadCount: number;

@@ -146,7 +146,7 @@ export function useTerminalAutocomplete(
         }
       }
 
-      const cmd = words[0];
+      const cmd = words[0] || "";
       const dirsOnly = ["cd", "mkdir"].includes(cmd);
 
       [...matchedNames].sort().forEach((name) => {

@@ -8,6 +8,6 @@ export function BadgeToastNotifier() {
 
   if (!user || user.is_staff) return null;
 
-  return <BadgeToastContainer toasts={toasts} onDismiss={dismissToast} />;
+  return <BadgeToastContainer toasts={toasts as any} onDismiss={dismissToast} />;
 }
 
