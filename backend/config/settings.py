@@ -130,11 +130,7 @@ DATABASES = {
     ),
 }
 
-for key in DATABASES:
-    if DATABASES[key]["ENGINE"] == "django.db.backends.sqlite3":
-        DATABASES[key]["ENGINE"] = "django_prometheus.db.backends.sqlite3"
-    elif DATABASES[key]["ENGINE"] == "django.db.backends.postgresql":
-        DATABASES[key]["ENGINE"] = "django_prometheus.db.backends.postgresql"
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 DATABASE_ROUTERS = ["config.db_router.PrimaryReplicaRouter"]
 
@@ -155,6 +151,16 @@ STATIC_URL = "/static/"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+#Github App Configuration
+GITHUB_APP={
+    'APP_ID': os.getenv('GITHUB_APP_ID'),
+    'PRIVATE_KEY_PATH': os.getenv('GITHUB_PRIVATE_KEY_PATH'),
+    'CLIENT_ID': os.getenv('GITHUB_CLIENT_ID'),
+    'CLIENT_SECRET': os.getenv('GITHUB_CLIENT_SECRET'),
+    'WEBHOOK_SECRET': os.getenv('GITHUB_WEBHOOK_SECRET'),
+}
+GITHUB_INSTALLATION_ID=os.getenv('GITHUB_INSTALLATION_ID)
 
 # ── Email Configuration ────────────────────────────────────────────────────────
 # Default: console backend (prints emails to stdout) — safe for dev/CI.
@@ -259,6 +265,10 @@ INSTALLED_APPS += [
     "apps.search.apps.SearchConfig",
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'http://localhost:5173',
+]
 
 # ──────────────────────────────────────────
 # Redis Availability and Configuration (Dynamic Fallbacks)
