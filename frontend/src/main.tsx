@@ -8,6 +8,7 @@ import { AuthProvider } from "./features/auth/AuthContext";
 import { ThemeProvider } from "./hooks/useTheme";
 import { ToastProvider } from "./features/ui/ToastContext";
 import { syncOfflineQueue } from "./lib/offlineQueue";
+import { initKeepAlive } from "./lib/hfKeepAlive";
 import i18n from "./lib/i18n";
 import { I18nextProvider } from "react-i18next";
 import "./styles.css";
@@ -37,6 +38,9 @@ if (typeof window !== "undefined" && "serviceWorker" in navigator) {
 
 // Perform initial check/sync of offline queue
 syncOfflineQueue();
+
+// Keep HF Spaces container warm (production only)
+initKeepAlive();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
