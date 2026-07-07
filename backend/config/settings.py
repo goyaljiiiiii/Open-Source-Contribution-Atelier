@@ -43,6 +43,10 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
+if not DEBUG and not ALLOWED_HOSTS:
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured("ALLOWED_HOSTS must not be empty in production.")
+
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
     for origin in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
