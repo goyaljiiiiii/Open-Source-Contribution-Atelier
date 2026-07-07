@@ -319,3 +319,142 @@ class QuizDetailView(views.APIView):
             )
 
         return response.Response(quiz_data)
+
+
+# --- Lesson Feedback Views ---
+from django.db.models import Count
+from django.db.models.functions import Coalesce
+
+from .models import Lesson, LessonFeedback
+from .serializers import (
+    LessonFeedbackCreateSerializer,
+    LessonFeedbackSerializer,
+    LessonFeedbackMetricsSerializer,
+)
+
+
+class LessonFeedbackListCreateView(generics.ListCreateAPIView):
+    """List all feedback for a lesson or create new feedback."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return LessonFeedbackCreateSerializer
+        return LessonFeedbackSerializer
+
+    def get_queryset(self):
+        lesson_slug = self.kwargs.get("lesson_slug")
+        return LessonFeedback.objects.filter(
+            lesson__slug=lesson_slug,
+            is_deleted=False
+        ).select_related("user", "lesson")
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["lesson_slug"] = self.kwargs.get("lesson_slug")
+        return context
+
+    def perform_create(self, serializer):
+        lesson_slug = self.kwargs.get("lesson_slug")
+        try:
+            lesson = Lesson.objects.get(slug=lesson_slug)
+        except Lesson.DoesNotExist:
+            raise serializers.ValidationError({"lesson": "Lesson not found."})
+        serializer.save(user=self.request.user, lesson=lesson)
+
+
+class LessonFeedbackRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    """Retrieve, update, or delete a specific feedback entry."""
+
+    serializer_class = LessonFeedbackSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return LessonFeedback.objects.filter(
+            is_deleted=False
+        ).select_related("user", "lesson")
+
+    def perform_destroy(self, instance):
+        instance.delete()
+
+
+class LessonFeedbackMetricsView(views.APIView):
+    """Get aggregated feedback metrics for a lesson."""
+
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, lesson_slug):
+        try:
+            lesson = Lesson.objects.get(slug=lesson_slug)
+        except Lesson.DoesNotExist:
+            return response.Response(
+                {"error": "Lesson not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        feedbacks = LessonFeedback.objects.filter(
+            lesson=lesson,
+            is_deleted=False
+        )
+
+        total_count = feedbacks.count()
+
+        if total_count == 0:
+            metrics = {
+                "lessonSlug": lesson_slug,
+                "averageRating": 0.0,
+                "totalCount": 0,
+                "ratingDistribution": {
+                    "1": 0, "2": 0, "3": 0, "4": 0, "5": 0
+                }
+            }
+        else:
+            # Calculate average rating
+            total_rating = sum(f.rating for f in feedbacks)
+            average_rating = total_rating / total_count
+
+            # Calculate rating distribution
+            distribution = {str(i): 0 for i in range(1, 6)}
+            for fb in feedbacks:
+                distribution[str(fb.rating)] += 1
+
+            metrics = {
+                "lessonSlug": lesson_slug,
+                "averageRating": round(average_rating, 2),
+                "totalCount": total_count,
+                "ratingDistribution": distribution
+            }
+
+        serializer = LessonFeedbackMetricsSerializer(data=metrics)
+        serializer.is_valid(raise_exception=True)
+        return response.Response(serializer.data)
+
+
+class UserLessonFeedbackView(views.APIView):
+    """Get the current user's feedback for a specific lesson."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, lesson_slug):
+        try:
+            lesson = Lesson.objects.get(slug=lesson_slug)
+        except Lesson.DoesNotExist:
+            return response.Response(
+                {"error": "Lesson not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        try:
+            feedback = LessonFeedback.objects.get(
+                user=request.user,
+                lesson=lesson,
+                is_deleted=False
+            )
+            serializer = LessonFeedbackSerializer(feedback)
+            return response.Response(serializer.data)
+        except LessonFeedback.DoesNotExist:
+            return response.Response(
+                {"error": "No feedback found for this lesson"},
+                status=status.HTTP_404_NOT_FOUND
+            )
