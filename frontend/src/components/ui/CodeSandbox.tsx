@@ -20,6 +20,24 @@ export function CodeSandbox() {
   useEffect(() => {
     fetchSandboxSnapshots().then(setSnapshots).catch(console.error);
   }, []);
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Only accept messages from our own sandbox iframe, never from
+      // other frames/windows, to avoid mixing in unrelated postMessage traffic.
+      if (!iframeRef.current || event.source !== iframeRef.current.contentWindow) {
+        return;
+      }
+
+      const data = event.data as { type?: string; message?: string } | undefined;
+      if (data?.type === "log" || data?.type === "error") {
+        const prefix = data.type === "error" ? "⚠ " : "";
+        setOutput((prev) => [...prev, `${prefix}${data.message ?? ""}`]);
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
 
   const wsUrl = import.meta.env.VITE_API_URL
     ? import.meta.env.VITE_API_URL.replace("http", "ws") + "ws/sandbox/"
@@ -117,7 +135,7 @@ export function CodeSandbox() {
       const snap = await saveSandboxSnapshot(code, label, false);
       setSnapshots((prev) => [snap, ...prev]);
       toast.success("Bookmark saved!");
-    } catch (err) {
+    } catch {
       toast.error("Failed to save bookmark");
     }
   };

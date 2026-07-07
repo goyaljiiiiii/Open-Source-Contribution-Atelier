@@ -4,6 +4,7 @@ export interface TraceEvent {
   step: number;
   line: number;
   event: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   locals: Record<string, any>;
   stdout: string;
   error?: string;
