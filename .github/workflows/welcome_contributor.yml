@@ -30,7 +30,24 @@ jobs:
               console.log('Owner opened issue; skipping welcome comment.');
               return;
             }
-            const commentBody = `👋 Hi @${issue.user.login}! Thanks for opening this issue.\n\nWe appreciate your contribution. Please make sure to check our [Contribution Guide](https://github.com/${owner}/${repo}/blob/main/CONTRIBUTING.md) and the [Code of Conduct](https://github.com/${owner}/${repo}/blob/main/CODE_OF_CONDUCT.md). If you have any questions, feel free to ask here!`;
+            const commentBody = [
+              `## 👋 Welcome, @${issue.user.login}!`,
+              ``,
+              `Thanks for opening this issue on **Open Source Contribution Atelier**! We're glad to have you here. 🎉`,
+              ``,
+              `### 📌 Before you proceed, please read our pinned guides:`,
+              `| Guide | What it covers |`,
+              `|---|---|`,
+              `| [📋 How to Get Assigned](https://github.com/${owner}/${repo}/issues?q=is%3Aissue+is%3Aclosed+label%3Apinned+%22Guide%3A+How+to+get+SSoC%22) | You **must** comment with the keyword \`ssoc26\` or \`ecsoc26\` to be assigned |`,
+              `| [⚡ CI Checks on PRs](https://github.com/${owner}/${repo}/issues?q=is%3Aissue+is%3Aclosed+label%3Apinned+%22CI+Checks%22) | Your PR will be auto-tested against Vercel & Hugging Face builds |`,
+              `| [⏰ 3-Day Stale Rule](https://github.com/${owner}/${repo}/issues?q=is%3Aissue+is%3Aclosed+label%3Apinned+%223-Day%22) | Submit a PR or update within 3 days or lose the assignment |`,
+              ``,
+              `### 📚 Helpful Resources:`,
+              `- [Contribution Guide](https://github.com/${owner}/${repo}/blob/main/CONTRIBUTING.md)`,
+              `- [Code of Conduct](https://github.com/${owner}/${repo}/blob/main/.github/CODE_OF_CONDUCT.md)`,
+              ``,
+              `> **Tip:** Run \`npm run build\` in \`frontend/\` before submitting your PR to catch errors early! 🚀`,
+            ].join('\n');
             await github.rest.issues.createComment({owner, repo, issue_number: issue.number, body: commentBody});
 
   welcome-pull-request:
@@ -49,12 +66,11 @@ jobs:
             const repo = context.repo.repo;
             
             const isFirstTime = pr.author_association === 'FIRST_TIME_CONTRIBUTOR';
-            let commentBody = '';
             
+            let greeting = '';
             if (isFirstTime) {
-              commentBody = `🎉 **Welcome to the community, @${pr.user.login}!** This is your first pull request to this repository! 🚀 We're thrilled to have you here.\n\nPlease ensure you have followed the [Contribution Guide](https://github.com/${owner}/${repo}/blob/main/CONTRIBUTING.md) and that your code passes all CI checks. We’ll review it soon. Happy hacking!`;
+              greeting = `## 🎉 Welcome to the community, @${pr.user.login}!\n\nThis is your **first pull request** to this repository! We're thrilled to have you here. 🚀\n`;
               try {
-                // Ensure the first-time-contributor label exists
                 const labelName = 'first-time-contributor';
                 try {
                   await github.rest.issues.getLabel({owner, repo, name: labelName});
@@ -72,7 +88,25 @@ jobs:
                 console.warn(`Could not add first-time-contributor label: ${e}`);
               }
             } else {
-              commentBody = `🎉 Thanks for the pull request, @${pr.user.login}!\n\nPlease ensure you have followed the [Contribution Guide](https://github.com/${owner}/${repo}/blob/main/CONTRIBUTING.md) and that your code passes all CI checks. We’ll review it soon. Happy hacking!`;
+              greeting = `## 🎉 Thanks for the pull request, @${pr.user.login}!\n`;
             }
+            
+            const commentBody = [
+              greeting,
+              `### ⚡ Automated CI Checks`,
+              `Our GitHub Actions CI will now automatically run:`,
+              `- ✅ **Frontend Build** (\`npm run build\`) — simulates Vercel deployment`,
+              `- ✅ **Backend Tests** (\`python manage.py test\`) — simulates Hugging Face deployment`,
+              ``,
+              `If any check fails, a comment will be posted here explaining what went wrong.`,
+              ``,
+              `### 📋 Quick Checklist`,
+              `- [ ] I linked the issue this PR fixes (e.g. \`Fixes #123\`)`,
+              `- [ ] I ran \`npm run build\` in \`frontend/\` locally with **0 errors**`,
+              `- [ ] I ran \`pytest\` in \`backend/\` locally with all tests passing`,
+              `- [ ] I added screenshots for any UI changes`,
+              ``,
+              `> **Need help?** Check the [Contribution Guide](https://github.com/${owner}/${repo}/blob/main/CONTRIBUTING.md) or ask in the issue thread. Happy coding! 💻`,
+            ].join('\n');
             
             await github.rest.issues.createComment({owner, repo, issue_number: pr.number, body: commentBody});
