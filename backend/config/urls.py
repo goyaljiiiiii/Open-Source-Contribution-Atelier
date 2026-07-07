@@ -1,10 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include, re_path
 from django.views.decorators.csrf import csrf_exempt
-from drf_spectacular.views import (
-    SpectacularAPIView,
-    SpectacularSwaggerSplitView,
-)
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 from graphene_django.views import GraphQLView
 from django.urls import path, include
 
