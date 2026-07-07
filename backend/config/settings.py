@@ -285,7 +285,7 @@ def is_redis_available(url):
     try:
         if not url:
             return False
-        clean_url = url.replace("redis://", "")
+        clean_url = url.replace("rediss://", "").replace("redis://", "")
         host_port = clean_url.split("/")[0]
         if "@" in host_port:
             host_port = host_port.split("@")[1]
