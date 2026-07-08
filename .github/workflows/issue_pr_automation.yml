@@ -64,8 +64,10 @@ jobs:
               await github.rest.issues.addLabels({owner, repo, issue_number: issue.number, labels: [ssocLabel]});
             }
 
-            // Always assign the author of the issue as the assignee
-            await github.rest.issues.addAssignees({owner, repo, issue_number: issue.number, assignees: [issue.user.login]});
+            // Assign the author of the issue (skip if author is the repo owner)
+            if (issue.user.login !== owner) {
+              await github.rest.issues.addAssignees({owner, repo, issue_number: issue.number, assignees: [issue.user.login]});
+            }
 
 
   first-commenter-assignment:
