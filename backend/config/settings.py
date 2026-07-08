@@ -44,7 +44,6 @@ SECRET_KEY = os.getenv(
     "SECRET_KEY", "django-insecure-dev-key-not-for-production-use-32bytes!!"
 )
 DEBUG = os.getenv("DEBUG", "False") == "True"
-fix/security-headers
 
 # ──────────────────────────────────────────
 # Security Headers
@@ -65,22 +64,16 @@ SECURE_HSTS_SECONDS = int(
     )
 )
 
-SECURE_HSTS_INCLUDE_SUBDOMAINS = (
-    os.getenv(
-        "SECURE_HSTS_INCLUDE_SUBDOMAINS",
-        "True",
-    ).lower()
-    in {"1", "true", "yes", "on"}
-)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv(
+    "SECURE_HSTS_INCLUDE_SUBDOMAINS",
+    "True",
+).lower() in {"1", "true", "yes", "on"}
 
 # HSTS preload is opt-in because enabling it has long-lived operational impact.
-SECURE_HSTS_PRELOAD = (
-    os.getenv(
-        "SECURE_HSTS_PRELOAD",
-        "False",
-    ).lower()
-    in {"1", "true", "yes", "on"}
-)
+SECURE_HSTS_PRELOAD = os.getenv(
+    "SECURE_HSTS_PRELOAD",
+    "False",
+).lower() in {"1", "true", "yes", "on"}
 
 # Restrictive default Content Security Policy.
 # Allow jsDelivr because the API documentation UI loads its assets from there.
@@ -105,7 +98,6 @@ CONTENT_SECURITY_POLICY = os.getenv(
 )
 
 TESTING = "test" in sys.argv or "pytest" in sys.modules
- main
 
 ALLOWED_HOSTS = [
     host.strip()
@@ -113,14 +105,10 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
- fix/insecure-docker-compose
 if not DEBUG and not TESTING and not ALLOWED_HOSTS:
-    raise ImproperlyConfigured("ALLOWED_HOSTS cannot be empty in production.")
-
-if not DEBUG and not ALLOWED_HOSTS:
     from django.core.exceptions import ImproperlyConfigured
-    raise ImproperlyConfigured("ALLOWED_HOSTS must not be empty in production.")
-main
+
+    raise ImproperlyConfigured("ALLOWED_HOSTS cannot be empty in production.")
 
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
@@ -129,17 +117,12 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 if not DEBUG and not TESTING and not CORS_ALLOWED_ORIGINS:
- fix/insecure-docker-compose
+    from django.core.exceptions import ImproperlyConfigured
+
     raise ImproperlyConfigured("CORS_ALLOWED_ORIGINS cannot be empty in production.")
 
 CORS_ALLOW_CREDENTIALS = True
-
-    from django.core.exceptions import ImproperlyConfigured
-    raise ImproperlyConfigured("CORS_ALLOWED_ORIGINS must not be empty in production.")
-
-CORS_ALLOW_CREDENTIALS = True
 # CORS_ALLOW_ALL_ORIGINS defaults to False; rely on CORS_ALLOWED_ORIGINS allowlist.
-main
 
 INSTALLED_APPS = [
     "daphne",
@@ -150,6 +133,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_filters",
+    "django_prometheus",
     "celery_prometheus_exporter",
     "drf_spectacular",
     "corsheaders",
@@ -170,7 +154,6 @@ INSTALLED_APPS = [
     "apps.organizations",
     "apps.webhooks",
     "apps.notes",
-    "apps.cache.apps.CacheConfig",
     "apps.recommendations",
     "apps.cache",
     "apps.rbac",
@@ -178,7 +161,6 @@ INSTALLED_APPS = [
     "graphene_django",
     "apps.feature_flags",
     "apps.issues",
-    "apps.cache",
     "django_q",
 ]
 
@@ -189,11 +171,9 @@ MIDDLEWARE = [
     "config.security_middleware.ContentSecurityPolicyMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.middleware.gzip.GZipMiddleware",
-    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
-    "django_prometheus.middleware.PrometheusAfterMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -238,6 +218,12 @@ DATABASES = {
     ),
 }
 
+for db_name, db_config in DATABASES.items():
+    if db_config.get("ENGINE") == "django.db.backends.postgresql":
+        db_config["ENGINE"] = "django_prometheus.db.backends.postgresql"
+    elif db_config.get("ENGINE") == "django.db.backends.sqlite3":
+        db_config["ENGINE"] = "django_prometheus.db.backends.sqlite3"
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 DATABASE_ROUTERS = ["config.db_router.PrimaryReplicaRouter"]
@@ -278,9 +264,11 @@ GITHUB_INSTALLATION_ID = os.getenv("GITHUB_INSTALLATION_ID")
 
 # ── Discord Integration ────────────────────────────────────────────────────────
 # Discord webhook URL for achievement announcements
-DISCORD_WEBHOOK_URL = os.getenv('DISCORD_WEBHOOK_URL')
+DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 # Whether to enable Discord announcements (can be disabled per environment)
-DISCORD_ANNOUNCEMENTS_ENABLED = os.getenv('DISCORD_ANNOUNCEMENTS_ENABLED', 'true').lower() == 'true'
+DISCORD_ANNOUNCEMENTS_ENABLED = (
+    os.getenv("DISCORD_ANNOUNCEMENTS_ENABLED", "true").lower() == "true"
+)
 
 # ── Email Configuration ────────────────────────────────────────────────────────
 # Default: console backend (prints emails to stdout) — safe for dev/CI.

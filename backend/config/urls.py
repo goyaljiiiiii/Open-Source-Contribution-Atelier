@@ -1,9 +1,12 @@
 from django.contrib import admin
-from django.urls import path, include, re_path
+from django.urls import include, path, re_path
 from django.views.decorators.csrf import csrf_exempt
-from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularRedocView,
+    SpectacularSwaggerView,
+)
 from graphene_django.views import GraphQLView
-from django.urls import path, include
 
 from apps.dashboard.views import LeaderboardView
 
@@ -19,7 +22,6 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     path("api/auth/", include("apps.accounts.urls")),
     path("api/users/", include("apps.accounts.user_urls")),
-    path("", include("django_prometheus.urls")),
     path("api/content/", include("apps.content.urls")),
     path("api/progress/", include("apps.progress.urls")),
     path("api/challenges/", include("apps.challenges.urls")),
@@ -34,7 +36,6 @@ urlpatterns = [
     # ============================================================
     # WEBHOOKS & UPLOADS
     # ============================================================
-    path("api/webhooks/", include("apps.webhooks.urls")),
     path("api/uploads/", include("apps.uploads.urls")),
     # ============================================================
     # RBAC (Role-Based Access Control)
@@ -55,19 +56,13 @@ urlpatterns = [
     # ============================================================
     # API DOCUMENTATION
     # ============================================================
-    path("api/rbac/", include("apps.rbac.urls")),
-    path("api/uploads/", include("apps.uploads.urls")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
         "api/docs/",
         SpectacularSwaggerSplitView.as_view(url_name="schema"),
         name="swagger-ui",
     ),
-    # ============================================================
-    # PROMETHEUS METRICS
-    # ============================================================
     path("api/graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
-    path("", include("django_prometheus.urls")),
 ]
 
 from django.conf import settings
