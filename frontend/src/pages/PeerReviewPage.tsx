@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { fetchApi } from "../lib/api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CodeDiffViewer } from "../components/ui/CodeDiffViewer";
+import { ReportDialog } from "../components/moderation/ReportDialog";
 
 interface CodeSubmission {
   id: number;
@@ -33,6 +34,9 @@ export function PeerReviewPage() {
   const [rating, setRating] = useState(5);
   const [isReviewing, setIsReviewing] = useState(false);
   const [reviewSuccess, setReviewSuccess] = useState(false);
+
+  // Report Dialog State
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
 
   const { data: pendingSubmissions = [], refetch: fetchPendingSubmissions, isLoading: isLoadingSubmissions } = useQuery<CodeSubmission[]>({
     queryKey: ["pendingSubmissions"],
@@ -260,9 +264,18 @@ export function PeerReviewPage() {
 
             {selectedSubmission && (
               <div className="bg-surface-low border-4 border-black rounded-2xl p-6 shadow-card dark:bg-[#1a1816] dark:border-[#2e2924] flex flex-col h-full">
-                <h2 className="text-2xl font-bold mb-4">
-                  Reviewing: {selectedSubmission.title}
-                </h2>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-2xl font-bold">
+                    Reviewing: {selectedSubmission.title}
+                  </h2>
+                  <button
+                    onClick={() => setReportDialogOpen(true)}
+                    className="text-xs font-bold uppercase bg-red-100 text-red-800 border-2 border-red-500 px-3 py-1 rounded hover:-translate-y-0.5 transition-all shadow-card-sm"
+                    title="Report Inappropriate Content"
+                  >
+                    Report
+                  </button>
+                </div>
                 <div className="mb-6">
                   <CodeDiffViewer
                     originalCode={parsedOriginalCode}
@@ -334,6 +347,13 @@ export function PeerReviewPage() {
           </div>
         )}
       </main>
+
+      <ReportDialog
+        isOpen={reportDialogOpen}
+        onClose={() => setReportDialogOpen(false)}
+        contentType="progress.peerreview"
+        objectId={selectedSubmission?.id || 0}
+      />
     </div>
   );
 }

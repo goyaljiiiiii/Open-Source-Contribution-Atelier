@@ -367,6 +367,7 @@ class PeerReview(models.Model):
     feedback = models.TextField()
     rating = models.PositiveIntegerField(default=5)
     is_approved = models.BooleanField(default=True)
+    is_hidden = models.BooleanField(default=False)
     points_earned = models.PositiveIntegerField(default=10)
     created_at = models.DateTimeField(auto_now_add=True)
 

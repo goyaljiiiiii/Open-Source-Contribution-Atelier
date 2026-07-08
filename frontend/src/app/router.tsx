@@ -13,6 +13,7 @@ import { SignupPage } from "../pages/SignupPage";
 import { LessonPage } from "../pages/LessonPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { ServerErrorPage } from "../pages/ServerErrorPage";
+import { ModerationDashboard } from "../pages/ModerationDashboard";
 import { SandboxPage } from "../pages/SandboxPage";
 import { ProfileSettingsPage } from "../pages/ProfileSettingsPage";
 import { LeaderboardPage } from "../pages/LeaderboardPage";
@@ -196,6 +197,14 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <PeerReviewPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/moderation"
+          element={
+            <ProtectedRoute>
+              <ModerationDashboard />
             </ProtectedRoute>
           }
         />

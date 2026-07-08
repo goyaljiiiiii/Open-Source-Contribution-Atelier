@@ -147,6 +147,7 @@ INSTALLED_APPS = [
     "allauth.socialaccount",
     "allauth.socialaccount.providers.github",
     "apps.accounts",
+    "apps.cache",
     "apps.content",
     "apps.progress",
     "apps.challenges",
@@ -161,6 +162,8 @@ INSTALLED_APPS = [
     "graphene_django",
     "apps.feature_flags",
     "apps.issues",
+"apps.cache",
+"apps.moderation",
     "django_q",
 ]
 

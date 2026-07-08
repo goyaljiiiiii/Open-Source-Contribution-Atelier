@@ -1,18 +1,25 @@
-import { useState, useEffect, useCallback } from "react";
-import type { ProgressEntry } from "./useUserProgress";
+// frontend/src/hooks/useLocalSync.ts
+import { useState, useEffect, useCallback } from 'react';
 
-const STORAGE_KEY = "atelier_pending_sync";
+export function useLocalSync<T>(key: string, initialData: T) {
+  const [data, setData] = useState<T>(() => {
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : initialData;
+  });
 
-export interface PendingProgress {
-  lesson_slug: string;
-  score?: number;
-  completed?: boolean;
-}
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-export function useLocalSync() {
-  const [pending, setPending] = useState<PendingProgress[]>([]);
+  // Save to localStorage
+  const save = useCallback((newData: T) => {
+    localStorage.setItem(key, JSON.stringify(newData));
+    setData(newData);
+  }, [key]);
 
-  const loadPending = useCallback(() => {
+  // Sync with server
+  const sync = useCallback(async () => {
+    setIsSyncing(true);
+    setError(null);
     try {
       const stored = localStorage.getItem(STORAGE_KEY) || "[]";
       if (stored) {
