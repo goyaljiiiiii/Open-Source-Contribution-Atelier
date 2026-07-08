@@ -30,6 +30,7 @@ const navItems = [
   { to: "/lessons/what-is-open-source", label: "Lessons", icon: BookOpen },
   { to: "/challenges", label: "Challenges", icon: Trophy },
   { to: "/leaderboard", label: "Leaderboard", icon: TrendingUp },
+  { to: "/contributor-sandbox", label: "Playground", icon: TerminalSquare },
   { to: "/community", label: "Community", icon: BriefcaseBusiness },
   { to: "/chat", label: "Chat", icon: MessageSquare },
   { to: "/peer-review", label: "Peer Review", icon: Shield },

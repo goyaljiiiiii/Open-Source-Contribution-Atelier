@@ -67,6 +67,31 @@ jobs:
             // Assign the author of the issue (skip if author is the repo owner)
             if (issue.user.login !== owner) {
               await github.rest.issues.addAssignees({owner, repo, issue_number: issue.number, assignees: [issue.user.login]});
+              
+              // Welcome Comment with Contributor Pathfinder & interactive tools
+              const welcomeBody = `### 🚀 Welcome to the Open-Source Contribution Atelier, @\${issue.user.login}!
+
+We are thrilled to have you here. To help you make your first contribution, we've set up some premium interactive developer tools:
+
+| Tool / Resource | Description | Link |
+| --- | --- | --- |
+| 🛠️ **Readiness Checker** | A local command-line diagnostic tool to verify your setup before pushing. | Run \`python3 verify_readiness.py\` |
+| 💻 **Contributor Sandbox** | Interactive browser sandbox to simulate making your first git commit, resolving conflicts, and opening mock PRs. | [Try Sandbox Simulator](https://open-source-contribution-atelier.vercel.app/contributor-sandbox) |
+| 📊 **SSoC Leaderboard** | Track project contributions, merged PRs, and active contributors. | [View Leaderboard](https://open-source-contribution-atelier.vercel.app/leaderboard) |
+
+#### 🎯 Recommended Next Steps:
+1. Fork the repo and set up your local environment (follow [AGENTS.md](https://github.com/\${owner}/\${repo}/blob/main/AGENTS.md) or [CONTRIBUTING.md](https://github.com/\${owner}/\${repo}/blob/main/CONTRIBUTING.md)).
+2. Browse through the available issues marked with **SSoC26** or **ECSoC26**.
+3. Run \`python3 verify_readiness.py\` locally before submitting your Pull Request to ensure everything is green!
+
+Happy contributing! 💻✨`;
+
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issue.number,
+                body: welcomeBody
+              });
             }
 
 
