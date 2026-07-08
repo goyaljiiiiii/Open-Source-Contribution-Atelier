@@ -2,6 +2,7 @@ import os
 import sys
 from datetime import timedelta
 from pathlib import Path
+from config.auth import JWT_CONFIG, TOKEN_BLACKLIST_ENABLED
 
 import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
@@ -262,13 +263,16 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# Github App Configuration
-GITHUB_APP = {
-    "APP_ID": os.getenv("GITHUB_APP_ID"),
-    "PRIVATE_KEY_PATH": os.getenv("GITHUB_PRIVATE_KEY_PATH"),
-    "CLIENT_ID": os.getenv("GITHUB_CLIENT_ID"),
-    "CLIENT_SECRET": os.getenv("GITHUB_CLIENT_SECRET"),
-    "WEBHOOK_SECRET": os.getenv("GITHUB_WEBHOOK_SECRET"),
+# Update JWT settings
+SIMPLE_JWT = JWT_CONFIG
+
+#Github App Configuration
+GITHUB_APP={
+    'APP_ID': os.getenv('GITHUB_APP_ID'),
+    'PRIVATE_KEY_PATH': os.getenv('GITHUB_PRIVATE_KEY_PATH'),
+    'CLIENT_ID': os.getenv('GITHUB_CLIENT_ID'),
+    'CLIENT_SECRET': os.getenv('GITHUB_CLIENT_SECRET'),
+    'WEBHOOK_SECRET': os.getenv('GITHUB_WEBHOOK_SECRET'),
 }
 GITHUB_INSTALLATION_ID = os.getenv("GITHUB_INSTALLATION_ID")
 
