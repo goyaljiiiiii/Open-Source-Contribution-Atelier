@@ -55,17 +55,16 @@ export function LessonFeedbackWidget({
       });
     },
     retry: false,
-    onSuccess: (data) => {
-      if (data && !("error" in data)) {
-        setRating(data.rating);
-        setComment(data.comment || "");
-        setHasSubmitted(true);
-      }
-    },
-    onError: () => {
-      // User has no feedback yet, that's fine
-    },
   });
+
+  // Sync local state when user feedback loads
+  useEffect(() => {
+    if (userFeedback && !("error" in userFeedback)) {
+      setRating(userFeedback.rating);
+      setComment(userFeedback.comment || "");
+      setHasSubmitted(true);
+    }
+  }, [userFeedback]);
 
   // Submit feedback mutation
   const submitMutation = useMutation({

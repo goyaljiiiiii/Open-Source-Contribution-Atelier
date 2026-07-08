@@ -1,5 +1,5 @@
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useLocalSync } from  '../hooks/useLocalSync';
+import { useLocalSyncGeneric } from  '../hooks/useLocalSyncGeneric';
 
 
 interface Progress {
@@ -11,7 +11,7 @@ interface Progress {
 const ProgressContext = createContext<any>(null);
 
 export function ProgressProvider ({children} : { children: ReactNode }) {
-  const progress = useLocalSync<Progress>('user_progress', {
+  const progress = useLocalSyncGeneric<Progress>('user_progress', {
     lessons: [],
     xp: 0,
     streak: 0,

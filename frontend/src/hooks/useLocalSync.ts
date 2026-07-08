@@ -21,30 +21,60 @@ export function useLocalSync<T>(key: string, initialData: T) {
     setIsSyncing(true);
     setError(null);
     try {
-      // POST to server
-      const res = await fetch(`/api/progress/${key}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error('Sync failed');
-      setIsSyncing(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Sync failed');
-      setIsSyncing(false);
+      const stored = localStorage.getItem(STORAGE_KEY) || "[]";
+      if (stored) {
+        setPending(JSON.parse(stored));
+        console.log("Pending from localStorage:", JSON.parse(stored));
+      } else {
+        setPending([]);
+        console.log("No pending items in localStorage");
+      }
+    } catch (e) {
+      console.error("Failed to load pending sync from localStorage", e);
+      setPending([]);
     }
-  }, [key, data]);
+  }, []);
 
-  // Auto-save on change
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (data) localStorage.setItem(key, JSON.stringify(data));
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [data, key]);
+    loadPending();
 
-  return { data, setData: save, sync, isSyncing, error };
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY) {
+        loadPending();
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, [loadPending]);
+
+  const isLessonPendingCompleted = useCallback(
+    (slug: string) => {
+      return pending.some((p) => p.lesson_slug === slug && p.completed);
+    },
+    [pending],
+  );
+
+  const getPendingXP = useCallback(
+    (backendProgress: ProgressEntry[]) => {
+      let pendingXP = 0;
+      pending.forEach((p) => {
+        const inBackend = backendProgress.some(
+          (bp) => bp.lesson_slug === p.lesson_slug,
+        );
+        if (!inBackend) {
+          pendingXP += p.score || 0;
+        }
+      });
+      return pendingXP;
+    },
+    [pending],
+  );
+
+  return {
+    pending,
+    isLessonPendingCompleted,
+    getPendingXP,
+    refresh: loadPending,
+  };
 }

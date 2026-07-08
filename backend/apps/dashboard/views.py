@@ -150,8 +150,9 @@ class AdminDashboardView(APIView):
     """
 
     def get_permissions(self):
-        from apps.rbac.permissions import HasAnyRole
         from rest_framework import permissions
+
+        from apps.rbac.permissions import HasAnyRole
 
         return [permissions.IsAuthenticated(), HasAnyRole(["Admin"])]
 
@@ -626,8 +627,9 @@ from apps.rbac.models import UserRole
 
 class ModeratorAnalyticsView(APIView):
     def get_permissions(self):
-        from apps.rbac.permissions import HasAnyRole
         from rest_framework import permissions
+
+        from apps.rbac.permissions import HasAnyRole
 
         return [permissions.IsAuthenticated(), HasAnyRole(["Admin", "Moderator"])]
 
