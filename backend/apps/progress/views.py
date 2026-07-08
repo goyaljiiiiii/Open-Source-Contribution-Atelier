@@ -1,11 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timezone as dt_timezone
 
 from django.contrib.auth.models import User
 from django.db import transaction
+from django.utils import timezone
 from django.db.models import Count, Min, Sum
 from apps.progress.constants import XP_PER_LEVEL
 from apps.progress.models import XPEvent
-from apps.progress.constants import XP_PER_LEVEL
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import permissions, status
@@ -67,21 +67,21 @@ class MyProgressView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
+        from apps.progress.models import LessonProgressSync, XPMultiplierEvent
+        from django_q.tasks import async_task
+
         lesson_slug = request.data.get("lesson_slug")
-        from apps.progress.models import XPMultiplierEvent, LessonProgressSync
-
         idempotency_key = request.data.get("idempotency_key")
-
         client_timestamp_ms = request.data.get("client_timestamp")
 
         multiplier = XPMultiplierEvent.get_active_multiplier()
-
         base_score = request.data.get("score", 100)
         completed = request.data.get("completed", True)
 
         try:
             lesson = Lesson.objects.get(
-                slug=lesson_slug, organization=request.user.organization
+                slug=lesson_slug,
+                organization=request.user.organization,
             )
         except Lesson.DoesNotExist:
             return Response(
@@ -89,73 +89,99 @@ class MyProgressView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        client_timestamp_ms = request.data.get("client_timestamp")
-
         with transaction.atomic():
-            # Idempotency: if this (user, lesson, key) was already processed,
-            # return existing progress state without re-applying multiplier.
+            # Lock the progress row for the full read-modify-write cycle.
+            # Concurrent requests for the same user/lesson are serialized here.
+            progress, created = (
+                LessonProgress.objects.select_for_update().get_or_create(
+                    user=request.user,
+                    lesson=lesson,
+                    defaults={
+                        "organization": request.user.organization,
+                        "completed": completed,
+                        "base_score": base_score,
+                        "multiplier_applied": multiplier,
+                        "score": int(base_score * multiplier),
+                    },
+                )
+            )
+
+            # Check idempotency only after the progress row is locked. This
+            # prevents two concurrent requests with the same key from both
+            # applying score and XP side effects.
             if idempotency_key:
                 sync_row = (
-                    LessonProgressSync.objects.select_related("lesson")
-                    .filter(
+                    LessonProgressSync.objects.filter(
                         user=request.user,
                         lesson=lesson,
                         idempotency_key=idempotency_key,
                     )
                     .first()
                 )
+
                 if sync_row is not None:
-                    progress, _ = LessonProgress.objects.get_or_create(
-                        user=request.user,
-                        lesson=lesson,
-                        defaults={
-                            "organization": request.user.organization,
-                            "completed": sync_row.completed,
-                            "base_score": sync_row.base_score,
-                            "multiplier_applied": sync_row.multiplier_applied,
-                            "score": sync_row.score,
-                        },
-                    )
                     serializer = LessonProgressSerializer(progress)
-                    async_task = __import__(
-                        "django_q.tasks", fromlist=["async_task"]
-                    ).async_task
-                    async_task(
-                        "apps.progress.tasks.evaluate_user_badges_task",
-                        request.user.id,
+
+                    transaction.on_commit(
+                        lambda: async_task(
+                            "apps.progress.tasks.evaluate_user_badges_task",
+                            request.user.id,
+                        )
                     )
+
                     return Response(
                         serializer.data,
                         status=status.HTTP_200_OK,
                     )
 
-            try:
-                progress = LessonProgress.objects.get(user=request.user, lesson=lesson)
-                created = False
-
-                skip_update = False
-                if client_timestamp_ms:
-                    import datetime
-
-                    client_dt = datetime.datetime.fromtimestamp(
-                        client_timestamp_ms / 1000.0, tz=datetime.timezone.utc
+            if created:
+                # Record XP only once for a newly created progress row.
+                if progress.score != 0:
+                    XPEvent.objects.create(
+                        user=request.user,
+                        source_type="lesson",
+                        source_id=lesson.id,
+                        base_points=base_score,
+                        multiplier=multiplier,
+                        xp_delta=progress.score,
                     )
+            else:
+                skip_update = False
+
+                if client_timestamp_ms:
+                    client_dt = datetime.fromtimestamp(
+                        client_timestamp_ms / 1000.0,
+                        tz=dt_timezone.utc,
+                    )
+
                     if progress.updated_at > client_dt:
                         skip_update = True
 
                 if not skip_update and (
-                    progress.base_score != base_score or progress.completed != completed
+                    progress.base_score != base_score
+                    or progress.completed != completed
                 ):
                     old_score = progress.score
+
                     progress.completed = completed
                     progress.base_score = base_score
                     progress.multiplier_applied = multiplier
                     progress.score = int(base_score * multiplier)
                     progress.organization = request.user.organization
-                    progress.save()
+                    progress.save(
+                        update_fields=[
+                            "completed",
+                            "base_score",
+                            "multiplier_applied",
+                            "score",
+                            "organization",
+                            "updated_at",
+                        ]
+                    )
 
-                    # XP side-effect only when we actually applied.
+                    # XP is the actual score delta, not the full replacement score.
                     xp_delta = progress.score - old_score
+
                     if xp_delta != 0:
                         XPEvent.objects.create(
                             user=request.user,
@@ -166,28 +192,8 @@ class MyProgressView(APIView):
                             xp_delta=xp_delta,
                         )
 
-            except LessonProgress.DoesNotExist:
-                created = True
-                progress = LessonProgress.objects.create(
-                    user=request.user,
-                    lesson=lesson,
-                    completed=completed,
-                    base_score=base_score,
-                    multiplier_applied=multiplier,
-                    score=int(base_score * multiplier),
-                    organization=request.user.organization,
-                )
-                # Record XP event for new progress
-                XPEvent.objects.create(
-                    user=request.user,
-                    source_type="lesson",
-                    source_id=lesson.id,
-                    base_points=base_score,
-                    multiplier=multiplier,
-                    xp_delta=progress.score,
-                )
-
-            # Write idempotency ledger AFTER progress state is committed.
+            # Store the idempotency ledger in the same transaction as the
+            # progress and XP updates so the state is committed atomically.
             if idempotency_key:
                 LessonProgressSync.objects.create(
                     user=request.user,
@@ -201,7 +207,13 @@ class MyProgressView(APIView):
                     server_updated_at=timezone.now(),
                 )
 
-        async_task("apps.progress.tasks.evaluate_user_badges_task", request.user.id)
+            # Queue badge evaluation only after the database commit succeeds.
+            transaction.on_commit(
+                lambda: async_task(
+                    "apps.progress.tasks.evaluate_user_badges_task",
+                    request.user.id,
+                )
+            )
 
         serializer = LessonProgressSerializer(progress)
 
@@ -221,15 +233,16 @@ class BulkSyncProgressView(APIView):
         synced = []
 
         from apps.progress.models import XPMultiplierEvent
+        from django_q.tasks import async_task
 
         multiplier = XPMultiplierEvent.get_active_multiplier()
 
         with transaction.atomic():
             for item in serializer.validated_data["lessons"]:
-
                 lesson_slug = item["lesson_slug"]
                 base_score = item.get("score", 100)
                 completed = item.get("completed", True)
+                client_timestamp_ms = item.get("client_timestamp")
 
                 try:
                     lesson = Lesson.objects.get(slug=lesson_slug)
@@ -242,18 +255,31 @@ class BulkSyncProgressView(APIView):
                         difficulty="beginner",
                     )
 
-                try:
-                    progress = LessonProgress.objects.get(
-                        user=request.user, lesson=lesson
+                # Serialize concurrent writes to the same user/lesson progress
+                # row before reading or mutating its state.
+                progress, created = (
+                    LessonProgress.objects.select_for_update().get_or_create(
+                        user=request.user,
+                        lesson=lesson,
+                        defaults={
+                            "completed": completed,
+                            "base_score": base_score,
+                            "multiplier_applied": multiplier,
+                            "score": int(base_score * multiplier),
+                            "organization": request.user.organization,
+                        },
                     )
-                    client_timestamp_ms = item.get("client_timestamp")
-                    skip_update = False
-                    if client_timestamp_ms:
-                        import datetime
+                )
 
-                        client_dt = datetime.datetime.fromtimestamp(
-                            client_timestamp_ms / 1000.0, tz=datetime.timezone.utc
+                if not created:
+                    skip_update = False
+
+                    if client_timestamp_ms:
+                        client_dt = datetime.fromtimestamp(
+                            client_timestamp_ms / 1000.0,
+                            tz=dt_timezone.utc,
                         )
+
                         if progress.updated_at > client_dt:
                             skip_update = True
 
@@ -261,35 +287,44 @@ class BulkSyncProgressView(APIView):
                         progress.base_score != base_score
                         or progress.completed != completed
                     ):
+                        old_score = progress.score
+
                         progress.completed = completed
                         progress.base_score = base_score
                         progress.multiplier_applied = multiplier
                         progress.score = int(base_score * multiplier)
-                        progress.save()
-                        # Record XP event for bulk sync update
-                        XPEvent.objects.create(
-                            user=request.user,
-                            source_type="lesson",
-                            source_id=lesson.id,
-                            base_points=base_score,
-                            multiplier=multiplier,
-                            xp_delta=progress.score,
+                        progress.organization = request.user.organization
+                        progress.save(
+                            update_fields=[
+                                "completed",
+                                "base_score",
+                                "multiplier_applied",
+                                "score",
+                                "organization",
+                                "updated_at",
+                            ]
                         )
-                except LessonProgress.DoesNotExist:
-                    progress = LessonProgress.objects.create(
-                        user=request.user,
-                        lesson=lesson,
-                        completed=completed,
-                        base_score=base_score,
-                        multiplier_applied=multiplier,
-                        score=int(base_score * multiplier),
-                    )
+
+                        xp_delta = progress.score - old_score
+
+                        if xp_delta != 0:
+                            XPEvent.objects.create(
+                                user=request.user,
+                                source_type="lesson",
+                                source_id=lesson.id,
+                                base_points=base_score,
+                                multiplier=multiplier,
+                                xp_delta=xp_delta,
+                            )
 
                 synced.append(progress.id)
 
-            from django_q.tasks import async_task
-
-            async_task("apps.progress.tasks.evaluate_user_badges_task", request.user.id)
+            transaction.on_commit(
+                lambda: async_task(
+                    "apps.progress.tasks.evaluate_user_badges_task",
+                    request.user.id,
+                )
+            )
 
         return Response(
             {"synced_count": len(synced), "progress_ids": synced},
