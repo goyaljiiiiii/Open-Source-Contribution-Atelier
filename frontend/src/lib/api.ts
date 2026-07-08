@@ -1,8 +1,19 @@
 import { enqueueOfflineAction } from "./offlineQueue";
 import toast from "react-hot-toast"; // <-- YEH HUMNE ADD KIYA HAI
 
+const getApiBaseUrl = () => {
+  if (typeof import.meta !== "undefined" && import.meta.env) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  if (typeof process !== "undefined" && process.env) {
+    return process.env.NEXT_PUBLIC_API_URL || process.env.VITE_API_BASE_URL;
+  }
+  return undefined;
+};
+
 const API_BASE =
-  import.meta.env.VITE_API_BASE_URL?.trim() || `${window.location.origin}/api`;
+  getApiBaseUrl()?.trim() ||
+  (typeof window !== "undefined" ? `${window.location.origin}/api` : "http://127.0.0.1:8000/api");
 
 type RequestOptions = RequestInit & {
   requireAuth?: boolean;
