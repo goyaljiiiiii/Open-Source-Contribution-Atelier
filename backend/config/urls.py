@@ -33,6 +33,7 @@ urlpatterns = [
     path("api/notes/", include("apps.notes.urls")),
     path("api/chat/", include("apps.chat.urls")),
     path("api/recommendations/", include("apps.recommendations.urls")),
+    path("api/moderation/", include("apps.moderation.urls")),
     # ============================================================
     # WEBHOOKS & UPLOADS
     # ============================================================
