@@ -1,21 +1,23 @@
 import { enqueueOfflineAction } from "./offlineQueue";
 import toast from "react-hot-toast"; // <-- YEH HUMNE ADD KIYA HAI
 
-const getApiBaseUrl = () => {
-  if (typeof import.meta !== "undefined" && import.meta.env) {
-    return import.meta.env.VITE_API_BASE_URL;
+// 1. Defend the environment variable retrieval against server-side execution crashes
+const getSafeEnvVar = (key: string): string => {
+  if (typeof process !== "undefined" && process.env && process.env[key]) {
+    return process.env[key] as string;
   }
-  if (typeof process !== "undefined" && process.env) {
-    return process.env.NEXT_PUBLIC_API_URL || process.env.VITE_API_BASE_URL;
+  if (typeof import.meta !== "undefined" && import.meta.env && import.meta.env[key]) {
+    return import.meta.env[key] as string;
   }
-  return undefined;
+  return "";
 };
 
+// 2. Safely resolve the base URL
 const API_BASE =
-  getApiBaseUrl()?.trim() ||
+  getSafeEnvVar("VITE_API_BASE_URL").trim() ||
   (typeof window !== "undefined" ? `${window.location.origin}/api` : "http://127.0.0.1:8000/api");
 
-type RequestOptions = RequestInit & {
+  type RequestOptions = RequestInit & {
   requireAuth?: boolean;
   suppressErrorToast?: boolean;
   /** Request timeout in milliseconds. Default: 15000 (15s) */
