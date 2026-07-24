@@ -224,7 +224,7 @@ export function Navigation() {
           ))}
         </nav>
 
-        <div className="border-t-4 border-black px-4 py-3 text-xs text-muted dark:border-[#2e2924] dark:text-slate-200">
+        <div className="border-t-4 border-black px-4 py-3 text-xs text-muted dark:border-[#2e2924] dark:text-[#c4bbae]">
           <div className="flex items-center gap-2 px-2 py-1.5">
             <Shield size={14} />
             <span>Community Safe Mode</span>
@@ -244,16 +244,13 @@ export function Navigation() {
             <Menu size={22} />
           </button>
           <div className="flex min-w-0 items-center space-x-3 relative grow max-w-md">
-            <div className="flex items-center space-x-2 rounded-lg bg-surface-low px-3 py-2 text-muted w-full border-2 border-black dark:border-[#2e2924] shadow-card-sm focus-within:bg-white transition-all dark:bg-[#151411] dark:text-slate-200 dark:focus-within:bg-[#0f0e0c]">
-              <label htmlFor="nav-search-input" className="sr-only">
-                Search lessons and issues
-              </label>
+            <div className="flex items-center space-x-2 rounded-lg bg-surface-low px-3 py-2 text-muted w-full border-2 border-black dark:border-[#2e2924] shadow-card-sm focus-within:bg-white transition-all dark:bg-[#151411] dark:text-[#c4bbae] dark:focus-within:bg-[#0f0e0c]">
               <Search size={15} className="shrink-0" />
               <input
-                id="nav-search-input"
                 type="text"
                 placeholder="Search lessons, issues..."
-                className="bg-transparent border-none outline-none text-sm w-full text-text placeholder:text-muted/75 dark:text-[#f0ebe2] dark:placeholder:text-slate-300/75"
+                aria-label="Search lessons and issues"
+                className="bg-transparent border-none outline-none text-sm w-full text-text placeholder:text-muted/75 dark:text-[#f0ebe2] dark:placeholder:text-[#c4bbae]/75"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />

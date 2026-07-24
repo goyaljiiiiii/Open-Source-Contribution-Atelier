@@ -140,20 +140,6 @@ export function App({ children }: { children?: React.ReactNode }) {
       <NotificationProvider>
         <ErrorBoundary>
           <div className="min-h-screen bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
-            <a
-              href="#main-content"
-              className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-indigo-600 focus:text-white focus:ring-2 focus:ring-accent focus:rounded-lg font-bold shadow-lg"
-              onClick={(e) => {
-                e.preventDefault();
-                const main = document.getElementById("main-content");
-                if (main) {
-                  main.tabIndex = -1;
-                  main.focus();
-                }
-              }}
-            >
-              Skip to main content
-            </a>
             <OfflineBanner />
             <InstallAppBanner />
             <UpdateAvailableBanner />

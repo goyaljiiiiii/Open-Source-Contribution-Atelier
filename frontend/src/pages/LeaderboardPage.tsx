@@ -244,13 +244,9 @@ export function LeaderboardPage() {
 
           {/* ===== SEARCH INPUT WITH CLEAR BUTTON (Issue #1965) ===== */}
           <div className="relative flex-1 xl:w-80 group">
-            <label htmlFor="leaderboard-search-input" className="sr-only">
-              Search by username
-            </label>
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted dark:text-[#8a8377] group-focus-within:text-indigo-500 transition-colors" />
             
             <input
-              id="leaderboard-search-input"
               type="text"
               placeholder="Search by username..."
               value={search}

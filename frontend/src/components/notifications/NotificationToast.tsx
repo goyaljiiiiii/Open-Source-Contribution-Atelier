@@ -25,8 +25,6 @@ export function showNotificationToast(
   toast.custom(
     (t) => (
       <div
-        role="status"
-        aria-live="polite"
         className={`
           ${t.visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}
           max-w-md w-full bg-white dark:bg-[#1f1c18] border-4 border-black dark:border-[#2e2924] shadow-[4px_4px_0px_#000] dark:shadow-[4px_4px_0px_#2e2924] rounded-2xl pointer-events-auto flex p-4 cursor-pointer hover:bg-surface-low dark:hover:bg-[#151411] transition-all duration-300 ease-out
@@ -39,7 +37,7 @@ export function showNotificationToast(
             <p className="text-sm font-black text-black dark:text-white uppercase leading-none mb-1">
               {title}
             </p>
-            <p className="text-xs text-gray-500 dark:text-slate-300 font-bold line-clamp-2">
+            <p className="text-xs text-gray-500 dark:text-[#c4bbae] font-bold line-clamp-2">
               {message}
             </p>
           </div>
@@ -49,5 +47,3 @@ export function showNotificationToast(
     { duration: 5000 },
   );
 }
-
-export default showNotificationToast;

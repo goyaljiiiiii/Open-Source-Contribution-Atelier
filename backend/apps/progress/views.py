@@ -1,32 +1,28 @@
-import json
 import uuid  # NEW: Added for cryptographic nonce generation
-from datetime import datetime
-from datetime import timezone as dt_timezone
+from datetime import datetime, timezone as dt_timezone
 
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
-from django.core.cache import cache
 from django.db import transaction
-from django.db.models import Count, Min, Sum
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.db.models import Count, Min, Sum
+from apps.progress.constants import XP_PER_LEVEL
+from apps.progress.models import XPEvent
+from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import permissions, status
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
-from rest_framework.views import APIView
-
-from apps.content.models import Lesson
-from apps.content.serializers import LessonSerializer
 from apps.core.throttling import SlidingWindowAnonThrottle, SlidingWindowScopedThrottle
-from apps.progress.constants import XP_PER_LEVEL
-from apps.progress.models import XPEvent
+from rest_framework.views import APIView
+from django.http import HttpResponse
+from django.core.cache import cache
+from apps.content.serializers import LessonSerializer
+from apps.content.models import Lesson
 
-from .models import UserNote  # ✅ ADD: UserNote model
 from .models import (
     Badge,
     Certificate,
@@ -37,16 +33,17 @@ from .models import (
     LessonProgress,
     QuizAttempt,
     UserBadge,
+    UserNote,  # ✅ ADD: UserNote model
 )
 from .serializers import (
     BadgeSerializer,
     BulkSyncSerializer,
     CertificateVerificationSerializer,
-    DailyProgressSerializer,
     HelpRequestSerializer,
     LessonProgressCreateSerializer,
     LessonProgressSerializer,
     QuizAttemptSerializer,
+    DailyProgressSerializer,
 )
 from .throttles import HelpRequestRateThrottle
 
@@ -256,11 +253,11 @@ class MyProgressView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        from apps.content.models import Lesson
-        from apps.progress.services.progress_buffer import ProgressBufferService
         from apps.progress.services.progress_tracking_service import (
             ProgressTrackingService,
         )
+        from apps.progress.services.progress_buffer import ProgressBufferService
+        from apps.content.models import Lesson
 
         lesson_slug = request.data.get("lesson_slug")
         idempotency_key = request.data.get("idempotency_key")
@@ -379,9 +376,9 @@ class BulkProgressUpdateView(APIView):
         validated_data = serializer.validated_data["lessons"]
 
         from apps.progress.services.progress_batch_service import (
+            process_bulk_progress_updates,
             DuplicateEntryException,
             InvalidLessonException,
-            process_bulk_progress_updates,
         )
 
         try:
@@ -1299,17 +1296,15 @@ class HeatmapView(APIView):
         from django.contrib.auth import get_user_model
 
         User = get_user_model()
-        import datetime
-        from collections import defaultdict
-
         from django.shortcuts import get_object_or_404
-
         from apps.progress.models import (
             DailyActivity,
-            ExerciseAttempt,
             LessonProgress,
             QuizAttempt,
+            ExerciseAttempt,
         )
+        import datetime
+        from collections import defaultdict
 
         username = request.query_params.get("username")
         if username:
@@ -1473,18 +1468,16 @@ class HeatmapCSVExportView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        import csv
-        import datetime
-        from collections import defaultdict
-
-        from django.http import HttpResponse
-
         from apps.progress.models import (
             DailyActivity,
-            ExerciseAttempt,
             LessonProgress,
             QuizAttempt,
+            ExerciseAttempt,
         )
+        import datetime
+        from collections import defaultdict
+        import csv
+        from django.http import HttpResponse
 
         user = request.user
 

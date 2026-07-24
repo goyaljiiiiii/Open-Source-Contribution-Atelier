@@ -667,8 +667,8 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 [tabindex]:focus-visible {
-  outline: none !important;
-  box-shadow: 0 0 0 2px #6366f1 !important;
+  outline: 3px solid #ff3b30 !important; /* primary brand color */
+  outline-offset: 2px !important;
 }
 
 html.dark a:focus-visible,
@@ -677,8 +677,8 @@ html.dark input:focus-visible,
 html.dark select:focus-visible,
 html.dark textarea:focus-visible,
 html.dark [tabindex]:focus-visible {
-  outline: none !important;
-  box-shadow: 0 0 0 2px #8b5cf6 !important;
+  outline: 3px solid var(--dark-accent) !important;
+  outline-offset: 2px !important;
 }
 
 html.high-contrast a:focus-visible,

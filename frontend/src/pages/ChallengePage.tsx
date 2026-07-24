@@ -111,12 +111,8 @@ export function ChallengePage() {
       {/* Search and Filters */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-50 dark:bg-slate-900/50 p-4 border-2 border-black dark:border-white/10 rounded-2xl">
         <div className="relative w-full sm:w-80">
-          <label htmlFor="challenge-search-input" className="sr-only">
-            Search challenges
-          </label>
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
-            id="challenge-search-input"
             type="text"
             placeholder="Search challenges..."
             value={search}

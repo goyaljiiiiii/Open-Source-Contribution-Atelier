@@ -246,11 +246,10 @@ export function OAuthClients() {
 
             <form onSubmit={handleCreateClient} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
-                <label htmlFor="oauth-app-name" className="text-xs font-bold uppercase text-muted">
+                <label className="text-xs font-bold uppercase text-muted">
                   Application Name
                 </label>
                 <input
-                  id="oauth-app-name"
                   type="text"
                   required
                   value={name}
@@ -261,11 +260,10 @@ export function OAuthClients() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label htmlFor="oauth-client-type" className="text-xs font-bold uppercase text-muted">
+                <label className="text-xs font-bold uppercase text-muted">
                   Client Type
                 </label>
                 <select
-                  id="oauth-client-type"
                   value={clientType}
                   onChange={(e) => setClientType(e.target.value as any)}
                   className="px-3 py-2 bg-surface-low dark:bg-[#1a1714] border border-black/20 dark:border-[#2e2924] rounded-lg text-sm font-bold text-text dark:text-[#f0ebe2]"
@@ -280,11 +278,10 @@ export function OAuthClients() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label htmlFor="oauth-redirect-uris" className="text-xs font-bold uppercase text-muted">
+                <label className="text-xs font-bold uppercase text-muted">
                   Redirect URIs (comma separated)
                 </label>
                 <input
-                  id="oauth-redirect-uris"
                   type="text"
                   required
                   value={redirectUrisInput}
@@ -294,11 +291,10 @@ export function OAuthClients() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label htmlFor="oauth-allowed-scopes" className="text-xs font-bold uppercase text-muted">
+                <label className="text-xs font-bold uppercase text-muted">
                   Allowed Scopes (space separated)
                 </label>
                 <input
-                  id="oauth-allowed-scopes"
                   type="text"
                   value={scopesInput}
                   onChange={(e) => setScopesInput(e.target.value)}
