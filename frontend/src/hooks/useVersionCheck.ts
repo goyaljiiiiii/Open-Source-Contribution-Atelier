@@ -1,3 +1,4 @@
+// Version polling hook contributed by @shahkhushi0307 (closes #1666)
 import { useState, useEffect, useRef, useCallback } from "react";
 
 const POLL_INTERVAL = 5 * 60 * 1000;
