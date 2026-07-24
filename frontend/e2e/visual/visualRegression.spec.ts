@@ -3,6 +3,7 @@ import { compareScreenshot } from "../helpers/visual";
 
 /**
  * Cross-browser visual regression tests.
+ * Contributed by @diksha78dev
  *
  * Covers critical public and authenticated routes at all configured viewports
  * (desktop 1280px, tablet 810px, mobile 393px) defined in playwright.config.ts.
