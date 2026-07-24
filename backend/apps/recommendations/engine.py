@@ -12,6 +12,7 @@ from apps.cache.services.cache_manager import CacheManager
 from .models import Recommendation
 
 
+# Multi-tenant organization isolation (contributed by @Pratyush-Panda-2006)
 class RecommendationEngine:
     def __init__(self, user):
         self.user = user
