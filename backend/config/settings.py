@@ -224,7 +224,6 @@ API_RATE_LIMIT_AUTH = int(os.getenv("API_RATE_LIMIT_AUTH", "100"))
 API_RATE_LIMIT_ANON = int(os.getenv("API_RATE_LIMIT_ANON", "20"))
 API_RATE_LIMIT_WINDOW = int(os.getenv("API_RATE_LIMIT_WINDOW", "60"))
 
-<<<<<<< HEAD
 # ──────────────────────────────────────────
 # Redis / Channels (graceful fallback when Redis is down)
 # ──────────────────────────────────────────
@@ -245,9 +244,6 @@ _default_rate_limit_backend = (
 )
 RATE_LIMIT_BACKEND = os.getenv("RATE_LIMIT_BACKEND", _default_rate_limit_backend).lower()
 RATE_LIMIT_REDIS_URL = ENV_REDIS_URL or CHECK_REDIS_URL
-
-=======
->>>>>>> origin/main
 
 MIDDLEWARE = [
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
