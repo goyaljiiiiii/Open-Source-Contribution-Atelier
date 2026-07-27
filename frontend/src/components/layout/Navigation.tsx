@@ -23,6 +23,7 @@ import {
   Key,
   ShoppingBag,
   Cpu,
+  SlidersHorizontal,
 } from "lucide-react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/AuthContext";
@@ -91,6 +92,7 @@ const navGroups = [
       { to: "/settings/connected-apps", label: "Connected Apps", icon: Shield },
       { to: "/admin/oauth-clients", label: "OAuth Apps", icon: Key },
       { to: "/admin/celery", label: "Celery Tasks", icon: Cpu },
+      { to: "/admin/audit", label: "Audit Logs", icon: SlidersHorizontal },
     ],
   },
 ];

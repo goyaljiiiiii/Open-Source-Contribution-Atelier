@@ -18,6 +18,8 @@ from .version_view import version_view
 urlpatterns = [
     # ── Admin ──────────────────────────────────────────────────────────────────
     path("admin/", admin.site.urls),
+    path("api/admin/audit/", include("apps.audit.urls")),
+    path("api/audit/", include("apps.audit.urls")),
     path("api/admin/", include("apps.monitoring.urls")),
     path("api/monitoring/", include("apps.monitoring.urls")),
 

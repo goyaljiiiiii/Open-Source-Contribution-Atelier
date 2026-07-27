@@ -4,8 +4,10 @@ from datetime import timedelta
 
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
-from django.test import RequestFactory, TestCase
+from django.test import RequestFactory, TestCase, override_settings
 from django.utils import timezone
+from rest_framework import status
+from rest_framework.test import APITestCase
 
 from apps.audit.middleware import AuditContextMiddleware, _audit_ctx
 from apps.audit.models import AuditEvent
@@ -15,6 +17,7 @@ from apps.content.models import Lesson
 User = get_user_model()
 
 
+@override_settings(CELERY_TASK_ALWAYS_EAGER=True)
 class AuditTrailTests(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
@@ -129,19 +132,16 @@ class AuditTrailTests(TestCase):
 
     def test_archive_audit_events_task(self):
         """archive_audit_events task archives old events and deletes them from DB."""
-        # Config custom test archive path
         test_archive_dir = os.path.join(os.path.dirname(__file__), "test_archives")
         self.assertFalse(os.path.exists(test_archive_dir))
 
         with self.settings(AUDIT_RETENTION_DAYS=1, AUDIT_ARCHIVE_DIR=test_archive_dir):
-            # Create a recent event
             AuditEvent.objects.create(
                 action="created",
                 resource_type="content.lesson",
                 resource_id="101",
                 created_at=timezone.now(),
             )
-            # Create an old event to be archived
             old_time = timezone.now() - timedelta(days=2)
             AuditEvent.objects.create(
                 action="created",
@@ -152,15 +152,12 @@ class AuditTrailTests(TestCase):
 
             self.assertEqual(AuditEvent.objects.count(), 2)
 
-            # Run the archival task
             deleted_count = archive_audit_events()
             self.assertEqual(deleted_count, 1)
 
-            # Assert only recent remains in DB
             self.assertEqual(AuditEvent.objects.count(), 1)
             self.assertEqual(AuditEvent.objects.first().resource_id, "101")
 
-            # Assert archive JSON file was written
             files = os.listdir(test_archive_dir)
             self.assertEqual(len(files), 1)
             archive_path = os.path.join(test_archive_dir, files[0])
@@ -169,13 +166,11 @@ class AuditTrailTests(TestCase):
                 self.assertEqual(len(data), 1)
                 self.assertEqual(data[0]["resource_id"], "102")
 
-            # Cleanup file and directory
             os.remove(archive_path)
             os.rmdir(test_archive_dir)
 
     def test_replay_events_management_command(self):
         """replay_events command successfully rebuilds Lesson state."""
-        # Create a Lesson and save it, generating audit logs
         lesson = Lesson.objects.create(
             title="Old Title",
             slug="old-slug",
@@ -185,19 +180,15 @@ class AuditTrailTests(TestCase):
         )
         lesson_id = lesson.id
 
-        # Modify and delete, producing the audit trail
         lesson.title = "Replayed Title"
         lesson.save()
         lesson.delete()
 
         self.assertFalse(Lesson.objects.filter(id=lesson_id).exists())
-
-        # Verify we have created, updated, deleted events
         self.assertEqual(
             AuditEvent.objects.filter(resource_id=str(lesson_id)).count(), 3
         )
 
-        # Run replay command
         from_str = (timezone.now() - timedelta(minutes=5)).strftime("%Y-%m-%dT%H:%M:%S")
         to_str = (timezone.now() + timedelta(minutes=5)).strftime("%Y-%m-%dT%H:%M:%S")
 
@@ -208,11 +199,8 @@ class AuditTrailTests(TestCase):
             "--resource-type=lesson",
         )
 
-        # It should end up in the last state (deleted) because we replayed a delete event at the end.
         self.assertFalse(Lesson.objects.filter(id=lesson_id).exists())
 
-        # Let's test a replay excluding the delete event (by deleting the audit event for deletion or just replaying created/updated)
-        # But AuditEvents are immutable! We can't delete them easily through instance.delete(), but we can do a QuerySet delete.
         AuditEvent.objects.filter(resource_id=str(lesson_id), action="deleted").delete()
 
         call_command(
@@ -222,6 +210,127 @@ class AuditTrailTests(TestCase):
             "--resource-type=lesson",
         )
 
-        # Now the lesson should be rebuilt to the updated title state
         rebuilt = Lesson.objects.get(id=lesson_id)
         self.assertEqual(rebuilt.title, "Replayed Title")
+
+
+@override_settings(CELERY_TASK_ALWAYS_EAGER=True)
+class AuditApiTests(APITestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_user(
+            username="adminuser", email="admin@example.com", password="password123", is_staff=True
+        )
+        self.normal_user = User.objects.create_user(
+            username="normaluser", email="normal@example.com", password="password123", is_staff=False
+        )
+
+        self.event1 = AuditEvent.objects.create(
+            actor=self.admin_user,
+            action="created",
+            resource_type="content.lesson",
+            resource_id="1001",
+            before=None,
+            after={"title": "Lesson 1", "difficulty": "beginner"},
+            correlation_id="corr-111",
+            ip_address="127.0.0.1",
+        )
+        self.event2 = AuditEvent.objects.create(
+            actor=self.normal_user,
+            action="updated",
+            resource_type="content.module",
+            resource_id="2002",
+            before={"title": "Module Old"},
+            after={"title": "Module New"},
+            correlation_id="corr-222",
+            ip_address="192.168.1.1",
+        )
+        self.event3 = AuditEvent.objects.create(
+            actor=self.admin_user,
+            action="deleted",
+            resource_type="content.lesson",
+            resource_id="1001",
+            before={"title": "Lesson 1"},
+            after=None,
+            correlation_id="corr-333",
+            ip_address="127.0.0.1",
+        )
+
+    def test_permission_required(self):
+        """Non-admin user cannot access the audit API."""
+        self.client.force_authenticate(user=self.normal_user)
+        response = self.client.get("/api/admin/audit/")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Unauthenticated request
+        self.client.logout()
+        response = self.client.get("/api/admin/audit/")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_admin_list_audit_events(self):
+        """Admin user can list audit events with pagination and calculated summaries."""
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.get("/api/admin/audit/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("results", response.data)
+        self.assertEqual(response.data["count"], 3)
+
+        first_item = response.data["results"][0]
+        self.assertIn("summary", first_item)
+        self.assertIn("actor_username", first_item)
+
+    def test_search_and_filters(self):
+        """Audit events can be filtered by action, actor, resource_type, and search query."""
+        self.client.force_authenticate(user=self.admin_user)
+
+        # Filter by action
+        res = self.client.get("/api/admin/audit/?action=created")
+        self.assertEqual(res.data["count"], 1)
+        self.assertEqual(res.data["results"][0]["id"], self.event1.id)
+
+        # Filter by model_type / resource_type
+        res = self.client.get("/api/admin/audit/?model_type=module")
+        self.assertEqual(res.data["count"], 1)
+        self.assertEqual(res.data["results"][0]["id"], self.event2.id)
+
+        # Filter by actor username
+        res = self.client.get("/api/admin/audit/?actor=normaluser")
+        self.assertEqual(res.data["count"], 1)
+        self.assertEqual(res.data["results"][0]["id"], self.event2.id)
+
+        # Structured free-text search
+        res = self.client.get("/api/admin/audit/?search=corr-222")
+        self.assertEqual(res.data["count"], 1)
+        self.assertEqual(res.data["results"][0]["id"], self.event2.id)
+
+    def test_audit_detail_view(self):
+        """GET /api/admin/audit/<id>/ returns full event detail."""
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.get(f"/api/admin/audit/{self.event2.id}/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["resource_id"], "2002")
+        self.assertEqual(response.data["before"], {"title": "Module Old"})
+        self.assertEqual(response.data["after"], {"title": "Module New"})
+
+    def test_export_csv(self):
+        """GET /api/admin/audit/?export=csv returns downloadable CSV respecting filters."""
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.get("/api/admin/audit/?action=created&export=csv")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response["Content-Type"], "text/csv")
+        self.assertIn("attachment; filename=", response["Content-Disposition"])
+
+        content = response.content.decode("utf-8")
+        lines = [line for line in content.splitlines() if line]
+        self.assertGreaterEqual(len(lines), 2)  # Header + 1 row
+        self.assertIn("Created", lines[1])
+
+    def test_export_json(self):
+        """GET /api/admin/audit/?export=json returns downloadable JSON array."""
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.get("/api/admin/audit/?export=json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response["Content-Type"], "application/json")
+        self.assertIn("attachment; filename=", response["Content-Disposition"])
+
+        data = json.loads(response.content)
+        self.assertEqual(len(data), 3)

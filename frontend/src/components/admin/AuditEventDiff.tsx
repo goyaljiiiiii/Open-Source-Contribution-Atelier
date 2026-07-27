@@ -1,0 +1,310 @@
+import React, { useState } from "react";
+import {
+  FileDiff,
+  Plus,
+  Minus,
+  RefreshCw,
+  Code,
+  Layers,
+  Clock,
+  User,
+  Hash,
+  Globe,
+  Terminal,
+} from "lucide-react";
+
+export interface AuditEventData {
+  id: number;
+  actor?: number | null;
+  actor_username?: string | null;
+  action: "created" | "updated" | "deleted" | string;
+  resource_type: string;
+  resource_id: string;
+  before: Record<string, any> | null;
+  after: Record<string, any> | null;
+  correlation_id?: string;
+  ip_address?: string | null;
+  user_agent?: string;
+  created_at: string;
+  summary?: string;
+  extra?: Record<string, any>;
+}
+
+interface AuditEventDiffProps {
+  event: AuditEventData;
+  onClose?: () => void;
+}
+
+export const AuditEventDiff: React.FC<AuditEventDiffProps> = ({ event }) => {
+  const [viewMode, setViewMode] = useState<"diff" | "side_by_side" | "raw">(
+    "diff",
+  );
+  const [showUnchanged, setShowUnchanged] = useState(false);
+
+  const beforeObj = event.before || {};
+  const afterObj = event.after || {};
+
+  const allKeys = Array.from(
+    new Set([...Object.keys(beforeObj), ...Object.keys(afterObj)]),
+  ).sort();
+
+  const diffEntries = allKeys.map((key) => {
+    const hasBefore = key in beforeObj;
+    const hasAfter = key in afterObj;
+    const valBefore = beforeObj[key];
+    const valAfter = afterObj[key];
+
+    let type: "added" | "deleted" | "modified" | "unchanged" = "unchanged";
+
+    if (!hasBefore && hasAfter) {
+      type = "added";
+    } else if (hasBefore && !hasAfter) {
+      type = "deleted";
+    } else if (JSON.stringify(valBefore) !== JSON.stringify(valAfter)) {
+      type = "modified";
+    }
+
+    return {
+      key,
+      valBefore,
+      valAfter,
+      type,
+    };
+  });
+
+  const filteredEntries = showUnchanged
+    ? diffEntries
+    : diffEntries.filter((e) => e.type !== "unchanged");
+
+  const formatValue = (val: any) => {
+    if (val === undefined) return <span className="text-gray-500 italic">none</span>;
+    if (val === null) return <span className="text-gray-400 italic">null</span>;
+    if (typeof val === "object") return JSON.stringify(val);
+    return String(val);
+  };
+
+  return (
+    <div className="flex flex-col gap-5 w-full text-gray-100">
+      {/* Header & Event Overview Metadata */}
+      <div className="p-4 bg-[#141824] border border-gray-800 rounded-xl flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <span
+            className={`px-3 py-1 text-xs font-bold uppercase rounded-md tracking-wider ${
+              event.action === "created"
+                ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                : event.action === "updated"
+                ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                : "bg-red-500/20 text-red-400 border border-red-500/30"
+            }`}
+          >
+            {event.action}
+          </span>
+          <h3 className="text-lg font-bold text-white flex items-center gap-2">
+            {event.summary || `${event.resource_type} #${event.resource_id}`}
+          </h3>
+        </div>
+
+        {/* View Mode Toggle Controls */}
+        <div className="flex items-center gap-1 bg-[#0b0e14] p-1 border border-gray-800 rounded-lg text-xs font-medium">
+          <button
+            onClick={() => setViewMode("diff")}
+            className={`px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-all ${
+              viewMode === "diff"
+                ? "bg-blue-600 text-white font-semibold shadow"
+                : "text-gray-400 hover:text-white"
+            }`}
+          >
+            <FileDiff className="w-3.5 h-3.5" /> Structured Diff
+          </button>
+          <button
+            onClick={() => setViewMode("side_by_side")}
+            className={`px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-all ${
+              viewMode === "side_by_side"
+                ? "bg-blue-600 text-white font-semibold shadow"
+                : "text-gray-400 hover:text-white"
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" /> Side by Side
+          </button>
+          <button
+            onClick={() => setViewMode("raw")}
+            className={`px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-all ${
+              viewMode === "raw"
+                ? "bg-blue-600 text-white font-semibold shadow"
+                : "text-gray-400 hover:text-white"
+            }`}
+          >
+            <Code className="w-3.5 h-3.5" /> Raw Payload
+          </button>
+        </div>
+      </div>
+
+      {/* Audit Event Metadata Pills */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+        <div className="p-3 bg-[#11141c] border border-gray-800/80 rounded-lg flex items-center gap-2.5">
+          <Clock className="w-4 h-4 text-blue-400 shrink-0" />
+          <div>
+            <div className="text-gray-400 text-[10px] uppercase font-semibold">Timestamp</div>
+            <div className="text-gray-200 font-mono">
+              {new Date(event.created_at).toLocaleString()}
+            </div>
+          </div>
+        </div>
+
+        <div className="p-3 bg-[#11141c] border border-gray-800/80 rounded-lg flex items-center gap-2.5">
+          <User className="w-4 h-4 text-purple-400 shrink-0" />
+          <div>
+            <div className="text-gray-400 text-[10px] uppercase font-semibold">Actor</div>
+            <div className="text-gray-200 font-semibold">
+              {event.actor_username || "System"}
+            </div>
+          </div>
+        </div>
+
+        <div className="p-3 bg-[#11141c] border border-gray-800/80 rounded-lg flex items-center gap-2.5">
+          <Hash className="w-4 h-4 text-amber-400 shrink-0" />
+          <div>
+            <div className="text-gray-400 text-[10px] uppercase font-semibold">Correlation ID</div>
+            <div className="text-gray-200 font-mono truncate max-w-[120px]">
+              {event.correlation_id || "N/A"}
+            </div>
+          </div>
+        </div>
+
+        <div className="p-3 bg-[#11141c] border border-gray-800/80 rounded-lg flex items-center gap-2.5">
+          <Globe className="w-4 h-4 text-emerald-400 shrink-0" />
+          <div>
+            <div className="text-gray-400 text-[10px] uppercase font-semibold">IP Address</div>
+            <div className="text-gray-200 font-mono">
+              {event.ip_address || "Internal"}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Diff Content Container */}
+      {viewMode === "diff" && (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs text-gray-400 font-medium">
+              Showing {filteredEntries.length} of {diffEntries.length} field(s)
+            </span>
+            <label className="flex items-center gap-2 text-xs text-gray-400 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showUnchanged}
+                onChange={(e) => setShowUnchanged(e.target.checked)}
+                className="rounded border-gray-700 bg-gray-900 text-blue-600 focus:ring-blue-500"
+              />
+              Show unchanged fields
+            </label>
+          </div>
+
+          {filteredEntries.length === 0 ? (
+            <div className="p-8 text-center bg-[#0d1017] border border-gray-800/80 rounded-xl text-gray-400 text-sm">
+              No field changes detected between before and after snapshots.
+            </div>
+          ) : (
+            <div className="border border-gray-800/80 rounded-xl overflow-hidden bg-[#0d1017]">
+              <table className="w-full text-left text-xs font-mono border-collapse">
+                <thead>
+                  <tr className="bg-[#141824] text-gray-400 border-b border-gray-800 text-[11px] uppercase tracking-wider">
+                    <th className="py-2.5 px-4 w-12">Type</th>
+                    <th className="py-2.5 px-4 w-1/4">Field / Key</th>
+                    <th className="py-2.5 px-4 w-1/3">Before</th>
+                    <th className="py-2.5 px-4 w-1/3">After</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-800/60">
+                  {filteredEntries.map((item) => (
+                    <tr
+                      key={item.key}
+                      className={`transition-colors ${
+                        item.type === "added"
+                          ? "bg-green-950/20 hover:bg-green-950/30"
+                          : item.type === "deleted"
+                          ? "bg-red-950/20 hover:bg-red-950/30"
+                          : item.type === "modified"
+                          ? "bg-amber-950/15 hover:bg-amber-950/25"
+                          : "hover:bg-gray-800/20"
+                      }`}
+                    >
+                      <td className="py-2 px-4 text-center">
+                        {item.type === "added" && (
+                          <span className="inline-flex p-1 bg-green-500/20 text-green-400 rounded">
+                            <Plus className="w-3 h-3" />
+                          </span>
+                        )}
+                        {item.type === "deleted" && (
+                          <span className="inline-flex p-1 bg-red-500/20 text-red-400 rounded">
+                            <Minus className="w-3 h-3" />
+                          </span>
+                        )}
+                        {item.type === "modified" && (
+                          <span className="inline-flex p-1 bg-amber-500/20 text-amber-400 rounded">
+                            <RefreshCw className="w-3 h-3" />
+                          </span>
+                        )}
+                        {item.type === "unchanged" && (
+                          <span className="inline-flex p-1 text-gray-600">=</span>
+                        )}
+                      </td>
+                      <td className="py-2 px-4 font-semibold text-gray-200">
+                        {item.key}
+                      </td>
+                      <td className="py-2 px-4 text-red-300/80 break-all">
+                        {formatValue(item.valBefore)}
+                      </td>
+                      <td className="py-2 px-4 text-green-300/80 break-all">
+                        {formatValue(item.valAfter)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Side-by-Side Raw View */}
+      {viewMode === "side_by_side" && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-4 bg-[#0d1017] border border-gray-800 rounded-xl flex flex-col gap-2">
+            <h4 className="text-xs font-bold uppercase text-red-400 flex items-center gap-1.5">
+              <Minus className="w-3.5 h-3.5" /> Before Snapshot
+            </h4>
+            <pre className="text-xs font-mono text-gray-300 bg-[#07090e] p-3 rounded-lg overflow-x-auto max-h-96">
+              {event.before
+                ? JSON.stringify(event.before, null, 2)
+                : "// No before state (Record Created)"}
+            </pre>
+          </div>
+
+          <div className="p-4 bg-[#0d1017] border border-gray-800 rounded-xl flex flex-col gap-2">
+            <h4 className="text-xs font-bold uppercase text-green-400 flex items-center gap-1.5">
+              <Plus className="w-3.5 h-3.5" /> After Snapshot
+            </h4>
+            <pre className="text-xs font-mono text-gray-300 bg-[#07090e] p-3 rounded-lg overflow-x-auto max-h-96">
+              {event.after
+                ? JSON.stringify(event.after, null, 2)
+                : "// No after state (Record Deleted)"}
+            </pre>
+          </div>
+        </div>
+      )}
+
+      {/* Raw Payload View */}
+      {viewMode === "raw" && (
+        <div className="p-4 bg-[#0d1017] border border-gray-800 rounded-xl flex flex-col gap-2">
+          <h4 className="text-xs font-bold uppercase text-blue-400 flex items-center gap-1.5">
+            <Terminal className="w-3.5 h-3.5" /> Complete Audit Record Payload
+          </h4>
+          <pre className="text-xs font-mono text-gray-300 bg-[#07090e] p-3 rounded-lg overflow-x-auto max-h-96">
+            {JSON.stringify(event, null, 2)}
+          </pre>
+        </div>
+      )}
+    </div>
+  );
+};

@@ -98,6 +98,12 @@ const BackupDashboardPage = lazy(() =>
   })),
 );
 
+const AuditLogViewerPage = lazy(() =>
+  import("../pages/admin/AuditLogViewerPage").then((module) => ({
+    default: module.AuditLogViewerPage,
+  })),
+);
+
 const CeleryDashboardPage = lazy(() =>
   import("../pages/admin/CeleryDashboardPage").then((module) => ({
     default: module.default,
@@ -635,6 +641,15 @@ export function AppRouter() {
             element={
               <ProtectedRoute>
                 <ModerationDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/audit"
+            element={
+              <ProtectedRoute>
+                <AuditLogViewerPage />
               </ProtectedRoute>
             }
           />
