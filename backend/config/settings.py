@@ -250,6 +250,7 @@ MIDDLEWARE = [
     "waffle.middleware.WaffleMiddleware",
     "apps.core.middleware.ratelimit.RateLimitMiddleware",
     "apps.sandbox.middleware.SandboxExecutionLogMiddleware",
+    "apps.core.middleware.api_version.APIVersionMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
@@ -416,6 +417,19 @@ PASSWORD_RESET_TIMEOUT_MINUTES = int(os.getenv("PASSWORD_RESET_TIMEOUT_MINUTES",
 # How many minutes an OTP verification code remains valid.
 OTP_TIMEOUT_MINUTES = int(os.getenv("OTP_TIMEOUT_MINUTES", "10"))
 
+# ── API Versioning Configuration ──────────────────────────────────────────────
+DEFAULT_API_VERSION = "1.0"
+ALLOWED_API_VERSIONS = ["1.0"]
+DEPRECATED_API_VERSIONS = {}
+API_VERSION_DISCOVERY = {
+    "1.0": {
+        "status": "stable",
+        "changelog_url": "/docs/changelog/v1.0",
+        "sunset": None,
+        "deprecation": None,
+    }
+}
+
 REST_FRAMEWORK = {
     # ── Default Throttle Classes ─────────────────────────────────────────────
     "DATETIME_FORMAT": "%Y-%m-%dT%H:%M:%SZ",
@@ -423,6 +437,11 @@ REST_FRAMEWORK = {
         "apps.core.throttling.SlidingWindowAnonThrottle",
         "apps.core.throttling.SlidingWindowUserThrottle",
     ],
+    # ── API Versioning ───────────────────────────────────────────────────────
+    "DEFAULT_VERSIONING_CLASS": "apps.core.versioning.AcceptHeaderOrURLVersioning",
+    "DEFAULT_VERSION": "1.0",
+    "ALLOWED_VERSIONS": ["1.0"],
+    "VERSION_PARAM": "version",
     # ── Throttle Rates ───────────────────────────────────────────────────────
     # Sandbox endpoints
     # Auth endpoints (brute-force + spam protection)
