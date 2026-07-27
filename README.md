@@ -159,7 +159,7 @@ This boots:
 | **celery_worker** | — | Background task processor for email notifications |
 | **frontend** | `http://localhost:5173/` | Vite dev server with hot-reload |
 
-If you hit any setup issues, see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md).
+If you hit any setup issues, see [TROUBLESHOOTING.md](./docs/TROUBLESHOOTING.md).
 
 > [!TIP]
 > The Celery worker mounts the codebase as a volume (`./services/notifications_worker:/app`),

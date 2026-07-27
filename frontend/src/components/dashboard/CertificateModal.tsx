@@ -65,6 +65,7 @@ export function CertificateModal({
   return (
     <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4 overflow-y-auto">
       <div className="w-full max-w-4xl bg-[#FFF9F0] rounded-[2rem] border-8 border-black p-8 sm:p-12 relative flex flex-col justify-between items-center text-center shadow-card bg-dot-grid certificate-printable print:border-none print:shadow-none print:p-0 print:bg-white print:text-black">
+        
         <button
           onClick={onClose}
           className="absolute top-4 right-4 bg-white border-2 border-black p-2 rounded-full hover:bg-surface-low transition-colors print:hidden"
@@ -74,7 +75,15 @@ export function CertificateModal({
         </button>
 
         {/* Bound layout wrapper targeting DOM elements for capture structure conversion */}
+<<<<<<< HEAD
+<<<<<<< HEAD
+        <div 
+=======
         <div
+>>>>>>> dfdebfe7240e0a2925844a3a06c0bf827e540a66
+=======
+        <div
+>>>>>>> origin/main
           ref={certificateRef}
           className="space-y-6 w-full border-4 border-dashed border-black/35 rounded-2xl p-6 sm:p-10 relative bg-[#FFF9F0]"
         >
@@ -124,7 +133,7 @@ export function CertificateModal({
               <span className="font-mono text-xs font-black block">
                 {certificateData?.certificate?.issued_at
                   ? new Date(
-                      certificateData.certificate.issued_at,
+                      certificateData.certificate.issued_at
                     ).toLocaleDateString()
                   : new Date().toLocaleDateString()}
               </span>
@@ -157,12 +166,22 @@ export function CertificateModal({
             disabled={isExporting}
             className="flex items-center gap-2 rounded-lg bg-amber-400 text-black border-4 border-black px-5 py-2.5 font-black text-sm shadow-card-sm hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-card-sm cursor-pointer disabled:opacity-60"
           >
+<<<<<<< HEAD
+<<<<<<< HEAD
+            {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Image size={16} />} Download PNG
+=======
+=======
+>>>>>>> origin/main
             {isExporting ? (
               <Loader2 size={16} className="animate-spin" />
             ) : (
               <Image size={16} />
             )}{" "}
             Download PNG
+<<<<<<< HEAD
+>>>>>>> dfdebfe7240e0a2925844a3a06c0bf827e540a66
+=======
+>>>>>>> origin/main
           </button>
 
           <button
@@ -170,12 +189,22 @@ export function CertificateModal({
             disabled={isExporting}
             className="flex items-center gap-2 rounded-lg bg-teal-400 text-black border-4 border-black px-5 py-2.5 font-black text-sm shadow-card-sm hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-card-sm cursor-pointer disabled:opacity-60"
           >
+<<<<<<< HEAD
+<<<<<<< HEAD
+            {isExporting ? <Loader2 size={16} className="animate-spin" /> : <FileImage size={16} />} Download SVG
+=======
+=======
+>>>>>>> origin/main
             {isExporting ? (
               <Loader2 size={16} className="animate-spin" />
             ) : (
               <FileImage size={16} />
             )}{" "}
             Download SVG
+<<<<<<< HEAD
+>>>>>>> dfdebfe7240e0a2925844a3a06c0bf827e540a66
+=======
+>>>>>>> origin/main
           </button>
 
           {certificateData?.certificate?.verification_hash && (

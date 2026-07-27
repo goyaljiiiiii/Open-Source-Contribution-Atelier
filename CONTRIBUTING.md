@@ -53,3 +53,9 @@ To prevent partial implementations, the files modified in your pull request must
 
 ### 3. SSoC26 Contributors
 If you are participating in SSoC26, please check the contributor checkmark `- [x] I am a SSoC26 contributor` in the issue/PR templates. The automation will sync the `SSoC26` label to both your PR and linked issue, and automatically assign them to you.
+
+### 4. Issue Assignment Cap (5 Issues Per Contributor)
+To ensure equal opportunity and rapid progression across all program participants:
+- Each contributor is limited to a maximum of **5 open assigned issues** at a time.
+- If you currently have **5 open assigned issues**, GitHub Actions automation will block further assignments until your open issues are resolved or unclaimed (`/unclaim`).
+- Remember the **48-Hour SLA**: a Draft PR must be opened within 48 hours of assignment to prevent automatic unassignment.

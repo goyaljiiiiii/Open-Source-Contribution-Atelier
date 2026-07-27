@@ -23,15 +23,10 @@ from .views import (
     ShopStreakFreezeView,
     SignupView,
     UserListView,
-    UserSessionListView,
     UserSessionDetailView,
+    UserSessionListView,
     UserStatisticsView,
     UserSuggestionsView,
-    AvatarUploadView,
-    PasswordResetValidateTokenView,
-    ChangePasswordView,
-    PublicProfileView,
-    ShopStreakFreezeView,
 )
 
 urlpatterns = [

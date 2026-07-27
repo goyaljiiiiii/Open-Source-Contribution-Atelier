@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import SearchEmbedding, UserSearchProfile, SearchAnalytics
+
+from .models import SearchAnalytics, SearchEmbedding, UserSearchProfile
 
 
 class SearchEmbeddingSerializer(serializers.ModelSerializer):

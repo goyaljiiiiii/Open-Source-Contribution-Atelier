@@ -1,3 +1,6 @@
+import logging
+
+logger = logging.getLogger(__name__)
 from django.apps import AppConfig
 
 
@@ -19,5 +22,5 @@ class AccountsConfig(AppConfig):
                     "schedule_type": Schedule.DAILY,
                 },
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)

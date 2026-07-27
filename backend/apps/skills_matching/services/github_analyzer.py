@@ -2,11 +2,13 @@
 GitHub profile analyzer for contributor skills.
 """
 
-import requests
-from typing import Dict, Any, List, Optional
-from django.conf import settings
-from apps.skill_matching.models import ContributorProfile, SkillTag
 import logging
+from typing import Any, Dict, List, Optional
+
+import requests
+from django.conf import settings
+
+from apps.skill_matching.models import ContributorProfile, SkillTag
 
 logger = logging.getLogger(__name__)
 

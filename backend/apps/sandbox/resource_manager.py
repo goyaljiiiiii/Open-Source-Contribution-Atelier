@@ -1,12 +1,12 @@
 import ast
 import logging
-import time
 import sys
-import redis
+import time
 
+import redis
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
-from django.conf import settings
 
 from apps.sandbox.models import ExecutionViolationLog
 
@@ -131,7 +131,6 @@ class ResourceManagementEngine:
             cache.set(
                 cache_key, current - 1, timeout=cls.MAX_EXECUTION_TIME_SECONDS * 2
             )
-
 
 
 class SandboxResourceManager:

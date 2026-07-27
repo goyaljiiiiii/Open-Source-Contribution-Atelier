@@ -1,6 +1,8 @@
 import uuid
+
 from django.core.management.base import BaseCommand
-from apps.sandbox.models import ModerationScenario, DialogueNode, DialogueChoice
+
+from apps.sandbox.models import DialogueChoice, DialogueNode, ModerationScenario
 
 
 class Command(BaseCommand):

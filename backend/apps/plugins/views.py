@@ -1,8 +1,10 @@
 import importlib
 import logging
-from rest_framework.views import APIView
+
+from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
-from rest_framework.permissions import IsAdminUser, AllowAny
+from rest_framework.views import APIView
+
 from .models import Plugin
 from .registry import registry
 

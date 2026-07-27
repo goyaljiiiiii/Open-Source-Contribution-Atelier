@@ -18,32 +18,59 @@ first and wire this call accordingly (marked with a clear TODO, not
 silently guessed at).
 """
 
+import logging
+
+logger = logging.getLogger(__name__)
+import traceback
 from typing import Any, Dict, List
 
-import traceback
 from .plugins import LessonPlugin, registry
 
 
-def _run_in_sandbox(test_code: str, implementation_code: str, function_name: str) -> Dict[str, Any]:
+def _run_in_sandbox(
+    test_code: str, implementation_code: str, function_name: str
+) -> Dict[str, Any]:
     """
     Executes the test code against the implementation code.
-    Note: In a production environment with Pyodide, this logic would be 
-    handled by the frontend. For backend evaluation, we use a restricted 
+    Note: In a production environment with Pyodide, this logic would be
+    handled by the frontend. For backend evaluation, we use a restricted
     exec environment to simulate the sandbox.
     """
     # Combine implementation and test code
     full_code = f"{implementation_code}\n\n{test_code}\n\n{function_name}()"
-    
+
     # Restricted globals for basic safety in the simulated sandbox
-    safe_globals = {"__builtins__": {
-        "abs": abs, "all": all, "any": any, "bool": bool, "dict": dict,
-        "enumerate": enumerate, "filter": filter, "float": float, "int": int,
-        "len": len, "list": list, "map": map, "max": max, "min": min,
-        "pow": pow, "range": range, "round": round, "set": set, "str": str,
-        "sum": sum, "tuple": tuple, "zip": zip, "AssertionError": AssertionError,
-        "Exception": Exception, "ValueError": ValueError, "TypeError": TypeError,
-    }}
-    
+    safe_globals = {
+        "__builtins__": {
+            "abs": abs,
+            "all": all,
+            "any": any,
+            "bool": bool,
+            "dict": dict,
+            "enumerate": enumerate,
+            "filter": filter,
+            "float": float,
+            "int": int,
+            "len": len,
+            "list": list,
+            "map": map,
+            "max": max,
+            "min": min,
+            "pow": pow,
+            "range": range,
+            "round": round,
+            "set": set,
+            "str": str,
+            "sum": sum,
+            "tuple": tuple,
+            "zip": zip,
+            "AssertionError": AssertionError,
+            "Exception": Exception,
+            "ValueError": ValueError,
+            "TypeError": TypeError,
+        }
+    }
+
     try:
         exec(full_code, safe_globals)
         return {"passed": True, "error": None}
@@ -86,7 +113,11 @@ class UnitTestChallengePlugin(LessonPlugin):
                 return False
 
         buggy = data.get("buggy_implementations")
-        if not isinstance(buggy, list) or not buggy or not all(isinstance(b, str) for b in buggy):
+        if (
+            not isinstance(buggy, list)
+            or not buggy
+            or not all(isinstance(b, str) for b in buggy)
+        ):
             return False
 
         return True
@@ -104,7 +135,8 @@ class UnitTestChallengePlugin(LessonPlugin):
         # Rule 1: the test MUST pass against the correct reference implementation.
         try:
             reference_result = _run_in_sandbox(test_code, reference_impl, function_name)
-        except Exception:
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)
             return 0.0
 
         if not reference_result.get("passed"):
@@ -118,7 +150,8 @@ class UnitTestChallengePlugin(LessonPlugin):
         for buggy_impl in buggy_impls:
             try:
                 result = _run_in_sandbox(test_code, buggy_impl, function_name)
-            except Exception:
+            except Exception as e:
+                logger.warning("Caught exception: %s", e)
                 # Treat a harness error on a buggy variant as "not caught"
                 # rather than crashing the whole evaluation.
                 continue

@@ -2,7 +2,7 @@ name: Auto-comment on Issue Assignment
 
 on:
   issues:
-    types: [assigned, opened]
+    types: [assigned]
 
 permissions:
   issues: write
@@ -16,13 +16,80 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const assignees = context.payload.issue.assignees || [];
+            const issue = context.payload.issue;
+            const assignees = issue.assignees || [];
             if (assignees.length === 0) return;
-            const mentions = assignees.map(a => `@${a.login}`).join(', ');
-            const body = `Assigned to ${mentions} — acknowledged.`;
+            
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            async function countOpenAssignedIssues(username) {
+              try {
+                const assignedIssues = await github.paginate(github.rest.issues.listForRepo, {
+                  owner,
+                  repo,
+                  state: 'open',
+                  assignee: username,
+                  per_page: 100
+                });
+                return assignedIssues.filter(i => !i.pull_request).length;
+              } catch (err) {
+                console.warn(`Could not count open assigned issues for ${username}: ${err}`);
+                return 0;
+              }
+            }
+
+            const validAssignees = [];
+            const atLimitAssignees = [];
+
+            for (const assignee of assignees) {
+              const count = await countOpenAssignedIssues(assignee.login);
+              if (count > 5) {
+                await github.rest.issues.removeAssignees({
+                  owner,
+                  repo,
+                  issue_number: issue.number,
+                  assignees: [assignee.login]
+                });
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: issue.number,
+                  body: `⚠️ @${assignee.login}, assignment reverted. You currently have **${count} open assigned issues**, exceeding the maximum limit of **5 open assigned issues** per contributor. Please resolve or unclaim existing issues before taking on new ones.`
+                });
+              } else {
+                validAssignees.push(assignee);
+                if (count === 5) {
+                  atLimitAssignees.push(assignee.login);
+                }
+              }
+            }
+
+            if (validAssignees.length === 0) return;
+
+            const mentions = validAssignees.map(a => `@${a.login}`).join(', ');
+
+            const limitNotice = atLimitAssignees.length > 0
+              ? `\n\nℹ️ **Limit Reached**: ${atLimitAssignees.map(u => `@${u}`).join(', ')} has reached the maximum limit of **5 open assigned issues**.`
+              : '';
+
+            const commentBody = [
+              `### 🚀 Assigned to ${mentions}!`,
+              ``,
+              `Please adhere strictly to our **Contribution Rules**:`,
+              `1. ⏰ **48-Hour SLA**: Open a Draft PR within **48 hours**, or the issue will be automatically unassigned.`,
+              `2. 🔗 **Link Issue**: PR description MUST include \`Fixes #${issue.number}\` for points to sync on SSoC / ECSoC leaderboards.`,
+              `3. 🧪 **Pre-Push Checks**: Run \`npm run build\` (frontend) & \`pytest\` (backend) locally before requesting review.`,
+              `4. 🏷️ **Labels**: Do NOT edit or remove program or difficulty labels (\`SSoC26\`, \`ECSoC26\`, \`easy\`, \`Medium\`, \`hard\`).`,
+              `5. 📌 **5 Issue Cap**: Maximum **5 open assigned issues** per contributor at a time.${limitNotice}`,
+              ``,
+              `> 🛠️ **Tools**: Run \`python3 verify_readiness.py\` locally | [Contributor Sandbox](https://open-source-contribution-atelier.vercel.app/contributor-sandbox) | [CONTRIBUTING.md](https://github.com/${owner}/${repo}/blob/main/CONTRIBUTING.md)`
+            ].join('\n');
+
             await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.name,
-              body: body
+              issue_number: issue.number,
+              owner: owner,
+              repo: repo,
+              body: commentBody
             });
+

@@ -1,10 +1,11 @@
+import logging
+from datetime import timedelta
+
 from celery import shared_task
 from django.utils import timezone
-from datetime import timedelta
-import logging
 
-from apps.errors.models import ErrorGroup, ErrorEvent
-from apps.errors.grouping import normalize_message, calculate_fingerprint
+from apps.errors.grouping import calculate_fingerprint, normalize_message
+from apps.errors.models import ErrorEvent, ErrorGroup
 
 logger = logging.getLogger(__name__)
 

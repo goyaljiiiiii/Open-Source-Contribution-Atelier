@@ -1,20 +1,22 @@
 from datetime import date, timedelta
-from django.utils import timezone
-from django.db import transaction
-from django.contrib.auth import get_user_model
 
-User = get_user_model()
+from django.contrib.auth import get_user_model
+from django.db import transaction
+from django.utils import timezone
+
 from apps.progress.models import (
+    ExerciseAttempt,
+    QuizAttempt,
     StreakProfile,
     StreakRecoveryPlan,
-    QuizAttempt,
-    ExerciseAttempt,
 )
+
+get_user_model()
 
 
 class StreakRecoveryService:
     @classmethod
-    def get_or_create_recovery_plan(cls, user: User) -> StreakRecoveryPlan | None:
+    def get_or_create_recovery_plan(cls, user):
         """
         Check if the user has missed yesterday's streak day.
         If yes, get or create a StreakRecoveryPlan for today.
@@ -44,6 +46,7 @@ class StreakRecoveryService:
                         "code_target": 1,
                     },
                 )
+
                 if not created and plan.target_date != today:
                     # Clean up expired plan
                     plan.delete()
@@ -55,16 +58,17 @@ class StreakRecoveryService:
                         reading_target=15,
                         code_target=1,
                     )
+
                 # Sync progress automatically when retrieved
                 cls.sync_and_update_progress(plan)
                 return plan
-            else:
-                # If they are not eligible for recovery, clean up any old plan
-                StreakRecoveryPlan.objects.filter(user=user).delete()
-                return None
+
+            # If they are not eligible for recovery, clean up any old plan
+            StreakRecoveryPlan.objects.filter(user=user).delete()
+            return None
 
     @classmethod
-    def sync_and_update_progress(cls, plan: StreakRecoveryPlan) -> StreakRecoveryPlan:
+    def sync_and_update_progress(cls, plan):
         """
         Query actual completions for today and evaluate if recovery is complete.
         """
@@ -73,14 +77,18 @@ class StreakRecoveryService:
 
         today = plan.target_date
 
-        # 1. Quizzes completed today
+        # Count only correctly answered quizzes
         plan.quiz_progress = QuizAttempt.objects.filter(
-            user=plan.user, created_at__date=today
+            user=plan.user,
+            created_at__date=today,
+            is_correct=True,
         ).count()
 
-        # 2. Code exercises completed today (successful attempts)
+        # Count only successful coding exercises
         plan.code_progress = ExerciseAttempt.objects.filter(
-            user=plan.user, is_correct=True, created_at__date=today
+            user=plan.user,
+            is_correct=True,
+            created_at__date=today,
         ).count()
 
         # Check if fully recovered
@@ -89,17 +97,18 @@ class StreakRecoveryService:
             and plan.reading_progress >= plan.reading_target
             and plan.code_progress >= plan.code_target
         ):
-
             plan.is_completed = True
 
-            # Perform recovery: update StreakProfile
             try:
                 profile = StreakProfile.objects.get(user=plan.user)
                 profile.current_streak = plan.previous_streak + 1
                 profile.last_activity_date = today
+
                 if profile.current_streak > profile.longest_streak:
                     profile.longest_streak = profile.current_streak
+
                 profile.save()
+
             except StreakProfile.DoesNotExist:
                 pass
 
@@ -107,23 +116,27 @@ class StreakRecoveryService:
         return plan
 
     @classmethod
-    def record_reading_minute(cls, user: User) -> bool:
+    def record_reading_minute(cls, user):
         """
-        Record a reading minute towards the user's active recovery plan.
-        Returns True if a recovery plan was updated.
+        Record one reading minute toward the active recovery plan.
+        Returns True if the plan was updated.
         """
         plan = cls.get_or_create_recovery_plan(user)
+
         if not plan or plan.is_completed:
             return False
 
         now = timezone.now()
-        # Throttled increment: only add 1 minute if at least 30 seconds since the last update
         elapsed = (now - plan.updated_at).total_seconds()
 
-        # Always allow first increment
+        # Always allow the first increment, then throttle to once every 30 seconds.
         if plan.reading_progress == 0 or elapsed >= 30:
-            plan.reading_progress = min(plan.reading_target, plan.reading_progress + 1)
+            plan.reading_progress = min(
+                plan.reading_target,
+                plan.reading_progress + 1,
+            )
             plan.save()
             cls.sync_and_update_progress(plan)
             return True
+
         return False

@@ -10,9 +10,9 @@ import pytest
 from django.contrib.auth import get_user_model
 
 from apps.core.tenant import (
-    set_current_tenant,
     clear_current_tenant,
     get_current_tenant_id,
+    set_current_tenant,
 )
 from apps.organizations.models import Organization, OrganizationMembership
 
@@ -220,8 +220,9 @@ class TestIsTenantMemberPermission:
 @pytest.mark.django_db
 class TestAuditCommand:
     def test_command_runs_and_reports(self):
-        from django.core.management import call_command
         from io import StringIO
+
+        from django.core.management import call_command
 
         out = StringIO()
         # Should not raise; --strict would exit nonzero if any gap exists,

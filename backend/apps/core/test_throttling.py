@@ -1,8 +1,10 @@
 import time
 from unittest import mock
-from django.test import TestCase, RequestFactory
-from rest_framework.views import APIView
+
+from django.test import RequestFactory, TestCase
 from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from apps.core.throttling import SlidingWindowAnonThrottle, get_redis_connection
 
 

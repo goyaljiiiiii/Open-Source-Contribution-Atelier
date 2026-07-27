@@ -2,30 +2,31 @@
 Views for sandbox app with duplicate execution prevention and all features.
 """
 
+import logging
+
+from django.core.cache import cache
 from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.core.cache import cache
-import logging
 
 from .models import (
-    CodeSnapshot,
-    Project,
-    ProjectFile,
     CodeExecutionTrace,
     CodeReviewThread,
-    SnippetCollection,
+    CodeSnapshot,
     CodeSnippet,
+    Project,
+    ProjectFile,
+    SnippetCollection,
 )
 from .serializers import (
-    CodeSnapshotSerializer,
-    ProjectSerializer,
-    ProjectFileSerializer,
     CodeExecutionTraceSerializer,
     CodeReviewThreadSerializer,
-    SnippetCollectionSerializer,
+    CodeSnapshotSerializer,
     CodeSnippetSerializer,
+    ProjectFileSerializer,
+    ProjectSerializer,
+    SnippetCollectionSerializer,
 )
 from .services import verify_git_command
 from .services.execution_tracker import ExecutionTracker, prevent_duplicate_execution
@@ -146,11 +147,14 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         if is_regex:
             if len(query) > 100:
-                return Response({"error": "Regex query too long (max 100 chars)"}, status=400)
+                return Response(
+                    {"error": "Regex query too long (max 100 chars)"}, status=400
+                )
             # Basic validation to prevent catastrophic backtracking (nested quantifiers)
             if re.search(r"(\(.*?[+*{].*?\)[+*{])", query):
-                return Response({"error": "Complex nested quantifiers are not allowed"}, status=400)
-
+                return Response(
+                    {"error": "Complex nested quantifiers are not allowed"}, status=400
+                )
 
         flags = 0 if match_case else re.IGNORECASE
         try:
@@ -216,6 +220,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         """Export project workspace as a ZIP file."""
         import io
         import zipfile
+
         from django.http import HttpResponse
 
         project = self.get_object()
@@ -474,8 +479,8 @@ class WorkspaceSnapshotViewSet(viewsets.ModelViewSet):
 # MAINTAINER ROLEPLAY
 # ============================================================
 
-from .models import MaintainerScenario, MaintainerEvaluation
-from .serializers import MaintainerScenarioSerializer, MaintainerEvaluationSerializer
+from .models import MaintainerEvaluation, MaintainerScenario
+from .serializers import MaintainerEvaluationSerializer, MaintainerScenarioSerializer
 
 
 class MaintainerScenarioViewSet(viewsets.ReadOnlyModelViewSet):
@@ -492,9 +497,10 @@ class MaintainerEvaluationViewSet(viewsets.ModelViewSet):
         return MaintainerEvaluation.objects.filter(user=self.request.user)
 
 
+from django.contrib.auth import get_user_model
+
 from .models import CollabSession
 from .serializers import CollabSessionSerializer
-from django.contrib.auth import get_user_model
 
 
 class CollabSessionViewSet(viewsets.ModelViewSet):
@@ -583,12 +589,14 @@ class PipelineExecutionViewSet(viewsets.ModelViewSet):
 # MERGE CONFLICT ARENA
 # ============================================================
 
-from .models import ConflictScenario, ConflictAttempt
-from .serializers import ConflictScenarioSerializer, ConflictAttemptSerializer
+import re
+
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework import status
-import re
+
+from .models import ConflictAttempt, ConflictScenario
+from .serializers import ConflictAttemptSerializer, ConflictScenarioSerializer
 
 
 class ConflictScenarioViewSet(viewsets.ReadOnlyModelViewSet):
@@ -647,11 +655,11 @@ class ConflictScenarioViewSet(viewsets.ReadOnlyModelViewSet):
 # FEATURE 2: TOXIC COMMUNITY DE-ESCALATION TRAINER
 # ============================================================
 
-from .models import ModerationScenario, DialogueNode, DialogueChoice, ModerationAttempt
+from .models import DialogueChoice, DialogueNode, ModerationAttempt, ModerationScenario
 from .serializers import (
-    ModerationScenarioSerializer,
-    ModerationAttemptSerializer,
     DialogueNodeSerializer,
+    ModerationAttemptSerializer,
+    ModerationScenarioSerializer,
 )
 
 
@@ -739,8 +747,8 @@ class ModerationScenarioViewSet(viewsets.ReadOnlyModelViewSet):
 # FEATURE 3: LICENSE & DEPENDENCY DETECTIVE
 # ============================================================
 
-from .models import LicenseScenario, DependencyDiff, LicenseAttempt
-from .serializers import LicenseScenarioSerializer, LicenseAttemptSerializer
+from .models import DependencyDiff, LicenseAttempt, LicenseScenario
+from .serializers import LicenseAttemptSerializer, LicenseScenarioSerializer
 
 
 class LicenseScenarioViewSet(viewsets.ReadOnlyModelViewSet):
@@ -815,8 +823,8 @@ class LicenseScenarioViewSet(viewsets.ReadOnlyModelViewSet):
 # FEATURE 11: ISSUE TRIAGE & LABELING MAINTAINER SCENARIO
 # ============================================================
 
-from .models import TriageIssue, TriageAttempt
-from .serializers import TriageIssueSerializer, TriageAttemptSerializer
+from .models import TriageAttempt, TriageIssue
+from .serializers import TriageAttemptSerializer, TriageIssueSerializer
 
 
 def _score_triage(issue: TriageIssue, submitted_labels: list, submitted_response: str):
@@ -997,8 +1005,8 @@ class TriageIssueViewSet(viewsets.ReadOnlyModelViewSet):
 # FEATURE: ADR Sandbox Simulator
 # ============================================================
 
-from .models import ADRScenario, ADROption, ADRAttempt
-from .serializers import ADRScenarioSerializer, ADRAttemptSerializer
+from .models import ADRAttempt, ADROption, ADRScenario
+from .serializers import ADRAttemptSerializer, ADRScenarioSerializer
 
 
 class ADRScenarioViewSet(viewsets.ReadOnlyModelViewSet):

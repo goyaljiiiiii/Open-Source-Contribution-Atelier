@@ -1,5 +1,6 @@
 from django.urls import path
-from .views import DXOverviewView, DXHistoryView, DXFrictionView, DXMetricsIngestView
+
+from .views import DXFrictionView, DXHistoryView, DXMetricsIngestView, DXOverviewView
 
 urlpatterns = [
     path("overview/", DXOverviewView.as_view(), name="dx_overview"),

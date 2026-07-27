@@ -1,11 +1,12 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from .models import ContributorActivity, BurnoutSignal, Intervention, BurnoutMetric
+
+from .models import BurnoutMetric, BurnoutSignal, ContributorActivity, Intervention
 from .serializers import (
-    ContributorActivitySerializer,
-    BurnoutSignalSerializer,
-    InterventionSerializer,
     BurnoutMetricSerializer,
+    BurnoutSignalSerializer,
+    ContributorActivitySerializer,
+    InterventionSerializer,
 )
 
 

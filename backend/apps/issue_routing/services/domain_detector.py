@@ -2,11 +2,13 @@
 NLP-based issue domain detection.
 """
 
-import re
-from typing import List, Dict, Any
-from textblob import TextBlob
-from apps.issue_routing.models import ExpertiseDomain
 import logging
+import re
+from typing import Any, Dict, List
+
+from textblob import TextBlob
+
+from apps.issue_routing.models import ExpertiseDomain
 
 logger = logging.getLogger(__name__)
 

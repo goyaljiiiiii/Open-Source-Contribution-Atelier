@@ -16,8 +16,9 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils import timezone
 
-from apps.core.models import SoftDeleteModel, PurgeLog
-from .locks import distributed_lock, TaskLockManager
+from apps.core.models import PurgeLog, SoftDeleteModel
+
+from .locks import TaskLockManager, distributed_lock
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +27,9 @@ logger = logging.getLogger(__name__)
 @distributed_lock("certificate_generation:{user_id}", timeout=120, retry_count=5)
 def generate_certificate_task(user_id: int):
     """Generate certificate with distributed lock."""
-    from apps.progress.models import Certificate
     from django.contrib.auth.models import User
+
+    from apps.progress.models import Certificate
 
     try:
         user = User.objects.get(id=user_id)
@@ -56,6 +58,7 @@ def generate_certificate_task(user_id: int):
 def send_daily_digest_task(user_id: int):
     """Send daily digest with distributed lock."""
     from django.contrib.auth.models import User
+
     from apps.progress.models import LessonProgress
 
     try:
@@ -99,10 +102,11 @@ def send_daily_digest_task(user_id: int):
 @distributed_lock("leaderboard_recalculation", timeout=300, retry_count=3)
 def recalculate_leaderboard_task():
     """Recalculate leaderboard with distributed lock."""
+    from django.contrib.auth.models import User
+    from django.db.models import Count, Sum
+
     from apps.dashboard.models import Leaderboard
     from apps.progress.models import LessonProgress
-    from django.contrib.auth.models import User
-    from django.db.models import Sum, Count
 
     logger.info("Starting leaderboard recalculation")
 
@@ -135,8 +139,9 @@ def recalculate_leaderboard_task():
 @distributed_lock("badge_evaluation:{user_id}", timeout=60, retry_count=5)
 def evaluate_badges_task(user_id: int):
     """Evaluate badges with distributed lock."""
-    from apps.progress.badge_evaluator import BadgeEvaluator
     from django.contrib.auth.models import User
+
+    from apps.progress.badge_evaluator import BadgeEvaluator
 
     try:
         user = User.objects.get(id=user_id)
@@ -225,12 +230,14 @@ def _purge_for_model(model, threshold_date, batch_size):
 
 
 def archive_audit_logs():
-    from apps.core.models import AdminAuditLog
+    import json
+    import os
+    from pathlib import Path
+
     from django.conf import settings
     from django.utils import timezone
-    import os
-    import json
-    from pathlib import Path
+
+    from apps.core.models import AdminAuditLog
 
     retention_days = 90
     cutoff = timezone.now() - timezone.timedelta(days=retention_days)
@@ -301,9 +308,10 @@ def backup_database():
 
 
 def _backup_sqlite(output_path: Path) -> None:
+    import io
+
     import django
     from django.core.management import call_command
-    import io
 
     buf = io.StringIO()
     call_command("dumpdata", stdout=buf, verbosity=0)

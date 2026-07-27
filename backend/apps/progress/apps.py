@@ -1,3 +1,6 @@
+import logging
+
+logger = logging.getLogger(__name__)
 from django.apps import AppConfig
 
 
@@ -28,6 +31,7 @@ class ProgressConfig(AppConfig):
                     "minutes": 1,
                 },
             )
-        except Exception:
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)
             # Catch database programming/operational errors during migrations or tests
             pass

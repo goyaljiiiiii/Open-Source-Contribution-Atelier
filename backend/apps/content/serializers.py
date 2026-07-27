@@ -3,8 +3,8 @@ from rest_framework import serializers
 from .models import (
     Exercise,
     Lesson,
-    LessonFeedback,
     LessonDraft,
+    LessonFeedback,
     ModuleDraft,
     Organization,
     QuizDraft,

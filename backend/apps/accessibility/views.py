@@ -1,9 +1,10 @@
-from rest_framework import viewsets, permissions, serializers
-from rest_framework.pagination import PageNumberPagination
-from .models import A11yIssue
-from rest_framework.response import Response
-from rest_framework.decorators import action
 from django.db.models import Count
+from rest_framework import permissions, serializers, viewsets
+from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
+
+from .models import A11yIssue
 
 
 class A11yIssueSerializer(serializers.ModelSerializer):

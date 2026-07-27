@@ -1,10 +1,15 @@
-from django.contrib import admin
-from django.urls import path
-from django.shortcuts import render, redirect
-from django.conf import settings
-from apps.core.models import AdminAuditLog, PurgeLog
+import logging
+
+logger = logging.getLogger(__name__)
 import json
 import os
+
+from django.conf import settings
+from django.contrib import admin
+from django.shortcuts import redirect, render
+from django.urls import path
+
+from apps.core.models import AdminAuditLog, PurgeLog
 
 
 @admin.register(AdminAuditLog)
@@ -103,7 +108,8 @@ class PurgeLogAdmin(admin.ModelAdmin):
                     m.decode("utf-8") if isinstance(m, bytes) else m for m in members
                 ]
                 active_tags.append({"tag": tag, "keys": keys})
-        except Exception:
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)
             from django.core.cache import cache
 
             if hasattr(cache, "_cache"):

@@ -61,16 +61,6 @@ Visit [the official site](https://summerofcode.withgoogle.com/).
 
 ---
 
-### 🎀 GirlScript Summer of Code (GSSoC)
-
-India's largest open source program for developers, students, and AI creators. A non-profit initiative by the GirlScript Foundation, welcoming contributors of all levels.
-
-<img width="700" height=auto alt="image" src="https://github.com/user-attachments/assets/f6c4cbe8-4825-4cce-9a1a-d237ff52f1ff" />
-
-Visit [the official site](https://gssoc.girlscript.org/).
-
----
-
 ### 💬 Social Summer of Code (SSoC)
 
 A 3-month open source program that helps students and developers learn, contribute, and grow. Whether you're a complete beginner or an experienced dev, SSoC has something for you.

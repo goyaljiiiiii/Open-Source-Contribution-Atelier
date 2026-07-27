@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import OnboardingJourney, JourneyEvent, OnboardingNudge, OnboardingMetric
+
+from .models import JourneyEvent, OnboardingJourney, OnboardingMetric, OnboardingNudge
 
 
 class OnboardingJourneySerializer(serializers.ModelSerializer):

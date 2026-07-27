@@ -2,13 +2,15 @@
 Celery tasks for onboarding monitoring.
 """
 
+import logging
+from datetime import timedelta
+
 from celery import shared_task
 from django.utils import timezone
-from datetime import timedelta
+
 from apps.onboarding.models import OnboardingJourney, OnboardingMetric
-from apps.onboarding.services.nudge_engine import NudgeEngine
 from apps.onboarding.services.ml_predictor import OnboardingPredictor
-import logging
+from apps.onboarding.services.nudge_engine import NudgeEngine
 
 logger = logging.getLogger(__name__)
 

@@ -14,7 +14,6 @@ from typing import Any, Dict, List, Optional
 
 from .plugins import LessonPlugin, registry
 
-
 _TYPE_COERCERS = {
     "string": str,
     "integer": int,
@@ -75,13 +74,20 @@ class CSVDataChallengePlugin(LessonPlugin):
             return False
 
         required_headers = data.get("required_headers")
-        if not isinstance(required_headers, list) or not all(isinstance(h, str) for h in required_headers):
+        if not isinstance(required_headers, list) or not all(
+            isinstance(h, str) for h in required_headers
+        ):
             return False
 
         for optional_key, expected_kind in (
-            ("column_types", dict), ("min_rows", int), ("max_rows", int), ("expected_cells", list)
+            ("column_types", dict),
+            ("min_rows", int),
+            ("max_rows", int),
+            ("expected_cells", list),
         ):
-            if optional_key in data and not isinstance(data[optional_key], expected_kind):
+            if optional_key in data and not isinstance(
+                data[optional_key], expected_kind
+            ):
                 return False
 
         try:
@@ -101,8 +107,10 @@ class CSVDataChallengePlugin(LessonPlugin):
         except csv.Error:
             return 0.0
 
-        actual_headers = set(rows[0].keys()) if rows else set(
-            csv.reader(io.StringIO(data["submitted_csv"])).__next__()
+        actual_headers = (
+            set(rows[0].keys())
+            if rows
+            else set(csv.reader(io.StringIO(data["submitted_csv"])).__next__())
         )
 
         checks_passed = 0

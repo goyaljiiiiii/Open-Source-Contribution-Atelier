@@ -7,8 +7,8 @@ class SearchConfig(AppConfig):
 
     def ready(self):
         try:
-            from apps.events.registry import EventHandlerRegistry
             import apps.search.handlers
+            from apps.events.registry import EventHandlerRegistry
 
             EventHandlerRegistry.discover_handlers("apps.search.handlers")
         except ImportError:

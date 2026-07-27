@@ -3,17 +3,18 @@ Health check aggregator endpoint with async verification.
 """
 
 import asyncio
+import json
 import logging
 import time
-from typing import Dict, Any, Optional
-from django.db import connection
+from typing import Any, Dict, Optional
+
+import redis
+from django.conf import settings
 from django.core.cache import cache
+from django.db import connection
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from django.conf import settings
-import redis
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +101,7 @@ class HealthChecker:
         }
         try:
             from celery.task.control import inspect
+
             from config.celery import app
 
             start = time.time()
@@ -138,8 +140,8 @@ class HealthChecker:
             "details": {},
         }
         try:
-            from channels.layers import get_channel_layer
             from asgiref.sync import async_to_sync
+            from channels.layers import get_channel_layer
 
             start = time.time()
             channel_layer = get_channel_layer()

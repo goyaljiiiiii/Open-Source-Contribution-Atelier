@@ -1,8 +1,13 @@
 # Make this a package
-import time
+import logging
+
+logger = logging.getLogger(__name__)
 import threading
+import time
+
 from asgiref.sync import sync_to_async
 from django.core.cache import cache
+
 from .request_id import RequestIdMiddleware
 
 
@@ -61,7 +66,8 @@ class WebSocketRateLimitMiddleware:
                     cache.set(cache_key, 1, WINDOW)
 
             return True
-        except Exception:
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)
             # Fail open if cache is unreachable
             return True
 

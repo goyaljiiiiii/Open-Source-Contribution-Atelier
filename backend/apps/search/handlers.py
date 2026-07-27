@@ -2,6 +2,7 @@ import logging
 import sys
 
 from django_q.tasks import async_task
+
 from apps.events.registry import event_handler
 
 logger = logging.getLogger(__name__)

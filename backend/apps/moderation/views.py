@@ -1,10 +1,9 @@
-from rest_framework import generics, permissions, status
+from django.db import IntegrityError
+from rest_framework import generics, permissions, serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.db import IntegrityError
-from rest_framework import serializers
-from apps.moderation.models import ContentReport, ModerationAuditEvent
 
+from apps.moderation.models import ContentReport, ModerationAuditEvent
 from apps.moderation.serializers import (
     ContentReportSerializer,
     ModerationActionSerializer,

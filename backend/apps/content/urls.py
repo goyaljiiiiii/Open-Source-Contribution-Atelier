@@ -2,16 +2,16 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from .views import (
+    LessonDraftViewSet,
     LessonFeedbackListCreateView,
     LessonFeedbackMetricsView,
     LessonFeedbackRetrieveUpdateDeleteView,
     LessonPDFView,
     LessonViewSet,
-    LessonDraftViewSet,
     ModuleDraftViewSet,
     OrganizationListView,
-    QuizDraftViewSet,
     QuizDetailView,
+    QuizDraftViewSet,
     RoadmapView,
     SearchView,
     SemanticSearchView,

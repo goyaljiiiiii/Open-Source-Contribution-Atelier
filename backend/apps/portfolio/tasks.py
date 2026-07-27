@@ -1,15 +1,18 @@
 import logging
+
 from celery import shared_task
 from django.db.models import Sum
-from .models import GeneratedPortfolio
+
 from apps.progress.models import (
-    UserBadge,
-    LessonProgress,
-    CodeSubmission,
     Certificate,
+    CodeSubmission,
+    LessonProgress,
     StreakProfile,
+    UserBadge,
     XPEvent,
 )
+
+from .models import GeneratedPortfolio
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +82,7 @@ def generate_portfolio_task(portfolio_id: str):
             }
 
         # Generate file
-        from .utils import generate_pdf_report, generate_html_report
+        from .utils import generate_html_report, generate_pdf_report
 
         if portfolio.format == GeneratedPortfolio.Format.PDF:
             file_content = generate_pdf_report(user, context_data)

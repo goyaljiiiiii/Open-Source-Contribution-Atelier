@@ -10,8 +10,8 @@ from django_q.tasks import async_task
 from .models import (
     DeadLetterWebhook,
     WebhookDelivery,
-    WebhookEndpoint,
     WebhookDeliveryLog,
+    WebhookEndpoint,
 )
 
 logger = logging.getLogger(__name__)

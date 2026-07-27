@@ -3,7 +3,6 @@ from datetime import timedelta
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
-from apps.core.cache import multi_level_cache as cache
 from django.db import models, transaction
 from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce, TruncDate
@@ -16,6 +15,7 @@ from rest_framework.views import APIView
 
 from apps.challenges.models import ChallengeCompletion
 from apps.content.models import Lesson
+from apps.core.cache import multi_level_cache as cache
 from apps.dashboard.models import Issue, PullRequest
 from apps.progress.models import (
     CodeSubmission,
@@ -523,11 +523,9 @@ class ContributorDashboardView(APIView):
         return Response(data)
 
 
+from django.db import models
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
-
-
-from django.db import models
 
 from apps.rbac.models import UserRole
 

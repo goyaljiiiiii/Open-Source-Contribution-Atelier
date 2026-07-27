@@ -2,10 +2,11 @@
 GitHub API client for PR interactions.
 """
 
-import requests
-from typing import Dict, Any, List
-from django.conf import settings
 import logging
+from typing import Any, Dict, List
+
+import requests
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 

@@ -1,6 +1,7 @@
+import re
+
 from django.core.management.base import BaseCommand
 from django.db import connection
-import re
 
 
 class Command(BaseCommand):

@@ -2,13 +2,15 @@
 Event Bus - Core event dispatching system.
 """
 
-import logging
 import importlib
-from typing import Dict, List, Any, Optional, Type, Callable
+import logging
+from typing import Any, Callable, Dict, List, Optional, Type
+
+from django.core.cache import cache
 from django.db import transaction
 from django.utils import timezone
-from django.core.cache import cache
-from apps.events.models import DomainEvent, EventSubscription, EventHandler
+
+from apps.events.models import DomainEvent, EventHandler, EventSubscription
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +81,7 @@ class EventBus:
         else:
             # Process asynchronously (via Django-Q)
             from django_q.tasks import async_task
+
             from apps.events.tasks import process_event
 
             async_task(process_event, str(event.id))

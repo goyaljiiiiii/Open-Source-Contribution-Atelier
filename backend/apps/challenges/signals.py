@@ -1,7 +1,8 @@
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
-from apps.events.services.event_bus import EventBus
+
 from apps.challenges.models import Challenge
+from apps.events.services.event_bus import EventBus
 
 
 @receiver(post_save, sender=Challenge)

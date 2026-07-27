@@ -2,11 +2,11 @@
 Models for PR review bot.
 """
 
-from django.db import models
-from django.conf import settings
-
-from django.utils import timezone
 import uuid
+
+from django.conf import settings
+from django.db import models
+from django.utils import timezone
 
 
 class PRReview(models.Model):

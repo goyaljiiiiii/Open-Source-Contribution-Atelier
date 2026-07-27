@@ -2,11 +2,13 @@
 NLP-based sentiment analysis for contributor communications.
 """
 
-from textblob import TextBlob
-from typing import List, Dict, Any
-import re
-from apps.burnout_detection.models import BurnoutSignal
 import logging
+import re
+from typing import Any, Dict, List
+
+from textblob import TextBlob
+
+from apps.burnout_detection.models import BurnoutSignal
 
 logger = logging.getLogger(__name__)
 

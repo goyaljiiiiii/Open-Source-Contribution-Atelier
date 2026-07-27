@@ -1,6 +1,8 @@
-import requests
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 from urllib.parse import urlparse
+
+import requests
+
 from .auth import get_github_token
 
 

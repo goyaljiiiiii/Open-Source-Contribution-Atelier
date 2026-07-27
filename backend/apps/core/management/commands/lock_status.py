@@ -3,6 +3,7 @@ Management command to check lock status.
 """
 
 from django.core.management.base import BaseCommand
+
 from apps.core.locks import TaskLockManager
 
 

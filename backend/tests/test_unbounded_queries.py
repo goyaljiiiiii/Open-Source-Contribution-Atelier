@@ -2,16 +2,17 @@
 Automated tests to detect unbounded database queries in CI.
 """
 
-import re
 import ast
-from pathlib import Path
-from typing import List, Dict, Any, Optional
-from django.test import TestCase
-from django.urls import get_resolver, URLPattern, URLResolver
-from django.db import connection
-from django.core.management import call_command
 import inspect
 import os
+import re
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+from django.core.management import call_command
+from django.db import connection
+from django.test import TestCase
+from django.urls import URLPattern, URLResolver, get_resolver
 
 
 class UnboundedQueryDetector:

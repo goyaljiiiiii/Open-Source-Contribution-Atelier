@@ -110,32 +110,35 @@ class DeadCodeDetector:
         imports = []
 
         # Find all React components
-        for js_file in self.project_root.glob('frontend/src/**/*.{js,jsx,ts,tsx}'):
-            with open(js_file, 'r') as f:
-                content = f.read()
-                # Find component definitions
-                pattern = r'(?:export\s+)?(?:const|function|class)\s+(\w+)\s*(?:=|\()'
-                for match in re.finditer(pattern, content):
-                    component_name = match.group(1)
-                    if component_name not in ['React', 'useState', 'useEffect', 'useRef']:
-                        components[component_name] = str(js_file)
+        for ext in ("js", "jsx", "ts", "tsx"):
+            for js_file in self.project_root.glob(f"frontend/src/**/*.{ext}"):
+                with open(js_file, 'r') as f:
+                    content = f.read()
+                    # Find component definitions
+                    pattern = r'(?:export\s+)?(?:const|function|class)\s+(\w+)\s*(?:=|\()'
+                    for match in re.finditer(pattern, content):
+                        component_name = match.group(1)
+                        if component_name not in ['React', 'useState', 'useEffect', 'useRef']:
+                            components[component_name] = str(js_file)
 
         # Find imports
-        for js_file in self.project_root.glob('frontend/src/**/*.{js,jsx,ts,tsx}'):
-            with open(js_file, 'r') as f:
-                content = f.read()
-                pattern = r'import\s+\{([^}]+)\}\s+from'
-                for match in re.finditer(pattern, content):
-                    imported = [name.strip() for name in match.group(1).split(',')]
-                    imports.extend(imported)
+        for ext in ("js", "jsx", "ts", "tsx"):
+            for js_file in self.project_root.glob(f"frontend/src/**/*.{ext}"):
+                with open(js_file, 'r') as f:
+                    content = f.read()
+                    pattern = r'import\s+\{([^}]+)\}\s+from'
+                    for match in re.finditer(pattern, content):
+                        imported = [name.strip() for name in match.group(1).split(',')]
+                        imports.extend(imported)
 
         # Also find default imports
         pattern = r"import\s+(\w+)\s+from"
-        for js_file in self.project_root.glob('frontend/src/**/*.{js,jsx,ts,tsx}'):
-            with open(js_file, 'r') as f:
-                content = f.read()
-                for match in re.finditer(pattern, content):
-                    imports.append(match.group(1))
+        for ext in ("js", "jsx", "ts", "tsx"):
+            for js_file in self.project_root.glob(f"frontend/src/**/*.{ext}"):
+                with open(js_file, 'r') as f:
+                    content = f.read()
+                    for match in re.finditer(pattern, content):
+                        imports.append(match.group(1))
 
         # Find unused components (excluding common ones)
         common_components = {'React', 'useState', 'useEffect', 'useRef', 'useCallback', 
@@ -260,24 +263,26 @@ class DeadCodeDetector:
                     css_classes[class_name].append(str(css_file))
 
         # Find references in JS/TS files
-        for js_file in self.project_root.glob('frontend/src/**/*.{js,jsx,ts,tsx}'):
-            with open(js_file, 'r') as f:
-                content = f.read()
-                for class_name in css_classes.keys():
-                    if f'"{class_name}"' in content or f"'{class_name}'" in content:
-                        references.append(class_name)
+        for ext in ("js", "jsx", "ts", "tsx"):
+            for js_file in self.project_root.glob(f"frontend/src/**/*.{ext}"):
+                with open(js_file, 'r') as f:
+                    content = f.read()
+                    for class_name in css_classes.keys():
+                        if f'"{class_name}"' in content or f"'{class_name}'" in content:
+                            references.append(class_name)
 
         # Also check className usage
-        for js_file in self.project_root.glob('frontend/src/**/*.{js,jsx,ts,tsx}'):
-            with open(js_file, 'r') as f:
-                content = f.read()
-                # Find className="..."
-                pattern = r'className=[\'"]([^\'"]+)[\'"]'
-                for match in re.finditer(pattern, content):
-                    classes = match.group(1).split()
-                    for cls in classes:
-                        if cls in css_classes:
-                            references.append(cls)
+        for ext in ("js", "jsx", "ts", "tsx"):
+            for js_file in self.project_root.glob(f"frontend/src/**/*.{ext}"):
+                with open(js_file, 'r') as f:
+                    content = f.read()
+                    # Find className="..."
+                    pattern = r'className=[\'"]([^\'"]+)[\'"]'
+                    for match in re.finditer(pattern, content):
+                        classes = match.group(1).split()
+                        for cls in classes:
+                            if cls in css_classes:
+                                references.append(cls)
 
         # Find unused CSS classes
         for class_name, file_paths in css_classes.items():

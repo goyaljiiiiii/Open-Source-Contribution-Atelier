@@ -3,11 +3,11 @@ GitHub API Analyzer and Health Score computation service.
 Uses the public GitHub REST API (no authentication required for public repos).
 """
 
-import re
 import logging
+import re
 from datetime import datetime, timezone
-from urllib.parse import urlparse
 from typing import Any
+from urllib.parse import urlparse
 
 import requests
 
@@ -66,9 +66,7 @@ def _compute_health_score(data: dict) -> tuple[int, list, list]:
             )
         elif last_commit_days > 90:
             score -= 10
-            red_flags.append(
-                "🟡 Low activity (last commit was over 3 months ago)."
-            )
+            red_flags.append("🟡 Low activity (last commit was over 3 months ago).")
         else:
             score += 15
             green_flags.append("✅ Actively maintained (recent commits).")
@@ -77,19 +75,13 @@ def _compute_health_score(data: dict) -> tuple[int, list, list]:
     if avg_pr_days is not None:
         if avg_pr_days < 7:
             score += 15
-            green_flags.append(
-                "✅ Excellent PR response time (< 1 week)."
-            )
+            green_flags.append("✅ Excellent PR response time (< 1 week).")
         elif avg_pr_days < 30:
             score += 5
-            green_flags.append(
-                "✅ Reasonable PR response time (< 1 month)."
-            )
+            green_flags.append("✅ Reasonable PR response time (< 1 month).")
         else:
             score -= 10
-            red_flags.append(
-                "🟡 Slow PR response time (> 30 days on average)."
-            )
+            red_flags.append("🟡 Slow PR response time (> 30 days on average).")
 
     open_issues = data.get("open_issues", 0)
     closed_issues = data.get("closed_issues", 0)
@@ -118,9 +110,7 @@ def _compute_health_score(data: dict) -> tuple[int, list, list]:
         )
     elif contributors < 5:
         score -= 5
-        red_flags.append(
-            "🟡 Low contributor count – bus-factor risk."
-        )
+        red_flags.append("🟡 Low contributor count – bus-factor risk.")
 
     sentiment = data.get("sentiment_score")
 
@@ -132,9 +122,7 @@ def _compute_health_score(data: dict) -> tuple[int, list, list]:
             )
         elif sentiment < -0.1:
             score -= 15
-            red_flags.append(
-                "🔴 Community communications appear negative or toxic."
-            )
+            red_flags.append("🔴 Community communications appear negative or toxic.")
 
     return max(0, min(score, 100)), red_flags, green_flags
 
@@ -157,9 +145,7 @@ def analyze_repository(
             token=token,
         )
     except requests.HTTPError as exc:
-        raise ValueError(
-            f"Repository not found or inaccessible: {exc}"
-        ) from exc
+        raise ValueError(f"Repository not found or inaccessible: {exc}") from exc
 
     last_commit_days = None
 
@@ -171,12 +157,8 @@ def analyze_repository(
 
         if commits:
             date_str = commits[0]["commit"]["committer"]["date"]
-            last_commit_dt = datetime.fromisoformat(
-                date_str.replace("Z", "+00:00")
-            )
-            last_commit_days = (
-                datetime.now(tz=timezone.utc) - last_commit_dt
-            ).days
+            last_commit_dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+            last_commit_days = (datetime.now(tz=timezone.utc) - last_commit_dt).days
 
     except (
         requests.RequestException,
@@ -188,9 +170,7 @@ def analyze_repository(
             "Failed to fetch last commit information: %s",
             exc,
         )
-        warnings.append(
-            "Last commit information could not be retrieved."
-        )
+        warnings.append("Last commit information could not be retrieved.")
 
     avg_pr_close_days = None
     closed_prs = []
@@ -215,9 +195,7 @@ def analyze_repository(
                     durations.append((merged - created).days)
 
             if durations:
-                avg_pr_close_days = (
-                    sum(durations) / len(durations)
-                )
+                avg_pr_close_days = sum(durations) / len(durations)
 
     except (
         requests.RequestException,
@@ -229,9 +207,7 @@ def analyze_repository(
             "Failed to fetch pull request statistics: %s",
             exc,
         )
-        warnings.append(
-            "Pull request statistics could not be retrieved."
-        )
+        warnings.append("Pull request statistics could not be retrieved.")
 
     open_pr_count = 0
 
@@ -252,9 +228,7 @@ def analyze_repository(
             "Failed to fetch open pull request count: %s",
             exc,
         )
-        warnings.append(
-            "Open pull request count could not be retrieved."
-        )
+        warnings.append("Open pull request count could not be retrieved.")
 
     contributor_count = 0
 
@@ -275,9 +249,7 @@ def analyze_repository(
             "Failed to fetch contributor count: %s",
             exc,
         )
-        warnings.append(
-            "Contributor statistics could not be retrieved."
-        )
+        warnings.append("Contributor statistics could not be retrieved.")
 
     sentiment_score = None
     sentiment_lbl = ""
@@ -292,7 +264,6 @@ def analyze_repository(
 
             # Simple keyword-based sentiment (no external dependency needed)
 
-
             positive_words = {
                 "great",
                 "thanks",
@@ -303,8 +274,6 @@ def analyze_repository(
                 "love",
                 "perfect",
             }
-
-
 
             negative_words = {
                 "terrible",
@@ -317,7 +286,6 @@ def analyze_repository(
                 "useless",
                 "toxic",
             }
-
 
             polarity_sum = 0
 
@@ -342,9 +310,7 @@ def analyze_repository(
             "Failed to fetch issue comments for sentiment analysis: %s",
             exc,
         )
-        warnings.append(
-            "Sentiment analysis could not be completed."
-        )
+        warnings.append("Sentiment analysis could not be completed.")
 
     data = {
         "repo_owner": owner,
@@ -367,7 +333,6 @@ def analyze_repository(
     data["green_flags"] = green_flags
     data["warnings"] = warnings
     data["partial_analysis"] = bool(warnings)
-
 
     return data
 

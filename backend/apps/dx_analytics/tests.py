@@ -1,4 +1,5 @@
 import pytest
+
 from apps.dx_analytics.models import DeveloperExperienceMetric, DXSnapshot
 from apps.dx_analytics.services import DXScoreService
 

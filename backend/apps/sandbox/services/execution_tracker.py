@@ -1,9 +1,13 @@
+import logging
+
+logger = logging.getLogger(__name__)
+import functools
 import hashlib
 import json
-import functools
+
 from django.core.cache import cache
-from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.response import Response
 
 
 class ExecutionTracker:
@@ -25,9 +29,11 @@ class ExecutionTracker:
         cache.set(key, True, timeout=86400)  # Duplicate for 24 hours
 
         try:
-            from apps.gamification.models import Streak
-            from django.utils import timezone
             import datetime
+
+            from django.utils import timezone
+
+            from apps.gamification.models import Streak
 
             today = timezone.localdate()
             streak, _ = Streak.objects.get_or_create(user_id=user_id)
@@ -37,13 +43,19 @@ class ExecutionTracker:
                     streak.current_streak += 1
                 else:
                     streak.current_streak = 1
-                
+
                 streak.last_activity_date = today
                 if streak.current_streak > streak.longest_streak:
                     streak.longest_streak = streak.current_streak
-                streak.save(update_fields=['current_streak', 'longest_streak', 'last_activity_date'])
-        except Exception:
-            pass
+                streak.save(
+                    update_fields=[
+                        "current_streak",
+                        "longest_streak",
+                        "last_activity_date",
+                    ]
+                )
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)
 
     @classmethod
     def clear_execution(cls, user_id, code, payload):

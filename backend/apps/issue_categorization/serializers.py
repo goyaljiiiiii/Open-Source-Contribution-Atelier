@@ -1,10 +1,11 @@
 from rest_framework import serializers
+
 from .models import (
     Category,
+    CategorySuggestion,
     IssueCategoryAssignment,
     IssueTag,
     IssueTagAssignment,
-    CategorySuggestion,
 )
 
 

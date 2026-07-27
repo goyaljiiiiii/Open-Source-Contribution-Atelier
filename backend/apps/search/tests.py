@@ -177,8 +177,9 @@ class SearchEngineEdgeCaseTests(TestCase):
 
 class SearchCachingTests(TestCase):
     def setUp(self):
-        from apps.search.tests import _is_postgres
         import unittest
+
+        from apps.search.tests import _is_postgres
 
         if not _is_postgres():
             raise unittest.SkipTest("PostgreSQL-only test")
@@ -207,6 +208,7 @@ class SearchCachingTests(TestCase):
 
     def test_cache_version_bump(self):
         from django.core.cache import cache
+
         from apps.search.utils import bump_search_cache_version
 
         request = self.factory.get("/api/search/", {"q": "React"})
@@ -311,12 +313,14 @@ class MeilisearchIntegrationTests(TestCase):
         request = self.factory.get("/api/search/", {"q": "Title"})
         response = self.view(request)
         self.assertEqual(response.status_code, 200)
-        results = response.data["results"] if isinstance(response.data, dict) else response.data
+        results = (
+            response.data["results"]
+            if isinstance(response.data, dict)
+            else response.data
+        )
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["title"], "Meili Title")
-        self.assertEqual(
-            results[0]["highlighted_title"], "Meili <mark>Title</mark>"
-        )
+        self.assertEqual(results[0]["highlighted_title"], "Meili <mark>Title</mark>")
 
     @patch("apps.search.views.get_meili_index")
     def test_view_postgres_fallback_on_meili_error(self, mock_get_index):
@@ -393,7 +397,9 @@ class SearchFilterInjectionSecurityTests(TestCase):
         ]
         for invalid in invalid_inputs:
             with self.subTest(invalid=invalid):
-                request = self.factory.get("/api/search/", {"q": "git", "type": invalid})
+                request = self.factory.get(
+                    "/api/search/", {"q": "git", "type": invalid}
+                )
                 response = self.view(request)
                 self.assertEqual(response.status_code, 400)
 
@@ -406,13 +412,10 @@ class SearchFilterInjectionSecurityTests(TestCase):
         mock_index.search.return_value = {"hits": []}
         mock_get_index.return_value = mock_index
 
-        request = self.factory.get(
-            "/api/search/", {"q": "git", "type": "challenge"}
-        )
+        request = self.factory.get("/api/search/", {"q": "git", "type": "challenge"})
         response = self.view(request)
         self.assertEqual(response.status_code, 200)
         mock_index.search.assert_called_once()
         _, kwargs = mock_index.search.call_args
         opts = kwargs if kwargs else _[1]
         self.assertEqual(opts["filter"], ["content_type_name = 'challenge'"])
-

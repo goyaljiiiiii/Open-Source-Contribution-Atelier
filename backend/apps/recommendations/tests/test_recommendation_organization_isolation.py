@@ -1,10 +1,12 @@
-from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
+from django.test import TestCase
+
 from apps.accounts.models import UserProfile
-from apps.organizations.models import Organization
-from apps.content.models import Lesson, Organization as ContentOrganization
 from apps.challenges.models import Challenge
+from apps.content.models import Lesson
+from apps.content.models import Organization as ContentOrganization
+from apps.organizations.models import Organization
 from apps.progress.models import LessonProgress
 from apps.recommendations.engine import RecommendationEngine
 from apps.recommendations.models import Recommendation
@@ -18,8 +20,12 @@ class RecommendationOrganizationIsolationTests(TestCase):
         self.org_a = Organization.objects.create(name="Org A")
         self.org_b = Organization.objects.create(name="Org B")
 
-        self.content_org_a = ContentOrganization.objects.create(name="Org A", slug="org-a")
-        self.content_org_b = ContentOrganization.objects.create(name="Org B", slug="org-b")
+        self.content_org_a = ContentOrganization.objects.create(
+            name="Org A", slug="org-a"
+        )
+        self.content_org_b = ContentOrganization.objects.create(
+            name="Org B", slug="org-b"
+        )
 
         self.user_a = User.objects.create_user(
             username="user_a", email="usera@orga.com", password="password123"

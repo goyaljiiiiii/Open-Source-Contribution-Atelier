@@ -2,13 +2,15 @@
 Match issues to maintainers based on expertise.
 """
 
-from typing import List, Dict, Any
-from django.db.models import Q
+from typing import Any, Dict, List
+
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 
 User = get_user_model()
-from apps.issue_routing.models import MaintainerExpertise, ExpertiseDomain
 import logging
+
+from apps.issue_routing.models import ExpertiseDomain, MaintainerExpertise
 
 logger = logging.getLogger(__name__)
 

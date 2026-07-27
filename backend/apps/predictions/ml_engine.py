@@ -1,4 +1,5 @@
 import logging
+
 import numpy as np
 
 logger = logging.getLogger(__name__)
@@ -33,15 +34,34 @@ class PRReviewDelayPredictor:
 
         try:
             from .models import PullRequestMetric
-            historical_prs = PullRequestMetric.objects.filter(actual_review_delay_hours__isnull=False)
+
+            historical_prs = PullRequestMetric.objects.filter(
+                actual_review_delay_hours__isnull=False
+            )
             for pr in historical_prs:
-                workload = pr.assigned_reviewer.current_workload if pr.assigned_reviewer else 1
-                activity = pr.assigned_reviewer.activity_score if pr.assigned_reviewer else 0.8
-                avg_resp = pr.assigned_reviewer.avg_response_time_hours if pr.assigned_reviewer else 24.0
-                X_data.append([pr.total_lines_changed, pr.changed_files, workload, activity, avg_resp])
+                workload = (
+                    pr.assigned_reviewer.current_workload if pr.assigned_reviewer else 1
+                )
+                activity = (
+                    pr.assigned_reviewer.activity_score if pr.assigned_reviewer else 0.8
+                )
+                avg_resp = (
+                    pr.assigned_reviewer.avg_response_time_hours
+                    if pr.assigned_reviewer
+                    else 24.0
+                )
+                X_data.append(
+                    [
+                        pr.total_lines_changed,
+                        pr.changed_files,
+                        workload,
+                        activity,
+                        avg_resp,
+                    ]
+                )
                 y_data.append(pr.actual_review_delay_hours)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)
 
         if len(X_data) < 3:
             # Calibrated baseline training set around historical PR bounds
@@ -59,17 +79,29 @@ class PRReviewDelayPredictor:
 
         try:
             import xgboost as xgb
-            self.model = xgb.XGBRegressor(n_estimators=50, max_depth=3, learning_rate=0.1, random_state=42)
+
+            self.model = xgb.XGBRegressor(
+                n_estimators=50, max_depth=3, learning_rate=0.1, random_state=42
+            )
             self.model.fit(X_train, y_train)
-            logger.info("Initialized PR review delay predictor with XGBoost Regressor on %d samples.", len(X_train))
+            logger.info(
+                "Initialized PR review delay predictor with XGBoost Regressor on %d samples.",
+                len(X_train),
+            )
         except Exception as exc:
             try:
                 from sklearn.ensemble import GradientBoostingRegressor
+
                 self.model = GradientBoostingRegressor(n_estimators=30, random_state=42)
                 self.model.fit(X_train, y_train)
-                logger.info("XGBoost not available; initialized with GradientBoostingRegressor fallback.")
+                logger.info(
+                    "XGBoost not available; initialized with GradientBoostingRegressor fallback."
+                )
             except Exception as e:
-                logger.warning("Could not initialize ML ensemble model: %s. Operating with fallback formula.", e)
+                logger.warning(
+                    "Could not initialize ML ensemble model: %s. Operating with fallback formula.",
+                    e,
+                )
                 self.model = None
 
     def fit_model(self, X_train: np.ndarray, y_train: np.ndarray):
@@ -79,17 +111,32 @@ class PRReviewDelayPredictor:
         if len(X_train) > 0:
             try:
                 import xgboost as xgb
-                self.model = xgb.XGBRegressor(n_estimators=50, max_depth=3, learning_rate=0.1, random_state=42)
+
+                self.model = xgb.XGBRegressor(
+                    n_estimators=50, max_depth=3, learning_rate=0.1, random_state=42
+                )
                 self.model.fit(X_train, y_train)
-                logger.info("Successfully re-trained XGBoost PR review delay model on %d historical samples.", len(X_train))
-            except Exception:
+                logger.info(
+                    "Successfully re-trained XGBoost PR review delay model on %d historical samples.",
+                    len(X_train),
+                )
+            except Exception as e:
+                logger.warning("Caught exception: %s", e)
                 if self.model is not None:
                     self.model.fit(X_train, y_train)
-                    logger.info("Re-trained model on %d historical samples.", len(X_train))
+                    logger.info(
+                        "Re-trained model on %d historical samples.", len(X_train)
+                    )
 
-    def extract_features(self, additions: int, deletions: int, changed_files: int,
-                         current_workload: int, activity_score: float,
-                         avg_response_time_hours: float) -> dict:
+    def extract_features(
+        self,
+        additions: int,
+        deletions: int,
+        changed_files: int,
+        current_workload: int,
+        activity_score: float,
+        avg_response_time_hours: float,
+    ) -> dict:
         total_lines = additions + deletions
         return {
             "total_lines": total_lines,
@@ -99,29 +146,45 @@ class PRReviewDelayPredictor:
             "avg_response_time_hours": avg_response_time_hours,
         }
 
-    def predict(self, additions: int, deletions: int, changed_files: int,
-                current_workload: int = 1, activity_score: float = 0.8,
-                avg_response_time_hours: float = 24.0) -> dict:
+    def predict(
+        self,
+        additions: int,
+        deletions: int,
+        changed_files: int,
+        current_workload: int = 1,
+        activity_score: float = 0.8,
+        avg_response_time_hours: float = 24.0,
+    ) -> dict:
         """
         Predicts review delay in hours using pre-fitted XGBoost model or fallback formula.
         """
         features = self.extract_features(
-            additions, deletions, changed_files,
-            current_workload, activity_score, avg_response_time_hours
+            additions,
+            deletions,
+            changed_files,
+            current_workload,
+            activity_score,
+            avg_response_time_hours,
         )
 
         if self.model is not None:
             try:
-                input_vec = np.array([[
-                    features["total_lines"],
-                    features["changed_files"],
-                    features["current_workload"],
-                    features["activity_score"],
-                    features["avg_response_time_hours"]
-                ]])
+                input_vec = np.array(
+                    [
+                        [
+                            features["total_lines"],
+                            features["changed_files"],
+                            features["current_workload"],
+                            features["activity_score"],
+                            features["avg_response_time_hours"],
+                        ]
+                    ]
+                )
                 predicted_delay = float(self.model.predict(input_vec)[0])
             except Exception as e:
-                logger.warning("XGBoost prediction error: %s. Using fallback calculation.", e)
+                logger.warning(
+                    "XGBoost prediction error: %s. Using fallback calculation.", e
+                )
                 predicted_delay = self._fallback_calc(features)
         else:
             predicted_delay = self._fallback_calc(features)
@@ -132,8 +195,12 @@ class PRReviewDelayPredictor:
         return {
             "predicted_delay_hours": predicted_delay,
             "confidence_interval_hours": self.confidence_margin,
-            "min_predicted_delay_hours": max(0.0, round(predicted_delay - self.confidence_margin, 1)),
-            "max_predicted_delay_hours": round(predicted_delay + self.confidence_margin, 1),
+            "min_predicted_delay_hours": max(
+                0.0, round(predicted_delay - self.confidence_margin, 1)
+            ),
+            "max_predicted_delay_hours": round(
+                predicted_delay + self.confidence_margin, 1
+            ),
             "risk_level": risk_level,
             "features": features,
         }
@@ -142,9 +209,18 @@ class PRReviewDelayPredictor:
         lines_contrib = features["total_lines"] * self.w_lines
         files_contrib = features["changed_files"] * self.w_files
         workload_contrib = features["current_workload"] * self.w_workload
-        activity_contrib = (1.0 - max(0.0, min(1.0, features["activity_score"]))) * abs(self.w_activity)
+        activity_contrib = (1.0 - max(0.0, min(1.0, features["activity_score"]))) * abs(
+            self.w_activity
+        )
         response_contrib = features["avg_response_time_hours"] * 0.4
-        return self.base_delay + lines_contrib + files_contrib + workload_contrib + activity_contrib + response_contrib
+        return (
+            self.base_delay
+            + lines_contrib
+            + files_contrib
+            + workload_contrib
+            + activity_contrib
+            + response_contrib
+        )
 
     def determine_risk_level(self, predicted_delay_hours: float) -> str:
         if predicted_delay_hours < 24.0:

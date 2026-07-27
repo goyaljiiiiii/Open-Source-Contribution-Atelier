@@ -2,10 +2,11 @@
 Export dependency graph as SVG using graphviz.
 """
 
+import os
 import subprocess
 import tempfile
-import os
-from typing import Dict, Any
+from typing import Any, Dict
+
 from .graphviz import GraphvizExporter
 
 

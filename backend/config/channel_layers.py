@@ -46,7 +46,8 @@ def parse_redis_host_port(url: str) -> tuple[str, int] | None:
         host = parsed.hostname or "127.0.0.1"
         port = parsed.port or 6379
         return host, port
-    except Exception:
+    except Exception as e:
+        logger.warning("Caught exception: %s", e)
         return None
 
 
@@ -69,10 +70,10 @@ def is_redis_available(url: str, timeout: float = 0.5) -> bool:
         finally:
             try:
                 client.close()
-            except Exception:
-                pass
-    except Exception:
-        pass
+            except Exception as e:
+                logger.warning("Caught exception: %s", e)
+    except Exception as e:
+        logger.warning("Caught exception: %s", e)
 
     host_port = parse_redis_host_port(url)
     if not host_port:
@@ -84,7 +85,8 @@ def is_redis_available(url: str, timeout: float = 0.5) -> bool:
         sock.connect((host, port))
         sock.close()
         return True
-    except Exception:
+    except Exception as e:
+        logger.warning("Caught exception: %s", e)
         return False
 
 

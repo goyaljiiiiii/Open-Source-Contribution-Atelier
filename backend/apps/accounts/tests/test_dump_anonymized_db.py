@@ -6,8 +6,8 @@ from django.core.management import call_command
 from django.test import TestCase
 
 from apps.accounts.models import UserProfile
-from apps.progress.models import HelpRequest
 from apps.content.models import Lesson
+from apps.progress.models import HelpRequest
 
 User = get_user_model()
 

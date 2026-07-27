@@ -2,30 +2,30 @@
 URL configuration for sandbox app.
 """
 
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from .views import (
-    SandboxVerifyView,
-    CodeSnapshotViewSet,
-    ProjectViewSet,
-    ProjectFileViewSet,
+    ADRScenarioViewSet,
+    ClearExecutionView,
     CodeExecutionTraceViewSet,
     CodeReviewThreadViewSet,
-    SnippetCollectionViewSet,
+    CodeSnapshotViewSet,
     CodeSnippetViewSet,
-    ExecutionStatusView,
-    ClearExecutionView,
-    WorkspaceSnapshotViewSet,
-    MaintainerScenarioViewSet,
-    MaintainerEvaluationViewSet,
     CollabSessionViewSet,
-    PipelineExecutionViewSet,
     ConflictScenarioViewSet,
-    ModerationScenarioViewSet,
+    ExecutionStatusView,
     LicenseScenarioViewSet,
+    MaintainerEvaluationViewSet,
+    MaintainerScenarioViewSet,
+    ModerationScenarioViewSet,
+    PipelineExecutionViewSet,
+    ProjectFileViewSet,
+    ProjectViewSet,
+    SandboxVerifyView,
+    SnippetCollectionViewSet,
     TriageIssueViewSet,
-    ADRScenarioViewSet,
+    WorkspaceSnapshotViewSet,
 )
 
 # ============================================================

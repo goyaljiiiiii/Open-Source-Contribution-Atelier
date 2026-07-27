@@ -47,7 +47,8 @@ def test_code_review_edge_cases():
 @pytest.mark.django_db
 def test_collab_session_viewset(api_client, user):
     from rest_framework.test import APIClient
-    from apps.sandbox.models import Project, CollabSession
+
+    from apps.sandbox.models import CollabSession, Project
 
     # Create project
     project = Project.objects.create(name="Test Project", user=user)

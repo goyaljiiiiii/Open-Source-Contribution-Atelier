@@ -2,9 +2,10 @@
 Models for developer experience testing.
 """
 
+import uuid
+
 from django.db import models
 from django.utils import timezone
-import uuid
 
 
 class DXTestRun(models.Model):

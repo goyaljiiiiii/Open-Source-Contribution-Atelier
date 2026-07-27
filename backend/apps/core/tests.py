@@ -1,7 +1,6 @@
 import os
-from pathlib import Path
-
 from datetime import timedelta
+from pathlib import Path
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -311,9 +310,9 @@ class CacheTaggingAndInvalidationTests(TestCase):
 
     def test_set_and_get_tagged_cache(self):
         from apps.core.cache.invalidation import (
-            set_tagged_cache,
-            get_tagged_cache,
             get_keys_for_tag,
+            get_tagged_cache,
+            set_tagged_cache,
         )
 
         set_tagged_cache(
@@ -332,9 +331,9 @@ class CacheTaggingAndInvalidationTests(TestCase):
 
     def test_invalidate_tag(self):
         from apps.core.cache.invalidation import (
-            set_tagged_cache,
             get_tagged_cache,
             invalidate_tag,
+            set_tagged_cache,
         )
 
         set_tagged_cache("k1", "v1", ["user:1"], timeout=60)
@@ -349,9 +348,9 @@ class CacheTaggingAndInvalidationTests(TestCase):
 
     def test_invalidate_wildcard_tag(self):
         from apps.core.cache.invalidation import (
-            set_tagged_cache,
             get_tagged_cache,
             invalidate_tag,
+            set_tagged_cache,
         )
 
         set_tagged_cache("k1", "v1", ["leaderboard:weekly"], timeout=60)
@@ -366,7 +365,7 @@ class CacheTaggingAndInvalidationTests(TestCase):
 
     @patch("apps.core.cache.invalidation.random.random")
     def test_xfetch_stampede_protection(self, mock_random):
-        from apps.core.cache.invalidation import set_tagged_cache, get_tagged_cache
+        from apps.core.cache.invalidation import get_tagged_cache, set_tagged_cache
 
         # Cache with delta=1.5 seconds, key expires in 5 seconds
         set_tagged_cache("hot_key", "hot_value", ["tags"], timeout=5, delta=1.5)

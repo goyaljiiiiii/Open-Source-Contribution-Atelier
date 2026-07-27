@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import OAuthClient, OAuthToken, OAuthAuthorizationCode
+
+from .models import OAuthAuthorizationCode, OAuthClient, OAuthToken
 
 
 class OAuthClientSerializer(serializers.ModelSerializer):

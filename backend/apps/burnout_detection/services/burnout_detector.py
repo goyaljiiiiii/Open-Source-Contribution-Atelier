@@ -2,13 +2,15 @@
 ML-based burnout detection system.
 """
 
+import logging
+from typing import Any, Dict, Tuple
+
 import numpy as np
+from django.core.cache import cache
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
-from typing import Dict, Any, Tuple
-from django.core.cache import cache
-from apps.burnout_detection.models import ContributorActivity, BurnoutSignal
-import logging
+
+from apps.burnout_detection.models import BurnoutSignal, ContributorActivity
 
 logger = logging.getLogger(__name__)
 

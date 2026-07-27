@@ -1,7 +1,9 @@
 from functools import wraps
+
 from django.contrib.contenttypes.models import ContentType
-from apps.core.models import AdminAuditLog
+
 from apps.core.middleware import get_current_audit_info
+from apps.core.models import AdminAuditLog
 
 
 def log_action(action_name, get_details_func=None):

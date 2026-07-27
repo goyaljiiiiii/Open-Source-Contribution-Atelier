@@ -2,13 +2,15 @@
 GitHub API collector for issue metadata.
 """
 
-import requests
-import time
-from typing import List, Dict, Any, Optional
-from datetime import datetime
-from django.conf import settings
-from apps.ml_triage.models import Issue, Comment, Reaction
 import logging
+import time
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+import requests
+from django.conf import settings
+
+from apps.ml_triage.models import Comment, Issue, Reaction
 
 logger = logging.getLogger(__name__)
 

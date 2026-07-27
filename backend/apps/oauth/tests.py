@@ -1,10 +1,12 @@
-import pytest
 import base64
 import hashlib
+
+import pytest
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
-from apps.oauth.models import OAuthClient, OAuthToken, OAuthAuthorizationCode
+
 from apps.oauth.backends import OAuth2TokenAuthentication
+from apps.oauth.models import OAuthAuthorizationCode, OAuthClient, OAuthToken
 
 User = get_user_model()
 

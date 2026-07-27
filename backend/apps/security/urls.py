@@ -5,8 +5,8 @@ from .views import (
     AutoFixPRViewSet,
     VulnerabilityItemViewSet,
     VulnerabilityReportViewSet,
-    VulnerabilitySuppressionViewSet,
     VulnerabilitySummaryView,
+    VulnerabilitySuppressionViewSet,
 )
 
 router = DefaultRouter()

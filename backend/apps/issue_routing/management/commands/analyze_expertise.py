@@ -2,12 +2,13 @@
 Management command to analyze maintainer expertise.
 """
 
-from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
+from django.core.management.base import BaseCommand
 
 User = get_user_model()
-from apps.issue_routing.models import MaintainerExpertise, ExpertiseDomain
 import logging
+
+from apps.issue_routing.models import ExpertiseDomain, MaintainerExpertise
 
 logger = logging.getLogger(__name__)
 

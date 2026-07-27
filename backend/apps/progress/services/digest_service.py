@@ -1,12 +1,13 @@
 from datetime import timedelta
-from django.utils import timezone
+
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 User = get_user_model()
 from django.db.models import Sum
 
-from apps.progress.models import XPEvent, LessonProgress, UserBadge, StreakProfile
 from apps.content.models import Lesson
+from apps.progress.models import LessonProgress, StreakProfile, UserBadge, XPEvent
 from apps.progress.services.insights_engine import InsightsEngine
 
 

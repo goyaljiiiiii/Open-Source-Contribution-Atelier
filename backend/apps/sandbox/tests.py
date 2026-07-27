@@ -143,8 +143,9 @@ async def test_collab_websocket_consumer():
     await communicator2.disconnect()
 
     # Verify document_state in the database
-    from apps.sandbox.models import CollabSession
     from channels.db import database_sync_to_async
+
+    from apps.sandbox.models import CollabSession
 
     @database_sync_to_async
     def check_db():

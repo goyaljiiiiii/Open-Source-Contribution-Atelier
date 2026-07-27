@@ -45,10 +45,10 @@ class NextLessonRecommendationView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
+        from apps.content.serializers import LessonSerializer
         from apps.recommendations.next_lesson_service import (
             NextLessonRecommendationService,
         )
-        from apps.content.serializers import LessonSerializer
 
         service = NextLessonRecommendationService(request.user)
         result = service.get_next_lesson()
@@ -66,8 +66,8 @@ class NextLessonRecommendationView(APIView):
 
 
 class OSSIssueListView(generics.ListAPIView):
-    from .serializers import OSSIssueSerializer
     from .models import OSSIssue
+    from .serializers import OSSIssueSerializer
 
     serializer_class = OSSIssueSerializer
     permission_classes = [permissions.IsAuthenticated]

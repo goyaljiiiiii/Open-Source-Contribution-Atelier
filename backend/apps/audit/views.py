@@ -1,5 +1,6 @@
-from rest_framework import generics, permissions
 from django.utils.dateparse import parse_datetime
+from rest_framework import generics, permissions
+
 from apps.audit.models import AuditEvent
 from apps.audit.serializers import AuditEventSerializer
 

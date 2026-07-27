@@ -1,3 +1,6 @@
+import logging
+
+logger = logging.getLogger(__name__)
 import os
 import secrets
 from pathlib import Path
@@ -468,7 +471,8 @@ class GitHubOAuthCallbackView(APIView):
                     },
                 )
             )
-        except Exception:
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)
             return redirect(
                 frontend_url("/", {"auth_error": "GitHub authentication failed."})
             )

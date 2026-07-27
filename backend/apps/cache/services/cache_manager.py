@@ -5,14 +5,16 @@ Cache manager with write-through and invalidation strategies.
 import hashlib
 import json
 import logging
-from typing import Any, Dict, List, Optional, Type, Union
 from functools import wraps
+from typing import Any, Dict, List, Optional, Type, Union
+
+from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.db import models
-from django.db.models.signals import post_save, post_delete, m2m_changed
+from django.db.models.signals import m2m_changed, post_delete, post_save
 from django.dispatch import receiver
-from django.contrib.contenttypes.models import ContentType
-from apps.cache.models import CacheDependency, CacheConfig
+
+from apps.cache.models import CacheConfig, CacheDependency
 
 logger = logging.getLogger(__name__)
 
@@ -209,7 +211,8 @@ class CacheManager:
                         parent = getattr(target, field.name)
                         if parent:
                             self.invalidate_dependencies(parent)
-                    except Exception:
+                    except Exception as e:
+                        logger.warning("Caught exception: %s", e)
                         logger.exception(
                             "Failed to invalidate parent cache dependency."
                         )
@@ -380,7 +383,8 @@ def _is_migration_in_progress():
             cursor.execute("PRAGMA table_info(django_content_type)")
             columns = {row[1] for row in cursor.fetchall()}
             return "name" not in columns
-    except Exception:
+    except Exception as e:
+        logger.warning("Caught exception: %s", e)
         return True
 
 

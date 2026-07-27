@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 
 from .models import MaintainerWorkloadProfile, RepoHealthScore
 from .serializers import MaintainerWorkloadProfileSerializer, RepoHealthScoreSerializer
-from .services import analyze_repository, BurnoutAnalyzer
+from .services import BurnoutAnalyzer, analyze_repository
 
 
 class AnalyzeRepositoryView(APIView):

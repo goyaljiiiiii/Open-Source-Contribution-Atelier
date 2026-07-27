@@ -2,14 +2,16 @@
 Management command to generate dependency graph.
 """
 
-import os
 import json
-from django.core.management.base import BaseCommand
+import os
+
 from django.conf import settings
-from apps.dependency_graph.graph_generator import DependencyGraphGenerator
-from apps.dependency_graph.exporters.mermaid import MermaidExporter
+from django.core.management.base import BaseCommand
+
 from apps.dependency_graph.exporters.graphviz import GraphvizExporter
+from apps.dependency_graph.exporters.mermaid import MermaidExporter
 from apps.dependency_graph.exporters.svg import SVGExporter
+from apps.dependency_graph.graph_generator import DependencyGraphGenerator
 
 
 class Command(BaseCommand):

@@ -1,3 +1,6 @@
+import logging
+
+logger = logging.getLogger(__name__)
 import json
 import re
 
@@ -71,8 +74,8 @@ class ProfanityFilterMiddleware:
                                     else:
                                         data["message"] = filtered
                                         message["text"] = json.dumps(data)
-                            except Exception:
-                                pass
+                            except Exception as e:
+                                logger.warning("Caught exception: %s", e)
                     return message
 
             return await self.inner(scope, filtered_receive, send)

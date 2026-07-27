@@ -1,9 +1,10 @@
 import pytest
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework.test import APIClient
-from django.contrib.auth import get_user_model
-from apps.progress.models import CodeSubmission, PlagiarismReport
+
 from apps.content.models import Exercise, Lesson
+from apps.progress.models import CodeSubmission, PlagiarismReport
 
 User = get_user_model()
 

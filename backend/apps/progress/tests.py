@@ -637,9 +637,10 @@ class BadgeEvaluatorTests(APITestCase):
         )
 
     def test_streak_badge_not_awarded_for_non_consecutive_days(self):
-        from apps.progress.models import DailyActivity, UserBadge
-        from apps.progress.badge_evaluator import BadgeEvaluator
         import datetime
+
+        from apps.progress.badge_evaluator import BadgeEvaluator
+        from apps.progress.models import DailyActivity, UserBadge
 
         # Create 7 non-consecutive login days (each 2 days apart)
         base_date = datetime.date(2026, 7, 1)
@@ -660,9 +661,10 @@ class BadgeEvaluatorTests(APITestCase):
         self.assertFalse(has_streak_badge)
 
     def test_streak_badge_awarded_for_consecutive_days(self):
-        from apps.progress.models import DailyActivity, UserBadge
-        from apps.progress.badge_evaluator import BadgeEvaluator
         import datetime
+
+        from apps.progress.badge_evaluator import BadgeEvaluator
+        from apps.progress.models import DailyActivity, UserBadge
 
         # Create 7 consecutive login days
         base_date = datetime.date(2026, 7, 1)
@@ -692,8 +694,9 @@ class StreakEngineTests(APITestCase):
         )
 
     def test_record_activity_consecutive_days_increments_streak(self):
-        from apps.progress.streak_engine import StreakEngine
         import datetime
+
+        from apps.progress.streak_engine import StreakEngine
 
         # Day 1 activity
         res1 = StreakEngine.record_activity(self.user, datetime.date(2026, 7, 10))
@@ -704,8 +707,9 @@ class StreakEngineTests(APITestCase):
         self.assertEqual(res2["current_streak"], 2)
 
     def test_record_activity_past_date_does_not_reset_streak(self):
-        from apps.progress.streak_engine import StreakEngine
         import datetime
+
+        from apps.progress.streak_engine import StreakEngine
 
         # Day 1 activity
         res1 = StreakEngine.record_activity(self.user, datetime.date(2026, 7, 10))

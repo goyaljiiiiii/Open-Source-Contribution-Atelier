@@ -1,13 +1,14 @@
-from django.test import TestCase, RequestFactory
-from django.contrib.auth import get_user_model
-from django.core.management import call_command
-from django.utils import timezone
-from datetime import timedelta
 import json
 import os
+from datetime import timedelta
 
-from apps.audit.models import AuditEvent
+from django.contrib.auth import get_user_model
+from django.core.management import call_command
+from django.test import RequestFactory, TestCase
+from django.utils import timezone
+
 from apps.audit.middleware import AuditContextMiddleware, _audit_ctx
+from apps.audit.models import AuditEvent
 from apps.audit.tasks import archive_audit_events
 from apps.content.models import Lesson
 

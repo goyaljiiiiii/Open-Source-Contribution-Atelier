@@ -1,3 +1,6 @@
+import logging
+
+logger = logging.getLogger(__name__)
 from django.apps import AppConfig
 
 
@@ -6,10 +9,10 @@ class CoreConfig(AppConfig):
     name = "apps.core"
 
     def ready(self):
-        import apps.core.checks  # noqa
-        import apps.core.celery_signals  # noqa
-
         from django.db.backends.signals import connection_created
+
+        import apps.core.celery_signals  # noqa
+        import apps.core.checks  # noqa
 
         def configure_sqlite(sender, connection, **kwargs):
             if connection.vendor == "sqlite":
@@ -22,8 +25,8 @@ class CoreConfig(AppConfig):
         connection_created.connect(configure_sqlite)
 
         try:
-            import apps.core.signals  # noqa: F401
             import apps.core.cache.signals  # noqa: F401
+            import apps.core.signals  # noqa: F401
         except ImportError:
             pass
 
@@ -77,6 +80,7 @@ class CoreConfig(AppConfig):
                     "repeats": -1,
                 },
             )
-        except Exception:
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)
             # Table might not be migrated yet or django_q not installed
             pass

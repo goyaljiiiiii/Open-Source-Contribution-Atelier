@@ -1,0 +1,38 @@
+# CodeRabbit Configuration File
+# Documentation: https://docs.coderabbit.ai/getting-started/configure-coderabbit
+
+version: "2"
+language: "en-US"
+tone_instructions: "Provide polite, constructive, and concise code reviews tailored for open-source contributors."
+
+reviews:
+  profile: "chill"
+  request_tools:
+    ast_grep:
+      enable: true
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - "main"
+      - "master"
+      - "dev"
+  collapse_walkthrough: false
+  path_filters:
+    - "!backend/.venv/**"
+    - "!frontend/node_modules/**"
+    - "!frontend/dist/**"
+    - "!frontend/build/**"
+    - "!**/package-lock.json"
+    - "!**/poetry.lock"
+  path_instructions:
+    - path: "backend/**"
+      instructions: "Review Django REST framework views, models, serializers, and Celery tasks. Enforce security, PEP8 formatting, and pytest coverage."
+    - path: "frontend/**"
+      instructions: "Review React 19 TypeScript components, Vite config, and Tailwind CSS styles. Ensure accessible semantic HTML and proper state management."
+
+chat:
+  auto_reply: true
+
+summary:
+  enabled: true

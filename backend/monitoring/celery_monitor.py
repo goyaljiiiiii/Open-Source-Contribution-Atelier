@@ -1,8 +1,9 @@
-from prometheus_client import Counter, Gauge, Histogram, start_http_server
-import time
-from celery import Celery
 import os
+import time
+
 import redis
+from celery import Celery
+from prometheus_client import Counter, Gauge, Histogram, start_http_server
 
 app = Celery("config")
 

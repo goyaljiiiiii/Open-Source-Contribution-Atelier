@@ -1,6 +1,9 @@
+import logging
+
+logger = logging.getLogger(__name__)
+from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
@@ -266,7 +269,8 @@ class TenantManager(models.Manager.from_queryset(TenantQuerySet)):
             from apps.core.tenant import get_current_tenant_id
 
             org_id = get_current_tenant_id()
-        except Exception:
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)
             org_id = None
         if org_id is not None:
             return qs.filter(organization_id=org_id)

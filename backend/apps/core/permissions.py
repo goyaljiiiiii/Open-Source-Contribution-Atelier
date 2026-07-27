@@ -16,7 +16,7 @@ permission inspects the object's tenant discriminator and returns
 ``False`` (→ 403) when it differs from the request's tenant.
 """
 
-from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 
 class IsTenantMember(BasePermission):

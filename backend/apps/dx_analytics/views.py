@@ -1,11 +1,13 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.utils import timezone
 from datetime import timedelta
+
 from django.db.models import Avg, Count
+from django.utils import timezone
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from .models import DeveloperExperienceMetric, DXSnapshot
-from .services import DXScoreService, AnomalyDetectionService, RecommendationService
+from .services import AnomalyDetectionService, DXScoreService, RecommendationService
 
 
 class DXOverviewView(APIView):

@@ -4,15 +4,16 @@ WebSocket performance benchmark suite for Django Channels.
 
 import asyncio
 import json
-import time
-import psutil
-import threading
-from typing import Dict, Any, List, Optional
-from dataclasses import dataclass, field
-from django.core.management.base import BaseCommand
-from channels.testing import WebsocketCommunicator
-from channels.layers import get_channel_layer
 import logging
+import threading
+import time
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional
+
+import psutil
+from channels.layers import get_channel_layer
+from channels.testing import WebsocketCommunicator
+from django.core.management.base import BaseCommand
 
 logger = logging.getLogger(__name__)
 
@@ -291,9 +292,10 @@ class WebSocketBenchmark:
 
     def get_application(self):
         """Get the ASGI application."""
-        from django.core.asgi import get_asgi_application
         from channels.routing import ProtocolTypeRouter, URLRouter
+        from django.core.asgi import get_asgi_application
         from django.urls import path
+
         from apps.benchmark.consumers import BenchmarkConsumer
 
         return ProtocolTypeRouter(

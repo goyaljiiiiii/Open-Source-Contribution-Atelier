@@ -1,7 +1,8 @@
 import logging
-from django.db.models.signals import post_save, post_delete
-from django.dispatch import receiver
+
 from django.contrib.auth import get_user_model
+from django.db.models.signals import post_delete, post_save
+from django.dispatch import receiver
 
 User = get_user_model()
 
@@ -15,7 +16,8 @@ def get_model_safe(app_label, model_name):
 
     try:
         return apps.get_model(app_label, model_name)
-    except Exception:
+    except Exception as e:
+        logger.warning("Caught exception: %s", e)
         return None
 
 

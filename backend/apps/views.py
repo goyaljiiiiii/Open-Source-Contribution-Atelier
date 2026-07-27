@@ -1,7 +1,8 @@
-from django.http import JsonResponse
-from django.db import connection
-from django.core.management import call_command
 from io import StringIO
+
+from django.core.management import call_command
+from django.db import connection
+from django.http import JsonResponse
 
 
 def migration_health(request):

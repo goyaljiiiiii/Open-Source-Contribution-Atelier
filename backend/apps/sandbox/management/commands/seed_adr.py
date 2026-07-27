@@ -1,6 +1,8 @@
 import uuid
+
 from django.core.management.base import BaseCommand
-from apps.sandbox.models import ADRScenario, ADROption
+
+from apps.sandbox.models import ADROption, ADRScenario
 
 
 class Command(BaseCommand):

@@ -1,7 +1,8 @@
 import secrets
-from django.db import models
+
 from django.contrib.auth import get_user_model
-from django.contrib.auth.hashers import make_password, check_password
+from django.contrib.auth.hashers import check_password, make_password
+from django.db import models
 from django.utils import timezone
 
 User = get_user_model()

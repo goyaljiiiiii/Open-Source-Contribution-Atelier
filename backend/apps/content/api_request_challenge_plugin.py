@@ -37,7 +37,9 @@ def _path_matches(submitted_path: str, expected_path: str) -> bool:
     return True
 
 
-def _headers_match(submitted_headers: Dict[str, str], required_headers: Dict[str, str]) -> Tuple[int, int]:
+def _headers_match(
+    submitted_headers: Dict[str, str], required_headers: Dict[str, str]
+) -> Tuple[int, int]:
     """Case-insensitive header key/value comparison. Returns (matched_count, required_count)."""
     normalized_submitted = {k.lower(): v for k, v in submitted_headers.items()}
     matched = 0
@@ -101,16 +103,22 @@ class APIRequestChallengePlugin(LessonPlugin):
         if not isinstance(submitted, dict) or not isinstance(expected, dict):
             return False
 
-        if not isinstance(submitted.get("method"), str) or not isinstance(expected.get("method"), str):
+        if not isinstance(submitted.get("method"), str) or not isinstance(
+            expected.get("method"), str
+        ):
             return False
 
-        if not isinstance(submitted.get("path"), str) or not isinstance(expected.get("path"), str):
+        if not isinstance(submitted.get("path"), str) or not isinstance(
+            expected.get("path"), str
+        ):
             return False
 
         if "headers" in submitted and not isinstance(submitted["headers"], dict):
             return False
 
-        if "required_headers" in expected and not isinstance(expected["required_headers"], dict):
+        if "required_headers" in expected and not isinstance(
+            expected["required_headers"], dict
+        ):
             return False
 
         if "body" in submitted:
@@ -147,7 +155,9 @@ class APIRequestChallengePlugin(LessonPlugin):
         # Headers check
         required_headers = expected.get("required_headers", {})
         if required_headers:
-            matched, required_count = _headers_match(submitted.get("headers", {}), required_headers)
+            matched, required_count = _headers_match(
+                submitted.get("headers", {}), required_headers
+            )
             checks_total += required_count
             checks_passed += matched
 

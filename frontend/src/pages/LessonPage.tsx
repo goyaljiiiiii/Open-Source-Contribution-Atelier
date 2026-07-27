@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   Lock,
   Bookmark,
+  AlertTriangle,
   History,
   ArrowLeft,
   ArrowRight,
@@ -372,7 +373,8 @@ export function LessonPage() {
       .catch((err) => {
         console.error("[LessonPage] Unexpected error loading lesson:", err);
         setError(
-          "Failed to load lesson. Please check your connection and try again.",
+          err?.message ||
+            "Failed to load lesson. Please check your connection and try again.",
         );
       })
       .finally(() => {
@@ -648,37 +650,40 @@ export function LessonPage() {
   if (error) {
     return (
       <div
-        className="pt-20 h-screen w-full flex items-center justify-center px-4"
+        className="pt-20 h-screen w-full flex items-center justify-center p-6"
         role="alert"
         aria-live="assertive"
       >
-        <div className="w-full max-w-2xl">
-          <div className="rounded-2xl border-4 border-red-600 bg-red-50 p-8 shadow-card dark:bg-red-950 dark:border-red-700">
-            <h2 className="text-2xl font-black mb-4 text-red-900 dark:text-red-200">
-              ⚠️ Error Loading Lesson
+        <div className="w-full max-w-md rounded-2xl border-4 border-black bg-white dark:bg-[#1f1c18] dark:border-[#2e2924] p-8 shadow-[6px_6px_0px_#000] flex flex-col items-center gap-6 text-center">
+          <div className="flex items-center justify-center w-16 h-16 rounded-full bg-red-100 border-4 border-red-600">
+            <AlertTriangle size={32} className="text-red-600" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black text-text dark:text-[#f0ebe2] mb-2">
+              Failed to Load Lesson
             </h2>
-            <p className="text-red-800 dark:text-red-300 mb-6 font-semibold">
+            <p className="text-sm font-bold text-muted dark:text-[#c4bbae] break-words">
               {error}
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button
-                onClick={() => {
-                  setError(null);
-                  setIsLoading(true);
-                  // Re-trigger the fetch by resetting the effect
-                  window.location.reload();
-                }}
-                className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-black rounded-lg border-2 border-red-800 transition-colors"
-              >
-                🔄 Retry
-              </button>
-              <Link
-                to="/dashboard"
-                className="flex-1 px-6 py-3 bg-black dark:bg-[#2e2924] hover:bg-gray-800 text-white font-black rounded-lg border-2 border-black dark:border-[#2e2924] transition-colors text-center"
-              >
-                ← Go Back to Dashboard
-              </Link>
-            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 w-full">
+            <button
+              onClick={() => {
+                setError(null);
+                setIsLoading(true);
+                // Re-trigger by bumping slug-based effect via navigate
+                navigate(0);
+              }}
+              className="flex-1 px-5 py-3 bg-primary text-black font-black text-sm rounded-xl border-4 border-black shadow-[3px_3px_0px_#000] hover:-translate-y-0.5 active:translate-y-0.5 transition-all"
+            >
+              Retry
+            </button>
+            <Link
+              to="/dashboard"
+              className="flex-1 px-5 py-3 bg-surface-low text-text dark:text-[#f0ebe2] font-black text-sm rounded-xl border-4 border-black shadow-[3px_3px_0px_#000] hover:-translate-y-0.5 active:translate-y-0.5 transition-all text-center"
+            >
+              Go Back
+            </Link>
           </div>
         </div>
       </div>

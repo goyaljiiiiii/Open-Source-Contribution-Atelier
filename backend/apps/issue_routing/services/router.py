@@ -2,12 +2,14 @@
 Issue routing engine.
 """
 
-from typing import Dict, Any, List
+import logging
+from typing import Any, Dict, List
+
 from django.core.cache import cache
+
 from apps.issue_routing.models import IssueRouting, MaintainerExpertise
 from apps.issue_routing.services.domain_detector import DomainDetector
 from apps.issue_routing.services.expertise_matcher import ExpertiseMatcher
-import logging
 
 logger = logging.getLogger(__name__)
 

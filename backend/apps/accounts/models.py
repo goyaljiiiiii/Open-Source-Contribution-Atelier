@@ -99,6 +99,7 @@ class OTPToken(models.Model):
     def is_expired(self) -> bool:
         """Return True if the token is older than OTP_TIMEOUT_MINUTES."""
         from datetime import timedelta
+
         from django.utils import timezone
 
         timeout = getattr(settings, "OTP_TIMEOUT_MINUTES", 15)

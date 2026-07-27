@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Recommendation, OSSIssue
+from .models import OSSIssue, Recommendation
 
 
 class RecommendationSerializer(serializers.ModelSerializer):

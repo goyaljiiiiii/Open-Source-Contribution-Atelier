@@ -1,6 +1,8 @@
 import uuid
+
 from django.core.management.base import BaseCommand
-from apps.sandbox.models import LicenseScenario, DependencyDiff
+
+from apps.sandbox.models import DependencyDiff, LicenseScenario
 
 
 class Command(BaseCommand):

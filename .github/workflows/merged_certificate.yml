@@ -1,0 +1,67 @@
+name: Merged PR Certificate Generator
+
+on:
+  pull_request_target:
+    types: [closed]
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  generate-certificate:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Post Merged PR Contributor Certificate
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const author = pr.user.login;
+
+            // Generate custom celebratory certificate comment
+            const tweetText = encodeURIComponent(`🎉 Excited to share that my Pull Request #${pr.number} has been merged into Open-Source Contribution Atelier under #SSoC26 / #ECSoC26! 🚀\n\nCheck out the project: https://github.com/${owner}/${repo}`);
+            const linkedinText = encodeURIComponent(`https://github.com/${owner}/${repo}/pull/${pr.number}`);
+
+            const certBody = [
+              `## 🏆 Congratulations, @${author}! Your PR Has Been Merged! 🎉`,
+              ``,
+              `Your pull request **#${pr.number}** (\`${pr.title}\`) has been successfully merged into \`main\`!`,
+              ``,
+              `### 📜 Contributor Badge & Certificate`,
+              ``,
+              `[![Open Source Contributor](https://img.shields.io/badge/Open_Source-Contributor-4ECDC4?style=for-the-badge&logo=github&logoColor=white)](https://github.com/${owner}/${repo}/pull/${pr.number})`,
+              ``,
+              `<details>`,
+              `<summary>📋 Copy Markdown snippet for your README / Portfolio</summary>`,
+              ``,
+              `\`\`\`markdown`,
+              `[![Open Source Contributor](https://img.shields.io/badge/Open_Source-Contributor-4ECDC4?style=for-the-badge&logo=github&logoColor=white)](https://github.com/${owner}/${repo}/pull/${pr.number})`,
+              `\`\`\``,
+              ``,
+              `</details>`,
+              ``,
+              `---`,
+              ``,
+              `### 📣 Share Your Contribution Achievement!`,
+              `Showcase your open-source contribution to your network:`,
+              `- 🐦 **[Share on Twitter / X](https://twitter.com/intent/tweet?text=${tweetText})**`,
+              `- 💼 **[Share on LinkedIn](https://www.linkedin.com/sharing/share-offsite/?url=${linkedinText})**`,
+              ``,
+              `> Thank you for making **Open-Source Contribution Atelier** better! Pick another issue to keep your streak going! 🚀`
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: pr.number,
+              body: certBody
+            });

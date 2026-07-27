@@ -2,13 +2,15 @@
 Personalized nudge system for contributors.
 """
 
-from django.utils import timezone
+import logging
 from datetime import timedelta
+
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from django.utils import timezone
+
 from apps.onboarding.models import OnboardingJourney, OnboardingNudge
 from apps.onboarding.services.ml_predictor import OnboardingPredictor
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
-import logging
 
 logger = logging.getLogger(__name__)
 
