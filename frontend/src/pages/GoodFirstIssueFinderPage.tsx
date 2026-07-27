@@ -8,6 +8,7 @@ import {
   saveFiltersToStorage,
 } from "../lib/goodFirstIssueFinder";
 import { useGoodFirstIssues } from "../hooks/useGoodFirstIssues";
+import { DataStateWrapper } from "../components/ui/DataStateWrapper";
 import {
   ExternalLink,
   Filter,
@@ -66,7 +67,7 @@ export function GoodFirstIssueFinderPage() {
     saveFiltersToStorage(filters);
   }, [filters, hydrated]);
 
-  const { issues, isLoading, error, fromCache, totalCount } =
+  const { issues, isLoading, error, fromCache, totalCount, refetch } =
     useGoodFirstIssues(filters);
 
   const toggleLabel = (label: string) => {
@@ -216,52 +217,22 @@ export function GoodFirstIssueFinderPage() {
       </div>
 
       {/* Results */}
-      {isLoading && (
-        <div
-          className="grid gap-4 md:grid-cols-2"
-          role="status"
-          aria-busy="true"
-        >
-          <span className="sr-only">Searching GitHub issues…</span>
-          <IssueSkeleton />
-          <IssueSkeleton />
-          <IssueSkeleton />
-          <IssueSkeleton />
-        </div>
-      )}
-
-      {!isLoading && error && (
-        <div
-          role="alert"
-          className="flex flex-col items-center gap-3 rounded-[2rem] border-4 border-dashed border-red-400 bg-red-50 p-10 text-center dark:bg-red-950/20 dark:border-red-700"
-        >
-          <AlertCircle className="h-10 w-10 text-red-500" aria-hidden />
-          <h3 className="text-lg font-black text-red-800 dark:text-red-200">
-            Couldn’t load issues
-          </h3>
-          <p className="max-w-md text-sm font-bold text-red-700/90 dark:text-red-300">
-            {error}
-          </p>
-        </div>
-      )}
-
-      {!isLoading && !error && issues.length === 0 && (
-        <div className="rounded-[2rem] border-4 border-dashed border-black/30 bg-surface-low p-12 text-center dark:bg-[#151411] dark:border-[#2e2924]">
-          <h3 className="mb-2 text-xl font-black dark:text-[#f0ebe2]">
-            No matching issues
-          </h3>
-          <p className="mx-auto max-w-md text-sm font-bold text-muted dark:text-[#c4bbae]">
-            Try lowering the beginner score, reducing min stars, or switching
-            language. Internal practice stays on{" "}
-            <Link to="/bounties" className="underline underline-offset-2">
-              Bounties
-            </Link>
-            .
-          </p>
-        </div>
-      )}
-
-      {!isLoading && !error && issues.length > 0 && (
+      <DataStateWrapper
+        loading={isLoading}
+        error={error}
+        empty={issues.length === 0}
+        onRetry={refetch}
+        emptyTitle="No Matching Issues Found"
+        emptyDescription="Try lowering the beginner score threshold, reducing min stars, or selecting a different language."
+        skeleton={
+          <div className="grid gap-4 md:grid-cols-2">
+            <IssueSkeleton />
+            <IssueSkeleton />
+            <IssueSkeleton />
+            <IssueSkeleton />
+          </div>
+        }
+      >
         <div className="grid gap-4 md:grid-cols-2">
           {issues.map((issue) => (
             <a
@@ -301,7 +272,7 @@ export function GoodFirstIssueFinderPage() {
             </a>
           ))}
         </div>
-      )}
+      </DataStateWrapper>
     </div>
   );
 }
