@@ -287,6 +287,10 @@ const ApiDocsPage = lazy(() =>
   })),
 );
 
+const EnvConfigGeneratorPage = lazy(
+  () => import("../pages/EnvConfigGeneratorPage"),
+);
+
 const OAuthClientsPage = lazy(() =>
   import("../pages/admin/OAuthClients").then((module) => ({
     default: module.OAuthClients,
@@ -745,6 +749,7 @@ export function AppRouter() {
           />
 
           <Route path="/docs/api" element={<ApiDocsPage />} />
+          <Route path="/docs/env-generator" element={<EnvConfigGeneratorPage />} />
           <Route
             path="/notifications/digest"
             element={

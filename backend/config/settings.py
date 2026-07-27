@@ -224,7 +224,6 @@ API_RATE_LIMIT_AUTH = int(os.getenv("API_RATE_LIMIT_AUTH", "100"))
 API_RATE_LIMIT_ANON = int(os.getenv("API_RATE_LIMIT_ANON", "20"))
 API_RATE_LIMIT_WINDOW = int(os.getenv("API_RATE_LIMIT_WINDOW", "60"))
 
-<<<<<<< HEAD
 # ──────────────────────────────────────────
 # Redis / Channels (graceful fallback when Redis is down)
 # ──────────────────────────────────────────
@@ -245,9 +244,6 @@ _default_rate_limit_backend = (
 )
 RATE_LIMIT_BACKEND = os.getenv("RATE_LIMIT_BACKEND", _default_rate_limit_backend).lower()
 RATE_LIMIT_REDIS_URL = ENV_REDIS_URL or CHECK_REDIS_URL
-
-=======
->>>>>>> origin/main
 
 MIDDLEWARE = [
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
@@ -590,26 +586,6 @@ CONTENT_SECURITY_POLICY = {
         "data:",
     ],
 }
-<<<<<<< HEAD
-
-=======
-
-
-# ──────────────────────────────────────────
-# Redis / Channels (graceful fallback when Redis is down)
-# ──────────────────────────────────────────
-from config.channel_layers import build_channel_and_cache_config, is_redis_available
-
-ENV_REDIS_URL = os.getenv("REDIS_URL", "")
-CHECK_REDIS_URL = ENV_REDIS_URL or "redis://127.0.0.1:6379/0"
-
-_channel_cfg = build_channel_and_cache_config()
-REDIS_URL = _channel_cfg.get("REDIS_URL") or CHECK_REDIS_URL
-CHANNEL_LAYERS = _channel_cfg["CHANNEL_LAYERS"]
-CACHES = _channel_cfg["CACHES"]
-CHANNEL_LAYER_BACKEND = _channel_cfg["CHANNEL_LAYER_BACKEND"]
-
->>>>>>> origin/main
 CELERY_BEAT_SCHEDULE = {
     "sync-oss-issues-hourly": {
         "task": "apps.recommendations.tasks.sync_oss_issues",

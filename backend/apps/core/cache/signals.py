@@ -11,6 +11,13 @@ from apps.core.tasks import invalidate_tag_task
 logger = logging.getLogger(__name__)
 
 
+def _safe_delay(tag: str):
+    try:
+        invalidate_tag_task.delay(tag)
+    except Exception as e:
+        logger.warning("Could not dispatch invalidate_tag_task for %s: %s", tag, e)
+
+
 def get_model_safe(app_label, model_name):
     from django.apps import apps
 
@@ -29,8 +36,8 @@ if Lesson:
     def on_lesson_changed(sender, instance, **kwargs):
         slug = getattr(instance, "slug", "")
         if slug:
-            invalidate_tag_task.delay(f"lesson:{slug}")
-        invalidate_tag_task.delay("curriculum")
+            _safe_delay(f"lesson:{slug}")
+        _safe_delay("curriculum")
 
 
 # 2. LessonProgress signals
@@ -47,16 +54,16 @@ if LessonProgress:
             user_id = instance.user.id
 
         if user_id:
-            invalidate_tag_task.delay(f"user:{user_id}")
-        invalidate_tag_task.delay("leaderboard:weekly")
-        invalidate_tag_task.delay("leaderboard:alltime")
+            _safe_delay(f"user:{user_id}")
+        _safe_delay("leaderboard:weekly")
+        _safe_delay("leaderboard:alltime")
 
 
 # 3. User signals
 @receiver([post_save, post_delete], sender=User)
 def on_user_changed(sender, instance, **kwargs):
-    invalidate_tag_task.delay(f"user:{instance.id}")
-    invalidate_tag_task.delay("leaderboard:*")
+    _safe_delay(f"user:{instance.id}")
+    _safe_delay("leaderboard:*")
 
 
 # 4. Badge changes
@@ -69,7 +76,7 @@ if UserBadge:
         if not isinstance(user_id, int) and hasattr(instance, "user") and instance.user:
             user_id = instance.user.id
         if user_id:
-            invalidate_tag_task.delay(f"user:{user_id}")
+            _safe_delay(f"user:{user_id}")
 
 
 # 5. Streak changes
@@ -82,7 +89,7 @@ if Streak:
         if not isinstance(user_id, int) and hasattr(instance, "user") and instance.user:
             user_id = instance.user.id
         if user_id:
-            invalidate_tag_task.delay(f"user:{user_id}")
+            _safe_delay(f"user:{user_id}")
 
 
 StreakProfile = get_model_safe("progress", "StreakProfile")
@@ -94,4 +101,4 @@ if StreakProfile:
         if not isinstance(user_id, int) and hasattr(instance, "user") and instance.user:
             user_id = instance.user.id
         if user_id:
-            invalidate_tag_task.delay(f"user:{user_id}")
+            _safe_delay(f"user:{user_id}")

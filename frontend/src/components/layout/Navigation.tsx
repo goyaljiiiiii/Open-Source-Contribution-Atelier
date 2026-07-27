@@ -89,6 +89,7 @@ const navGroups = [
     items: [
       { to: "/profile", label: "Settings", icon: Settings },
       { to: "/settings/connected-apps", label: "Connected Apps", icon: Shield },
+      { to: "/docs/env-generator", label: ".env Wizard", icon: SlidersHorizontal },
       { to: "/admin/oauth-clients", label: "OAuth Apps", icon: Key },
       { to: "/admin/celery", label: "Celery Tasks", icon: Cpu },
     ],
