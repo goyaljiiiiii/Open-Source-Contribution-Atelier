@@ -10,16 +10,21 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
-            model_name="notification",
-            name="notif_type",
-            field=models.CharField(
-                choices=[
-                    ("badge", "Badge Earned"),
-                    ("comment", "New Comment"),
-                    ("achievement", "Achievement Unlocked"),
-                ],
-                max_length=20,
-            ),
+        migrations.SeparateDatabaseAndState(
+            database_operations=[],
+            state_operations=[
+                migrations.AlterField(
+                    model_name="notification",
+                    name="notif_type",
+                    field=models.CharField(
+                        choices=[
+                            ("badge", "Badge Earned"),
+                            ("comment", "New Comment"),
+                            ("achievement", "Achievement Unlocked"),
+                        ],
+                        max_length=20,
+                    ),
+                ),
+            ]
         ),
     ]

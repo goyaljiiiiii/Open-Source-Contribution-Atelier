@@ -54,18 +54,23 @@ class Migration(migrations.Migration):
             name="webhook_url",
             field=models.URLField(blank=True, max_length=500, null=True),
         ),
-        migrations.AlterField(
-            model_name="notification",
-            name="notif_type",
-            field=models.CharField(
-                choices=[
-                    ("badge", "Badge Earned"),
-                    ("comment", "New Comment"),
-                    ("achievement", "Achievement Unlocked"),
-                    ("lesson_completed", "Lesson Completed"),
-                ],
-                max_length=50,
-            ),
+        migrations.SeparateDatabaseAndState(
+            database_operations=[],
+            state_operations=[
+                migrations.AlterField(
+                    model_name="notification",
+                    name="notif_type",
+                    field=models.CharField(
+                        choices=[
+                            ("badge", "Badge Earned"),
+                            ("comment", "New Comment"),
+                            ("achievement", "Achievement Unlocked"),
+                            ("lesson_completed", "Lesson Completed"),
+                        ],
+                        max_length=50,
+                    ),
+                ),
+            ]
         ),
         migrations.CreateModel(
             name="NotificationDeadLetter",

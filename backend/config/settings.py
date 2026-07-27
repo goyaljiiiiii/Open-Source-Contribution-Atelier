@@ -354,6 +354,9 @@ DATABASE_REPLICAS = [
 # Seconds after a write before a user's reads are redirected back to replicas.
 READ_AFTER_WRITE_SECONDS = int(os.getenv("READ_AFTER_WRITE_SECONDS", "5"))
 
+# PostgreSQL lock timeout for migrations (in milliseconds)
+DATABASE_LOCK_TIMEOUT = int(os.getenv("DATABASE_LOCK_TIMEOUT", "5000"))
+
 # Replication lag (seconds) above which /health/db/replication-lag returns 503.
 REPLICA_LAG_ALERT_SECONDS = int(os.getenv("REPLICA_LAG_ALERT_SECONDS", "30"))
 
