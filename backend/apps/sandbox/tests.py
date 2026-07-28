@@ -66,6 +66,29 @@ async def test_sandbox_websocket_consumer():
     await communicator2.disconnect()
 
 
+@pytest.mark.django_db
+@pytest.mark.asyncio
+async def test_sandbox_websocket_abnormal_disconnect():
+    headers = [(b"origin", b"http://localhost"), (b"host", b"localhost")]
+    communicator = WebsocketCommunicator(application, "/ws/sandbox/", headers=headers)
+    connected, _ = await communicator.connect()
+    assert connected
+
+    from apps.sandbox.services.execution_tracker import ExecutionTracker
+
+    # Session ID is the channel name
+    session_id = communicator.instance.channel_name
+    assert ExecutionTracker.get_session_state(session_id) == {}
+    assert session_id in ExecutionTracker.get_all_active_sessions()
+
+    # Simulate an abnormal disconnect (close code 1006)
+    await communicator.disconnect(code=1006)
+
+    # Verify tracker entry is removed
+    assert ExecutionTracker.get_session_state(session_id) is None
+    assert session_id not in ExecutionTracker.get_all_active_sessions()
+
+
 def test_sandbox_security_ast_violations():
     from apps.sandbox.resource_manager import (
         ResourceManagementEngine,
