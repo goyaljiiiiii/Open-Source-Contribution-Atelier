@@ -9,6 +9,15 @@ from django.core.cache import cache
 from rest_framework import status
 from rest_framework.response import Response
 
+try:
+    from prometheus_client import Gauge
+
+    SANDBOX_ACTIVE_SESSIONS = Gauge(
+        "sandbox_active_sessions", "Number of active sandbox sessions"
+    )
+except ImportError:
+    SANDBOX_ACTIVE_SESSIONS = None
+
 
 class ExecutionTracker:
     @staticmethod
@@ -61,6 +70,42 @@ class ExecutionTracker:
     def clear_execution(cls, user_id, code, payload):
         key = cls._get_key(user_id, code, payload)
         cache.delete(key)
+
+    @classmethod
+    def set_session_state(cls, session_id: str, state_data: dict):
+        cache.set(f"sandbox_session:{session_id}", state_data, timeout=1800)
+        cls._add_to_active_sessions(session_id)
+
+    @classmethod
+    def get_session_state(cls, session_id: str):
+        return cache.get(f"sandbox_session:{session_id}")
+
+    @classmethod
+    def reset(cls, session_id: str):
+        cache.delete(f"sandbox_session:{session_id}")
+        cls._remove_from_active_sessions(session_id)
+
+    @classmethod
+    def _add_to_active_sessions(cls, session_id: str):
+        active_sessions = cache.get("sandbox_active_sessions_list", set())
+        if session_id not in active_sessions:
+            active_sessions.add(session_id)
+            cache.set("sandbox_active_sessions_list", active_sessions, timeout=None)
+            if SANDBOX_ACTIVE_SESSIONS is not None:
+                SANDBOX_ACTIVE_SESSIONS.inc()
+
+    @classmethod
+    def _remove_from_active_sessions(cls, session_id: str):
+        active_sessions = cache.get("sandbox_active_sessions_list", set())
+        if session_id in active_sessions:
+            active_sessions.discard(session_id)
+            cache.set("sandbox_active_sessions_list", active_sessions, timeout=None)
+            if SANDBOX_ACTIVE_SESSIONS is not None:
+                SANDBOX_ACTIVE_SESSIONS.dec()
+
+    @classmethod
+    def get_all_active_sessions(cls):
+        return cache.get("sandbox_active_sessions_list", set())
 
 
 def prevent_duplicate_execution(get_user_id, get_code, get_payload):
