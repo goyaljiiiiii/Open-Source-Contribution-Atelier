@@ -22,6 +22,7 @@ import {
   ArrowRight,
   WifiOff,
   HardDrive,
+  Flag,
 } from "lucide-react";
 
 import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
@@ -952,13 +953,31 @@ export function LessonPage() {
                   </article>
                 </>
               )}
-              <div className="mt-4 flex justify-end">
-                <button
-                  onClick={() => alert("Thanks for reporting the typo")}
-                  className="px-4 py-2 bg-red-500 text-white rounded-lg font-bold border-2 border-black hover:opacity-90 transition"
-                >
-                  Report Typo 🐛
-                </button>
+              <div className="mt-6 flex justify-end">
+                {(() => {
+                  const currentUrl = window.location.href;
+                  const lessonTitle = lesson?.title || "Lesson";
+                  const issueTitle = encodeURIComponent(`[Lesson Issue]: ${lessonTitle}`);
+                  const issueBody = encodeURIComponent(
+                    `**Lesson Title:** ${lessonTitle}\n` +
+                      `**Lesson URL:** ${currentUrl}\n\n` +
+                      `### What's wrong?\n` +
+                      `Please describe the typo, broken link, or incorrect information in this lesson.`
+                  );
+                  const githubIssueUrl = `https://github.com/Babin123456/Open-Source-Contribution-Atelier/issues/new?title=${issueTitle}&body=${issueBody}&labels=bug,documentation`;
+
+                  return (
+                    <a
+                      href={githubIssueUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 font-bold border-2 border-red-300 rounded-xl hover:bg-red-100 hover:border-red-500 transition-all text-xs shadow-sm dark:bg-red-950/20 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-900/30"
+                    >
+                      <Flag className="w-4 h-4 text-red-600 dark:text-red-400" />
+                      Report a problem
+                    </a>
+                  );
+                })()}
               </div>
 
               <div className="pt-8 space-y-6">
