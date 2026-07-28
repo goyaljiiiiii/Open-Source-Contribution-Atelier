@@ -11,6 +11,7 @@ import {
   CheckCircle,
   FolderTree,
   Archive,
+  Boxes,
 } from "lucide-react";
 import { SectionCard } from "../components/ui/SectionCard";
 import { CommitMessageCoach } from "../components/ui/CommitMessageCoach";
@@ -171,6 +172,12 @@ export function ContributorSandboxPage() {
               className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 bg-accent text-black font-black text-xs rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all"
             >
               <Archive className="w-4 h-4" /> Git Stash Manager →
+            </Link>
+            <Link
+              to="/monorepo-visualizer"
+              className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 bg-yellow-400 text-black font-black text-xs rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all"
+            >
+              <Boxes className="w-4 h-4" /> Monorepo Visualizer →
             </Link>
           </div>
         </div>

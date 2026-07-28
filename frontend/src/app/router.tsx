@@ -135,6 +135,12 @@ const GitStashManagerPage = lazy(() =>
   })),
 );
 
+const MonorepoVisualizerPage = lazy(() =>
+  import("../pages/MonorepoVisualizerPage").then((module) => ({
+    default: module.MonorepoVisualizerPage,
+  })),
+);
+
 const CollabSessionPage = lazy(() =>
   import("../pages/CollabSessionPage").then((module) => ({
     default: module.CollabSessionPage,
@@ -549,6 +555,15 @@ export function AppRouter() {
             element={
               <ProtectedRoute>
                 <GitStashManagerPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/monorepo-visualizer"
+            element={
+              <ProtectedRoute>
+                <MonorepoVisualizerPage />
               </ProtectedRoute>
             }
           />
