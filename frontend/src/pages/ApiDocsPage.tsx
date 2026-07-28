@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Download, Search, Sliders } from "lucide-react";
+import { Download, Search, Sliders, Activity } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ApiEndpointCard } from "../components/docs/ApiEndpointCard";
 import { SectionCard } from "../components/ui/SectionCard";
@@ -86,6 +87,13 @@ export function ApiDocsPage() {
             className="inline-flex items-center gap-2 rounded-md bg-accent text-white px-3 py-2 text-sm font-bold shadow-card-sm hover:bg-accent/90 transition-all"
           >
             <Sliders size={16} /> Config Generator Wizard
+            <Sliders size={16} /> Config Generator
+          </Link>
+          <Link
+            to="/docs/websocket-simulator"
+            className="inline-flex items-center gap-2 rounded-md bg-blue-600 text-white px-3 py-2 text-sm font-bold shadow-card-sm hover:bg-blue-500 transition-all"
+          >
+            <Activity size={16} /> WebSocket Simulator
           </Link>
           <a
             href={`${API_BASE}/schema/?format=json`}

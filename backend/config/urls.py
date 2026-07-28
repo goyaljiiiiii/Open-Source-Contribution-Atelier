@@ -1,5 +1,6 @@
+from django.conf import settings
 from django.contrib import admin
-from django.urls import include, path, re_path
+from django.urls import include, path
 from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.views import (
     SpectacularAPIView,
@@ -93,24 +94,33 @@ urlpatterns = [
     # ============================================================
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
-        "api/docs/",
+        "docs/",
         SpectacularSwaggerView.as_view(url_name="schema"),
         name="swagger-ui",
     ),
-    # ============================================================
-    # PROMETHEUS METRICS
-    # ============================================================
-    path("api/graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
 ]
 
-# ── Development URLs ──────────────────────────────────────────────────────────
-from django.conf import settings
-from django.conf.urls.static import static
+urlpatterns = [
+    # ── Django Admin & External Webhooks ──────────────────────────────────────
+    path("admin/", admin.site.urls),
+    path("accounts/", include("allauth.urls")),
+    path("create-checkout-session/", CheckoutSessionView.as_view()),
+    path("webhook/", stripe_webhook),
+    # ── Health Checks ──────────────────────────────────────────────────────────
+    path("health/", include("apps.health.urls")),
+    path("health/legacy/", health_view, name="health"),
+    # ── Version Discovery (root /api/versions/) ─────────────────────────────
+    path("api/versions/", api_versions_view, name="root-api-versions"),
+    # ── Stable Versioned API (/api/v1/) ───────────────────────────────────────
+    path("api/v1/", include(api_v1_patterns)),
+    # ── Unversioned API Fallback (/api/) ───────────────────────────────────────
+    path("api/", include(api_v1_patterns)),
+]
 
 if settings.DEBUG:
     from apps.feature_flags.debug_view import feature_flags_debug_view
 
     urlpatterns += [
-        path("api/organizations/", include("apps.organizations.urls")),
+        path("api/v1/feature-flags/", include("apps.feature_flags.urls")),
         path("api/feature-flags/", include("apps.feature_flags.urls")),
     ]

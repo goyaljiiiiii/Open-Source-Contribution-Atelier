@@ -1236,7 +1236,62 @@ class LeaderboardView(APIView):
             page = 1
             limit = 50
 
+        import logging
+
+        from apps.progress.models import LeaderboardRank
         from apps.progress.services.leaderboard_service import LeaderboardService
+
+        logger = logging.getLogger(__name__)
+
+        if time_period == "all_time":
+            try:
+                query = LeaderboardRank.objects.select_related("user")
+                if search_username:
+                    query = query.filter(user__username__icontains=search_username)
+
+                total_users = query.count()
+                if total_users > 0:
+                    offset = (page - 1) * limit
+                    ranks = query[offset : offset + limit]
+                    leaderboard = [
+                        {
+                            "user_id": r.user_id,
+                            "username": r.user.username,
+                            "rank": r.rank,
+                            "total_xp": r.total_xp,
+                        }
+                        for r in ranks
+                    ]
+
+                    personal_rank = None
+                    if request.user.is_authenticated and not search_username:
+                        try:
+                            pr = LeaderboardRank.objects.get(user=request.user)
+                            personal_rank = {
+                                "rank": pr.rank,
+                                "total_xp": pr.total_xp,
+                            }
+                        except LeaderboardRank.DoesNotExist:
+                            pass
+
+                    total_pages = (
+                        (total_users + limit - 1) // limit if total_users > 0 else 1
+                    )
+                    return Response(
+                        {
+                            "leaderboard": leaderboard,
+                            "personal_rank": personal_rank,
+                            "page": page,
+                            "limit": limit,
+                            "total_users": total_users,
+                            "total_pages": total_pages,
+                        },
+                        status=status.HTTP_200_OK,
+                    )
+            except Exception as e:
+                logger.warning(
+                    f"Materialized view query failed or empty, falling back: {e}"
+                )
 
         result = LeaderboardService.get_leaderboard(
             time_period=time_period,

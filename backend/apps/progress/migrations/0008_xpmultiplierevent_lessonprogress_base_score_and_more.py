@@ -36,11 +36,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="lessonprogress",
             name="base_score",
-            field=models.PositiveIntegerField(default=0),
+            field=models.PositiveIntegerField(null=True, default=None),
         ),
         migrations.AddField(
             model_name="lessonprogress",
             name="multiplier_applied",
-            field=models.FloatField(default=1.0),
+            field=models.FloatField(null=True, default=None),
         ),
     ]

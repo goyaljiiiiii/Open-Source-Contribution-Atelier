@@ -97,3 +97,25 @@ class AutoFixPR(models.Model):
 
     def __str__(self):
         return f"AutoFixPR #{self.pr_number} ({self.status})"
+
+
+class ProjectDependency(models.Model):
+    package_name = models.CharField(max_length=128)
+    ecosystem = models.CharField(max_length=32, default="python")
+    current_version = models.CharField(max_length=64, default="0.0.0")
+    latest_version = models.CharField(max_length=64, default="0.0.0")
+    days_vulnerable = models.IntegerField(default=0)
+    decay_rate = models.FloatField(default=0.0)
+    security_score = models.IntegerField(default=100)
+    last_checked_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-days_vulnerable", "package_name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["package_name", "ecosystem"], name="unique_package_ecosystem"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.package_name} ({self.current_version} -> {self.latest_version})"

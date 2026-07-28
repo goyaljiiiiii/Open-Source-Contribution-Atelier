@@ -688,3 +688,18 @@ class UserMilestoneCompletion(models.Model):
 
     def __str__(self):
         return f"{self.user.username} completed {self.milestone.name}"
+
+
+class LeaderboardRank(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.DO_NOTHING,
+        primary_key=True,
+    )
+    total_xp = models.IntegerField()
+    rank = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = "progress_leaderboard_mv"
+        ordering = ["rank"]

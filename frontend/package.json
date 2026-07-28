@@ -70,6 +70,7 @@
     "jwt-decode": "^4.0.0",
     "libsodium-wrappers": "^0.8.4",
     "lucide-react": "^0.474.0",
+    "picomatch": "^4.0.5",
     "prismjs": "^1.30.0",
     "pyodide": "^314.0.2",
     "randomcolor": "^0.6.2",
