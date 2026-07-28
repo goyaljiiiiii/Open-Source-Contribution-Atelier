@@ -148,6 +148,17 @@ export function LessonPage() {
   >([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+  return localStorage.getItem("lesson-sidebar-collapsed") === "true";
+});
+
+useEffect(() => {
+  localStorage.setItem(
+    "lesson-sidebar-collapsed",
+    String(isSidebarCollapsed),
+  );
+}, [isSidebarCollapsed]);
+
   const curriculumLessonRefs = useMemo(
     () =>
       modules.flatMap((mod) =>
@@ -737,6 +748,8 @@ export function LessonPage() {
         <ResponsiveSidebar
           isOpen={isSidebarOpen}
           onClose={closeSidebar}
+          isSidebarCollapsed={isSidebarCollapsed}
+          setIsSidebarCollapsed={setIsSidebarCollapsed}
           title={
             <>
               <BookOpen size={18} className="text-primary" />
@@ -745,9 +758,11 @@ export function LessonPage() {
           }
         >
           <div className="space-y-6">
+          {!isSidebarCollapsed && (
             <div className="pt-2">
               <RecentlyViewedLessonsWidget />
             </div>
+          )}
 
             {modules.map((mod, modIdx) => (
               <div key={mod.id} className="space-y-2">
@@ -759,7 +774,9 @@ export function LessonPage() {
                                : "text-muted dark:text-[#c4bbae] border-transparent"
                            }`}
                 >
-                  Module {modIdx + 1}: {mod.title}
+                {isSidebarCollapsed
+                    ? `M${modIdx + 1}`
+                    : `Module {modIdx + 1}: {mod.title}`}
                 </h3>
                 <div className="space-y-1">
                   {mod.lessons.map(
@@ -790,7 +807,10 @@ export function LessonPage() {
                             ) : (
                               <div className="w-3.5 h-3.5 rounded-full border-2 border-black/35 flex-shrink-0" />
                             )}
-                            <span className="truncate">{les.title}</span>
+                            {!isSidebarCollapsed && (
+                              <span className="truncate">{les.title}</span>
+                            )}
+
                           </div>
                           {les.difficulty === "advanced" && (
                             <span className="text-[8px] bg-red-100 text-red-700 px-1 py-0.5 rounded border border-red-700">
