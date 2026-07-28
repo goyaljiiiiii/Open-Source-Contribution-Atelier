@@ -24,6 +24,7 @@ import {
   ShoppingBag,
   Cpu,
   SlidersHorizontal,
+  Activity,
 } from "lucide-react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/AuthContext";
@@ -90,6 +91,8 @@ const navGroups = [
     items: [
       { to: "/profile", label: "Settings", icon: Settings },
       { to: "/settings/connected-apps", label: "Connected Apps", icon: Shield },
+      { to: "/docs/env-generator", label: ".env Wizard", icon: SlidersHorizontal },
+      { to: "/docs/websocket-simulator", label: "WS Simulator", icon: Activity },
       { to: "/admin/oauth-clients", label: "OAuth Apps", icon: Key },
       { to: "/admin/celery", label: "Celery Tasks", icon: Cpu },
       { to: "/admin/audit", label: "Audit Logs", icon: SlidersHorizontal },

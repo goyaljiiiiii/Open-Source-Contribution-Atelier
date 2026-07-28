@@ -11,16 +11,30 @@ from django.core.cache import cache
 class SandboxConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_group_name = "sandbox_group"
+        self.session_id = self.channel_name
         self.debug_process = None
         self.debug_file = None
         self.debug_task = None
+
+        from .services.execution_tracker import ExecutionTracker
+        from asgiref.sync import sync_to_async
+
+        await sync_to_async(ExecutionTracker.set_session_state)(self.session_id, {})
 
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
-        await self._cleanup_debug_session()
+        try:
+            await self.channel_layer.group_discard(
+                self.room_group_name, self.channel_name
+            )
+            await self._cleanup_debug_session()
+        finally:
+            from .services.execution_tracker import ExecutionTracker
+            from asgiref.sync import sync_to_async
+
+            await sync_to_async(ExecutionTracker.reset)(self.session_id)
 
     @database_sync_to_async
     def check_rate_limit(self, key, limit, period):

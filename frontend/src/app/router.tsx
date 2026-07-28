@@ -110,10 +110,15 @@ const CeleryDashboardPage = lazy(() =>
   })),
 );
 
-
 const VulnerabilityDashboard = lazy(() =>
   import("../pages/admin/VulnerabilityDashboard").then((module) => ({
     default: module.VulnerabilityDashboard,
+  })),
+);
+
+const SecurityDashboardPage = lazy(() =>
+  import("../pages/SecurityDashboardPage").then((module) => ({
+    default: module.SecurityDashboardPage,
   })),
 );
 
@@ -126,6 +131,36 @@ const SandboxPage = lazy(() =>
 const ContributorSandboxPage = lazy(() =>
   import("../pages/ContributorSandboxPage").then((module) => ({
     default: module.ContributorSandboxPage,
+  })),
+);
+
+const GitSubmoduleSimulatorPage = lazy(() =>
+  import("../pages/GitSubmoduleSimulatorPage").then((module) => ({
+    default: module.GitSubmoduleSimulatorPage,
+  })),
+);
+
+const GitStashManagerPage = lazy(() =>
+  import("../pages/GitStashManagerPage").then((module) => ({
+    default: module.GitStashManagerPage,
+  })),
+);
+
+const MonorepoVisualizerPage = lazy(() =>
+  import("../pages/MonorepoVisualizerPage").then((module) => ({
+    default: module.MonorepoVisualizerPage,
+  })),
+);
+
+const DockerfileLinterPage = lazy(() =>
+  import("../pages/DockerfileLinterPage").then((module) => ({
+    default: module.DockerfileLinterPage,
+  })),
+);
+
+const GitBisectGamePage = lazy(() =>
+  import("../pages/GitBisectGamePage").then((module) => ({
+    default: module.GitBisectGamePage,
   })),
 );
 
@@ -291,6 +326,12 @@ const ApiDocsPage = lazy(() =>
   import("../pages/ApiDocsPage").then((module) => ({
     default: module.ApiDocsPage,
   })),
+);
+
+const EnvConfigGeneratorPage = lazy(
+  () => import("../pages/EnvConfigGeneratorPage"),
+const WebSocketSimulatorPage = lazy(
+  () => import("../pages/docs/WebSocketSimulatorPage"),
 );
 
 const OAuthClientsPage = lazy(() =>
@@ -530,6 +571,51 @@ export function AppRouter() {
           />
 
           <Route
+            path="/sandbox/submodules"
+            element={
+              <ProtectedRoute>
+                <GitSubmoduleSimulatorPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/git-tools/stash"
+            element={
+              <ProtectedRoute>
+                <GitStashManagerPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/monorepo-visualizer"
+            element={
+              <ProtectedRoute>
+                <MonorepoVisualizerPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dockerfile-linter"
+            element={
+              <ProtectedRoute>
+                <DockerfileLinterPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/git-bisect-game"
+            element={
+              <ProtectedRoute>
+                <GitBisectGamePage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             path="/collab/:sessionId"
             element={
               <ProtectedRoute>
@@ -672,7 +758,6 @@ export function AppRouter() {
             }
           />
 
-
           <Route
             path="/admin/performance"
             element={
@@ -687,6 +772,15 @@ export function AppRouter() {
             element={
               <ProtectedRoute>
                 <VulnerabilityDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/security"
+            element={
+              <ProtectedRoute>
+                <SecurityDashboardPage />
               </ProtectedRoute>
             }
           />
@@ -760,6 +854,8 @@ export function AppRouter() {
           />
 
           <Route path="/docs/api" element={<ApiDocsPage />} />
+          <Route path="/docs/env-generator" element={<EnvConfigGeneratorPage />} />
+          <Route path="/docs/websocket-simulator" element={<WebSocketSimulatorPage />} />
           <Route
             path="/notifications/digest"
             element={

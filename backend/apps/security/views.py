@@ -1,6 +1,5 @@
 from datetime import timedelta
-
-from django.db.models import Count, Q, Sum
+from django.db.models import Avg, Count, Q, Sum
 from django.utils import timezone
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
@@ -9,12 +8,14 @@ from rest_framework.views import APIView
 
 from .models import (
     AutoFixPR,
+    ProjectDependency,
     VulnerabilityItem,
     VulnerabilityReport,
     VulnerabilitySuppression,
 )
 from .serializers import (
     AutoFixPRSerializer,
+    ProjectDependencySerializer,
     VulnerabilityItemSerializer,
     VulnerabilityReportSerializer,
     VulnerabilitySuppressionSerializer,
@@ -121,6 +122,12 @@ class AutoFixPRViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
 
 
+class ProjectDependencyViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ProjectDependency.objects.all()
+    serializer_class = ProjectDependencySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
 class VulnerabilitySummaryView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -184,6 +191,19 @@ class VulnerabilitySummaryView(APIView):
                     "suppressed": suppressed_count,
                     "resolved": resolved_count,
                     "active_autofix_prs": active_autofix_prs,
+                },
+                "dependencies": {
+                    "total_vulnerable": ProjectDependency.objects.filter(
+                        days_vulnerable__gt=0
+                    ).count(),
+                    "avg_decay_rate": ProjectDependency.objects.aggregate(
+                        a=Avg("decay_rate")
+                    )["a"]
+                    or 0,
+                    "avg_security_score": ProjectDependency.objects.aggregate(
+                        a=Avg("security_score")
+                    )["a"]
+                    or 100,
                 },
                 "trend": trend,
                 "suppressions": suppression_data,

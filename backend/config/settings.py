@@ -27,16 +27,13 @@ STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 
 stripe.api_key = STRIPE_SECRET_KEY
 
-
 def load_dotenv(dotenv_path: Path) -> None:
     if not dotenv_path.exists():
         return
 
-
 from dotenv import load_dotenv
 
 load_dotenv(BASE_DIR / ".env")
-
 
 SECRET_KEY = os.getenv(
     "SECRET_KEY", "django-insecure-dev-key-not-for-production-use-32bytes!!"
@@ -242,7 +239,9 @@ CHANNEL_LAYER_BACKEND = _channel_cfg["CHANNEL_LAYER_BACKEND"]
 _default_rate_limit_backend = (
     "redis" if is_redis_available(CHECK_REDIS_URL) and ENV_REDIS_URL else "local"
 )
-RATE_LIMIT_BACKEND = os.getenv("RATE_LIMIT_BACKEND", _default_rate_limit_backend).lower()
+RATE_LIMIT_BACKEND = os.getenv(
+    "RATE_LIMIT_BACKEND", _default_rate_limit_backend
+).lower()
 RATE_LIMIT_REDIS_URL = ENV_REDIS_URL or CHECK_REDIS_URL
 
 MIDDLEWARE = [
@@ -270,6 +269,7 @@ MIDDLEWARE = [
     "waffle.middleware.WaffleMiddleware",
     "apps.core.middleware.ratelimit.RateLimitMiddleware",
     "apps.sandbox.middleware.SandboxExecutionLogMiddleware",
+    "apps.core.middleware.api_version.APIVersionMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
@@ -349,6 +349,9 @@ DATABASE_REPLICAS = [
 
 # Seconds after a write before a user's reads are redirected back to replicas.
 READ_AFTER_WRITE_SECONDS = int(os.getenv("READ_AFTER_WRITE_SECONDS", "5"))
+
+# PostgreSQL lock timeout for migrations (in milliseconds)
+DATABASE_LOCK_TIMEOUT = int(os.getenv("DATABASE_LOCK_TIMEOUT", "5000"))
 
 # Replication lag (seconds) above which /health/db/replication-lag returns 503.
 REPLICA_LAG_ALERT_SECONDS = int(os.getenv("REPLICA_LAG_ALERT_SECONDS", "30"))
@@ -436,6 +439,19 @@ PASSWORD_RESET_TIMEOUT_MINUTES = int(os.getenv("PASSWORD_RESET_TIMEOUT_MINUTES",
 # How many minutes an OTP verification code remains valid.
 OTP_TIMEOUT_MINUTES = int(os.getenv("OTP_TIMEOUT_MINUTES", "10"))
 
+# ── API Versioning Configuration ──────────────────────────────────────────────
+DEFAULT_API_VERSION = "1.0"
+ALLOWED_API_VERSIONS = ["1.0"]
+DEPRECATED_API_VERSIONS = {}
+API_VERSION_DISCOVERY = {
+    "1.0": {
+        "status": "stable",
+        "changelog_url": "/docs/changelog/v1.0",
+        "sunset": None,
+        "deprecation": None,
+    }
+}
+
 REST_FRAMEWORK = {
     # ── Default Throttle Classes ─────────────────────────────────────────────
     "DATETIME_FORMAT": "%Y-%m-%dT%H:%M:%SZ",
@@ -443,6 +459,11 @@ REST_FRAMEWORK = {
         "apps.core.throttling.SlidingWindowAnonThrottle",
         "apps.core.throttling.SlidingWindowUserThrottle",
     ],
+    # ── API Versioning ───────────────────────────────────────────────────────
+    "DEFAULT_VERSIONING_CLASS": "apps.core.versioning.AcceptHeaderOrURLVersioning",
+    "DEFAULT_VERSION": "1.0",
+    "ALLOWED_VERSIONS": ["1.0"],
+    "VERSION_PARAM": "version",
     # ── Throttle Rates ───────────────────────────────────────────────────────
     # Sandbox endpoints
     # Auth endpoints (brute-force + spam protection)
@@ -484,7 +505,6 @@ REST_FRAMEWORK = {
 # ============================================================
 # ✅ UPDATED: SimpleJWT Configuration with Dynamic Salt
 # ============================================================
-
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(
         minutes=int(os.getenv("ACCESS_TOKEN_LIFETIME_MINUTES", "30"))
@@ -554,7 +574,6 @@ SOCIALACCOUNT_ADAPTER = "apps.accounts.allauth_adapter.CustomSocialAccountAdapte
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_UNIQUE_EMAIL = True
 
-
 # ──────────────────────────────────────────
 # Django Channels + Notifications
 # ──────────────────────────────────────────
@@ -586,6 +605,7 @@ CONTENT_SECURITY_POLICY = {
         "data:",
     ],
 }
+
 CELERY_BEAT_SCHEDULE = {
     "sync-oss-issues-hourly": {
         "task": "apps.recommendations.tasks.sync_oss_issues",
@@ -811,7 +831,6 @@ if SENTRY_DSN:
         traces_sample_rate=float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "1.0")),
         send_default_pii=False,
     )
-
 
 # ──────────────────────────────────────────
 # Audit Trail Configuration

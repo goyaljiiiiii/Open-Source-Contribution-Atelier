@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from .models import (
     AutoFixPR,
+    ProjectDependency,
     VulnerabilityItem,
     VulnerabilityReport,
     VulnerabilitySuppression,
@@ -77,4 +78,20 @@ class AutoFixPRSerializer(serializers.ModelSerializer):
             "status",
             "packages_updated",
             "created_at",
+        ]
+
+
+class ProjectDependencySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectDependency
+        fields = [
+            "id",
+            "package_name",
+            "ecosystem",
+            "current_version",
+            "latest_version",
+            "days_vulnerable",
+            "decay_rate",
+            "security_score",
+            "last_checked_at",
         ]
