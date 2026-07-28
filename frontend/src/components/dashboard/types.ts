@@ -1,3 +1,4 @@
+import type { components } from "../../types/api";
 export interface ModuleLesson {
   slug: string;
   title?: string;
@@ -50,15 +51,10 @@ export interface AdminDashboardData {
   pending_prs: PendingPR[];
 }
 
-export interface LeaderboardEntry {
-  username: string;
-  xp: number;
-  prs_merged: number;
-}
+export type LeaderboardEntry = components["schemas"]["Leaderboard"];
 
-export interface LeaderboardResponse {
-  results?: LeaderboardEntry[];
-}
+export type LeaderboardResponse =
+  components["schemas"]["PaginatedLeaderboardList"];
 
 export interface PersonalStats {
   issues_solved: number;
