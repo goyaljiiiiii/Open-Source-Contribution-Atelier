@@ -141,6 +141,12 @@ const MonorepoVisualizerPage = lazy(() =>
   })),
 );
 
+const DockerfileLinterPage = lazy(() =>
+  import("../pages/DockerfileLinterPage").then((module) => ({
+    default: module.DockerfileLinterPage,
+  })),
+);
+
 const CollabSessionPage = lazy(() =>
   import("../pages/CollabSessionPage").then((module) => ({
     default: module.CollabSessionPage,
@@ -564,6 +570,15 @@ export function AppRouter() {
             element={
               <ProtectedRoute>
                 <MonorepoVisualizerPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dockerfile-linter"
+            element={
+              <ProtectedRoute>
+                <DockerfileLinterPage />
               </ProtectedRoute>
             }
           />
