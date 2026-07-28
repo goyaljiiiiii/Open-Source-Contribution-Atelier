@@ -47,6 +47,7 @@ SVG_DANGEROUS_TAGS = {"script", "foreignObject"}
 SVG_URL_ATTRIBUTES = {"href", "{http://www.w3.org/1999/xlink}href"}
 DANGEROUS_URL_RE = re.compile(r"^\s*(?:javascript|data\s*:\s*text/html)", re.I)
 
+_SCAN_CHUNK_SIZE = 65536  # 64KB chunks, bounded memory regardless of file size
 
 def max_size_for(upload_type: str) -> int:
     limits = getattr(
@@ -88,6 +89,34 @@ def _looks_like_svg(header: bytes) -> bool:
     )
 
 
+def _contains_dangerous_marker(stream: BinaryIO) -> bool:
+    """
+    Scan the FULL stream (not just the magic-byte header) for dangerous
+    script markers, in bounded chunks so large text files don't get
+    loaded entirely into memory. Handles markers that could straddle a
+    chunk boundary by overlapping a small tail from the previous chunk.
+    """
+    position = stream.tell()
+    try:
+        stream.seek(0)
+        max_marker_len = max(len(m) for m in DANGEROUS_TEXT_MARKERS)
+        tail = b""
+        while True:
+            chunk = stream.read(_SCAN_CHUNK_SIZE)
+            if not chunk:
+                break
+            window = tail + chunk
+            lowered = window.lower()
+            if any(marker in lowered for marker in DANGEROUS_TEXT_MARKERS):
+                return True
+            # Keep a small tail so a marker split across the chunk
+            # boundary is still caught on the next iteration.
+            tail = window[-(max_marker_len - 1):] if max_marker_len > 1 else b""
+        return False
+    finally:
+        stream.seek(position)
+
+
 def detect_file_type(stream: BinaryIO) -> str:
     position = stream.tell()
     try:
@@ -113,8 +142,9 @@ def detect_file_type(stream: BinaryIO) -> str:
     if _looks_like_svg(header):
         return "svg"
     if _looks_like_text(header):
-        lowered = header.lower()
-        if any(marker in lowered for marker in DANGEROUS_TEXT_MARKERS):
+        # Scan the FULL file, not just the header, for dangerous markers —
+        # a marker placed past byte 8192 was previously invisible to this check.
+        if _contains_dangerous_marker(stream):
             raise ValidationError(
                 "Executable or server-side script content is not allowed."
             )
