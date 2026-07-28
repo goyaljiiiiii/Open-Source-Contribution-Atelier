@@ -202,4 +202,32 @@ describe("ToastContext Edge Cases", () => {
     expect(screen.queryByText("Toast 2")).not.toBeInTheDocument();
     expect(screen.getByText("Toast 3")).toBeInTheDocument();
   });
+
+  it("deduplicates duplicate toasts with identical message and type", async () => {
+    const DuplicateToastComponent = () => {
+      const { addToast } = useToast();
+      return (
+        <button
+          onClick={() => {
+            addToast("Correct!", "success", 5000);
+            addToast("Correct!", "success", 5000);
+            addToast("Correct!", "success", 5000);
+          }}
+        >
+          Trigger Duplicates
+        </button>
+      );
+    };
+
+    render(
+      <ToastProvider>
+        <DuplicateToastComponent />
+      </ToastProvider>,
+    );
+
+    fireEvent.click(screen.getByText("Trigger Duplicates"));
+
+    const elements = screen.getAllByText("Correct!");
+    expect(elements).toHaveLength(1);
+  });
 });
