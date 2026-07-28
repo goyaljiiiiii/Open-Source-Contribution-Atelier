@@ -3,11 +3,11 @@ from datetime import timedelta
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
-from django.db import models, transaction
+from django.db import models
 from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce, TruncDate
 from django.utils import timezone
-from rest_framework import permissions, serializers, status
+from rest_framework import permissions, serializers
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
@@ -19,12 +19,10 @@ from apps.core.cache import multi_level_cache as cache
 from apps.dashboard.models import Issue, PullRequest
 from apps.progress.models import (
     CodeSubmission,
-    ExerciseAttempt,
     LessonProgress,
     QuizAttempt,
     XPEvent,
 )
-from apps.rbac.permissions import HasRole
 
 
 class LeaderboardPagination(PageNumberPagination):
@@ -308,33 +306,6 @@ class ContributorDashboardView(APIView):
             longest_streak = streak_profile.longest_streak
             # ------------------------------
 
-            # Calculate streak based on unique days of activity (attempts or completed lessons) and active/used freezes
-            activity_days = set()
-            attempts = ExerciseAttempt.objects.filter(user=user).values_list(
-                "created_at", flat=True
-            )
-            for dt in attempts:
-                activity_days.add(timezone.localdate(dt))
-            progress_entries = LessonProgress.objects.filter(user=user).values_list(
-                "updated_at", flat=True
-            )
-            for dt in progress_entries:
-                activity_days.add(timezone.localdate(dt))
-
-            # Apply streak freezes to calculate streak days
-            streak_days = 0
-            current_day = today
-            while True:
-                if current_day < join_date:
-                    break
-                if current_day in activity_days:
-                    streak_days += 1
-                elif current_day == today:
-                    pass
-                else:
-                    break
-                current_day -= timedelta(days=1)
-
             # Determine Rank based on user XP vs others
             lesson_xp_sub = (
                 LessonProgress.objects.filter(user=OuterRef("pk"), completed=True)
@@ -521,13 +492,6 @@ class ContributorDashboardView(APIView):
             data[field] = field_data
 
         return Response(data)
-
-
-from django.db import models
-from drf_spectacular.utils import extend_schema
-from rest_framework import status
-
-from apps.rbac.models import UserRole
 
 
 class ModeratorAnalyticsView(APIView):
