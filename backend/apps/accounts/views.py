@@ -478,11 +478,12 @@ class GitHubOAuthCallbackView(APIView):
             )
 
 
+from apps.core.mixins import OrganizationScopedQuerySetMixin
 from .permissions import IsAdminOrModeratorRole
 
 
 @extend_schema(responses=UserListSerializer(many=True))
-class UserListView(generics.ListAPIView):
+class UserListView(OrganizationScopedQuerySetMixin, generics.ListAPIView):
     queryset = User.objects.select_related("user_profile").order_by("id")
     permission_classes = [permissions.IsAuthenticated, IsAdminOrModeratorRole]
     serializer_class = UserListSerializer

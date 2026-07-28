@@ -218,6 +218,34 @@ class TestIsTenantMemberPermission:
 
 
 @pytest.mark.django_db
+class TestUserSearchTenantIsolation:
+    def test_user_search_isolated_by_tenant(self, api_client, org_a, org_b):
+        from django.contrib.auth.models import Group
+        admin_group = Group.objects.create(name="Admin")
+
+        admin_a = User.objects.create_user(username="admin_a", email="admin_a@example.com", password="password")
+        admin_a.groups.add(admin_group)
+        admin_a.user_profile.organization = org_a
+        admin_a.user_profile.save()
+
+        user_in_a = User.objects.create_user(username="john_tenant_a", email="john_a@example.com", password="password")
+        user_in_a.user_profile.organization = org_a
+        user_in_a.user_profile.save()
+
+        user_in_b = User.objects.create_user(username="john_tenant_b", email="john_b@example.com", password="password")
+        user_in_b.user_profile.organization = org_b
+        user_in_b.user_profile.save()
+
+        api_client.force_authenticate(user=admin_a)
+        response = api_client.get("/api/accounts/users/?search=john")
+        assert response.status_code == 200
+        results = response.data.get("results", response.data)
+        usernames = [u["username"] for u in results]
+        assert "john_tenant_a" in usernames
+        assert "john_tenant_b" not in usernames
+
+
+@pytest.mark.django_db
 class TestAuditCommand:
     def test_command_runs_and_reports(self):
         from io import StringIO

@@ -47,7 +47,17 @@ class OrganizationScopedQuerySetMixin:
 
     def get_tenant_id(self):
         """Return the org id for the current request, or ``None``."""
-        return get_current_tenant_id()
+        tenant_id = get_current_tenant_id()
+        if tenant_id is None:
+            user = getattr(self.request, "user", None)
+            if (
+                user
+                and user.is_authenticated
+                and hasattr(user, "user_profile")
+                and user.user_profile
+            ):
+                return user.user_profile.organization_id
+        return tenant_id
 
     # -- queryset scoping -------------------------------------------------
 
@@ -86,6 +96,10 @@ class OrganizationScopedQuerySetMixin:
         if self._model_has_field(model, "user"):
             # Strategy 2: derive tenant from the owning user's profile.
             return qs.filter(user__user_profile__organization_id=org_id)
+
+        if self._model_has_field(model, "user_profile"):
+            # Strategy 3: derive tenant when model is User model (user_profile.organization).
+            return qs.filter(user_profile__organization_id=org_id)
 
         # No tenant discriminator available — fail closed.
         return qs.none()
