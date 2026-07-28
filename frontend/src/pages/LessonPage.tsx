@@ -963,6 +963,12 @@ useEffect(() => {
                       }
                     >
                       <MarkdownRenderer content={markdownContent} />
+                      {lesson?.updatedAt && (
+                        <div className="mt-8 border-t pt-4 text-sm text-muted-foreground">
+                          <strong>Last updated:</strong>{" "}
+                          {new Date(lesson.updatedAt).toLocaleDateString()}
+                       </div>
+                      )}
                     </React.Suspense>
                   </article>
                 </>
