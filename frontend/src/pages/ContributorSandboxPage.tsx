@@ -13,6 +13,7 @@ import {
   Archive,
   Boxes,
   ShieldAlert,
+  Target,
 } from "lucide-react";
 import { SectionCard } from "../components/ui/SectionCard";
 import { CommitMessageCoach } from "../components/ui/CommitMessageCoach";
@@ -184,7 +185,13 @@ export function ContributorSandboxPage() {
               to="/dockerfile-linter"
               className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 bg-teal-400 text-black font-black text-xs rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all"
             >
-              <ShieldAlert className="w-4 h-4" /> Dockerfile Security Linter →
+              <ShieldAlert className="w-4 h-4" /> Dockerfile Linter →
+            </Link>
+            <Link
+              to="/git-bisect-game"
+              className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 bg-rose-400 text-black font-black text-xs rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all"
+            >
+              <Target className="w-4 h-4" /> `git bisect` Game →
             </Link>
           </div>
         </div>

@@ -147,6 +147,12 @@ const DockerfileLinterPage = lazy(() =>
   })),
 );
 
+const GitBisectGamePage = lazy(() =>
+  import("../pages/GitBisectGamePage").then((module) => ({
+    default: module.GitBisectGamePage,
+  })),
+);
+
 const CollabSessionPage = lazy(() =>
   import("../pages/CollabSessionPage").then((module) => ({
     default: module.CollabSessionPage,
@@ -579,6 +585,15 @@ export function AppRouter() {
             element={
               <ProtectedRoute>
                 <DockerfileLinterPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/git-bisect-game"
+            element={
+              <ProtectedRoute>
+                <GitBisectGamePage />
               </ProtectedRoute>
             }
           />
