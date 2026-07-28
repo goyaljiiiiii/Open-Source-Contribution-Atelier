@@ -10,6 +10,7 @@ import {
   RotateCcw,
   CheckCircle,
   FolderTree,
+  Archive,
 } from "lucide-react";
 import { SectionCard } from "../components/ui/SectionCard";
 import { CommitMessageCoach } from "../components/ui/CommitMessageCoach";
@@ -158,12 +159,20 @@ export function ContributorSandboxPage() {
             run local linting, and open a mock PR to unlock your Contributor
             Badge!
           </p>
-          <Link
-            to="/sandbox/submodules"
-            className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-black font-black text-xs rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all"
-          >
-            <FolderTree className="w-4 h-4" /> Git Submodule Simulator →
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              to="/sandbox/submodules"
+              className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-black font-black text-xs rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all"
+            >
+              <FolderTree className="w-4 h-4" /> Git Submodule Simulator →
+            </Link>
+            <Link
+              to="/git-tools/stash"
+              className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 bg-accent text-black font-black text-xs rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all"
+            >
+              <Archive className="w-4 h-4" /> Git Stash Manager →
+            </Link>
+          </div>
         </div>
       </SectionCard>
 

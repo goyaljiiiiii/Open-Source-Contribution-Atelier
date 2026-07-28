@@ -129,6 +129,12 @@ const GitSubmoduleSimulatorPage = lazy(() =>
   })),
 );
 
+const GitStashManagerPage = lazy(() =>
+  import("../pages/GitStashManagerPage").then((module) => ({
+    default: module.GitStashManagerPage,
+  })),
+);
+
 const CollabSessionPage = lazy(() =>
   import("../pages/CollabSessionPage").then((module) => ({
     default: module.CollabSessionPage,
@@ -534,6 +540,15 @@ export function AppRouter() {
             element={
               <ProtectedRoute>
                 <GitSubmoduleSimulatorPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/git-tools/stash"
+            element={
+              <ProtectedRoute>
+                <GitStashManagerPage />
               </ProtectedRoute>
             }
           />
