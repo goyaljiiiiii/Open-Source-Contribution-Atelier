@@ -123,6 +123,12 @@ const ContributorSandboxPage = lazy(() =>
   })),
 );
 
+const GitSubmoduleSimulatorPage = lazy(() =>
+  import("../pages/GitSubmoduleSimulatorPage").then((module) => ({
+    default: module.GitSubmoduleSimulatorPage,
+  })),
+);
+
 const CollabSessionPage = lazy(() =>
   import("../pages/CollabSessionPage").then((module) => ({
     default: module.CollabSessionPage,
@@ -519,6 +525,15 @@ export function AppRouter() {
             element={
               <ProtectedRoute>
                 <ContributorSandboxPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/sandbox/submodules"
+            element={
+              <ProtectedRoute>
+                <GitSubmoduleSimulatorPage />
               </ProtectedRoute>
             }
           />

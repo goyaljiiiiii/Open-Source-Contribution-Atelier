@@ -9,6 +9,7 @@ import {
   ArrowRight,
   RotateCcw,
   CheckCircle,
+  FolderTree,
 } from "lucide-react";
 import { SectionCard } from "../components/ui/SectionCard";
 import { CommitMessageCoach } from "../components/ui/CommitMessageCoach";
@@ -150,12 +151,20 @@ export function ContributorSandboxPage() {
         eyebrow="SSoC 2026 Simulator"
         title="Contributor Sandbox Playground"
       >
-        <p className="max-w-3xl text-sm leading-6 text-muted dark:text-[#c4bbae] font-bold">
-          New to open-source contributions? Simulate the complete flow of
-          contributing to our codebase. Learn our guidelines, fix a mock bug,
-          run local linting, and open a mock PR to unlock your Contributor
-          Badge!
-        </p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <p className="max-w-3xl text-sm leading-6 text-muted dark:text-[#c4bbae] font-bold">
+            New to open-source contributions? Simulate the complete flow of
+            contributing to our codebase. Learn our guidelines, fix a mock bug,
+            run local linting, and open a mock PR to unlock your Contributor
+            Badge!
+          </p>
+          <Link
+            to="/sandbox/submodules"
+            className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-black font-black text-xs rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all"
+          >
+            <FolderTree className="w-4 h-4" /> Git Submodule Simulator →
+          </Link>
+        </div>
       </SectionCard>
 
       {/* Progress Steps Header */}
