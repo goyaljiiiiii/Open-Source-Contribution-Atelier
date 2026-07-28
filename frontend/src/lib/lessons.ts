@@ -70,6 +70,7 @@ export interface Lesson {
   jsExercise?: JSExercise;
   debugExercise?: DebugExercise;
   category?: string;
+  updatedAt?: string;
 }
 
 // Small built-in fallback lessons (used if API unreachable)
@@ -135,6 +136,11 @@ function mapApiLessons(data: unknown[]): Lesson[] {
       order: Number(les.order ?? index),
       category: String(les.category ?? "general"),
       filePath: les.filePath ? String(les.filePath) : undefined,
+      updatedAt: les.updatedAt
+        ? String(les.updatedAt)
+        : les.updated_at
+          ? String(les.updated_at)
+          : undefined,
     } satisfies Lesson;
   });
 }
