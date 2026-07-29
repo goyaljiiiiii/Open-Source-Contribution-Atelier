@@ -92,7 +92,10 @@ class DeadCodeDetector:
         for py_file in self.project_root.glob('backend/**/*.py'):
             with open(py_file, 'r') as f:
                 content = f.read()
-                for serializer_name in serializers.keys():
+                for serializer_name, definition_file in serializers.items():
+                    # Do not count occurrences in the file where it is defined
+                    if str(py_file) == definition_file:
+                        continue
                     if serializer_name in content:
                         references.append(serializer_name)
 
