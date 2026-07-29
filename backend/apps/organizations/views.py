@@ -96,6 +96,25 @@ class OrganizationMembershipViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         before_role = serializer.instance.role
+        after_role = serializer.validated_data.get("role", before_role)
+
+        if (
+            before_role == OrganizationMembership.ROLE_OWNER
+            and after_role != OrganizationMembership.ROLE_OWNER
+        ):
+            remaining_owners = (
+                OrganizationMembership.objects.filter(
+                    organization=serializer.instance.organization,
+                    role=OrganizationMembership.ROLE_OWNER,
+                )
+                .exclude(pk=serializer.instance.pk)
+                .count()
+            )
+            if remaining_owners == 0:
+                raise PermissionDenied(
+                    "Cannot remove the last owner of an organization."
+                )
+
         membership = serializer.save()
         OrganizationAuditLog.objects.create(
             organization_id=membership.organization_id,
