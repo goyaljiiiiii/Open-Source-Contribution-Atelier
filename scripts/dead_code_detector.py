@@ -60,8 +60,11 @@ class DeadCodeDetector:
             with open(url_file, 'r') as f:
                 content = f.read()
                 # Find view references in URLs
-                pattern = r"views\.(\w+)"
-                for match in re.finditer(pattern, content):
+                pattern1 = r"views\.(\w+)"
+                pattern2 = r"(\w+)\.as_view\("
+                for match in re.finditer(pattern1, content):
+                    urls.append(match.group(1))
+                for match in re.finditer(pattern2, content):
                     urls.append(match.group(1))
 
         # Find unused views
