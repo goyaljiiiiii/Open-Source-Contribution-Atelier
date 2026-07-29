@@ -25,7 +25,7 @@ class SlidingWindowThrottle(SimpleRateThrottle):
 
     num_requests: Optional[int] = None
     duration: Optional[int] = None
-    oldest_score: float = 0.0
+    oldest_score: Optional[float] = None
 
     def allow_request(self, request, view):
         """
@@ -80,9 +80,8 @@ class SlidingWindowThrottle(SimpleRateThrottle):
         Returns the recommended number of seconds to wait before the next request.
         """
         duration = self.duration if self.duration is not None else 60
-        if hasattr(self, "oldest_score"):
-            oldest_score = getattr(self, "oldest_score", self.now) or self.now
-            wait_time = duration - (self.now - oldest_score)
+        if self.oldest_score is not None:
+            wait_time = duration - (self.now - self.oldest_score)
             return max(1, int(wait_time))
         return super().wait()
 
