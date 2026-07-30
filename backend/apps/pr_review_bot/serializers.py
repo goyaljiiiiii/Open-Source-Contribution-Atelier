@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import PRReview, CodeIssue, PRReviewComment, ReviewConfig
+
+from .models import CodeIssue, PRReview, PRReviewComment, ReviewConfig
 
 
 class PRReviewSerializer(serializers.ModelSerializer):

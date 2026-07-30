@@ -3,14 +3,16 @@ Code analysis service using AST parsing.
 """
 
 import ast
-import re
 import builtins
-from typing import List, Dict, Any, Tuple
+import logging
+import re
+from typing import Any, Dict, List, Tuple
+
+import pycodestyle
 import radon.complexity as radon_complexity
 from radon.visitors import ComplexityVisitor
-import pycodestyle
+
 from apps.pr_review_bot.models import CodeIssue
-import logging
 
 logger = logging.getLogger(__name__)
 

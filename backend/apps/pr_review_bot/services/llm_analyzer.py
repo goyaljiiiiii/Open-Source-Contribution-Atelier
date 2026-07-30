@@ -3,10 +3,11 @@ LLM-based code analysis.
 """
 
 import json
-import openai
-from typing import Dict, Any, List
-from django.conf import settings
 import logging
+from typing import Any, Dict, List
+
+import openai
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +18,8 @@ class LLMAnalyzer:
     """
 
     def __init__(self):
-        self.api_key = getattr(settings, 'OPENAI_API_KEY', None)
-        self.model = getattr(settings, 'LLM_MODEL', 'gpt-3.5-turbo')
+        self.api_key = getattr(settings, "OPENAI_API_KEY", None)
+        self.model = getattr(settings, "LLM_MODEL", "gpt-3.5-turbo")
 
     def analyze_code(self, code: str, file_path: str) -> Dict[str, Any]:
         """
@@ -30,7 +31,7 @@ class LLMAnalyzer:
 
         try:
             openai.api_key = self.api_key
-            
+
             prompt = f"""
             Analyze this code for:
             1. Code quality issues
@@ -43,3 +44,11 @@ class LLMAnalyzer:
             Code:
             ```python
             {code[:3000]}
+            ```
+            """
+
+            return {"prompt": prompt}
+
+        except Exception as e:
+            logger.error(f"Error during LLM analysis: {e}")
+            return {}

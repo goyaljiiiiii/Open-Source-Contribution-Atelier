@@ -9,10 +9,10 @@ Covers:
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
-from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
+from rest_framework.test import APIClient, APITestCase
 
-from apps.sandbox.models import TriageIssue, TriageAttempt
+from apps.sandbox.models import TriageAttempt, TriageIssue
 from apps.sandbox.views import _score_triage
 
 User = get_user_model()

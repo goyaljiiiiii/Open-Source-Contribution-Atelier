@@ -2,14 +2,16 @@
 Django signals for auto-categorization.
 """
 
+import logging
+
+from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.contrib.contenttypes.models import ContentType
+
+from apps.issue_categorization.models import CategorySuggestion
 from apps.issue_categorization.services.categorization_engine import (
     CategorizationEngine,
 )
-from apps.issue_categorization.models import CategorySuggestion
-import logging
 
 logger = logging.getLogger(__name__)
 

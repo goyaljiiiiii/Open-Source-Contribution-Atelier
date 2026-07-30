@@ -1,10 +1,11 @@
 from rest_framework import serializers
+
 from apps.ml_triage.models import (
-    Issue,
     Comment,
+    Issue,
+    IssuePrediction,
     Reaction,
     TrainingData,
-    IssuePrediction,
 )
 
 

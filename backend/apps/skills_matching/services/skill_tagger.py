@@ -2,11 +2,12 @@
 NLP-based issue skill tagging.
 """
 
-import re
-from typing import List, Dict, Any, Set
-from apps.skill_matching.models import SkillTag, IssueSkillTag
-from apps.ml_triage.models import Issue
 import logging
+import re
+from typing import Any, Dict, List, Set
+
+from apps.ml_triage.models import Issue
+from apps.skill_matching.models import IssueSkillTag, SkillTag
 
 logger = logging.getLogger(__name__)
 

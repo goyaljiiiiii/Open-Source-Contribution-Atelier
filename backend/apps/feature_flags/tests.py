@@ -1,6 +1,6 @@
-from django.test import RequestFactory, TestCase
-from django.contrib.auth.models import AnonymousUser, User
 import waffle
+from django.contrib.auth.models import AnonymousUser, User
+from django.test import RequestFactory, TestCase
 from waffle.models import Flag, Switch
 
 from .context_processors import feature_flags

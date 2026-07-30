@@ -1,6 +1,8 @@
 import datetime
+
 from django.db import transaction
 from django_q.tasks import async_task
+
 from apps.content.models import Lesson
 from apps.progress.models import LessonProgress, XPMultiplierEvent
 

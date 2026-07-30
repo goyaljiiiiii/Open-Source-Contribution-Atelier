@@ -126,11 +126,15 @@ class DatabaseBackup:
 
             if result.returncode != 0:
                 error_msg = result.stderr.decode("utf-8", errors="replace")
-                logger.error(f"pg_dump failed with code {result.returncode}: {error_msg}")
+                logger.error(
+                    f"pg_dump failed with code {result.returncode}: {error_msg}"
+                )
                 self._cleanup_partial_file(filepath)
                 return None
 
-            logger.info(f"✅ Backup created: {filepath} ({filepath.stat().st_size / 1024:.2f} KB)")
+            logger.info(
+                f"✅ Backup created: {filepath} ({filepath.stat().st_size / 1024:.2f} KB)"
+            )
             return filepath
 
         except subprocess.TimeoutExpired:
@@ -171,12 +175,16 @@ class DatabaseBackup:
             import shutil
 
             with open(filepath, "rb") as f_in:
-                with gzip.open(compressed_path, "wb", compresslevel=self.COMPRESS_LEVEL) as f_out:
+                with gzip.open(
+                    compressed_path, "wb", compresslevel=self.COMPRESS_LEVEL
+                ) as f_out:
                     shutil.copyfileobj(f_in, f_out)
 
             # Remove original file after successful compression
             filepath.unlink()
-            logger.info(f"✅ Backup compressed: {compressed_path} ({compressed_path.stat().st_size / 1024:.2f} KB)")
+            logger.info(
+                f"✅ Backup compressed: {compressed_path} ({compressed_path.stat().st_size / 1024:.2f} KB)"
+            )
             return compressed_path
 
         except (OSError, gzip.error) as e:

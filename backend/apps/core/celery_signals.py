@@ -1,5 +1,6 @@
-from celery.signals import before_task_publish, task_prerun, task_postrun
-from apps.core.middleware.request_id import get_request_id, _thread_locals
+from celery.signals import before_task_publish, task_postrun, task_prerun
+
+from apps.core.middleware.request_id import _thread_locals, get_request_id
 
 
 @before_task_publish.connect

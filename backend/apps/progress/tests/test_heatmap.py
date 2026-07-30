@@ -1,18 +1,19 @@
-import datetime
 import csv
+import datetime
+
 import pytest
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
-from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-from apps.content.models import Lesson, Exercise
+from apps.content.models import Exercise, Lesson
 from apps.progress.models import (
     DailyActivity,
+    ExerciseAttempt,
     LessonProgress,
     QuizAttempt,
-    ExerciseAttempt,
 )
 
 

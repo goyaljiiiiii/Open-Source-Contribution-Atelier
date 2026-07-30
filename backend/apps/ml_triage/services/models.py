@@ -2,17 +2,19 @@
 ML Model for issue triage and priority scoring.
 """
 
+import logging
 import pickle
+from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
-from typing import Dict, Any, List, Tuple, Optional
+from django.core.cache import cache
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-from django.core.cache import cache
+
 from apps.ml_triage.models import Issue, TrainingData
 from apps.ml_triage.services.feature_extractor import FeatureExtractor
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -171,6 +173,7 @@ class MLModel:
             return
 
         import os
+
         from django.conf import settings
 
         model_dir = os.path.join(settings.BASE_DIR, "ml_models")
@@ -196,6 +199,7 @@ class MLModel:
         Load trained model from disk.
         """
         import os
+
         from django.conf import settings
 
         model_dir = os.path.join(settings.BASE_DIR, "ml_models")

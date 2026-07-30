@@ -1,7 +1,8 @@
-from django.core.management.base import BaseCommand
-import subprocess
-import os
 import json
+import os
+import subprocess
+
+from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):

@@ -1,3 +1,6 @@
+import logging
+
+logger = logging.getLogger(__name__)
 import contextlib
 import io
 import json
@@ -32,7 +35,8 @@ def safe_serialize(obj, max_depth=2, current_depth=0):
         if len(r) > 100:
             return r[:97] + "..."
         return r
-    except Exception:
+    except Exception as e:
+        logger.warning("Caught exception: %s", e)
         return "<unserializable>"
 
 

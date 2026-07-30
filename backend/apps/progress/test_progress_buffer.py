@@ -1,8 +1,9 @@
 import json
 from unittest.mock import patch
-from django.test import TestCase
+
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
+from django.test import TestCase
 
 from apps.content.models import Lesson
 from apps.progress.models import LessonProgress, XPEvent

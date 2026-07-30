@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from apps.monitoring.models import BackupVerification
+
+from apps.monitoring.models import BackupVerification, TaskRun
 
 
 class BackupVerificationSerializer(serializers.ModelSerializer):
@@ -13,3 +14,21 @@ class BackupVerificationSerializer(serializers.ModelSerializer):
             "status",
             "logs",
         ]
+
+
+class TaskRunSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TaskRun
+        fields = [
+            "id",
+            "task_id",
+            "task_name",
+            "status",
+            "started_at",
+            "finished_at",
+            "duration",
+            "error_message",
+            "args_summary",
+            "retry_count",
+        ]
+

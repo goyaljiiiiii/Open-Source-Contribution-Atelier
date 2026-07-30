@@ -2,16 +2,18 @@
 NLP-based issue quality scoring for CI/CD pipeline.
 """
 
-import re
 import json
-from typing import Dict, Any, List, Tuple
+import logging
+import re
+from typing import Any, Dict, List, Tuple
+
 from textblob import TextBlob
+
 from apps.issue_quality_ci.models import (
     IssueQualityRecord,
-    QualityMetric,
     QualityComment,
+    QualityMetric,
 )
-import logging
 
 logger = logging.getLogger(__name__)
 

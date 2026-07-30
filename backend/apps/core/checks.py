@@ -1,4 +1,4 @@
-from django.core.checks import Error, register, Tags
+from django.core.checks import Error, Tags, register
 from django.db import connections
 
 

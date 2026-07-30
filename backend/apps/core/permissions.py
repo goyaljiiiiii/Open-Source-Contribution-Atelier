@@ -16,7 +16,7 @@ permission inspects the object's tenant discriminator and returns
 ``False`` (→ 403) when it differs from the request's tenant.
 """
 
-from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 
 class IsTenantMember(BasePermission):
@@ -72,12 +72,22 @@ class IsTenantMember(BasePermission):
 
 
 class IsTenantMemberOrReadOnly(IsTenantMember):
-    """Like :class:`IsTenantMember` but allows safe methods to any tenant member."""
+    """
+    Like :class:`IsTenantMember` but allows safe methods (GET/HEAD/OPTIONS)
+    to any authenticated tenant member, regardless of which tenant the
+    object belongs to. Unsafe methods (POST/PUT/PATCH/DELETE) still
+    require the object to belong to the requester's current tenant.
+    """
 
     def has_object_permission(self, request, view, obj):
         if request.method in SAFE_METHODS:
-            return super().has_object_permission(request, view, obj)
-        # Unsafe methods additionally require the object to be in the
-        # current tenant (same check; expressed separately for clarity
-        # and future extension, e.g. role checks).
+            # Relaxed: any authenticated user who is a member of ANY
+            # tenant (not necessarily this object's tenant) may read.
+            # We already know the user is authenticated from
+            # IsTenantMember.has_permission(); no additional check needed
+            # for safe methods under this relaxed policy.
+            return bool(request.user and request.user.is_authenticated)
+
+        # Unsafe methods require same-tenant membership, same as the
+        # strict base class.
         return super().has_object_permission(request, view, obj)

@@ -1,11 +1,12 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from .models import OnboardingJourney, JourneyEvent, OnboardingNudge, OnboardingMetric
+
+from .models import JourneyEvent, OnboardingJourney, OnboardingMetric, OnboardingNudge
 from .serializers import (
-    OnboardingJourneySerializer,
     JourneyEventSerializer,
-    OnboardingNudgeSerializer,
+    OnboardingJourneySerializer,
     OnboardingMetricSerializer,
+    OnboardingNudgeSerializer,
 )
 
 

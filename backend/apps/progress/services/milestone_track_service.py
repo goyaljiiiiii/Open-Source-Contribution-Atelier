@@ -1,3 +1,6 @@
+import logging
+
+logger = logging.getLogger(__name__)
 import datetime
 
 from django.db import transaction
@@ -113,8 +116,8 @@ class MilestoneTrackService:
                                             "icon": milestone.badge.icon_asset_url,
                                         },
                                     )
-                                except Exception:
-                                    pass
+                                except Exception as e:
+                                    logger.warning("Caught exception: %s", e)
 
                             # Award XP boost if configured
                             if milestone.xp_boost > 0:

@@ -1,19 +1,20 @@
 from io import BytesIO
+
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
 from django.utils import timezone
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from apps.progress.models import (
-    LessonProgress,
-    UserBadge,
     Certificate,
     CodeSubmission,
+    LessonProgress,
     StreakProfile,
+    UserBadge,
 )
 
 

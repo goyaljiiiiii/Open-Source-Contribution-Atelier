@@ -229,7 +229,8 @@ class TestChallengeViewSetPermissionsAndQueryset(APITestCase):
     # Task 4: Explicit permission_classes verification
     # -------------------------------------------------------------------
     def test_challenge_viewset_permission_classes(self):
-        from apps.challenges.views import ChallengeViewSet
         from rest_framework.permissions import AllowAny
+
+        from apps.challenges.views import ChallengeViewSet
 
         assert AllowAny in ChallengeViewSet.permission_classes

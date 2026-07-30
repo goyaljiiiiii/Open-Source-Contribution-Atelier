@@ -68,12 +68,11 @@ export function CertificateModal({
         <button
           onClick={onClose}
           className="absolute top-4 right-4 bg-white border-2 border-black p-2 rounded-full hover:bg-surface-low transition-colors print:hidden"
-          aria-label="Close certificate"
+          aria-label="Close modal"
         >
           <X size={16} />
         </button>
 
-        {/* Bound layout wrapper targeting DOM elements for capture structure conversion */}
         <div
           ref={certificateRef}
           className="space-y-6 w-full border-4 border-dashed border-black/35 rounded-2xl p-6 sm:p-10 relative bg-[#FFF9F0]"
@@ -124,7 +123,7 @@ export function CertificateModal({
               <span className="font-mono text-xs font-black block">
                 {certificateData?.certificate?.issued_at
                   ? new Date(
-                      certificateData.certificate.issued_at,
+                      certificateData.certificate.issued_at
                     ).toLocaleDateString()
                   : new Date().toLocaleDateString()}
               </span>

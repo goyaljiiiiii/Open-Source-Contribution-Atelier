@@ -5,14 +5,14 @@ User = get_user_model()
 Models for advanced search with relevance scoring and semantic understanding.
 """
 
-from django.db import models
-from django.conf import settings
+import json
+import uuid
 
+from django.conf import settings
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
+from django.db import models
 from django.utils import timezone
-import uuid
-import json
 
 
 class SearchEmbedding(models.Model):

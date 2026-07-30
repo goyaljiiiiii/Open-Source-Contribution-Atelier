@@ -2,15 +2,16 @@
 Generate dependency graphs for Django apps.
 """
 
+import ast
+import importlib
+import json
 import os
 import re
-import ast
-import json
 from pathlib import Path
-from typing import Dict, List, Set, Any, Optional
+from typing import Any, Dict, List, Optional, Set
+
 from django.apps import apps
 from django.conf import settings
-import importlib
 
 
 class DependencyGraphGenerator:

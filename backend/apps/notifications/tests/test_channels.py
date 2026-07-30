@@ -1,22 +1,23 @@
-import hmac
 import hashlib
+import hmac
 import json
 import time
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.urls import reverse
 from rest_framework.test import APIClient
 
 from apps.notifications.channels.base import (
-    get_registered_channels,
     get_channel_instance,
+    get_registered_channels,
 )
 from apps.notifications.models import (
     Notification,
-    NotificationDelivery,
     NotificationDeadLetter,
+    NotificationDelivery,
     NotificationPreference,
 )
 from apps.notifications.rate_limiter import ChannelRateLimiter

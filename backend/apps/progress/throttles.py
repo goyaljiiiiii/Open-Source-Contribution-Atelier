@@ -1,4 +1,5 @@
 from rest_framework.exceptions import Throttled
+
 from apps.core.throttling import SlidingWindowUserThrottle
 
 

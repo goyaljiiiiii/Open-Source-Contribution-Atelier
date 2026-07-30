@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import IssueQualityRecord, QualityMetric, QualityComment, QualityTrend
+
+from .models import IssueQualityRecord, QualityComment, QualityMetric, QualityTrend
 
 
 class IssueQualityRecordSerializer(serializers.ModelSerializer):

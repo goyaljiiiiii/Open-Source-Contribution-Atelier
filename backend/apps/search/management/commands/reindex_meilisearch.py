@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
-from apps.search.models import SearchDocument
+
 from apps.search.meili_client import setup_meilisearch_index
+from apps.search.models import SearchDocument
 
 
 class Command(BaseCommand):

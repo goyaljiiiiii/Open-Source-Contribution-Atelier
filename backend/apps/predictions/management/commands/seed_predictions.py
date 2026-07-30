@@ -1,7 +1,8 @@
 import numpy as np
 from django.core.management.base import BaseCommand
-from apps.predictions.models import PullRequestMetric, ReviewerAvailability
+
 from apps.predictions.ml_engine import predictor
+from apps.predictions.models import PullRequestMetric, ReviewerAvailability
 
 
 class Command(BaseCommand):
@@ -12,7 +13,11 @@ class Command(BaseCommand):
 
         reviewer, _ = ReviewerAvailability.objects.get_or_create(
             reviewer_username="lead_maintainer",
-            defaults={"current_workload": 2, "activity_score": 0.85, "avg_response_time_hours": 24.0}
+            defaults={
+                "current_workload": 2,
+                "activity_score": 0.85,
+                "avg_response_time_hours": 24.0,
+            },
         )
 
         historical_data = [
@@ -20,13 +25,29 @@ class Command(BaseCommand):
             (1002, "Implement Dark Mode UI", 450, 120, 8, "MERGED", 32.0),
             (1003, "Refactor core API endpoints", 1200, 350, 22, "MERGED", 68.5),
             (1004, "Update documentation links", 15, 5, 1, "MERGED", 6.0),
-            (1005, "Add WebSockets live notification layer", 850, 200, 14, "MERGED", 52.0),
+            (
+                1005,
+                "Add WebSockets live notification layer",
+                850,
+                200,
+                14,
+                "MERGED",
+                52.0,
+            ),
         ]
 
         X_train = []
         y_train = []
 
-        for pr_num, title, add, dele, files, status_val, actual_delay in historical_data:
+        for (
+            pr_num,
+            title,
+            add,
+            dele,
+            files,
+            status_val,
+            actual_delay,
+        ) in historical_data:
             pr_obj, _ = PullRequestMetric.objects.get_or_create(
                 repo_name="default",
                 pr_number=pr_num,
@@ -39,17 +60,30 @@ class Command(BaseCommand):
                     "changed_files": files,
                     "status": status_val,
                     "actual_review_delay_hours": actual_delay,
-                }
+                },
             )
-            X_train.append([add + dele, files, reviewer.current_workload, reviewer.activity_score, reviewer.avg_response_time_hours])
+            X_train.append(
+                [
+                    add + dele,
+                    files,
+                    reviewer.current_workload,
+                    reviewer.activity_score,
+                    reviewer.avg_response_time_hours,
+                ]
+            )
             y_train.append(actual_delay)
 
         if X_train:
             predictor.fit_model(np.array(X_train), np.array(y_train))
-            self.stdout.write(self.style.SUCCESS(f"Fitted XGBoost model on {len(X_train)} historical samples."))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Fitted XGBoost model on {len(X_train)} historical samples."
+                )
+            )
 
         try:
             from django_q.models import Schedule
+
             Schedule.objects.get_or_create(
                 name="monitor-pr-review-delays-hourly",
                 defaults={
@@ -66,8 +100,16 @@ class Command(BaseCommand):
                     "repeats": -1,
                 },
             )
-            self.stdout.write(self.style.SUCCESS("Registered hourly prediction monitoring schedules in Django-Q."))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    "Registered hourly prediction monitoring schedules in Django-Q."
+                )
+            )
         except Exception as e:
-            self.stdout.write(self.style.WARNING(f"Django-Q schedules registration skipped: {e}"))
+            self.stdout.write(
+                self.style.WARNING(f"Django-Q schedules registration skipped: {e}")
+            )
 
-        self.stdout.write(self.style.SUCCESS("Predictions seeding completed successfully."))
+        self.stdout.write(
+            self.style.SUCCESS("Predictions seeding completed successfully.")
+        )

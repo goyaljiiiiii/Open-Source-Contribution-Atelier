@@ -1,9 +1,11 @@
-import os
-import json
 import importlib
+import json
 import logging
+import os
 import sys
+
 from django.conf import settings
+
 from .manifest import validate_manifest
 from .models import Plugin
 

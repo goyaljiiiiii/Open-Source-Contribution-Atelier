@@ -16,11 +16,13 @@ import {
   CheckCircle2,
   Lock,
   Bookmark,
+  AlertTriangle,
   History,
   ArrowLeft,
   ArrowRight,
   WifiOff,
   HardDrive,
+  Flag,
 } from "lucide-react";
 
 import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
@@ -148,6 +150,17 @@ export function LessonPage() {
   >([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+  return localStorage.getItem("lesson-sidebar-collapsed") === "true";
+});
+
+useEffect(() => {
+  localStorage.setItem(
+    "lesson-sidebar-collapsed",
+    String(isSidebarCollapsed),
+  );
+}, [isSidebarCollapsed]);
+
   const curriculumLessonRefs = useMemo(
     () =>
       modules.flatMap((mod) =>
@@ -248,7 +261,7 @@ export function LessonPage() {
   // Reading progress scroll ref
   const mainContentRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
-
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const helpRequestMutation = useMutation({
     mutationFn: (message: string) => {
       if (!lesson) {
@@ -372,7 +385,8 @@ export function LessonPage() {
       .catch((err) => {
         console.error("[LessonPage] Unexpected error loading lesson:", err);
         setError(
-          "Failed to load lesson. Please check your connection and try again.",
+          err?.message ||
+            "Failed to load lesson. Please check your connection and try again.",
         );
       })
       .finally(() => {
@@ -486,28 +500,33 @@ export function LessonPage() {
     }
   }, [timeLeft, quizFeedback, handleTimeout]);
 
-  // 3. Scroll tracking for reading progress
+  // 3. Scroll tracking for reading progress + back to top
   useEffect(() => {
+    const element = mainContentRef.current;
+
+    if (!element) return;
+
     const handleScroll = () => {
-      if (!mainContentRef.current) return;
-      const element = mainContentRef.current;
       const totalHeight = element.scrollHeight - element.clientHeight;
+
       if (totalHeight <= 0) {
         setScrollProgress(100);
-        return;
-      }
-      const scrollPercent = (element.scrollTop / totalHeight) * 100;
-      setScrollProgress(Math.min(100, Math.max(0, Math.round(scrollPercent))));
+      } else {
+          const scrollPercent =
+            (element.scrollTop / totalHeight) * 100;
+
+          setScrollProgress(
+          Math.min(100, Math.max(0, Math.round(scrollPercent))),
+          );
+      }   
+
+      setShowBackToTop(element.scrollTop > 300);
     };
 
-    const container = mainContentRef.current;
-    if (container) {
-      container.addEventListener("scroll", handleScroll);
-    }
+    element.addEventListener("scroll", handleScroll);
+
     return () => {
-      if (container) {
-        container.removeEventListener("scroll", handleScroll);
-      }
+      element.removeEventListener("scroll", handleScroll);
     };
   }, [markdownContent]);
 
@@ -648,37 +667,40 @@ export function LessonPage() {
   if (error) {
     return (
       <div
-        className="pt-20 h-screen w-full flex items-center justify-center px-4"
+        className="pt-20 h-screen w-full flex items-center justify-center p-6"
         role="alert"
         aria-live="assertive"
       >
-        <div className="w-full max-w-2xl">
-          <div className="rounded-2xl border-4 border-red-600 bg-red-50 p-8 shadow-card dark:bg-red-950 dark:border-red-700">
-            <h2 className="text-2xl font-black mb-4 text-red-900 dark:text-red-200">
-              ⚠️ Error Loading Lesson
+        <div className="w-full max-w-md rounded-2xl border-4 border-black bg-white dark:bg-[#1f1c18] dark:border-[#2e2924] p-8 shadow-[6px_6px_0px_#000] flex flex-col items-center gap-6 text-center">
+          <div className="flex items-center justify-center w-16 h-16 rounded-full bg-red-100 border-4 border-red-600">
+            <AlertTriangle size={32} className="text-red-600" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black text-text dark:text-[#f0ebe2] mb-2">
+              Failed to Load Lesson
             </h2>
-            <p className="text-red-800 dark:text-red-300 mb-6 font-semibold">
+            <p className="text-sm font-bold text-muted dark:text-[#c4bbae] break-words">
               {error}
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button
-                onClick={() => {
-                  setError(null);
-                  setIsLoading(true);
-                  // Re-trigger the fetch by resetting the effect
-                  window.location.reload();
-                }}
-                className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-black rounded-lg border-2 border-red-800 transition-colors"
-              >
-                🔄 Retry
-              </button>
-              <Link
-                to="/dashboard"
-                className="flex-1 px-6 py-3 bg-black dark:bg-[#2e2924] hover:bg-gray-800 text-white font-black rounded-lg border-2 border-black dark:border-[#2e2924] transition-colors text-center"
-              >
-                ← Go Back to Dashboard
-              </Link>
-            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 w-full">
+            <button
+              onClick={() => {
+                setError(null);
+                setIsLoading(true);
+                // Re-trigger by bumping slug-based effect via navigate
+                navigate(0);
+              }}
+              className="flex-1 px-5 py-3 bg-primary text-black font-black text-sm rounded-xl border-4 border-black shadow-[3px_3px_0px_#000] hover:-translate-y-0.5 active:translate-y-0.5 transition-all"
+            >
+              Retry
+            </button>
+            <Link
+              to="/dashboard"
+              className="flex-1 px-5 py-3 bg-surface-low text-text dark:text-[#f0ebe2] font-black text-sm rounded-xl border-4 border-black shadow-[3px_3px_0px_#000] hover:-translate-y-0.5 active:translate-y-0.5 transition-all text-center"
+            >
+              Go Back
+            </Link>
           </div>
         </div>
       </div>
@@ -737,6 +759,8 @@ export function LessonPage() {
         <ResponsiveSidebar
           isOpen={isSidebarOpen}
           onClose={closeSidebar}
+          isSidebarCollapsed={isSidebarCollapsed}
+          setIsSidebarCollapsed={setIsSidebarCollapsed}
           title={
             <>
               <BookOpen size={18} className="text-primary" />
@@ -745,9 +769,11 @@ export function LessonPage() {
           }
         >
           <div className="space-y-6">
+          {!isSidebarCollapsed && (
             <div className="pt-2">
               <RecentlyViewedLessonsWidget />
             </div>
+          )}
 
             {modules.map((mod, modIdx) => (
               <div key={mod.id} className="space-y-2">
@@ -759,7 +785,9 @@ export function LessonPage() {
                                : "text-muted dark:text-[#c4bbae] border-transparent"
                            }`}
                 >
-                  Module {modIdx + 1}: {mod.title}
+                {isSidebarCollapsed
+                    ? `M${modIdx + 1}`
+                    : `Module {modIdx + 1}: {mod.title}`}
                 </h3>
                 <div className="space-y-1">
                   {mod.lessons.map(
@@ -790,7 +818,10 @@ export function LessonPage() {
                             ) : (
                               <div className="w-3.5 h-3.5 rounded-full border-2 border-black/35 flex-shrink-0" />
                             )}
-                            <span className="truncate">{les.title}</span>
+                            {!isSidebarCollapsed && (
+                              <span className="truncate">{les.title}</span>
+                            )}
+
                           </div>
                           {les.difficulty === "advanced" && (
                             <span className="text-[8px] bg-red-100 text-red-700 px-1 py-0.5 rounded border border-red-700">
@@ -943,17 +974,41 @@ export function LessonPage() {
                       }
                     >
                       <MarkdownRenderer content={markdownContent} />
+                      {lesson?.updatedAt && (
+                        <div className="mt-8 border-t pt-4 text-sm text-muted-foreground">
+                          <strong>Last updated:</strong>{" "}
+                          {new Date(lesson.updatedAt).toLocaleDateString()}
+                       </div>
+                      )}
                     </React.Suspense>
                   </article>
                 </>
               )}
-              <div className="mt-4 flex justify-end">
-                <button
-                  onClick={() => alert("Thanks for reporting the typo")}
-                  className="px-4 py-2 bg-red-500 text-white rounded-lg font-bold border-2 border-black hover:opacity-90 transition"
-                >
-                  Report Typo 🐛
-                </button>
+              <div className="mt-6 flex justify-end">
+                {(() => {
+                  const currentUrl = window.location.href;
+                  const lessonTitle = lesson?.title || "Lesson";
+                  const issueTitle = encodeURIComponent(`[Lesson Issue]: ${lessonTitle}`);
+                  const issueBody = encodeURIComponent(
+                    `**Lesson Title:** ${lessonTitle}\n` +
+                      `**Lesson URL:** ${currentUrl}\n\n` +
+                      `### What's wrong?\n` +
+                      `Please describe the typo, broken link, or incorrect information in this lesson.`
+                  );
+                  const githubIssueUrl = `https://github.com/Babin123456/Open-Source-Contribution-Atelier/issues/new?title=${issueTitle}&body=${issueBody}&labels=bug,documentation`;
+
+                  return (
+                    <a
+                      href={githubIssueUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 font-bold border-2 border-red-300 rounded-xl hover:bg-red-100 hover:border-red-500 transition-all text-xs shadow-sm dark:bg-red-950/20 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-900/30"
+                    >
+                      <Flag className="w-4 h-4 text-red-600 dark:text-red-400" />
+                      Report a problem
+                    </a>
+                  );
+                })()}
               </div>
 
               <div className="pt-8 space-y-6">
@@ -1623,7 +1678,63 @@ export function LessonPage() {
           />
         )}
       </div>
+      {showBackToTop && (
+        <div className="fixed bottom-24 right-8 lg:right-12 xl:right-16 z-[9999] group">
+        {/* Tooltip */}
+          <div
+            className="
+              absolute
+              bottom-16
+              right-0
+              opacity-0
+              scale-95
+              pointer-events-none
+              transition-all
+              duration-200
+              group-hover:opacity-100
+              group-hover:scale-100
+            "
+          >
+          <div className="relative bg-black text-white text-xs font-black px-3 py-2 rounded-lg border-2 border-white shadow-lg whitespace-nowrap">
+            Back to top
+          {/* Tooltip arrow */}
+          <div className="absolute top-full right-4 w-3 h-3 bg-black border-r-2 border-b-2 border-white rotate-45 -mt-[6px]" />
+        </div>
+      </div>
 
+      {/* Button */}
+      <button
+        onClick={() =>
+          mainContentRef.current?.scrollTo({
+            top: 0,
+            behavior: "smooth",
+          })
+        }
+        className="
+          h-12
+          w-12
+          flex
+          items-center
+          justify-center
+          rounded-full
+          border-4
+          border-black
+          bg-primary
+          text-black
+          text-2xl
+          font-black
+          shadow-[4px_4px_0px_#000]
+          transition-all
+          hover:-translate-y-1
+          hover:scale-105
+        "
+        aria-label="Back to top"
+      >
+          ↑
+        </button>
+      </div>
+    )}
+    
       <AITutorFloatingPanel
         lessonSlug={lesson.slug}
         lessonTitle={lesson.title}

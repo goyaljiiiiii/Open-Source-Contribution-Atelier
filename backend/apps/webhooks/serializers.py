@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import WebhookDelivery, WebhookEndpoint, WebhookDeliveryLog
+from .models import WebhookDelivery, WebhookDeliveryLog, WebhookEndpoint
 
 
 class WebhookEndpointSerializer(serializers.ModelSerializer):

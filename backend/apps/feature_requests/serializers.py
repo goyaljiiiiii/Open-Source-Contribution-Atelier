@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import FeatureRequest, Vote, Comment, StatusHistory, RoadmapMilestone
+
+from .models import Comment, FeatureRequest, RoadmapMilestone, StatusHistory, Vote
 
 
 class FeatureRequestSerializer(serializers.ModelSerializer):

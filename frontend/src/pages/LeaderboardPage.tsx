@@ -3,6 +3,7 @@ import { SectionCard } from "../components/ui/SectionCard";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { fetchApi } from "../lib/api";
+import { DataStateWrapper } from "../components/ui/DataStateWrapper";
 import {
   Trophy,
   TrendingUp,
@@ -49,6 +50,9 @@ export function LeaderboardPage() {
     hasNextPage,
     isFetchingNextPage,
     isLoading: loadingLeaderboard,
+    isError,
+    error,
+    refetch,
   } = useInfiniteQuery({
     queryKey: ["leaderboard", timePeriod, debouncedSearch],
     queryFn: async ({ pageParam = 1 }) => {
@@ -403,14 +407,12 @@ export function LeaderboardPage() {
           )}
         </div>
 
-        {loadingLeaderboard && leaderboard.length === 0 ? (
-          <div className="py-24 flex flex-col items-center justify-center gap-4">
-            <div className="w-10 h-10 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
-            <p className="text-sm font-bold text-muted dark:text-[#8a8377]">
-              Calibrating rankings...
-            </p>
-          </div>
-        ) : (
+        <DataStateWrapper
+          loading={loadingLeaderboard && leaderboard.length === 0}
+          error={isError ? (error as any)?.message || "Failed to load global leaderboard data." : null}
+          onRetry={() => refetch()}
+          loadingMessage="Calibrating rankings..."
+        >
           <ResponsiveTable
             data={restOfLeaderboard}
             keyExtractor={(item) => item.username}
@@ -493,7 +495,7 @@ export function LeaderboardPage() {
               },
             ]}
           />
-        )}
+        </DataStateWrapper>
       </motion.div>
 
       {/* Floating Personal Rank Bar */}

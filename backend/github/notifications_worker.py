@@ -1,7 +1,8 @@
-from github.service import github_service
-from github.auth import refresh_github_token
-import time
 import logging
+import time
+
+from github.auth import refresh_github_token
+from github.service import github_service
 
 logger = logging.getLogger(__name__)
 

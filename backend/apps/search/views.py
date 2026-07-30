@@ -99,10 +99,14 @@ class UnifiedSearchView(generics.ListAPIView):
             return Response({"count": 0, "next": None, "previous": None, "results": []})
 
         content_type_filter = (
-            request.query_params.get("type")
-            or request.query_params.get("content_type_filter")
-            or ""
-        ).strip().lower()
+            (
+                request.query_params.get("type")
+                or request.query_params.get("content_type_filter")
+                or ""
+            )
+            .strip()
+            .lower()
+        )
 
         if content_type_filter:
             # Server-side validation rejecting special characters, single quotes, semicolons, and operators
@@ -160,7 +164,9 @@ class UnifiedSearchView(generics.ListAPIView):
                     "limit": 200,
                 }
                 if content_type_filter:
-                    escaped_filter = content_type_filter.replace("\\", "\\\\").replace("'", "\\'")
+                    escaped_filter = content_type_filter.replace("\\", "\\\\").replace(
+                        "'", "\\'"
+                    )
                     search_options["filter"] = [
                         f"content_type_name = '{escaped_filter}'"
                     ]

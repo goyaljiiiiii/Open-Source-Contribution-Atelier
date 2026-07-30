@@ -9,8 +9,8 @@ a formatted report. Exits with code 1 if any replica exceeds the threshold
 or is unreachable.
 """
 
-from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
+from django.core.management.base import BaseCommand, CommandError
 
 
 class Command(BaseCommand):

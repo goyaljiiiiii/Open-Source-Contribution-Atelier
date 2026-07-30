@@ -1,12 +1,17 @@
-from rest_framework import viewsets, permissions, status
+import threading
+from datetime import timedelta
+
+from django.core.management import call_command
+from django.db import models
+from django.utils import timezone
+from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.core.management import call_command
-from apps.monitoring.models import BackupVerification
-from apps.monitoring.serializers import BackupVerificationSerializer
-from datetime import timedelta
-from django.utils import timezone
-import threading
+from rest_framework.views import APIView
+
+from apps.monitoring.celery_monitor import get_celery_stats, get_task_type_stats
+from apps.monitoring.models import BackupVerification, TaskRun
+from apps.monitoring.serializers import BackupVerificationSerializer, TaskRunSerializer
 
 
 class BackupVerificationViewSet(viewsets.ReadOnlyModelViewSet):
@@ -40,3 +45,54 @@ class BackupVerificationViewSet(viewsets.ReadOnlyModelViewSet):
             {"detail": "Backup verification started in background."},
             status=status.HTTP_202_ACCEPTED,
         )
+
+
+class CeleryStatsView(APIView):
+    """
+    API endpoint that exposes Celery metrics: queue depth, worker count, active & reserved tasks.
+    Protected behind staff/admin permission check.
+    """
+
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request):
+        data = get_celery_stats()
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class TaskTypeStatsView(APIView):
+    """
+    API endpoint that exposes per-task-type statistics, top 5 failing tasks, and 24h sparkline data.
+    Protected behind staff/admin permission check.
+    """
+
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request):
+        data = get_task_type_stats()
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class TaskRunViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    API endpoint to list and search recent Celery TaskRuns.
+    Protected behind staff/admin permission check.
+    """
+
+    permission_classes = [permissions.IsAdminUser]
+    serializer_class = TaskRunSerializer
+
+    def get_queryset(self):
+        qs = TaskRun.objects.all()
+        search = self.request.query_params.get("search")
+        if search:
+            qs = qs.filter(
+                models.Q(task_name__icontains=search)
+                | models.Q(task_id__icontains=search)
+                | models.Q(error_message__icontains=search)
+            )
+        status_param = self.request.query_params.get("status")
+        if status_param and status_param.upper() != "ALL":
+            qs = qs.filter(status=status_param.upper())
+        return qs
+

@@ -36,6 +36,7 @@ Examples:
 
 ## Opening Issues & PRs
 - Use the appropriate **issue template** (Bug, Feature, Documentation, Question) – the chooser is configured in `.github/ISSUE_TEMPLATE/config.yml`.
+- **5 Issue Cap**: Contributors can have a maximum of **5 open assigned issues** at a time. Automation will enforce this limit and notify contributors upon reaching 5 issues.
 - Reference the related issue in your PR description using `#<issue‑number>`.
 - Ensure your PR passes **CI** and **Dependabot** checks before merging.
 

@@ -38,6 +38,7 @@ class _RegexWatchdog:
 
     def __enter__(self):
         if self._supported:
+
             def _handler(signum, frame):
                 raise RegexTimeoutError("Regex evaluation exceeded time limit")
 

@@ -3,8 +3,9 @@ from django.db.models import Count, Max, Q
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import generics, pagination, permissions, status
 from rest_framework.response import Response
-from apps.core.throttling import SlidingWindowScopedThrottle
 from rest_framework.views import APIView
+
+from apps.core.throttling import SlidingWindowScopedThrottle
 
 from .models import DirectMessage, Message, UserPublicKey
 from .serializers import (

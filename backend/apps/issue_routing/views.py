@@ -1,10 +1,11 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from .models import ExpertiseDomain, MaintainerExpertise, IssueRouting, RoutingMetric
+
+from .models import ExpertiseDomain, IssueRouting, MaintainerExpertise, RoutingMetric
 from .serializers import (
     ExpertiseDomainSerializer,
-    MaintainerExpertiseSerializer,
     IssueRoutingSerializer,
+    MaintainerExpertiseSerializer,
     RoutingMetricSerializer,
 )
 

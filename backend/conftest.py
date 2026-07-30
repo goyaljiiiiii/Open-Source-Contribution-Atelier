@@ -1,6 +1,6 @@
 import pytest
-from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
+from rest_framework.test import APIClient
 
 User = get_user_model()
 
@@ -69,6 +69,9 @@ def _configure_celery_test_settings(settings):
     settings.CELERY_ALWAYS_EAGER = True
     from apps.core.tasks import invalidate_tag_task
 
+    original_delay = invalidate_tag_task.delay
     invalidate_tag_task.delay = lambda *args, **kwargs: invalidate_tag_task(
         *args, **kwargs
     )
+    yield
+    invalidate_tag_task.delay = original_delay

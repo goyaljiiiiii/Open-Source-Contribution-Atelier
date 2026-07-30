@@ -20,9 +20,9 @@ def _caesar_shift(text: str, shift: int) -> str:
     result = []
     for char in text:
         if char.isupper():
-            result.append(chr((ord(char) - ord('A') + shift) % 26 + ord('A')))
+            result.append(chr((ord(char) - ord("A") + shift) % 26 + ord("A")))
         elif char.islower():
-            result.append(chr((ord(char) - ord('a') + shift) % 26 + ord('a')))
+            result.append(chr((ord(char) - ord("a") + shift) % 26 + ord("a")))
         else:
             result.append(char)
     return "".join(result)
@@ -39,7 +39,7 @@ def _vigenere_encode(text: str, key: str) -> str:
 
     for char in text:
         if char.isalpha():
-            shift = ord(key[key_index % len(key)]) - ord('A')
+            shift = ord(key[key_index % len(key)]) - ord("A")
             result.append(_caesar_shift(char, shift))
             key_index += 1
         else:
@@ -59,7 +59,7 @@ def _vigenere_decode(text: str, key: str) -> str:
 
     for char in text:
         if char.isalpha():
-            shift = -(ord(key[key_index % len(key)]) - ord('A'))
+            shift = -(ord(key[key_index % len(key)]) - ord("A"))
             result.append(_caesar_shift(char, shift))
             key_index += 1
         else:
@@ -162,9 +162,13 @@ class CryptographyChallengePlugin(LessonPlugin):
 
         try:
             if challenge_type == "caesar":
-                return cls._evaluate_caesar(input_text, key, data.get("mode"), user_answer)
+                return cls._evaluate_caesar(
+                    input_text, key, data.get("mode"), user_answer
+                )
             elif challenge_type == "vigenere":
-                return cls._evaluate_vigenere(input_text, key, data.get("mode"), user_answer)
+                return cls._evaluate_vigenere(
+                    input_text, key, data.get("mode"), user_answer
+                )
             elif challenge_type == "xor":
                 return cls._evaluate_xor(input_text, key, data.get("mode"), user_answer)
             elif challenge_type == "hash_verify":
@@ -175,7 +179,9 @@ class CryptographyChallengePlugin(LessonPlugin):
         return 0.0
 
     @classmethod
-    def _evaluate_caesar(cls, input_text: str, key: str, mode: Optional[str], user_answer: str) -> float:
+    def _evaluate_caesar(
+        cls, input_text: str, key: str, mode: Optional[str], user_answer: str
+    ) -> float:
         try:
             shift = int(key)
         except ValueError:
@@ -199,14 +205,18 @@ class CryptographyChallengePlugin(LessonPlugin):
         # shift boundary confusion is a well-known beginner error here)
         for delta in (1, -1):
             near_shift = shift + delta if mode == "encode" else shift - delta
-            near_expected = _caesar_shift(input_text, near_shift if mode == "encode" else -near_shift)
+            near_expected = _caesar_shift(
+                input_text, near_shift if mode == "encode" else -near_shift
+            )
             if user_answer == near_expected:
                 return 50.0
 
         return 0.0
 
     @classmethod
-    def _evaluate_vigenere(cls, input_text: str, key: str, mode: Optional[str], user_answer: str) -> float:
+    def _evaluate_vigenere(
+        cls, input_text: str, key: str, mode: Optional[str], user_answer: str
+    ) -> float:
         if mode == "encode":
             expected = _vigenere_encode(input_text, key)
         elif mode == "decode":
@@ -221,7 +231,9 @@ class CryptographyChallengePlugin(LessonPlugin):
         return 0.0
 
     @classmethod
-    def _evaluate_xor(cls, input_text: str, key: str, mode: Optional[str], user_answer: str) -> float:
+    def _evaluate_xor(
+        cls, input_text: str, key: str, mode: Optional[str], user_answer: str
+    ) -> float:
         try:
             key_bytes = bytes.fromhex(key)
         except ValueError:
@@ -238,7 +250,9 @@ class CryptographyChallengePlugin(LessonPlugin):
         elif mode == "decode":
             try:
                 input_bytes = bytes.fromhex(input_text)
-                expected_plain = _xor_cipher(input_bytes, key_bytes).decode("utf-8", errors="replace")
+                expected_plain = _xor_cipher(input_bytes, key_bytes).decode(
+                    "utf-8", errors="replace"
+                )
             except (ValueError, UnicodeDecodeError):
                 return 0.0
             if user_answer == expected_plain:
@@ -249,7 +263,9 @@ class CryptographyChallengePlugin(LessonPlugin):
         return 0.0
 
     @classmethod
-    def _evaluate_hash_verify(cls, input_text: str, algorithm: str, user_answer: str) -> float:
+    def _evaluate_hash_verify(
+        cls, input_text: str, algorithm: str, user_answer: str
+    ) -> float:
         try:
             matches = _hash_matches(input_text, user_answer, algorithm)
         except ValueError:

@@ -1,6 +1,9 @@
+import logging
+
+logger = logging.getLogger(__name__)
+from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
@@ -266,7 +269,8 @@ class TenantManager(models.Manager.from_queryset(TenantQuerySet)):
             from apps.core.tenant import get_current_tenant_id
 
             org_id = get_current_tenant_id()
-        except Exception:
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)
             org_id = None
         if org_id is not None:
             return qs.filter(organization_id=org_id)
@@ -315,3 +319,31 @@ class TenantAwareModel(models.Model):
 
     class Meta:
         abstract = True
+
+
+class PerformanceSample(models.Model):
+    """
+    Records per-request performance metrics for endpoint telemetry.
+    """
+
+    view_name = models.CharField(max_length=255, db_index=True)
+    method = models.CharField(max_length=10)
+    duration_ms = models.FloatField()
+    db_query_count = models.IntegerField()
+    db_duration_ms = models.FloatField()
+    cache_hits = models.IntegerField(default=0)
+    cache_misses = models.IntegerField(default=0)
+    serialization_ms = models.FloatField(default=0)
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
+    user_id = models.IntegerField(
+        null=True, blank=True, help_text="Anonymized after 24h"
+    )
+
+    class Meta:
+        ordering = ["-timestamp"]
+        indexes = [
+            models.Index(fields=["view_name", "timestamp"]),
+        ]
+
+    def __str__(self):
+        return f"{self.method} {self.view_name} - {self.duration_ms}ms"

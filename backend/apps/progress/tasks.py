@@ -192,12 +192,14 @@ def process_buffered_progress_updates():
     Periodic task to flush batched progress and XP updates from Redis to the database.
     Ensures atomic updates and maintains data consistency.
     """
-    from apps.progress.services.progress_buffer import ProgressBufferService
+    import time
+
+    from django.contrib.auth import get_user_model
+
     from apps.progress.services.progress_batch_service import (
         process_bulk_progress_updates,
     )
-    from django.contrib.auth import get_user_model
-    import time
+    from apps.progress.services.progress_buffer import ProgressBufferService
 
     User = get_user_model()
 

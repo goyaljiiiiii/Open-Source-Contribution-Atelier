@@ -4,9 +4,9 @@ import hmac
 from functools import wraps
 from typing import List, Tuple, Union
 
+from cryptography.fernet import Fernet
 from django.conf import settings
 from django.http import JsonResponse
-from cryptography.fernet import Fernet
 
 
 def get_fernet_cipher() -> Fernet:

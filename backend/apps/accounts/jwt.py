@@ -5,12 +5,13 @@ Custom JWT signing with dynamic user-specific salt.
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
-from django.utils.crypto import constant_time_compare
-from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
-from rest_framework_simplejwt.settings import api_settings
-from rest_framework_simplejwt.exceptions import TokenError
 import hashlib
 import hmac
+
+from django.utils.crypto import constant_time_compare
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.settings import api_settings
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
 
 class DynamicSaltValidationError(TokenError, ValueError):
@@ -92,9 +93,11 @@ class DynamicSaltAccessToken(AccessToken):
         # Check session_id if present
         session_id = self.get("session_id")
         if session_id:
-            from .models import UserSession
-            from django.utils import timezone
             from datetime import timedelta
+
+            from django.utils import timezone
+
+            from .models import UserSession
 
             try:
                 session = UserSession.objects.get(session_id=session_id)
@@ -172,9 +175,11 @@ class DynamicSaltRefreshToken(RefreshToken):
         # Check session_id if present
         session_id = self.get("session_id")
         if session_id:
-            from .models import UserSession
-            from django.utils import timezone
             from datetime import timedelta
+
+            from django.utils import timezone
+
+            from .models import UserSession
 
             try:
                 session = UserSession.objects.get(session_id=session_id)

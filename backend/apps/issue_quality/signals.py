@@ -2,11 +2,13 @@
 Django signals for real-time issue quality analysis.
 """
 
+import logging
+
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
+
 from apps.issue_quality.models import IssueQualityCheck
 from apps.issue_quality.services.quality_scorer import QualityScorer
-import logging
 
 logger = logging.getLogger(__name__)
 

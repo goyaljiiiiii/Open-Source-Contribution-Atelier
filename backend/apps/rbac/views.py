@@ -1,9 +1,9 @@
 from django.contrib.auth import get_user_model
-
-User = get_user_model()
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from apps.organizations.models import Organization, OrganizationMembership
 
 from .models import AuditLog, Permission, Role, UserRole
 from .permissions import HasPermission, HasRole
@@ -13,6 +13,64 @@ from .serializers import (
     RoleSerializer,
     UserRoleSerializer,
 )
+
+User = get_user_model()
+
+
+def _get_user_organization_ids(user):
+    """Return a set of organization IDs associated with the user."""
+    if not user or not user.is_authenticated:
+        return set()
+    org_ids = set()
+
+    profile = getattr(user, "user_profile", None) or getattr(user, "profile", None)
+    if profile and getattr(profile, "organization_id", None):
+        org_ids.add(profile.organization_id)
+
+    try:
+        user_org = getattr(user, "organization", None)
+        if user_org and getattr(user_org, "id", None):
+            org_ids.add(user_org.id)
+    except Exception:
+        pass
+
+    try:
+        memberships = OrganizationMembership.objects.filter(user=user).values_list(
+            "organization_id", flat=True
+        )
+        org_ids.update(memberships)
+    except Exception:
+        pass
+
+    roles_orgs = UserRole.objects.filter(
+        user=user, organization__isnull=False
+    ).values_list("organization_id", flat=True)
+    org_ids.update(roles_orgs)
+
+    return org_ids
+
+
+def _user_belongs_to_org(user, organization_id):
+    """Check if the user belongs to the specified organization."""
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return True
+    if organization_id is None:
+        return True
+    try:
+        org_id_int = int(organization_id)
+    except (ValueError, TypeError):
+        return False
+    return org_id_int in _get_user_organization_ids(user)
+
+
+def _get_user_primary_org_id(user):
+    """Get the primary organization ID for a user if available."""
+    org_ids = _get_user_organization_ids(user)
+    if org_ids:
+        return next(iter(org_ids))
+    return None
 
 
 class RoleListView(generics.ListAPIView):
@@ -46,6 +104,37 @@ class AssignRoleView(APIView):
                 {"error": "User or Role not found"}, status=status.HTTP_404_NOT_FOUND
             )
 
+        if organization_id is not None:
+            if not Organization.objects.filter(id=organization_id).exists():
+                return Response(
+                    {"error": "Organization not found"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+        else:
+            organization_id = _get_user_primary_org_id(request.user) or _get_user_primary_org_id(target_user)
+
+        # Enforce multi-tenant organization boundaries for non-superusers
+        if not request.user.is_superuser:
+            if organization_id is not None:
+                if not _user_belongs_to_org(request.user, organization_id):
+                    return Response(
+                        {"error": "You do not have permission to manage roles in this organization"},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+                if not _user_belongs_to_org(target_user, organization_id):
+                    return Response(
+                        {"error": "Target user does not belong to this organization"},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+            else:
+                admin_orgs = _get_user_organization_ids(request.user)
+                target_orgs = _get_user_organization_ids(target_user)
+                if admin_orgs and target_orgs and not admin_orgs.intersection(target_orgs):
+                    return Response(
+                        {"error": "Cross-organization role assignment is forbidden"},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+
         user_role, created = UserRole.objects.get_or_create(
             user=target_user, role=role, organization_id=organization_id
         )
@@ -77,11 +166,48 @@ class RevokeRoleView(APIView):
         organization_id = request.data.get("organization_id", None)
 
         try:
+            target_user = User.objects.get(id=target_user_id)
+        except User.DoesNotExist:
+            return Response(
+                {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        if organization_id is not None:
+            if not Organization.objects.filter(id=organization_id).exists():
+                return Response(
+                    {"error": "Organization not found"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+        else:
+            organization_id = _get_user_primary_org_id(request.user) or _get_user_primary_org_id(target_user)
+
+        # Enforce multi-tenant organization boundaries for non-superusers
+        if not request.user.is_superuser:
+            if organization_id is not None:
+                if not _user_belongs_to_org(request.user, organization_id):
+                    return Response(
+                        {"error": "You do not have permission to manage roles in this organization"},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+                if not _user_belongs_to_org(target_user, organization_id):
+                    return Response(
+                        {"error": "Target user does not belong to this organization"},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+            else:
+                admin_orgs = _get_user_organization_ids(request.user)
+                target_orgs = _get_user_organization_ids(target_user)
+                if admin_orgs and target_orgs and not admin_orgs.intersection(target_orgs):
+                    return Response(
+                        {"error": "Cross-organization role revocation is forbidden"},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+
+        try:
             user_role = UserRole.objects.get(
                 user_id=target_user_id, role_id=role_id, organization_id=organization_id
             )
             role = user_role.role
-            target_user = user_role.user
             user_role.delete()
 
             AuditLog.objects.create(

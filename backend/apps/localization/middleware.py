@@ -1,3 +1,6 @@
+import logging
+
+logger = logging.getLogger(__name__)
 import re
 import time
 from functools import lru_cache
@@ -99,7 +102,8 @@ def _resolve_locale_cached(
             matched = resolve_tag_with_fallback(tag, supported)
             if matched:
                 return matched
-    except Exception:
+    except Exception as e:
+        logger.warning("Caught exception: %s", e)
         # Fall through to default instead of crashing (500) on malformed values
         pass
 

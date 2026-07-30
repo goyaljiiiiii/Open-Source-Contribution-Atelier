@@ -1,5 +1,6 @@
+from django.conf import settings
 from django.contrib import admin
-from django.urls import include, path, re_path
+from django.urls import include, path
 from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.views import (
     SpectacularAPIView,
@@ -8,22 +9,28 @@ from drf_spectacular.views import (
 )
 from graphene_django.views import GraphQLView
 
+from apps.billing.views import CheckoutSessionView
+from apps.billing.webhooks import stripe_webhook
 from apps.dashboard.views import LeaderboardView
 
 from .health_view import health_view
-from .version_view import version_view
-from apps.billing.views import CheckoutSessionView
-from apps.billing.webhooks import stripe_webhook
+from .version_view import version_view, api_versions_view
 
 urlpatterns = [
-    # ── Admin ──────────────────────────────────────────────────────────────────
+    # ── Django Admin & External Webhooks ──────────────────────────────────────
     path("admin/", admin.site.urls),
+    path("api/admin/audit/", include("apps.audit.urls")),
+    path("api/audit/", include("apps.audit.urls")),
+    path("api/admin/", include("apps.monitoring.urls")),
+    path("api/monitoring/", include("apps.monitoring.urls")),
+    path("api/admin/core/", include("apps.core.urls")),
+
     # ── Health Checks ──────────────────────────────────────────────────────────
     path("health/", include("apps.health.urls")),
-    # ── Legacy Health (keep for backward compatibility) ──────────────────────
     path("health/legacy/", health_view, name="health"),
-    # ── API Version ────────────────────────────────────────────────────────────
+    # ── Version Discovery (root /api/versions/) ─────────────────────────────
     path("api/version/", version_view, name="version"),
+    path("api/versions/", api_versions_view, name="root-api-versions"),
     # ── Leaderboard ────────────────────────────────────────────────────────────
     path("api/leaderboard/", LeaderboardView.as_view(), name="leaderboard"),
     # ── Authentication ─────────────────────────────────────────────────────────
@@ -90,24 +97,16 @@ urlpatterns = [
     # ============================================================
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
-        "api/docs/",
+        "docs/",
         SpectacularSwaggerView.as_view(url_name="schema"),
         name="swagger-ui",
     ),
-    # ============================================================
-    # PROMETHEUS METRICS
-    # ============================================================
-    path("api/graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
 ]
-
-# ── Development URLs ──────────────────────────────────────────────────────────
-from django.conf import settings
-from django.conf.urls.static import static
 
 if settings.DEBUG:
     from apps.feature_flags.debug_view import feature_flags_debug_view
 
     urlpatterns += [
-        path("api/organizations/", include("apps.organizations.urls")),
+        path("api/v1/feature-flags/", include("apps.feature_flags.urls")),
         path("api/feature-flags/", include("apps.feature_flags.urls")),
     ]

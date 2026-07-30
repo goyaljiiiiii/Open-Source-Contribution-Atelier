@@ -1,0 +1,62 @@
+name: PR Health Scorecard
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  scorecard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate PR Scorecard
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            // Check if PR references an issue
+            const hasIssueLink = /#(?:fixes|closes|resolves)?\s*#?\d+/i.test(pr.body || '');
+            const issueCheckmark = hasIssueLink ? '✅ Linked' : '⚠️ Missing issue reference (`Fixes #123`)';
+
+            const scorecardBody = [
+              `### 📊 PR Automated Health Scorecard`,
+              ``,
+              `| Check Item | Status | Guidance |`,
+              `| :--- | :--- | :--- |`,
+              `| 🔗 **Issue Link** | ${issueCheckmark} | Include \`Fixes #<issue_number>\` in PR description |`,
+              `| ⚡ **CI Checks** | ⏳ Running | View details in the Checks tab below |`,
+              `| 🎨 **Format & Syntax** | ⏳ Queued | Ensure \`npm run lint\` & \`black .\` pass locally |`,
+              ``,
+              `> 💡 **Tip:** If CI checks fail, inspect the logs under **Actions** or run \`python3 verify_readiness.py\` locally.`
+            ].join('\n');
+
+            // Find existing scorecard comment if any
+            const comments = await github.paginate(github.rest.issues.listComments, {owner, repo, issue_number: pr.number});
+            const existingComment = comments.find(c => c.user.type === 'Bot' && c.body.includes('PR Automated Health Scorecard'));
+
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existingComment.id,
+                body: scorecardBody
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: pr.number,
+                body: scorecardBody
+              });
+            }

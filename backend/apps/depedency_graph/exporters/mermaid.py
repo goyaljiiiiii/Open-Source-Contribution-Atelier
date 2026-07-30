@@ -2,7 +2,7 @@
 Export dependency graph as Mermaid diagram.
 """
 
-from typing import Dict, Any
+from typing import Any, Dict
 
 
 class MermaidExporter:

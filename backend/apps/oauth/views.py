@@ -1,23 +1,24 @@
-import secrets
-import hashlib
 import base64
+import hashlib
+import secrets
 from datetime import timedelta
-from django.utils import timezone
-from django.conf import settings
-from rest_framework import views, status, permissions, viewsets
-from rest_framework.response import Response
-from rest_framework.decorators import action
 
-from .models import OAuthClient, OAuthAuthorizationCode, OAuthToken
+from django.conf import settings
+from django.utils import timezone
+from rest_framework import permissions, status, views, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
+from .models import OAuthAuthorizationCode, OAuthClient, OAuthToken
+from .oidc import generate_id_token, get_jwks
 from .serializers import (
+    AuthorizeRequestSerializer,
     OAuthClientSerializer,
     OAuthTokenSerializer,
-    AuthorizeRequestSerializer,
-    TokenRequestSerializer,
     TokenIntrospectionSerializer,
+    TokenRequestSerializer,
     TokenRevocationSerializer,
 )
-from .oidc import get_jwks, generate_id_token
 
 
 def _verify_pkce(code_verifier: str, code_challenge: str, method: str) -> bool:

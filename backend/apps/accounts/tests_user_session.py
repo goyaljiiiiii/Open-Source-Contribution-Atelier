@@ -10,6 +10,9 @@ Verifies that:
 - Concurrent threads cannot exceed the session limit.
 """
 
+import logging
+
+logger = logging.getLogger(__name__)
 import threading
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -17,7 +20,7 @@ from unittest.mock import patch
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.db import connection, transaction, models
+from django.db import connection, models, transaction
 from django.test import TestCase, TransactionTestCase, override_settings
 
 from apps.accounts.models import UserSession
@@ -448,8 +451,8 @@ class TestUserSessionConcurrency(TransactionTestCase):
             try:
                 barrier.wait()
                 self._create_session_in_thread(self.user.pk, f"NewDevice{device_idx}")
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Caught exception: %s", e)
 
         threads = []
         for i in range(num_threads):
@@ -478,8 +481,8 @@ class TestUserSessionConcurrency(TransactionTestCase):
             try:
                 barrier.wait()
                 self._create_session_in_thread(self.user.pk, f"LimitDevice{device_idx}")
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Caught exception: %s", e)
 
         threads = []
         for i in range(num_threads):
@@ -513,8 +516,8 @@ class TestUserSessionConcurrency(TransactionTestCase):
             try:
                 barrier.wait()
                 self._create_session_in_thread(user_id, f"Device{device_idx}")
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Caught exception: %s", e)
 
         threads = []
         for i in range(num_threads_per_user):

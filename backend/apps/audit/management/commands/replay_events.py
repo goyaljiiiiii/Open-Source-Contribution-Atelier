@@ -1,9 +1,14 @@
-from django.core.management.base import BaseCommand, CommandError
-from django.utils.dateparse import parse_datetime, parse_date
-from django.apps import apps
-from django.db import transaction
-from django.utils.timezone import make_aware
+import logging
+
+logger = logging.getLogger(__name__)
 from datetime import datetime, time
+
+from django.apps import apps
+from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
+from django.utils.dateparse import parse_date, parse_datetime
+from django.utils.timezone import make_aware
+
 from apps.audit.models import AuditEvent
 
 
@@ -170,7 +175,8 @@ class Command(BaseCommand):
                     m2m_snapshot[field_name] = value
                 else:
                     non_m2m_snapshot[field_name] = value
-            except Exception:
+            except Exception as e:
+                logger.warning("Caught exception: %s", e)
                 non_m2m_snapshot[field_name] = value
 
         if action == AuditEvent.ACTION_CREATED:

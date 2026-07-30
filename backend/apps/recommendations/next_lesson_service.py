@@ -55,7 +55,9 @@ class NextLessonRecommendationService:
     def _get_candidate_lessons(self) -> List[Lesson]:
         org = getattr(self.user, "organization", None)
         if org is None:
-            profile = getattr(self.user, "user_profile", None) or getattr(self.user, "profile", None)
+            profile = getattr(self.user, "user_profile", None) or getattr(
+                self.user, "profile", None
+            )
             org = getattr(profile, "organization", None) if profile else None
 
         qs = Lesson.objects.all().prefetch_related("prerequisites")
@@ -63,7 +65,9 @@ class NextLessonRecommendationService:
             org_id = getattr(org, "id", None)
             org_name = getattr(org, "name", None)
             qs = qs.filter(
-                Q(organization_id=org_id) | Q(organization__name=org_name) | Q(organization__isnull=True)
+                Q(organization_id=org_id)
+                | Q(organization__name=org_name)
+                | Q(organization__isnull=True)
             )
         else:
             qs = qs.filter(organization__isnull=True)

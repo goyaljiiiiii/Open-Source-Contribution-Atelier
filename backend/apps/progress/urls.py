@@ -1,7 +1,10 @@
 from django.urls import path
 
+from .views import ExportNotesView  # ✅ ADDED
+from .views import QuizNonceView  # NEW: Imported the Nonce View
 from .views import (
     BadgeListView,
+    BufferMetricsView,
     BulkProgressUpdateView,
     BulkSyncProgressView,
     CertificateVerificationView,
@@ -9,25 +12,22 @@ from .views import (
     CommunityFeedView,
     CommunityStatsView,
     ContributorTimelineView,
-    ExportNotesView,  # ✅ ADDED
     DailyLessonStatsView,
+    HeatmapCSVExportView,
+    HeatmapView,
     HelpRequestListCreateView,
+    LeaderboardView,
     LessonBookmarkView,
     MentorHelpRequestListView,
     MyCertificateView,
     MyProgressView,
     PeerReviewView,
     QuizAttemptView,
-    RecommendationsView,
-    UserProgressPDFExportView,
     ReadingProgressView,
-    QuizNonceView,  # NEW: Imported the Nonce View
-    LeaderboardView,
-    BufferMetricsView,
-    HeatmapView,
-    StreakStatusView,
+    RecommendationsView,
     StreakRecoveryView,
-    HeatmapCSVExportView,
+    StreakStatusView,
+    UserProgressPDFExportView,
 )
 
 urlpatterns = [

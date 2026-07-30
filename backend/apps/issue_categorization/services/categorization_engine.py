@@ -4,19 +4,21 @@ ML-based categorization engine for issues.
 
 import logging
 import re
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
+
+import numpy as np
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import Q
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.naive_bayes import MultinomialNB
-import numpy as np
-from django.db.models import Q
-from django.contrib.contenttypes.models import ContentType
+
 from apps.issue_categorization.models import (
     Category,
-    IssueTag,
-    IssueCategoryAssignment,
-    IssueTagAssignment,
     CategorySuggestion,
+    IssueCategoryAssignment,
+    IssueTag,
+    IssueTagAssignment,
 )
 
 logger = logging.getLogger(__name__)

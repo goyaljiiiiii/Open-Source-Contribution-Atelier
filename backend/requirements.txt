@@ -51,4 +51,4 @@ pandas>=2.0.0
 textblob>=0.20.0
 langdetect>=1.0.9
 
-
+cryptography>=41.0.0

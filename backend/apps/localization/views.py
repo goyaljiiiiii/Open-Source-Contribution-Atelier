@@ -1,5 +1,6 @@
-from rest_framework import views, permissions
+from rest_framework import permissions, views
 from rest_framework.response import Response
+
 from .models import LocalizedContent
 
 

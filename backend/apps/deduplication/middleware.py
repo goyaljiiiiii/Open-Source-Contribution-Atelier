@@ -7,11 +7,12 @@ import json
 import logging
 import threading
 import time
-from typing import Dict, Any, Optional, Callable
-from django.utils.deprecation import MiddlewareMixin
+from typing import Any, Callable, Dict, Optional
+
+from django.conf import settings
 from django.core.cache import cache
 from django.http import JsonResponse
-from django.conf import settings
+from django.utils.deprecation import MiddlewareMixin
 
 logger = logging.getLogger(__name__)
 

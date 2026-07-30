@@ -37,13 +37,28 @@ from dotenv import load_dotenv
 
 load_dotenv(BASE_DIR / ".env")
 
-
 SECRET_KEY = os.getenv(
     "SECRET_KEY", "django-insecure-dev-key-not-for-production-use-32bytes!!"
 )
 if not SECRET_KEY:
     raise ImproperlyConfigured("SECRET_KEY environment variable is not set")
+
+# Base64 encoded 32-byte key for AES-GCM field encryption.
+# Can be a comma-separated list of keys to support double-read during key rotation.
+FIELD_ENCRYPTION_KEY_RAW = os.getenv("FIELD_ENCRYPTION_KEY", "")
+if FIELD_ENCRYPTION_KEY_RAW:
+    if "," in FIELD_ENCRYPTION_KEY_RAW:
+        FIELD_ENCRYPTION_KEY = [
+            k.strip() for k in FIELD_ENCRYPTION_KEY_RAW.split(",") if k.strip()
+        ]
+    else:
+        FIELD_ENCRYPTION_KEY = FIELD_ENCRYPTION_KEY_RAW.strip()
+else:
+    # Default for development only; this must be set in prod!
+    FIELD_ENCRYPTION_KEY = "MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI="
+
 DEBUG = os.getenv("DEBUG", "False") == "True"
+
 
 # Explicit environment designation, independent of DEBUG. Used below to make
 # sure DEBUG=True (and the wildcard CORS it enables) can never silently reach
@@ -224,9 +239,34 @@ API_RATE_LIMIT_AUTH = int(os.getenv("API_RATE_LIMIT_AUTH", "100"))
 API_RATE_LIMIT_ANON = int(os.getenv("API_RATE_LIMIT_ANON", "20"))
 API_RATE_LIMIT_WINDOW = int(os.getenv("API_RATE_LIMIT_WINDOW", "60"))
 
+# ──────────────────────────────────────────
+# Redis / Channels (graceful fallback when Redis is down)
+# ──────────────────────────────────────────
+from config.channel_layers import build_channel_and_cache_config, is_redis_available
+
+ENV_REDIS_URL = os.getenv("REDIS_URL", "")
+CHECK_REDIS_URL = ENV_REDIS_URL or "redis://127.0.0.1:6379/0"
+
+_channel_cfg = build_channel_and_cache_config()
+REDIS_URL = _channel_cfg.get("REDIS_URL") or CHECK_REDIS_URL
+CHANNEL_LAYERS = _channel_cfg["CHANNEL_LAYERS"]
+CACHES = _channel_cfg["CACHES"]
+CHANNEL_LAYER_BACKEND = _channel_cfg["CHANNEL_LAYER_BACKEND"]
+
+# ── Rate Limit Backend Selection ("redis" | "local") ───────────────────────
+_default_rate_limit_backend = (
+    "redis" if is_redis_available(CHECK_REDIS_URL) and ENV_REDIS_URL else "local"
+)
+RATE_LIMIT_BACKEND = os.getenv(
+    "RATE_LIMIT_BACKEND", _default_rate_limit_backend
+).lower()
+RATE_LIMIT_REDIS_URL = ENV_REDIS_URL or CHECK_REDIS_URL
+
+PERF_TRACK_SAMPLE_RATE = 0.1  # 10% sampling
 
 MIDDLEWARE = [
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
+    "apps.core.middleware.perf_tracking.PerformanceTrackingMiddleware",
     "apps.core.middleware.request_id.RequestIdMiddleware",
     "config.logging_middleware.RequestResponseLoggingMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -250,6 +290,7 @@ MIDDLEWARE = [
     "waffle.middleware.WaffleMiddleware",
     "apps.core.middleware.ratelimit.RateLimitMiddleware",
     "apps.sandbox.middleware.SandboxExecutionLogMiddleware",
+    "apps.core.middleware.api_version.APIVersionMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
@@ -330,6 +371,9 @@ DATABASE_REPLICAS = [
 # Seconds after a write before a user's reads are redirected back to replicas.
 READ_AFTER_WRITE_SECONDS = int(os.getenv("READ_AFTER_WRITE_SECONDS", "5"))
 
+# PostgreSQL lock timeout for migrations (in milliseconds)
+DATABASE_LOCK_TIMEOUT = int(os.getenv("DATABASE_LOCK_TIMEOUT", "5000"))
+
 # Replication lag (seconds) above which /health/db/replication-lag returns 503.
 REPLICA_LAG_ALERT_SECONDS = int(os.getenv("REPLICA_LAG_ALERT_SECONDS", "30"))
 
@@ -360,7 +404,14 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
@@ -416,6 +467,19 @@ PASSWORD_RESET_TIMEOUT_MINUTES = int(os.getenv("PASSWORD_RESET_TIMEOUT_MINUTES",
 # How many minutes an OTP verification code remains valid.
 OTP_TIMEOUT_MINUTES = int(os.getenv("OTP_TIMEOUT_MINUTES", "10"))
 
+# ── API Versioning Configuration ──────────────────────────────────────────────
+DEFAULT_API_VERSION = "1.0"
+ALLOWED_API_VERSIONS = ["1.0"]
+DEPRECATED_API_VERSIONS = {}
+API_VERSION_DISCOVERY = {
+    "1.0": {
+        "status": "stable",
+        "changelog_url": "/docs/changelog/v1.0",
+        "sunset": None,
+        "deprecation": None,
+    }
+}
+
 REST_FRAMEWORK = {
     # ── Default Throttle Classes ─────────────────────────────────────────────
     "DATETIME_FORMAT": "%Y-%m-%dT%H:%M:%SZ",
@@ -423,6 +487,11 @@ REST_FRAMEWORK = {
         "apps.core.throttling.SlidingWindowAnonThrottle",
         "apps.core.throttling.SlidingWindowUserThrottle",
     ],
+    # ── API Versioning ───────────────────────────────────────────────────────
+    "DEFAULT_VERSIONING_CLASS": "apps.core.versioning.AcceptHeaderOrURLVersioning",
+    "DEFAULT_VERSION": "1.0",
+    "ALLOWED_VERSIONS": ["1.0"],
+    "VERSION_PARAM": "version",
     # ── Throttle Rates ───────────────────────────────────────────────────────
     # Sandbox endpoints
     # Auth endpoints (brute-force + spam protection)
@@ -442,6 +511,7 @@ REST_FRAMEWORK = {
         "auth_otp_verify": os.getenv("RATE_AUTH_OTP_VERIFY", "5/minute"),
         "auth_password_reset": os.getenv("RATE_AUTH_PASSWORD_RESET", "3/hour"),
         "auth_oauth": os.getenv("RATE_AUTH_OAUTH", "20/minute"),
+        "auth_github_callback": "5/minute",
         "auth_magic_link_request": os.getenv(
             "RATE_AUTH_MAGIC_LINK_REQUEST", "3/minute"
         ),
@@ -464,7 +534,6 @@ REST_FRAMEWORK = {
 # ============================================================
 # ✅ UPDATED: SimpleJWT Configuration with Dynamic Salt
 # ============================================================
-
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(
         minutes=int(os.getenv("ACCESS_TOKEN_LIFETIME_MINUTES", "30"))
@@ -534,7 +603,6 @@ SOCIALACCOUNT_ADAPTER = "apps.accounts.allauth_adapter.CustomSocialAccountAdapte
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_UNIQUE_EMAIL = True
 
-
 # ──────────────────────────────────────────
 # Django Channels + Notifications
 # ──────────────────────────────────────────
@@ -566,21 +634,6 @@ CONTENT_SECURITY_POLICY = {
         "data:",
     ],
 }
-
-
-# ──────────────────────────────────────────
-# Redis / Channels (graceful fallback when Redis is down)
-# ──────────────────────────────────────────
-from config.channel_layers import build_channel_and_cache_config, is_redis_available
-
-ENV_REDIS_URL = os.getenv("REDIS_URL", "")
-CHECK_REDIS_URL = ENV_REDIS_URL or "redis://127.0.0.1:6379/0"
-
-_channel_cfg = build_channel_and_cache_config()
-REDIS_URL = _channel_cfg.get("REDIS_URL") or CHECK_REDIS_URL
-CHANNEL_LAYERS = _channel_cfg["CHANNEL_LAYERS"]
-CACHES = _channel_cfg["CACHES"]
-CHANNEL_LAYER_BACKEND = _channel_cfg["CHANNEL_LAYER_BACKEND"]
 
 CELERY_BEAT_SCHEDULE = {
     "sync-oss-issues-hourly": {
@@ -808,7 +861,6 @@ if SENTRY_DSN:
         send_default_pii=False,
     )
 
-
 # ──────────────────────────────────────────
 # Audit Trail Configuration
 # ──────────────────────────────────────────
@@ -839,3 +891,9 @@ NOTIFICATION_CHANNELS = {
     "webhook": "apps.notifications.channels.webhook_channel.WebhookChannel",
     "slack": "apps.notifications.channels.slack_channel.SlackChannel",
 }
+
+# ── Test Environment Settings ──────────────────────────────────────────────
+TESTING = ("test" in sys.argv) or any("pytest" in arg for arg in sys.argv)
+if TESTING:
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True

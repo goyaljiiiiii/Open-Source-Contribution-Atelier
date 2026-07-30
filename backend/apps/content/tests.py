@@ -581,6 +581,7 @@ def test_seed_lessons_json_output_format():
     """Test that seed_lessons command outputs valid JSON with required fields."""
     import json
     from io import StringIO
+
     from django.core.management import call_command
 
     out = StringIO()
@@ -622,6 +623,7 @@ def test_seed_lessons_idempotent_with_skip_detection():
     """Test that running seed_lessons twice produces skipped on second run."""
     import json
     from io import StringIO
+
     from django.core.management import call_command
 
     # First run
@@ -646,6 +648,7 @@ def test_seed_lessons_idempotent_with_skip_detection():
 def test_seed_lessons_default_format_is_text():
     """Test that default format is human-readable text (backward compatibility)."""
     from io import StringIO
+
     from django.core.management import call_command
 
     out = StringIO()

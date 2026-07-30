@@ -1,3 +1,6 @@
+import logging
+
+logger = logging.getLogger(__name__)
 from django.apps import AppConfig
 
 
@@ -6,8 +9,13 @@ class GamificationConfig(AppConfig):
     name = "apps.gamification"
 
     def ready(self):
+        from django.db.models.signals import post_migrate
+
         import apps.gamification.signals  # noqa: F401
 
+        post_migrate.connect(self.setup_initial_data, sender=self)
+
+    def setup_initial_data(self, sender, **kwargs):
         try:
             from django_q.models import Schedule
 
@@ -25,14 +33,14 @@ class GamificationConfig(AppConfig):
                     "schedule_type": Schedule.DAILY,
                 },
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)
 
         try:
             self.seed_default_quests()
             self.seed_shop_items()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)
 
     @staticmethod
     def seed_default_quests():

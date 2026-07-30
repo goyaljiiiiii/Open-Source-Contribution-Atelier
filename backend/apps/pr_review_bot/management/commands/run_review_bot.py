@@ -3,6 +3,7 @@ Management command to run PR review bot.
 """
 
 from django.core.management.base import BaseCommand
+
 from apps.pr_review_bot.tasks import review_pr
 
 

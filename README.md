@@ -1,3 +1,4 @@
+![CI](https://github.com/MILAN-123865/Open-Source-Contribution-Atelier/actions/workflows/ci.yml/badge.svg)
 
 <br />
 
@@ -94,6 +95,13 @@ cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
 ```
 
+> **Windows users:** If `cp` is unavailable in PowerShell, use:
+>
+> ```powershell
+> Copy-Item backend/.env.example backend/.env
+> Copy-Item frontend/.env.example frontend/.env
+> ```
+
 > [!WARNING]
 > **Google OAuth login requires a valid `VITE_GOOGLE_CLIENT_ID` in `frontend/.env`.**
 > Create credentials in the [Google Cloud Console](https://console.cloud.google.com/) with authorized redirect URIs set to `http://localhost:5173`.
@@ -113,11 +121,22 @@ cp frontend/.env.example frontend/.env
 >    ```
 
 ### 2. Run the Backend (Django)
-Ensure you are using **Python 3.9+**.
+
+Ensure Python 3.9+ is installed.
+
 ```bash
 cd backend
-python3 -m venv .venv
+python -m venv .venv
+
+# macOS/Linux
 source .venv/bin/activate
+
+# Windows PowerShell
+.\.venv\Scripts\Activate.ps1
+
+# Windows Command Prompt
+.\.venv\Scripts\activate.bat
+
 pip install -r requirements.txt
 
 # Setup the local SQLite database
@@ -128,6 +147,7 @@ python manage.py seed_dashboard
 # Start the server
 python manage.py runserver
 ```
+
 - API: `http://localhost:8000/api/`
 
 ### 3. Run the Frontend (React + Vite)
@@ -159,7 +179,7 @@ This boots:
 | **celery_worker** | — | Background task processor for email notifications |
 | **frontend** | `http://localhost:5173/` | Vite dev server with hot-reload |
 
-If you hit any setup issues, see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md).
+If you hit any setup issues, see [TROUBLESHOOTING.md](./docs/TROUBLESHOOTING.md).
 
 > [!TIP]
 > The Celery worker mounts the codebase as a volume (`./services/notifications_worker:/app`),
@@ -173,6 +193,12 @@ The Docker backend reads these environment variables automatically. You can over
 ```bash
 cp backend/.env.example backend/.env
 ```
+
+> **Windows users:** If `cp` is unavailable in PowerShell, use:
+>
+> ```powershell
+> Copy-Item backend/.env.example backend/.env
+> ```
 
 Key variables for Docker:
 

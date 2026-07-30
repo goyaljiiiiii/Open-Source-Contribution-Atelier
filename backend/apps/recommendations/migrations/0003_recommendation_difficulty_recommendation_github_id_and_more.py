@@ -6,33 +6,33 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('recommendations', '0002_alter_recommendation_content_type_ossissue'),
+        ("recommendations", "0002_alter_recommendation_content_type_ossissue"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='recommendation',
-            name='difficulty',
+            model_name="recommendation",
+            name="difficulty",
             field=models.CharField(blank=True, max_length=20),
         ),
         migrations.AddField(
-            model_name='recommendation',
-            name='github_id',
+            model_name="recommendation",
+            name="github_id",
             field=models.CharField(blank=True, max_length=100, null=True, unique=True),
         ),
         migrations.AddField(
-            model_name='recommendation',
-            name='gitlab_id',
+            model_name="recommendation",
+            name="gitlab_id",
             field=models.CharField(blank=True, max_length=100, null=True, unique=True),
         ),
         migrations.AddField(
-            model_name='recommendation',
-            name='labels',
+            model_name="recommendation",
+            name="labels",
             field=models.JSONField(default=list),
         ),
         migrations.AddField(
-            model_name='recommendation',
-            name='language',
+            model_name="recommendation",
+            name="language",
             field=models.CharField(blank=True, max_length=50),
         ),
     ]

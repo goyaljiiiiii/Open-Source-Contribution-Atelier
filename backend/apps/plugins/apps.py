@@ -8,6 +8,7 @@ class PluginsConfig(AppConfig):
     def ready(self):
         # Scan and load active plugins on startup
         from django.db.utils import OperationalError, ProgrammingError
+
         from .registry import registry
 
         try:

@@ -5,14 +5,14 @@ User = get_user_model()
 Models for community-driven feature request system with weighted voting.
 """
 
-from django.db import models
-from django.conf import settings
+import json
+import uuid
 
-from django.utils import timezone
+from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-import uuid
-import json
+from django.db import models
+from django.utils import timezone
 
 
 class FeatureRequest(models.Model):

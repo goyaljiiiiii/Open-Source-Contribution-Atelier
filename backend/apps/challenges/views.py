@@ -292,7 +292,8 @@ class BulkChallengeUploadView(APIView):
                 },
                 status=status.HTTP_409_CONFLICT,
             )
-        except Exception:
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)
             logger.exception("Unexpected error during bulk challenge upload")
             return Response(
                 {"error": "An unexpected error occurred while creating challenges."},

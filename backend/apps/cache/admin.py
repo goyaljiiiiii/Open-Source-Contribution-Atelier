@@ -3,7 +3,8 @@ Admin configuration for cache app.
 """
 
 from django.contrib import admin
-from .models import CacheDependency, CacheConfig
+
+from .models import CacheConfig, CacheDependency
 
 
 @admin.register(CacheDependency)

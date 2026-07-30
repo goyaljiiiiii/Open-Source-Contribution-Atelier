@@ -1,14 +1,11 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import CopyButton from "./CopyButton";
 import { pluginRegistry } from "../../lib/markdownPlugins";
 import { GlossaryTerm } from "./GlossaryTerm";
 import { GlossaryDrawer } from "./GlossaryDrawer";
-import {
-  loadGlossary,
-  splitTextWithGlossary,
-  type GlossaryEntry,
-} from "../../lib/glossary";
+import { loadGlossary, splitTextWithGlossary, type GlossaryEntry } from "../../lib/glossary";
 import DOMPurify from "dompurify";
+import { ArchitectureViewer } from "../docs/ArchitectureViewer";
 
 interface MarkdownRendererProps {
   content: string;
@@ -16,7 +13,17 @@ interface MarkdownRendererProps {
   loadGlossaryFn?: () => Promise<GlossaryEntry[]>;
 }
 
-// Helper to parse markdown table rows, ignoring pipes inside backticks or escaped pipes.
+// Helper to parse markdown table rows, parsing code spans first to treat pipes inside backticks as literal characters.
+function maskCodeSpanPipes(text: string): string {
+  return text.replace(/(`+)([\s\S]*?)\1/g, (match, p1, p2) => {
+    return p1 + p2.replace(/\|/g, "__ESCAPED_PIPE__") + p1;
+  });
+}
+
+function unmaskCodeSpanPipes(text: string): string {
+  return text.replace(/__ESCAPED_PIPE__/g, "|");
+}
+
 function splitTableRow(row: string): string[] {
   let trimmed = row.trim();
   if (trimmed.startsWith("|")) {
@@ -26,25 +33,24 @@ function splitTableRow(row: string): string[] {
     trimmed = trimmed.substring(0, trimmed.length - 1);
   }
 
+  // Parse code spans first to mask pipes inside backticks as literal characters
+  const maskedRow = maskCodeSpanPipes(trimmed);
+
   const cells: string[] = [];
   let currentCell = "";
-  let inCode = false;
 
-  for (let i = 0; i < trimmed.length; i++) {
-    const char = trimmed[i];
-    const prevChar = i > 0 ? trimmed[i - 1] : "";
+  for (let i = 0; i < maskedRow.length; i++) {
+    const char = maskedRow[i];
+    const prevChar = i > 0 ? maskedRow[i - 1] : "";
 
-    if (char === "`" && prevChar !== "\\") {
-      inCode = !inCode;
-      currentCell += char;
-    } else if (char === "|" && !inCode && prevChar !== "\\") {
-      cells.push(currentCell.trim());
+    if (char === "|" && prevChar !== "\\") {
+      cells.push(unmaskCodeSpanPipes(currentCell.trim()));
       currentCell = "";
     } else {
       currentCell += char;
     }
   }
-  cells.push(currentCell.trim());
+  cells.push(unmaskCodeSpanPipes(currentCell.trim()));
   return cells;
 }
 
@@ -215,6 +221,9 @@ export function MarkdownRenderer({
 
     // 2. Code Blocks: ```lang
     if (line.trim().startsWith("```")) {
+      const langMatch = line.trim().match(/^```([a-zA-Z0-9_-]+)/);
+      const lang = langMatch ? langMatch[1].toLowerCase() : "";
+
       let codeContent = "";
       index++;
       while (index < lines.length && !lines[index].trim().startsWith("```")) {
@@ -222,17 +231,24 @@ export function MarkdownRenderer({
         index++;
       }
       index++; // skip closing ```
-      blocks.push(
-        <div key={index} className="relative my-4 group">
-          <div className="absolute top-2 right-2 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-            <CopyButton text={codeContent.trim()} />
-          </div>
 
-          <pre className="w-full overflow-x-auto p-4 bg-[#1a1510] text-[#ffebc2] border-4 border-black rounded-2xl font-mono text-sm shadow-card-sm dark:border-[#2e2924]">
-            <code className="block whitespace-pre">{codeContent.trim()}</code>
-          </pre>
-        </div>,
-      );
+      if (lang === "mermaid") {
+        blocks.push(
+          <ArchitectureViewer key={index} chart={codeContent.trim()} />
+        );
+      } else {
+        blocks.push(
+          <div key={index} className="relative my-4 group">
+            <div className="absolute top-2 right-2 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+              <CopyButton text={codeContent.trim()} />
+            </div>
+
+            <pre className="w-full overflow-x-auto p-4 bg-[#1a1510] text-[#ffebc2] border-4 border-black rounded-2xl font-mono text-sm shadow-card-sm dark:border-[#2e2924]">
+              <code className="block whitespace-pre">{codeContent.trim()}</code>
+            </pre>
+          </div>,
+        );
+      }
       continue;
     }
 

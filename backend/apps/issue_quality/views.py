@@ -2,15 +2,17 @@
 Views for issue quality analysis.
 """
 
+import logging
+
 from django.db import models
-from rest_framework import viewsets, status
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
 from apps.issue_quality.models import IssueQualityCheck
 from apps.issue_quality.serializers import IssueQualityCheckSerializer
 from apps.issue_quality.services.quality_scorer import QualityScorer
-import logging
 
 logger = logging.getLogger(__name__)
 

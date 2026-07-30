@@ -2,11 +2,11 @@
 Models for developer onboarding journey tracking.
 """
 
-from django.db import models
-from django.conf import settings
-
-from django.utils import timezone
 import uuid
+
+from django.conf import settings
+from django.db import models
+from django.utils import timezone
 
 
 class OnboardingJourney(models.Model):

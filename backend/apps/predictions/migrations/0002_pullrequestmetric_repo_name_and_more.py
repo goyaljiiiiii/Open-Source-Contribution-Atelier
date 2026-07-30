@@ -6,22 +6,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('predictions', '0001_initial'),
+        ("predictions", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='pullrequestmetric',
-            name='repo_name',
-            field=models.CharField(default='default', max_length=150),
+            model_name="pullrequestmetric",
+            name="repo_name",
+            field=models.CharField(default="default", max_length=150),
         ),
         migrations.AlterField(
-            model_name='pullrequestmetric',
-            name='pr_number',
+            model_name="pullrequestmetric",
+            name="pr_number",
             field=models.IntegerField(),
         ),
         migrations.AlterUniqueTogether(
-            name='pullrequestmetric',
-            unique_together={('repo_name', 'pr_number')},
+            name="pullrequestmetric",
+            unique_together={("repo_name", "pr_number")},
         ),
     ]

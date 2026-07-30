@@ -1,0 +1,64 @@
+name: "🚀 Open Source Program Feature / Issue Request"
+description: "Propose a new feature, bug fix, or documentation improvement for SSoC 2026 or ECSoC 2026"
+title: "[FEATURE] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Welcome to Open-Source Contribution Atelier!
+        Thank you for taking the time to submit a proposal. Please fill out the form below.
+
+  - type: dropdown
+    id: program
+    attributes:
+      label: Open Source Program
+      description: Which program are you participating under?
+      options:
+        - "Social Summer of Code (SSoC 2026)"
+        - "Elite Coder Summer of Code (ECSoC 2026)"
+        - "General Contributor / Non-program"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: difficulty
+    attributes:
+      label: Target Difficulty Level
+      description: Select the estimated difficulty tier for this task.
+      options:
+        - "Level 1 / Easy (20-30 pts)"
+        - "Level 2 / Medium (50-100 pts)"
+        - "Level 3 / Hard (150-200 pts)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Proposed Feature / Fix Description
+      description: Detailed description of what needs to be built or fixed.
+      placeholder: "Describe the functionality or bug fix clearly..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: target_files
+    attributes:
+      label: Target File Paths
+      description: List the files or components to be modified (e.g. `frontend/src/components/Dashboard.tsx`).
+      placeholder: "`frontend/src/components/...` or `backend/...`"
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Contributor Checklist
+      options:
+        - label: "I have read the [CONTRIBUTING.md](.github/CONTRIBUTING.md) guidelines."
+          required: true
+        - label: "I agree to open a Draft PR within 48 hours if this issue is assigned to me."
+          required: true
+        - label: "I acknowledge the maximum 5 open assigned issues per contributor limit policy."
+          required: true

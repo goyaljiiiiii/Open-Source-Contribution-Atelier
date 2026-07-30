@@ -1,12 +1,13 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from .models import FeatureRequest, Vote, Comment, StatusHistory, RoadmapMilestone
+
+from .models import Comment, FeatureRequest, RoadmapMilestone, StatusHistory, Vote
 from .serializers import (
-    FeatureRequestSerializer,
-    VoteSerializer,
     CommentSerializer,
-    StatusHistorySerializer,
+    FeatureRequestSerializer,
     RoadmapMilestoneSerializer,
+    StatusHistorySerializer,
+    VoteSerializer,
 )
 
 

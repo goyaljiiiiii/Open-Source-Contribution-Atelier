@@ -47,18 +47,13 @@ export function useWebSocket({
     return `${url}${separator}token=${encodeURIComponent(token)}`;
   }, [url, token]);
 
-  const ws = new WebSocket(
-    `wss://${window.location.host}/ws/notifications/`,
-    ["token", token], // Subprotocol: token
-  );
-
-  const cleanup = useCallback(() => {
+  const cleanup = useCallback((intentional?: boolean) => {
     if (reconnectTimerRef.current) {
       clearTimeout(reconnectTimerRef.current);
       reconnectTimerRef.current = null;
     }
     if (wsRef.current) {
-      intentionalCloseRef.current = intentional;
+      intentionalCloseRef.current = intentional ?? false;
       wsRef.current.onopen = null;
       wsRef.current.onclose = null;
       wsRef.current.onerror = null;

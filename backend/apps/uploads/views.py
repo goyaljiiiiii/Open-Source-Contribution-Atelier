@@ -11,6 +11,20 @@ from rest_framework.response import Response
 from .models import UploadSession
 from .tasks import enqueue_upload_scan
 from .validators import sanitize_svg_file, validate_declared_size, validate_file
+import unicodedata
+import uuid
+
+
+def sanitize_filename_ascii(filename: str) -> str:
+    ascii_name = (
+        unicodedata.normalize("NFKD", filename)
+        .encode("ascii", "ignore")
+        .decode("ascii")
+    )
+    valid = get_valid_filename(ascii_name)
+    if not valid or valid.startswith("."):
+        valid = f"file_{uuid.uuid4().hex[:8]}{valid}"
+    return valid
 
 
 class StartUploadView(views.APIView):
@@ -47,7 +61,7 @@ class StartUploadView(views.APIView):
 
         session = UploadSession.objects.create(
             user=request.user,
-            filename=get_valid_filename(filename),
+            filename=sanitize_filename_ascii(filename),
             upload_type=upload_type,
             total_size=total_size,
             total_chunks=total_chunks,
@@ -216,7 +230,7 @@ class UploadStatusView(views.APIView):
 
 
 class DirectUploadView(views.APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
         uploaded_file = request.FILES.get("file") or request.FILES.get("image")
@@ -225,18 +239,63 @@ class DirectUploadView(views.APIView):
                 {"error": "No file uploaded"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        valid_name = get_valid_filename(uploaded_file.name)
-        media_root = Path(getattr(settings, "MEDIA_ROOT", settings.BASE_DIR / "media"))
-        upload_dir = media_root / "uploads"
-        upload_dir.mkdir(parents=True, exist_ok=True)
+        upload_type = request.data.get("upload_type", UploadSession.UploadType.PROJECT)
+        if upload_type not in UploadSession.UploadType.values:
+            return Response(
+                {"error": "Invalid upload type"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
-        target_path = upload_dir / valid_name
-        with open(target_path, "wb+") as dest:
+        try:
+            validate_declared_size(uploaded_file.size, upload_type)
+        except ValidationError as exc:
+            return Response(
+                {"error": exc.messages[0]}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        valid_name = sanitize_filename_ascii(uploaded_file.name)
+        quarantine_root = Path(
+            getattr(
+                settings, "UPLOAD_QUARANTINE_ROOT", settings.BASE_DIR / "quarantine"
+            )
+        )
+        quarantine_root.mkdir(parents=True, exist_ok=True)
+        quarantine_path = quarantine_root / f"{uuid.uuid4()}_{valid_name}"
+
+        with open(quarantine_path, "wb+") as dest:
             for chunk in uploaded_file.chunks():
                 dest.write(chunk)
 
-        media_url = getattr(settings, "MEDIA_URL", "/media/")
-        file_url = f"{media_url}uploads/{valid_name}"
+        try:
+            detected_type, mime_type = validate_file(
+                quarantine_path, valid_name, upload_type
+            )
+            if detected_type == "svg":
+                sanitize_svg_file(quarantine_path)
+        except (ValidationError, FileNotFoundError) as exc:
+            quarantine_path.unlink(missing_ok=True)
+            message = exc.messages[0] if isinstance(exc, ValidationError) else str(exc)
+            return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+
+        session = UploadSession.objects.create(
+            user=request.user,
+            filename=valid_name,
+            upload_type=upload_type,
+            total_size=uploaded_file.size,
+            total_chunks=1,
+            uploaded_chunks=[0],
+            status=UploadSession.Status.QUARANTINED,
+            detected_mime_type=mime_type,
+            quarantine_path=str(quarantine_path),
+            scan_message="File is being scanned...",
+        )
+        enqueue_upload_scan(str(session.session_id))
+
         return Response(
-            {"url": file_url, "filename": valid_name}, status=status.HTTP_201_CREATED
+            {
+                "message": "File is being scanned...",
+                "upload_id": session.session_id,
+                "session_id": session.session_id,
+                "status": session.status,
+            },
+            status=status.HTTP_202_ACCEPTED,
         )

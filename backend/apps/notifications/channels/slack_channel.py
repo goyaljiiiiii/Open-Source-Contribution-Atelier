@@ -1,5 +1,7 @@
 import logging
+
 import requests
+
 from apps.notifications.channels.base import NotificationChannel
 
 logger = logging.getLogger(__name__)

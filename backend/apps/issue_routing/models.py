@@ -2,11 +2,11 @@
 Models for smart issue routing and assignment.
 """
 
-from django.db import models
-from django.conf import settings
-
-from django.utils import timezone
 import uuid
+
+from django.conf import settings
+from django.db import models
+from django.utils import timezone
 
 
 class ExpertiseDomain(models.Model):

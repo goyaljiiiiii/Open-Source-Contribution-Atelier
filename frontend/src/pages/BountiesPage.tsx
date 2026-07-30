@@ -5,20 +5,25 @@ import { fetchBounties, claimBounty, submitBounty, Bounty } from "../lib/api";
 import { useAuth } from "../features/auth/AuthContext";
 import { SectionCard } from "../components/ui/SectionCard";
 import { CheckCircle, Target, Loader2 } from "lucide-react";
+import { DataStateWrapper } from "../components/ui/DataStateWrapper";
 
 export function BountiesPage() {
   const { user } = useAuth();
   const [bounties, setBounties] = useState<Bounty[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [claimingId, setClaimingId] = useState<number | null>(null);
   const [submittingId, setSubmittingId] = useState<number | null>(null);
 
   const loadBounties = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const data = await fetchBounties();
       setBounties(data);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setError(err?.message || "Failed to load open-source bounties. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -34,8 +39,9 @@ export function BountiesPage() {
       await claimBounty(id);
       toast.success("Bounty claimed successfully!");
       loadBounties();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      toast.error(err?.message || "Failed to claim bounty");
     } finally {
       setClaimingId(null);
     }
@@ -44,24 +50,36 @@ export function BountiesPage() {
   const handleSubmit = async (id: number) => {
     setSubmittingId(id);
     try {
-      // Dummy code patch for testing purposes
       const res = await submitBounty(id, "fixed bug in main.js");
       toast.success(`Bounty completed! +${res.xp_earned} XP`);
       loadBounties();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      toast.error(err?.message || "Failed to submit code");
     } finally {
       setSubmittingId(null);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  const skeletonNode = (
+    <div className="grid gap-6 md:grid-cols-2">
+      {Array.from({ length: 4 }).map((_, idx) => (
+        <div
+          key={idx}
+          className="p-6 bg-white dark:bg-[#151411] border-2 border-black/10 dark:border-[#2e2924] rounded-2xl animate-pulse flex flex-col gap-4"
+        >
+          <div className="flex justify-between items-center">
+            <div className="h-5 w-16 bg-gray-200 dark:bg-gray-800 rounded"></div>
+            <div className="h-5 w-14 bg-gray-200 dark:bg-gray-800 rounded"></div>
+          </div>
+          <div className="h-6 w-3/4 bg-gray-200 dark:bg-gray-800 rounded"></div>
+          <div className="h-4 w-full bg-gray-200 dark:bg-gray-800 rounded"></div>
+          <div className="h-4 w-2/3 bg-gray-200 dark:bg-gray-800 rounded"></div>
+          <div className="h-10 w-full bg-gray-200 dark:bg-gray-800 rounded mt-4"></div>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">
@@ -71,19 +89,23 @@ export function BountiesPage() {
             Help Wanted Bounties
           </h1>
           <p className="mt-2 text-muted dark:text-[#d7cec0]">
-            Claim dummy open-source issues, fix them in the sandbox, and earn XP
-            and badges!
+            Claim open-source issues, fix them in the sandbox, and earn XP and badges!
           </p>
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {bounties.length === 0 ? (
-          <div className="col-span-full py-12 text-center text-muted">
-            No bounties available right now. Check back later!
-          </div>
-        ) : (
-          bounties.map((bounty) => (
+      <DataStateWrapper
+        loading={loading}
+        error={error}
+        empty={bounties.length === 0}
+        onRetry={loadBounties}
+        skeleton={skeletonNode}
+        emptyTitle="No Bounties Available"
+        emptyDescription="There are currently no active help wanted bounties. Check back soon for new opportunities!"
+        emptyIcon={Target}
+      >
+        <div className="grid gap-6 md:grid-cols-2">
+          {bounties.map((bounty) => (
             <SectionCard key={bounty.id} className="flex flex-col h-full">
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-4">
@@ -155,9 +177,9 @@ export function BountiesPage() {
                 )}
               </div>
             </SectionCard>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      </DataStateWrapper>
     </div>
   );
 }

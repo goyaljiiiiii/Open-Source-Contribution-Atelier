@@ -1,11 +1,13 @@
-import os
 import json
+import os
+
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APITestCase
+
+from .manifest import validate_manifest
 from .models import Plugin
 from .registry import registry
-from .manifest import validate_manifest
 
 
 class PluginSystemTests(APITestCase):

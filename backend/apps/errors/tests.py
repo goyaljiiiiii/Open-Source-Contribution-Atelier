@@ -1,12 +1,13 @@
-from django.test import TestCase
-from django.utils import timezone
 from datetime import timedelta
-from rest_framework.test import APITestCase
-from django.urls import reverse
 from unittest.mock import patch
 
-from apps.errors.models import ErrorGroup, ErrorEvent
-from apps.errors.grouping import normalize_message, calculate_fingerprint
+from django.test import TestCase
+from django.urls import reverse
+from django.utils import timezone
+from rest_framework.test import APITestCase
+
+from apps.errors.grouping import calculate_fingerprint, normalize_message
+from apps.errors.models import ErrorEvent, ErrorGroup
 from apps.errors.tasks import ingest_error_event_task
 
 

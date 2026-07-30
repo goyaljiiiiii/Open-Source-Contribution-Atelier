@@ -20,9 +20,12 @@ If no organization can be resolved, the tenant id is left as ``None``
 and tenant-scoped querysets will return empty results — fail-closed.
 """
 
+import logging
+
+logger = logging.getLogger(__name__)
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from apps.core.tenant import set_current_tenant, clear_current_tenant
+from apps.core.tenant import clear_current_tenant, set_current_tenant
 
 
 class TenantContextMiddleware:
@@ -77,7 +80,8 @@ class TenantContextMiddleware:
             if org_id in (None, ""):
                 return None
             return int(org_id)
-        except Exception:
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)
             # Any JWT validation failure will be raised properly by the DRF
             # auth classes later in the stack; here we simply fall through.
             return None

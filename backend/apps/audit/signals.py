@@ -35,7 +35,8 @@ def _model_snapshot(instance) -> dict:
     """Serialise instance fields to a plain dict (JSON-safe)."""
     try:
         return model_to_dict(instance)
-    except Exception:
+    except Exception as e:
+        logger.warning("Caught exception: %s", e)
         return {"pk": instance.pk}
 
 
@@ -61,7 +62,8 @@ def _emit(instance, action: str, before=None, after=None) -> None:
                 ip_address=ctx.get("ip_address"),
                 user_agent=ctx.get("user_agent", ""),
             )
-        except Exception:
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)
             logger.exception(
                 "Failed to create AuditEvent for %s#%s action=%s",
                 resource_type,

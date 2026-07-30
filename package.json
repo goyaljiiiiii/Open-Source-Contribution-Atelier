@@ -1,4 +1,7 @@
 {
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "dependencies": {
     "@tanstack/react-virtual": "^3.14.3",
     "axios": "^1.18.1",

@@ -15,7 +15,6 @@ from typing import Any, Dict, List, Tuple
 
 from .plugins import LessonPlugin, registry
 
-
 _TYPE_MAP = {
     "string": str,
     "number": (int, float),
@@ -27,7 +26,9 @@ _TYPE_MAP = {
 }
 
 
-def _validate_against_schema(value: Any, schema: Dict[str, Any], path: str = "$") -> List[str]:
+def _validate_against_schema(
+    value: Any, schema: Dict[str, Any], path: str = "$"
+) -> List[str]:
     """
     Recursively validate value against schema. Returns a list of
     human-readable error messages (empty list means valid).
@@ -44,12 +45,18 @@ def _validate_against_schema(value: Any, schema: Dict[str, Any], path: str = "$"
             # from matching "integer", since a boolean isn't a JSON integer.
             errors.append(f"{path}: expected integer, got boolean")
         elif not isinstance(value, py_type):
-            errors.append(f"{path}: expected {expected_type}, got {type(value).__name__}")
-            return errors  # further checks on this path aren't meaningful with wrong type
+            errors.append(
+                f"{path}: expected {expected_type}, got {type(value).__name__}"
+            )
+            return (
+                errors  # further checks on this path aren't meaningful with wrong type
+            )
 
     if "enum" in schema:
         if value not in schema["enum"]:
-            errors.append(f"{path}: value {value!r} not in allowed enum {schema['enum']!r}")
+            errors.append(
+                f"{path}: value {value!r} not in allowed enum {schema['enum']!r}"
+            )
 
     if isinstance(value, (int, float)) and not isinstance(value, bool):
         if "minimum" in schema and value < schema["minimum"]:
@@ -59,9 +66,13 @@ def _validate_against_schema(value: Any, schema: Dict[str, Any], path: str = "$"
 
     if isinstance(value, str):
         if "minLength" in schema and len(value) < schema["minLength"]:
-            errors.append(f"{path}: length {len(value)} is below minLength {schema['minLength']}")
+            errors.append(
+                f"{path}: length {len(value)} is below minLength {schema['minLength']}"
+            )
         if "maxLength" in schema and len(value) > schema["maxLength"]:
-            errors.append(f"{path}: length {len(value)} is above maxLength {schema['maxLength']}")
+            errors.append(
+                f"{path}: length {len(value)} is above maxLength {schema['maxLength']}"
+            )
 
     if isinstance(value, dict) and "properties" in schema:
         properties = schema["properties"]
@@ -74,7 +85,9 @@ def _validate_against_schema(value: Any, schema: Dict[str, Any], path: str = "$"
         for key, sub_value in value.items():
             if key in properties:
                 errors.extend(
-                    _validate_against_schema(sub_value, properties[key], f"{path}.{key}")
+                    _validate_against_schema(
+                        sub_value, properties[key], f"{path}.{key}"
+                    )
                 )
             elif schema.get("additionalProperties") is False:
                 errors.append(f"{path}: unexpected additional property '{key}'")
@@ -152,7 +165,9 @@ class JSONValidationChallengePlugin(LessonPlugin):
         # actually present, as a rough signal beyond binary pass/fail.
         required = schema.get("required", []) if isinstance(parsed, dict) else []
         if required:
-            present = sum(1 for key in required if isinstance(parsed, dict) and key in parsed)
+            present = sum(
+                1 for key in required if isinstance(parsed, dict) and key in parsed
+            )
             structural_score = (present / len(required)) * 60.0
         else:
             structural_score = 0.0

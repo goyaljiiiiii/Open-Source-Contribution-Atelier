@@ -4,9 +4,9 @@ from datetime import datetime
 from pathlib import Path
 
 import boto3
-from django.core.management.base import BaseCommand
-from django.core.mail import mail_admins
 from django.conf import settings
+from django.core.mail import mail_admins
+from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from apps.monitoring.models import BackupVerification

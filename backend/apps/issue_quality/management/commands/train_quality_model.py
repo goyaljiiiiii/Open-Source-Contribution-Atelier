@@ -2,10 +2,12 @@
 Management command to train quality model.
 """
 
-from django.core.management.base import BaseCommand
-from apps.issue_quality.models import WontfixPattern
 import json
 import os
+
+from django.core.management.base import BaseCommand
+
+from apps.issue_quality.models import WontfixPattern
 
 
 class Command(BaseCommand):

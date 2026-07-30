@@ -1,4 +1,5 @@
 import logging
+
 from apps.core.channel_safety import safe_group_send_sync
 from apps.notifications.channels.base import NotificationChannel
 from apps.notifications.models import Notification

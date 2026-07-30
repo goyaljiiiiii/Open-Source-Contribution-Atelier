@@ -4,9 +4,15 @@ from django.utils import timezone
 
 class ReviewerAvailability(models.Model):
     reviewer_username = models.CharField(max_length=150, unique=True)
-    current_workload = models.IntegerField(default=0, help_text="Number of open PR reviews currently assigned")
-    activity_score = models.FloatField(default=1.0, help_text="Activity score (0.0 to 1.0 based on recent activity)")
-    avg_response_time_hours = models.FloatField(default=24.0, help_text="Historical average response time in hours")
+    current_workload = models.IntegerField(
+        default=0, help_text="Number of open PR reviews currently assigned"
+    )
+    activity_score = models.FloatField(
+        default=1.0, help_text="Activity score (0.0 to 1.0 based on recent activity)"
+    )
+    avg_response_time_hours = models.FloatField(
+        default=24.0, help_text="Historical average response time in hours"
+    )
     last_active_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
 
@@ -85,7 +91,9 @@ class ReviewDelayPrediction(models.Model):
     )
     predicted_delay_hours = models.FloatField()
     confidence_interval_hours = models.FloatField(default=12.0)
-    risk_level = models.CharField(max_length=20, choices=RISK_LEVEL_CHOICES, default="LOW")
+    risk_level = models.CharField(
+        max_length=20, choices=RISK_LEVEL_CHOICES, default="LOW"
+    )
     features_used = models.JSONField(default=dict)
     predicted_at = models.DateTimeField(auto_now_add=True)
 

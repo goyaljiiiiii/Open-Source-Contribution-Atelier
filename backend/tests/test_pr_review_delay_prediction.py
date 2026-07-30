@@ -1,8 +1,17 @@
 import pytest
 from rest_framework.test import APIClient
-from apps.predictions.models import ReviewerAvailability, PullRequestMetric, ReviewDelayPrediction, DelayAlert
+
 from apps.predictions.ml_engine import predictor
-from apps.predictions.tasks import monitor_pr_review_delays, update_reviewer_availability
+from apps.predictions.models import (
+    DelayAlert,
+    PullRequestMetric,
+    ReviewDelayPrediction,
+    ReviewerAvailability,
+)
+from apps.predictions.tasks import (
+    monitor_pr_review_delays,
+    update_reviewer_availability,
+)
 
 
 @pytest.mark.django_db
@@ -17,8 +26,12 @@ class TestPRReviewDelayPrediction:
         """
         # Low risk scenario (small PR, available reviewer)
         res_low = predictor.predict(
-            additions=30, deletions=10, changed_files=2,
-            current_workload=0, activity_score=1.0, avg_response_time_hours=12.0
+            additions=30,
+            deletions=10,
+            changed_files=2,
+            current_workload=0,
+            activity_score=1.0,
+            avg_response_time_hours=12.0,
         )
         assert res_low["confidence_interval_hours"] == 12.0
         assert res_low["predicted_delay_hours"] >= 0.0
@@ -26,8 +39,12 @@ class TestPRReviewDelayPrediction:
 
         # High risk scenario (large PR, heavy reviewer workload)
         res_high = predictor.predict(
-            additions=1500, deletions=400, changed_files=25,
-            current_workload=6, activity_score=0.2, avg_response_time_hours=72.0
+            additions=1500,
+            deletions=400,
+            changed_files=25,
+            current_workload=6,
+            activity_score=0.2,
+            avg_response_time_hours=72.0,
         )
         assert res_high["confidence_interval_hours"] == 12.0
         assert res_high["predicted_delay_hours"] > 48.0
@@ -90,7 +107,11 @@ class TestPRReviewDelayPrediction:
         alert = DelayAlert.objects.filter(prediction__pr__pr_number=202).first()
         assert alert is not None
         assert alert.is_sent is True
-        assert "High Stagnation Risk" in alert.message or "CRITICAL" in alert.alert_type or "HIGH" in alert.alert_type
+        assert (
+            "High Stagnation Risk" in alert.message
+            or "CRITICAL" in alert.alert_type
+            or "HIGH" in alert.alert_type
+        )
 
     def test_predict_api_endpoint(self):
         """
@@ -130,7 +151,9 @@ class TestPRReviewDelayPrediction:
             "activity_score": 0.95,
             "avg_response_time_hours": 16.0,
         }
-        post_resp = self.client.post("/api/predictions/reviewers/", payload, format="json")
+        post_resp = self.client.post(
+            "/api/predictions/reviewers/", payload, format="json"
+        )
         assert post_resp.status_code == 201
         assert post_resp.json()["reviewer_username"] == "reviewer_alex"
 

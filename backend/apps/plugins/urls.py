@@ -1,5 +1,6 @@
 from django.urls import path, re_path
-from .views import PluginListView, PluginToggleView, DynamicPluginRouterView
+
+from .views import DynamicPluginRouterView, PluginListView, PluginToggleView
 
 urlpatterns = [
     path("", PluginListView.as_view(), name="plugin-list"),

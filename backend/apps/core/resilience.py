@@ -60,7 +60,8 @@ class CircuitBreaker:
     def record_failure(self):
         try:
             failures = cache.get(self.failures_key, 0)
-        except Exception:
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)
             failures = 0
         failures += 1
         cache.set(self.failures_key, failures, timeout=self.recovery_timeout * 2)

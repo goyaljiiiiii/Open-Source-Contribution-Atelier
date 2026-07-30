@@ -1,10 +1,12 @@
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
-from django.utils import timezone
 from datetime import timedelta
-from apps.progress.models import ExerciseAttempt, QuizAttempt
+
+from django.utils import timezone
+
 from apps.content.models import Exercise, Lesson
+from apps.progress.models import ExerciseAttempt, QuizAttempt
 
 
 class InsightsEngine:

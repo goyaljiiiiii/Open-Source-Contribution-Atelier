@@ -2,11 +2,11 @@ from io import BytesIO
 from unittest.mock import patch
 
 import pytest
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from django.contrib.auth import get_user_model
 from apps.progress.models import StreakProfile
 
 User = get_user_model()
@@ -63,8 +63,8 @@ class TestUserProgressPDFExport:
         assert response.content.startswith(b"%PDF-")
 
     def test_edge_case_long_strings(self, api_client):
-        from apps.progress.models import LessonProgress
         from apps.content.models import Lesson
+        from apps.progress.models import LessonProgress
 
         # User with extremely long strings to test table truncation
         long_user = User.objects.create_user(username="long_user", password="password")

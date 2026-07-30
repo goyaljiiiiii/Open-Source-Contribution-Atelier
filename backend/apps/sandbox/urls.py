@@ -2,31 +2,32 @@
 URL configuration for sandbox app.
 """
 
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from .views import (
-    SandboxVerifyView,
-    CodeSnapshotViewSet,
-    ProjectViewSet,
-    ProjectFileViewSet,
+    ADRScenarioViewSet,
+    ClearExecutionView,
     CodeExecutionTraceViewSet,
     CodeReviewThreadViewSet,
-    SnippetCollectionViewSet,
+    CodeSnapshotViewSet,
     CodeSnippetViewSet,
-    ExecutionStatusView,
-    ClearExecutionView,
-    WorkspaceSnapshotViewSet,
-    MaintainerScenarioViewSet,
-    MaintainerEvaluationViewSet,
     CollabSessionViewSet,
-    PipelineExecutionViewSet,
     ConflictScenarioViewSet,
-    ModerationScenarioViewSet,
+    ExecutionStatusView,
     LicenseScenarioViewSet,
+    MaintainerEvaluationViewSet,
+    MaintainerScenarioViewSet,
+    ModerationScenarioViewSet,
+    PipelineExecutionViewSet,
+    ProjectFileViewSet,
+    ProjectViewSet,
+    SandboxVerifyView,
+    SnippetCollectionViewSet,
     TriageIssueViewSet,
-    ADRScenarioViewSet,
+    WorkspaceSnapshotViewSet,
 )
+from .views.rebase_views import GitRebaseSimulatorViewSet
 
 # ============================================================
 # Router Configuration
@@ -63,6 +64,7 @@ router.register(
 )
 router.register(r"triage-issues", TriageIssueViewSet, basename="triage-issue")
 router.register(r"adr-scenarios", ADRScenarioViewSet, basename="adr-scenario")
+router.register(r"rebase-simulator", GitRebaseSimulatorViewSet, basename="rebase-simulator")
 
 # ============================================================
 # URL Patterns

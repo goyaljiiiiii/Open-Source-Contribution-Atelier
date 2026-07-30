@@ -2,15 +2,18 @@
 Analyze contributor activity patterns.
 """
 
-import requests
 from datetime import datetime, timedelta
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+
+import requests
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
-from django.conf import settings
-from apps.burnout_detection.models import ContributorActivity
 import logging
+
+from django.conf import settings
+
+from apps.burnout_detection.models import ContributorActivity
 
 logger = logging.getLogger(__name__)
 
