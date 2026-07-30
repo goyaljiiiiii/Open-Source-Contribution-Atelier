@@ -52,4 +52,4 @@ textblob>=0.20.0
 langdetect>=1.0.9
 hypothesis>=6.0.0
 
-
+cryptography>=41.0.0

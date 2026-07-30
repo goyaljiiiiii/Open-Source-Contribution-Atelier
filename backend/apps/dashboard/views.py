@@ -2,7 +2,10 @@ from datetime import timedelta
 
 from django.contrib.auth import get_user_model
 
+ feat/notification-system-test-suite-2295
+
 User = get_user_model()
+ main
 from django.db import models
 from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce, TruncDate
@@ -23,6 +26,11 @@ from apps.progress.models import (
     QuizAttempt,
     XPEvent,
 )
+ feat/notification-system-test-suite-2295
+
+User = get_user_model()
+
+ main
 
 
 class LeaderboardPagination(PageNumberPagination):

@@ -4,10 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchApi } from "../lib/api";
 import { mockStudentStats, getTipOfTheDay } from "../lib/dashboardMockData";
 import { Link } from "react-router-dom";
+import { useLocation } from 'react-router-dom';
 import SkeletonCard from "../components/ui/skeletons/SkeletonCard";
 import { PRReviewPredictionWidget } from "../components/PRReviewPredictionWidget";
 import SkeletonAdminDashboard from "../components/ui/skeletons/SkeletonAdminDashboard";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useUserProgress } from "../hooks/useUserProgress";
 import { useBookmarks } from "../hooks/useBookmarks";
 import { useOfflineReadyLessons } from "../hooks/useOfflineReadyLessons";
@@ -30,7 +31,6 @@ export function DashboardPage() {
   const { user } = useAuth();
   const { isLoading: progressLoading, isLessonCompleted } = useUserProgress();
   const { bookmarks, toggleBookmark } = useBookmarks();
-
   const { lessons, isLoading: lessonsLoading } = useCurriculumLessons();
 
   const lessonRefs = useMemo(

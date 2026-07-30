@@ -8,10 +8,16 @@ WebSocket consumers.
 
 from __future__ import annotations
 
+import asyncio
+import inspect
 import logging
 from typing import Any
 
 logger = logging.getLogger(__name__)
+
+# Upper bound on pool cleanup. Redis is already misbehaving by the time we get
+# here, so a close that hangs must not stall the fallback behind it.
+CLOSE_POOLS_TIMEOUT = 5.0
 
 
 class ResilientChannelLayer:
@@ -46,6 +52,39 @@ class ResilientChannelLayer:
             exc,
         )
 
+    async def _close_primary(self) -> None:
+        """
+        Release the Redis connection pools held by the primary layer.
+
+        Without this the sockets opened by RedisChannelLayer stay allocated for
+        the lifetime of the process after we degrade — the layer is no longer
+        reachable through ``_active``, so nothing else would ever close them.
+        Best-effort and bounded: this never raises and never waits longer than
+        ``CLOSE_POOLS_TIMEOUT``, so cleanup cannot delay the fallback call.
+        """
+        closer = getattr(self._primary, "close_pools", None)
+        if closer is None:
+            logger.debug("Primary channel layer exposes no close_pools(); skipping.")
+            return
+
+        try:
+            result = closer()
+            if inspect.isawaitable(result):
+                await asyncio.wait_for(result, timeout=CLOSE_POOLS_TIMEOUT)
+            logger.info("Released Redis connection pools after channel-layer degrade.")
+        except asyncio.TimeoutError:
+            logger.warning(
+                "Timed out after %ss releasing Redis connection pools; "
+                "continuing on the fallback layer.",
+                CLOSE_POOLS_TIMEOUT,
+            )
+        except Exception as exc:
+            logger.warning(
+                "Failed to release Redis connection pools after degrade (%s: %s)",
+                type(exc).__name__,
+                exc,
+            )
+
     async def _call(self, operation: str, *args: Any, **kwargs: Any) -> Any:
         method = getattr(self._active, operation)
         try:
@@ -54,6 +93,7 @@ class ResilientChannelLayer:
             if self.degraded:
                 raise
             self._activate_fallback(operation, exc)
+            await self._close_primary()
             fallback_method = getattr(self._fallback, operation)
             return await fallback_method(*args, **kwargs)
 
