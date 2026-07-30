@@ -3,12 +3,9 @@ import CopyButton from "./CopyButton";
 import { pluginRegistry } from "../../lib/markdownPlugins";
 import { GlossaryTerm } from "./GlossaryTerm";
 import { GlossaryDrawer } from "./GlossaryDrawer";
-import {
-  loadGlossary,
-  splitTextWithGlossary,
-  type GlossaryEntry,
-} from "../../lib/glossary";
+import { loadGlossary, splitTextWithGlossary, type GlossaryEntry } from "../../lib/glossary";
 import DOMPurify from "dompurify";
+import { ArchitectureViewer } from "../docs/ArchitectureViewer";
 
 interface MarkdownRendererProps {
   content: string;
@@ -224,6 +221,9 @@ export function MarkdownRenderer({
 
     // 2. Code Blocks: ```lang
     if (line.trim().startsWith("```")) {
+      const langMatch = line.trim().match(/^```([a-zA-Z0-9_-]+)/);
+      const lang = langMatch ? langMatch[1].toLowerCase() : "";
+
       let codeContent = "";
       index++;
       while (index < lines.length && !lines[index].trim().startsWith("```")) {
@@ -231,17 +231,24 @@ export function MarkdownRenderer({
         index++;
       }
       index++; // skip closing ```
-      blocks.push(
-        <div key={index} className="relative my-4 group">
-          <div className="absolute top-2 right-2 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-            <CopyButton text={codeContent.trim()} />
-          </div>
 
-          <pre className="w-full overflow-x-auto p-4 bg-[#1a1510] text-[#ffebc2] border-4 border-black rounded-2xl font-mono text-sm shadow-card-sm dark:border-[#2e2924]">
-            <code className="block whitespace-pre">{codeContent.trim()}</code>
-          </pre>
-        </div>,
-      );
+      if (lang === "mermaid") {
+        blocks.push(
+          <ArchitectureViewer key={index} chart={codeContent.trim()} />
+        );
+      } else {
+        blocks.push(
+          <div key={index} className="relative my-4 group">
+            <div className="absolute top-2 right-2 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+              <CopyButton text={codeContent.trim()} />
+            </div>
+
+            <pre className="w-full overflow-x-auto p-4 bg-[#1a1510] text-[#ffebc2] border-4 border-black rounded-2xl font-mono text-sm shadow-card-sm dark:border-[#2e2924]">
+              <code className="block whitespace-pre">{codeContent.trim()}</code>
+            </pre>
+          </div>,
+        );
+      }
       continue;
     }
 

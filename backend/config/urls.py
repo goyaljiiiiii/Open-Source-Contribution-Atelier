@@ -23,6 +23,7 @@ urlpatterns = [
     path("api/audit/", include("apps.audit.urls")),
     path("api/admin/", include("apps.monitoring.urls")),
     path("api/monitoring/", include("apps.monitoring.urls")),
+    path("api/admin/core/", include("apps.core.urls")),
 
     # ── Health Checks ──────────────────────────────────────────────────────────
     path("health/", include("apps.health.urls")),
@@ -56,6 +57,7 @@ urlpatterns = [
     # ============================================================
     # WEBHOOKS & UPLOADS
     # ============================================================
+    path("api/webhooks/", include("apps.webhooks.urls")),
     path("api/uploads/", include("apps.uploads.urls")),
     # ── RBAC ───────────────────────────────────────────────────────────────────
     path("api/rbac/", include("apps.rbac.urls")),
@@ -96,8 +98,13 @@ urlpatterns = [
     # ============================================================
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
+<<<<<<< HEAD
+        "api/docs/",
+        SpectacularSwaggerView.as_view(url_name="schema"),  # Fixed here
+=======
         "docs/",
         SpectacularSwaggerView.as_view(url_name="schema"),
+>>>>>>> 02ece0c8009596a33fbf5bc0bc7298ff74711560
         name="swagger-ui",
     ),
 ]
@@ -108,4 +115,15 @@ if settings.DEBUG:
     urlpatterns += [
         path("api/v1/feature-flags/", include("apps.feature_flags.urls")),
         path("api/feature-flags/", include("apps.feature_flags.urls")),
+<<<<<<< HEAD
+        path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+        path(
+            "api/docs/",
+            SpectacularSwaggerView.as_view(url_name="schema"),  # Fixed here as well
+            name="swagger-ui",
+        ),
+        path("graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
+=======
+>>>>>>> 02ece0c8009596a33fbf5bc0bc7298ff74711560
     ]
+    

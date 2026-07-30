@@ -1,5 +1,5 @@
 import React from "react";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import {
   render,
   screen,
@@ -48,13 +48,8 @@ const TestComponent = ({
 };
 
 describe("ToastContext Edge Cases", () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-
   afterEach(() => {
     vi.runOnlyPendingTimers();
-    vi.useRealTimers();
     cleanup();
   });
 
