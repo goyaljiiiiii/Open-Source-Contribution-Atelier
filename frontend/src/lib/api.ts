@@ -4,25 +4,38 @@ import { clearAccessToken, getAccessToken } from "./authToken";
 import { broadcastAuthEvent } from "./authSync";
 import toast from "react-hot-toast";
 
-const getApiBaseUrl = () => {
-  if (typeof import.meta !== "undefined" && import.meta.env) {
-    return import.meta.env.VITE_API_BASE_URL;
+// 1. Defend the environment variable retrieval against server-side execution crashes
+const getSafeEnvVar = (key: string): string => {
+  if (typeof process !== "undefined" && process.env && process.env[key]) {
+    return process.env[key] as string;
   }
+<<<<<<< HEAD
+  if (typeof import.meta !== "undefined" && import.meta.env && import.meta.env[key]) {
+    return import.meta.env[key] as string;
+=======
   // @ts-ignore - process might not be defined in Vite environments
   if (typeof process !== "undefined" && process.env) {
     // @ts-ignore
     return process.env.NEXT_PUBLIC_API_URL || process.env.VITE_API_BASE_URL;
+>>>>>>> 02ece0c8009596a33fbf5bc0bc7298ff74711560
   }
-  return undefined;
+  return "";
 };
 
+<<<<<<< HEAD
+// 2. Safely resolve the base URL
+const API_BASE =
+  getSafeEnvVar("VITE_API_BASE_URL").trim() ||
+  (typeof window !== "undefined" ? `${window.location.origin}/api` : "http://127.0.0.1:8000/api");
+=======
 export const API_BASE =
   getApiBaseUrl()?.trim() ||
   (typeof window !== "undefined"
     ? `${window.location.origin}/api`
     : "http://127.0.0.1:8000/api");
+>>>>>>> 02ece0c8009596a33fbf5bc0bc7298ff74711560
 
-type RequestOptions = RequestInit & {
+  type RequestOptions = RequestInit & {
   requireAuth?: boolean;
   suppressErrorToast?: boolean;
   /** Request timeout in milliseconds. Default: 15000 (15s) */

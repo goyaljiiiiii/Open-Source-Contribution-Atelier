@@ -1,3 +1,4 @@
+![CI](https://github.com/MILAN-123865/Open-Source-Contribution-Atelier/actions/workflows/ci.yml/badge.svg)
 
 <br />
 

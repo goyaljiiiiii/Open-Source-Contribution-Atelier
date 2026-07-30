@@ -11,6 +11,20 @@ from rest_framework.response import Response
 from .models import UploadSession
 from .tasks import enqueue_upload_scan
 from .validators import sanitize_svg_file, validate_declared_size, validate_file
+import unicodedata
+import uuid
+
+
+def sanitize_filename_ascii(filename: str) -> str:
+    ascii_name = (
+        unicodedata.normalize("NFKD", filename)
+        .encode("ascii", "ignore")
+        .decode("ascii")
+    )
+    valid = get_valid_filename(ascii_name)
+    if not valid or valid.startswith("."):
+        valid = f"file_{uuid.uuid4().hex[:8]}{valid}"
+    return valid
 
 
 class StartUploadView(views.APIView):
@@ -47,7 +61,7 @@ class StartUploadView(views.APIView):
 
         session = UploadSession.objects.create(
             user=request.user,
-            filename=get_valid_filename(filename),
+            filename=sanitize_filename_ascii(filename),
             upload_type=upload_type,
             total_size=total_size,
             total_chunks=total_chunks,
@@ -234,11 +248,15 @@ class DirectUploadView(views.APIView):
         try:
             validate_declared_size(uploaded_file.size, upload_type)
         except ValidationError as exc:
-            return Response({"error": exc.messages[0]}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": exc.messages[0]}, status=status.HTTP_400_BAD_REQUEST
+            )
 
-        valid_name = get_valid_filename(uploaded_file.name)
+        valid_name = sanitize_filename_ascii(uploaded_file.name)
         quarantine_root = Path(
-            getattr(settings, "UPLOAD_QUARANTINE_ROOT", settings.BASE_DIR / "quarantine")
+            getattr(
+                settings, "UPLOAD_QUARANTINE_ROOT", settings.BASE_DIR / "quarantine"
+            )
         )
         quarantine_root.mkdir(parents=True, exist_ok=True)
         quarantine_path = quarantine_root / f"{uuid.uuid4()}_{valid_name}"
@@ -248,7 +266,9 @@ class DirectUploadView(views.APIView):
                 dest.write(chunk)
 
         try:
-            detected_type, mime_type = validate_file(quarantine_path, valid_name, upload_type)
+            detected_type, mime_type = validate_file(
+                quarantine_path, valid_name, upload_type
+            )
             if detected_type == "svg":
                 sanitize_svg_file(quarantine_path)
         except (ValidationError, FileNotFoundError) as exc:

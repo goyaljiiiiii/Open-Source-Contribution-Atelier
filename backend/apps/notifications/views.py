@@ -1,95 +1,41 @@
 from rest_framework import generics, permissions, status
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Notification, NotificationPreference, PushSubscription
+from .models import Notification, PushSubscription
 from .serializers import NotificationSerializer, PushSubscriptionSerializer
 
-
-def _prefs_payload(prefs: NotificationPreference) -> dict:
-    return {
-        "email": prefs.email_enabled,
-        "in_app": prefs.in_app_enabled,
-        "websocket": prefs.websocket_enabled,
-        "digest_frequency": prefs.digest_frequency,
-        "digest_time": (
-            prefs.digest_time.strftime("%H:%M") if prefs.digest_time else None
-        ),
-    }
-
-
-def _coerce_bool(value, default: bool) -> bool:
-    if value is None:
-        return default
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, (int, float)):
-        return bool(value)
-    if isinstance(value, str):
-        return value.strip().lower() in ("1", "true", "yes", "on")
-    return default
-
-
-class NotificationPagination(PageNumberPagination):
-    page_size = 10
-    page_size_query_param = "page_size"
-    max_page_size = 100
-
+from .models import NotificationPreference
 
 class NotificationPrefsView(APIView):
-    """GET/PUT /api/notifications/prefs/ — channel delivery preferences."""
-
-    permission_classes = [permissions.IsAuthenticated]
-
+    permission_classes = [IsAuthenticated]
+    
     def get(self, request):
         prefs, _ = NotificationPreference.objects.get_or_create(user=request.user)
-        return Response(_prefs_payload(prefs))
-
+        return Response({
+            'email': prefs.email_enabled,
+            'in_app': prefs.in_app_enabled,
+            'websocket': prefs.websocket_enabled,
+        })
+    
     def put(self, request):
-        prefs, _ = NotificationPreference.objects.get_or_create(user=request.user)
-        prefs.email_enabled = _coerce_bool(
-            request.data.get("email"), prefs.email_enabled
-        )
-        prefs.in_app_enabled = _coerce_bool(
-            request.data.get("in_app"), prefs.in_app_enabled
-        )
-        prefs.websocket_enabled = _coerce_bool(
-            request.data.get("websocket"), prefs.websocket_enabled
-        )
-        if "digest_frequency" in request.data:
-            prefs.digest_frequency = request.data["digest_frequency"]
-        if "digest_time" in request.data:
-            digest_time_str = request.data["digest_time"]
-            import datetime
-
-            try:
-                prefs.digest_time = datetime.datetime.strptime(
-                    digest_time_str, "%H:%M"
-                ).time()
-            except (ValueError, TypeError):
-                pass
-        prefs.save(
-            update_fields=[
-                "email_enabled",
-                "in_app_enabled",
-                "websocket_enabled",
-                "digest_frequency",
-                "digest_time",
-            ]
-        )
-        return Response(_prefs_payload(prefs))
-
-    def patch(self, request):
-        return self.put(request)
-
+        try:
+            prefs, _ = NotificationPreference.objects.get_or_create(user=request.user)
+            
+            if 'email_enabled' in request.data:
+                prefs.email_enabled = request.data['email_enabled']
+            if 'in_app_enabled' in request.data:
+                prefs.in_app_enabled = request.data['in_app_enabled']
+            if 'websocket_enabled' in request.data:
+                prefs.websocket_enabled = request.data['websocket_enabled']
+            
+            prefs.save()
 
 class NotificationListView(generics.ListAPIView):
     """GET /api/notifications/ — list current user's notifications"""
 
     serializer_class = NotificationSerializer
     permission_classes = [permissions.IsAuthenticated]
-    pagination_class = NotificationPagination
 
     def get_queryset(self):
         return Notification.objects.filter(recipient=self.request.user)
@@ -108,7 +54,7 @@ class MarkAllReadView(APIView):
 
 
 class MarkOneReadView(APIView):
-    """POST /api/notifications/<pk>/read/ or PATCH /api/notifications/<pk>/mark-read/"""
+    """POST /api/notifications/<pk>/read/"""
 
     permission_classes = [permissions.IsAuthenticated]
 
@@ -120,9 +66,6 @@ class MarkOneReadView(APIView):
         notif.is_read = True
         notif.save(update_fields=["is_read"])
         return Response(NotificationSerializer(notif).data)
-
-    def patch(self, request, pk):
-        return self.post(request, pk)
 
 
 class SubscribePushView(APIView):
@@ -170,35 +113,3 @@ class UnsubscribePushView(APIView):
         return Response(
             {"detail": "Unsubscribed successfully."}, status=status.HTTP_200_OK
         )
-
-
-class DigestAPIView(APIView):
-    """GET /api/notifications/digest/ — returns grouped unread notifications"""
-
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request):
-        unread = Notification.objects.filter(
-            recipient=request.user, is_read=False
-        ).order_by("-created_at")
-        serializer = NotificationSerializer(unread, many=True)
-        # Group by notif_type
-        grouped = {}
-        for notif in serializer.data:
-            notif_type = notif["notif_type"]
-            if notif_type not in grouped:
-                grouped[notif_type] = []
-            grouped[notif_type].append(notif)
-        return Response({"grouped": grouped, "count": len(unread)})
-
-
-class DigestReadView(APIView):
-    """POST /api/notifications/digest/read/"""
-
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request):
-        updated = Notification.objects.filter(
-            recipient=request.user, is_read=False
-        ).update(is_read=True)
-        return Response({"marked_read": updated}, status=status.HTTP_200_OK)

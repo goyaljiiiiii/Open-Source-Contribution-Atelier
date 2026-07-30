@@ -102,17 +102,10 @@ class RateLimitMiddleware(MiddlewareMixin):
 
         reset_val = ttl if (ttl is not None and ttl > 0) else self.window
 
-        allowed, remaining = self._check_rate_limit(cache_key, limit, self.window)
-
-
         request._rate_limit_info = {
             "limit": limit,
             "remaining": remaining,
-
             "reset": reset_val,
-
-            "reset": self.window,
-
         }
 
         if not allowed:
