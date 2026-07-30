@@ -342,6 +342,10 @@ const OAuthClientsPage = lazy(() =>
   })),
 );
 
+const UsageAnalyticsPage = lazy(() =>
+  import("../pages/admin/UsageAnalyticsPage"),
+);
+
 const ConnectedAppsPage = lazy(() =>
   import("../pages/settings/ConnectedApps").then((module) => ({
     default: module.ConnectedApps,
@@ -890,6 +894,15 @@ export function AppRouter() {
             element={
               <ProtectedRoute>
                 <OAuthClientsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/usage-analytics"
+            element={
+              <ProtectedRoute>
+                <UsageAnalyticsPage />
               </ProtectedRoute>
             }
           />
