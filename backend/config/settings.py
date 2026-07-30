@@ -198,6 +198,7 @@ INSTALLED_APPS = [
     "apps.plugins.apps.PluginsConfig",
     "apps.oauth",
     "apps.security",
+    "apps.deduplication",
     # ── Scaffolded Apps ────────────────────────────────────────────────────────
     "apps.burnout_detection",
     "apps.advanced_search",
