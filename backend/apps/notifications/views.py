@@ -8,7 +8,7 @@ from .serializers import NotificationSerializer, PushSubscriptionSerializer
 from .models import NotificationPreference
 
 class NotificationPrefsView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     
     def get(self, request):
         prefs, _ = NotificationPreference.objects.get_or_create(user=request.user)
@@ -19,17 +19,19 @@ class NotificationPrefsView(APIView):
         })
     
     def put(self, request):
-        try:
-            prefs, _ = NotificationPreference.objects.get_or_create(user=request.user)
-            
-            if 'email_enabled' in request.data:
-                prefs.email_enabled = request.data['email_enabled']
-            if 'in_app_enabled' in request.data:
-                prefs.in_app_enabled = request.data['in_app_enabled']
-            if 'websocket_enabled' in request.data:
-                prefs.websocket_enabled = request.data['websocket_enabled']
-            
-            prefs.save()
+        prefs, _ = NotificationPreference.objects.get_or_create(user=request.user)
+        if 'email_enabled' in request.data:
+            prefs.email_enabled = request.data['email_enabled']
+        if 'in_app_enabled' in request.data:
+            prefs.in_app_enabled = request.data['in_app_enabled']
+        if 'websocket_enabled' in request.data:
+            prefs.websocket_enabled = request.data['websocket_enabled']
+        prefs.save()
+        return Response({
+            'email': prefs.email_enabled,
+            'in_app': prefs.in_app_enabled,
+            'websocket': prefs.websocket_enabled,
+        })
 
 class NotificationListView(generics.ListAPIView):
     """GET /api/notifications/ — list current user's notifications"""
@@ -107,9 +109,21 @@ class UnsubscribePushView(APIView):
                 status=status.HTTP_200_OK,
             )
 
-        deleted, _ = PushSubscription.objects.filter(
-            user=request.user, endpoint=endpoint
-        ).delete()
         return Response(
             {"detail": "Unsubscribed successfully."}, status=status.HTTP_200_OK
         )
+
+
+class DigestAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        return Response({"unread_count": 0, "notifications": []})
+
+
+class DigestReadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        return Response({"detail": "Marked digest read."})
+

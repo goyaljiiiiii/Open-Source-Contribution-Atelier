@@ -144,21 +144,15 @@ class UserProfile(models.Model):
     """
 
     user = models.OneToOneField(
-<<<<<<< HEAD
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.CASCADE, 
-        related_name="user_profile"  # Changed from "profile" to "user_profile"
-=======
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="user_profile",  # Changed from "profile" to "user_profile"
+        related_name="user_profile",
     )
     avatar = models.ImageField(
         upload_to="avatars/",
         null=True,
         blank=True,
         max_length=255,
->>>>>>> 02ece0c8009596a33fbf5bc0bc7298ff74711560
     )
     cover_image = models.ImageField(upload_to="covers/", null=True, blank=True)
     last_password_change = models.DateTimeField(

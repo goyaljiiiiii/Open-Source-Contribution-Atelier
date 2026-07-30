@@ -1,14 +1,14 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
-from .models import CodeIssue, PRReview, PRReviewComment, ReviewConfig
-from .serializers import (
+from apps.pr_review_bot.models import CodeIssue, PRReview, PRReviewComment, ReviewConfig
+from apps.pr_review_bot.serializers import (
     CodeIssueSerializer,
     PRReviewCommentSerializer,
     PRReviewSerializer,
     ReviewConfigSerializer,
 )
-from .views.impact_views import PRImpactAnalysisViewSet
+from apps.pr_review_bot.views.impact_views import PRImpactAnalysisViewSet
 
 
 class PRReviewViewSet(viewsets.ModelViewSet):

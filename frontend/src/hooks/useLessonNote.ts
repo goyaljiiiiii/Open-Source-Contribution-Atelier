@@ -15,16 +15,29 @@ export function useLessonNote(lessonSlug: string) {
 
   const { data: note, isLoading } = useQuery<LessonNote>({
     queryKey: ["lessonNote", lessonSlug],
-    queryFn: () => fetchApi(`/progress/notes/${lessonSlug}/`),
+    queryFn: async () => {
+      try {
+        return await fetchApi(`/lessons/${lessonSlug}/notes`);
+      } catch {
+        return await fetchApi(`/progress/notes/${lessonSlug}/`);
+      }
+    },
     enabled: !!lessonSlug,
   });
 
   const mutation = useMutation({
-    mutationFn: (content: string) => {
-      return fetchApi(`/progress/notes/${lessonSlug}/`, {
-        method: "POST",
-        body: JSON.stringify({ content }),
-      });
+    mutationFn: async (content: string) => {
+      try {
+        return await fetchApi(`/lessons/${lessonSlug}/notes`, {
+          method: "POST",
+          body: JSON.stringify({ content }),
+        });
+      } catch {
+        return await fetchApi(`/progress/notes/${lessonSlug}/`, {
+          method: "POST",
+          body: JSON.stringify({ content }),
+        });
+      }
     },
     onMutate: async (newContent) => {
       await queryClient.cancelQueries({ queryKey: ["lessonNote", lessonSlug] });

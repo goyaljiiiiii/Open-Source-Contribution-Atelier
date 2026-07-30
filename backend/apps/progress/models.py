@@ -177,7 +177,7 @@ class LessonProgress(models.Model):
     score = models.PositiveIntegerField(default=0)
     base_score = models.PositiveIntegerField(default=0)
     multiplier_applied = models.FloatField(default=1.0)
-   attempt_count = models.PositiveIntegerField(default=0)
+    attempt_count = models.PositiveIntegerField(default=0)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -551,7 +551,6 @@ class UserNote(models.Model):
 
     def __str__(self):
         return f"Note by {self.user.username} for {self.lesson.slug}"
-from __future__ import annotations
 
 from django.contrib.auth import get_user_model
 
