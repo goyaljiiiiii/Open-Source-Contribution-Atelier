@@ -85,6 +85,26 @@ class CoreConfig(AppConfig):
                     "repeats": -1,
                 },
             )
+
+            # Performance sample cleanup
+            Schedule.objects.get_or_create(
+                name="perf-sample-prune-daily",
+                defaults={
+                    "func": "apps.core.tasks.prune_performance_samples",
+                    "schedule_type": Schedule.DAILY,
+                    "repeats": -1,
+                },
+            )
+
+            # Performance sample anonymization
+            Schedule.objects.get_or_create(
+                name="perf-sample-anonymize-hourly",
+                defaults={
+                    "func": "apps.core.tasks.anonymize_performance_samples",
+                    "schedule_type": Schedule.HOURLY,
+                    "repeats": -1,
+                },
+            )
         except Exception as e:
             logger.warning("Caught exception: %s", e)
             # Table might not be migrated yet or django_q not installed

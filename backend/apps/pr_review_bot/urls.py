@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (
     CodeIssueViewSet,
+    PRImpactAnalysisViewSet,
     PRReviewCommentViewSet,
     PRReviewViewSet,
     ReviewConfigViewSet,
@@ -13,6 +14,7 @@ router.register(r"pr-review", PRReviewViewSet)
 router.register(r"code-issue", CodeIssueViewSet)
 router.register(r"pr-review-comment", PRReviewCommentViewSet)
 router.register(r"review-config", ReviewConfigViewSet)
+router.register(r"impact-analysis", PRImpactAnalysisViewSet, basename="impact-analysis")
 
 urlpatterns = [
     path("", include(router.urls)),

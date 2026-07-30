@@ -42,7 +42,23 @@ SECRET_KEY = os.getenv(
 )
 if not SECRET_KEY:
     raise ImproperlyConfigured("SECRET_KEY environment variable is not set")
+
+# Base64 encoded 32-byte key for AES-GCM field encryption.
+# Can be a comma-separated list of keys to support double-read during key rotation.
+FIELD_ENCRYPTION_KEY_RAW = os.getenv("FIELD_ENCRYPTION_KEY", "")
+if FIELD_ENCRYPTION_KEY_RAW:
+    if "," in FIELD_ENCRYPTION_KEY_RAW:
+        FIELD_ENCRYPTION_KEY = [
+            k.strip() for k in FIELD_ENCRYPTION_KEY_RAW.split(",") if k.strip()
+        ]
+    else:
+        FIELD_ENCRYPTION_KEY = FIELD_ENCRYPTION_KEY_RAW.strip()
+else:
+    # Default for development only; this must be set in prod!
+    FIELD_ENCRYPTION_KEY = "MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI="
+
 DEBUG = os.getenv("DEBUG", "False") == "True"
+
 
 # Explicit environment designation, independent of DEBUG. Used below to make
 # sure DEBUG=True (and the wildcard CORS it enables) can never silently reach
@@ -189,9 +205,13 @@ INSTALLED_APPS = [
     "apps.portfolio",
     "apps.feature_flags",
     "apps.issues",
+<<<<<<< HEAD
+"apps.moderation",
+=======
     "apps.gamification",
     "apps.ai_tutor",
     "apps.project_health",
+>>>>>>> 02ece0c8009596a33fbf5bc0bc7298ff74711560
     "django_q",
     "apps.monitoring",
     "waffle",
@@ -247,8 +267,11 @@ RATE_LIMIT_BACKEND = os.getenv(
 ).lower()
 RATE_LIMIT_REDIS_URL = ENV_REDIS_URL or CHECK_REDIS_URL
 
+PERF_TRACK_SAMPLE_RATE = 0.1  # 10% sampling
+
 MIDDLEWARE = [
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
+    "apps.core.middleware.perf_tracking.PerformanceTrackingMiddleware",
     "apps.core.middleware.request_id.RequestIdMiddleware",
     "config.logging_middleware.RequestResponseLoggingMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -273,6 +296,7 @@ MIDDLEWARE = [
     "apps.core.middleware.ratelimit.RateLimitMiddleware",
     "apps.sandbox.middleware.SandboxExecutionLogMiddleware",
     "apps.core.middleware.api_version.APIVersionMiddleware",
+    "apps.webhooks.middleware.WebhookSignatureMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]

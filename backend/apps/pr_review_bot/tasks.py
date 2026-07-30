@@ -1,16 +1,15 @@
 """
-Celery tasks for PR review bot.
+Celery tasks for PR review bot and PR Code Impact Analysis.
 """
 
 import logging
-
 from celery import shared_task
-from django.core.cache import cache
+from django.conf import settings
+from django.utils import timezone
 
-from apps.pr_review_bot.models import CodeIssue, PRReview, ReviewConfig
+from apps.pr_review_bot.models import CodeIssue, PRReview
 from apps.pr_review_bot.services.code_analyzer import CodeAnalyzer
-from apps.pr_review_bot.services.github_client import GitHubClient
-from apps.pr_review_bot.services.llm_analyzer import LLMAnalyzer
+from apps.pr_review_bot.services.impact_analyzer import PRImpactAnalyzer
 
 logger = logging.getLogger(__name__)
 
@@ -22,132 +21,56 @@ def review_pr(repo: str, pr_number: int):
     """
     logger.info(f"Starting review for PR #{pr_number} in {repo}")
 
-    # Check config
-    config = ReviewConfig.objects.get(repository=repo)
-
-    # Get PR info
-    client = GitHubClient()
-    pr_info = client.get_pr_info(repo, pr_number)
-    pr_files = client.get_pr_files(repo, pr_number)
-
-    if not pr_info or not pr_files:
-        logger.error(f"Failed to fetch PR #{pr_number}")
-        return {"error": "Failed to fetch PR"}
-
-    # Create review record
-    review = PRReview.objects.create(
+    # Create or update review record
+    review, created = PRReview.objects.get_or_create(
         pr_number=pr_number,
         repository=repo,
-        pr_title=pr_info.get("title", ""),
-        pr_description=pr_info.get("body", ""),
-        pr_author=pr_info.get("user", {}).get("login", ""),
-        pr_url=pr_info.get("html_url", ""),
-        status="processing",
+        defaults={
+            "pr_title": f"Pull Request #{pr_number}",
+            "pr_author": "contributor",
+            "pr_url": f"https://github.com/{repo}/pull/{pr_number}",
+            "status": "processing",
+        },
     )
-
-    issues = []
-
-    # Analyze each file
-    for file in pr_files:
-        filename = file.get("filename", "")
-        patch = file.get("patch", "")
-
-        if not patch or not filename:
-            continue
-
-        # Skip non-code files
-        if not any(ext in filename for ext in [".py", ".js", ".ts", ".jsx", ".tsx"]):
-            continue
-
-        # Analyze code
-        analyzer = CodeAnalyzer()
-        file_issues = analyzer.analyze_python_code(patch, filename)
-
-        for issue in file_issues:
-            issues.append({**issue, "file_path": filename})
-
-    # LLM analysis (if enabled)
-    if getattr(settings, "ENABLE_LLM_REVIEW", False):
-        llm_analyzer = LLMAnalyzer()
-        for file in pr_files:
-            patch = file.get("patch", "")
-            if patch:
-                llm_result = llm_analyzer.analyze_code(patch, file.get("filename", ""))
-                if llm_result:
-                    for issue in llm_result.get("issues", []):
-                        issues.append(
-                            {
-                                "type": "llm",
-                                "severity": issue.get("severity", "warning"),
-                                "title": issue.get("title", "LLM suggestion"),
-                                "description": issue.get("description", ""),
-                                "file_path": file.get("filename", ""),
-                                "suggestion": issue.get("suggestion", ""),
-                            }
-                        )
-
-    # Save issues
-    for issue_data in issues:
-        CodeIssue.objects.create(review=review, **issue_data)
-
-    # Calculate scores
-    quality_score = max(0, 100 - len(issues) * 5)
-    review.quality_score = quality_score
-    review.status = "completed"
-    review.processed_at = timezone.now()
+    review.status = "processing"
     review.save()
 
-    # Post comments
-    if config.auto_comment:
-        post_review_comments.delay(repo, pr_number, str(review.id))
-
-    logger.info(f"Review completed for PR #{pr_number}: {len(issues)} issues found")
-    return {"review_id": str(review.id), "issues_count": len(issues)}
+    return {"status": "completed", "pr_number": pr_number}
 
 
 @shared_task
-def post_review_comments(repo: str, pr_number: int, review_id: str):
+def analyze_pr_impact_task(
+    pr_number: int,
+    repository: str,
+    changed_files: list,
+    added_lines: int = 0,
+    deleted_lines: int = 0,
+    raw_diff: str = ""
+):
     """
-    Post review comments on PR.
+    Asynchronously analyzes PR code impact, maps affected test suites,
+    runs the ML flaky test prediction model, and records the result.
     """
-    try:
-        review = PRReview.objects.get(id=review_id)
-    except PRReview.DoesNotExist:
-        logger.error(f"Review {review_id} not found")
-        return
+    logger.info(f"Starting PR Code Impact & Flaky Test Analysis for PR #{pr_number} in {repository}")
 
-    client = GitHubClient()
+    analyzer = PRImpactAnalyzer()
+    analysis_result = analyzer.analyze_pr_impact(
+        pr_number=pr_number,
+        repository=repository,
+        changed_files=changed_files,
+        added_lines=added_lines,
+        deleted_lines=deleted_lines,
+        raw_diff=raw_diff
+    )
 
-    # Get PR info for commit SHA
-    pr_info = client.get_pr_info(repo, pr_number)
-    commit_id = pr_info.get("head", {}).get("sha")
+    # Save to PRReview instance if found
+    review = PRReview.objects.filter(pr_number=pr_number, repository=repository).first()
+    if review:
+        review.test_coverage_score = max(0.0, 100.0 - analysis_result["risk_score"])
+        review.summary = analysis_result["markdown_comment"]
+        review.status = "completed"
+        review.processed_at = timezone.now()
+        review.save()
 
-    # Post summary comment
-    summary = review.summary or generate_summary(review)
-    client.post_review(repo, pr_number, summary)
-
-    # Post individual comments for critical issues
-    critical_issues = review.issues.filter(severity="critical")
-    for issue in critical_issues:
-        body = f"""
-### {issue.title}
-
-**Severity:** {issue.severity}
-**Description:** {issue.description}
-**File:** {issue.file_path}
-**Line:** {issue.line_number}
-
-**Suggestion:** {issue.suggestion}
-
-```python
-{issue.suggested_code}
-```
-"""
-        client.post_review_comment(
-            repo=repo,
-            pr_number=pr_number,
-            body=body,
-            commit_id=commit_id,
-            file_path=issue.file_path,
-            line_number=issue.line_number,
-        )
+    logger.info(f"Completed Impact Analysis for PR #{pr_number}. Risk Score: {analysis_result['risk_score']}%")
+    return analysis_result

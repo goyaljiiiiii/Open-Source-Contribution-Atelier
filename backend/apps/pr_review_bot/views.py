@@ -8,6 +8,7 @@ from .serializers import (
     PRReviewSerializer,
     ReviewConfigSerializer,
 )
+from .views.impact_views import PRImpactAnalysisViewSet
 
 
 class PRReviewViewSet(viewsets.ModelViewSet):
@@ -32,3 +33,12 @@ class ReviewConfigViewSet(viewsets.ModelViewSet):
     queryset = ReviewConfig.objects.all()
     serializer_class = ReviewConfigSerializer
     permission_classes = [IsAuthenticated]
+
+
+__all__ = [
+    "PRReviewViewSet",
+    "CodeIssueViewSet",
+    "PRReviewCommentViewSet",
+    "ReviewConfigViewSet",
+    "PRImpactAnalysisViewSet",
+]

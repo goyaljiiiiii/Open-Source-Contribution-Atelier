@@ -334,9 +334,13 @@ def _backup_postgres(db_settings: dict, output_path: Path) -> None:
         "--dbname",
         db_settings.get("NAME", ""),
         "--no-password",
-        "--file",
-        str(output_path),
     ]
+    cmd.extend(
+        [
+            "--file",
+            str(output_path),
+        ]
+    )
     subprocess.run(cmd, env=env, check=True, capture_output=True)
 
 
@@ -371,3 +375,33 @@ def invalidate_tag_task(tag: str):
     from apps.core.cache.invalidation import invalidate_tag
 
     invalidate_tag(tag)
+
+
+def prune_performance_samples():
+    """Delete performance samples older than 30 days."""
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from apps.core.models import PerformanceSample
+
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+    deleted, _ = PerformanceSample.objects.filter(
+        timestamp__lt=thirty_days_ago
+    ).delete()
+    logger.info(f"Pruned {deleted} old performance samples")
+
+
+def anonymize_performance_samples():
+    """Anonymize user_id in performance samples older than 24h."""
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from apps.core.models import PerformanceSample
+
+    one_day_ago = timezone.now() - timedelta(hours=24)
+    updated = PerformanceSample.objects.filter(
+        timestamp__lt=one_day_ago, user_id__isnull=False
+    ).update(user_id=None)
+    logger.info(f"Anonymized {updated} performance samples")
