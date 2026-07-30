@@ -38,17 +38,12 @@ class SandboxConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def check_rate_limit(self, key, limit, period):
-        count = cache.get(key, 0)
-        if count >= limit:
-            return False
-        if count == 0:
+        try:
+            count = cache.incr(key)
+        except ValueError:
             cache.set(key, 1, timeout=period)
-        else:
-            try:
-                cache.incr(key)
-            except ValueError:
-                cache.set(key, count + 1, timeout=period)
-        return True
+            count = 1
+        return count <= limit
 
     async def receive(self, text_data):
         try:
