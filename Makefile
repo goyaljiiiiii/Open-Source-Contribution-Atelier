@@ -36,3 +36,29 @@ test:
 
 verify:
 	./verify.sh
+
+TOOL_VERSIONS := grype:v0.79.1 pip-audit:2.7.3
+
+.PHONY: scan-vulns install-tools
+
+install-tools:
+	@echo "Installing vulnerability scanning tools (pinned versions)..."
+	pip install pip-audit==2.7.3
+	@echo "To install Grype: curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin v0.79.1"
+
+scan-vulns: install-tools
+	@echo "=== pip-audit (Python) ==="
+	pip-audit --require-hashes --strict -r backend/requirements.txt || true
+	@echo ""
+	@echo "=== npm audit (Frontend) ==="
+	cd frontend && npm audit --audit-level=high || true
+	@echo ""
+	@echo "=== Grype (Docker image) ==="
+	grype open-contribution-atelier-backend:latest --fail-on HIGH --only-fixed || true
+	@echo ""
+	@echo "=== Allowlist Check ==="
+	python backend/scripts/check_dependency_allowlist.py \
+		--reports-dir . \
+		--allowlist backend/scripts/vuln-allowlist.json \
+		--output vuln-report-consolidated.json
+	@echo "=== Done ==="

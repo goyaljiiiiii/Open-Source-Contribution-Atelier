@@ -1,8 +1,12 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
+import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { CodeBlock } from "../components/docs/CodeBlock";
 
 describe("CodeBlock Component", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it("renders language badge and code content", () => {
     const sampleCode = "const hello = 'world';";
     render(
@@ -18,7 +22,7 @@ describe("CodeBlock Component", () => {
     const multilineCode = "line1\nline2\nline3";
     render(<CodeBlock code={multilineCode} showLineNumbers={true} />);
 
-    expect(screen.getByText("1")).toBeInTheDocument();
+    expect(screen.getAllByText("1")[0]).toBeInTheDocument();
     expect(screen.getByText("2")).toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();
   });
@@ -33,7 +37,7 @@ describe("CodeBlock Component", () => {
 
     render(<CodeBlock code="echo 'test'" language="bash" />);
 
-    const copyBtn = screen.getByRole("button", { name: "Copy to Clipboard" });
+    const copyBtn = screen.getAllByRole("button", { name: "Copy to Clipboard" })[0];
     fireEvent.click(copyBtn);
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith("echo 'test'");

@@ -13,5 +13,16 @@ export default defineConfig({
       "src/test/**/*.test.{ts,tsx}",
       "src/components/**/*.test.{ts,tsx}",
     ],
+    // Ensure fake timers do not leak state across test suites
+    fakeTimers: {
+      toFake: [
+        "setTimeout",
+        "clearTimeout",
+        "setInterval",
+        "clearInterval",
+        "Date",
+        "performance",
+      ],
+    },
   },
 });

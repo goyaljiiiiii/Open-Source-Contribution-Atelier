@@ -8,6 +8,7 @@ from .views import (
     RecommendationViewSet,
     SkillGapAnalysisViewSet,
     SkillTagViewSet,
+    SkillTreeViewSet,
 )
 
 router = DefaultRouter()
@@ -17,6 +18,7 @@ router.register(r"issue-skill-tag", IssueSkillTagViewSet)
 router.register(r"newcomer-friendliness-score", NewcomerFriendlinessScoreViewSet)
 router.register(r"recommendation", RecommendationViewSet)
 router.register(r"skill-gap-analysis", SkillGapAnalysisViewSet)
+router.register(r"skill-tree", SkillTreeViewSet, basename="skill-tree")
 
 urlpatterns = [
     path("", include(router.urls)),

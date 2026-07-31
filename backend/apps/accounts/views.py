@@ -577,6 +577,29 @@ class PasswordResetRequestView(APIView):
         email = serializer.validated_data["email"].lower()  # type: ignore
         user = User.objects.filter(email__iexact=email).first()
 
+        try:
+            user = User.objects.get(email=email)
+            # Generate reset token
+            token = generate_reset_token(user)
+            
+            # Send email
+            send_mail(
+                'Password Reset',
+                f'Click here to reset: /reset-password/{token}',
+                'noreply@atelier.dev',
+                [email],
+                fail_silently=True,  
+            )
+        except User.DoesNotExist:
+            #  Log silently 
+            logger.info(f'Password reset requested for non-existent email: {email}')
+           
+        
+        
+        return Response({
+            'message': 'If an account with that email exists, we\'ve sent a reset link.'
+        }, status=status.HTTP_200_OK)
+
         if user:
             # Invalidate any existing unused tokens for this user
             PasswordResetToken.objects.filter(user=user, is_used=False).update(
