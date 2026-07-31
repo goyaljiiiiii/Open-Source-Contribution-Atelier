@@ -461,7 +461,7 @@ class ContributorDashboardView(APIView):
             }
 
     def get(self, request):
-         users = User.objects.filter(
+        users = User.objects.filter(
             is_active=True
         ).annotate(
             total_xp=F('progress__xp')
@@ -470,6 +470,7 @@ class ContributorDashboardView(APIView):
             'username'   
         )
         user = request.user
+
         fields_param = request.query_params.get("fields")
         if fields_param:
             requested_fields = [f.strip() for f in fields_param.split(",") if f.strip()]

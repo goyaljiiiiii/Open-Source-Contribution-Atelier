@@ -40,6 +40,13 @@ def _configure_django_q_test_settings(settings):
             "BACKEND": "channels.layers.InMemoryChannelLayer",
         },
     }
+    settings.CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "atelier-test-cache",
+        },
+    }
+
 
 
 @pytest.fixture(autouse=True)
