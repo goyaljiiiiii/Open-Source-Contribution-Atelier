@@ -408,8 +408,18 @@ GITHUB_APP = {
 }
 GITHUB_INSTALLATION_ID = os.getenv("GITHUB_INSTALLATION_ID")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
-GITHUB_OAUTH_CLIENT_ID = os.getenv("GITHUB_OAUTH_CLIENT_ID")
-GITHUB_OAUTH_CLIENT_SECRET = os.getenv("GITHUB_OAUTH_CLIENT_SECRET")
+
+# Used by the custom user-login OAuth flow (apps.accounts.views.GitHubOAuthStartView /
+# GitHubOAuthCallbackView). Distinct from GITHUB_APP above, which is for the
+# GitHub App integration (webhooks / API access), not user login.
+GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
+GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
+
+# Deprecated aliases kept for backward compatibility with any existing
+# deployments/.env files still using the old *_OAUTH_* naming. Remove
+# once confirmed no active deployment relies on these.
+GITHUB_OAUTH_CLIENT_ID = os.getenv("GITHUB_OAUTH_CLIENT_ID") or GITHUB_CLIENT_ID
+GITHUB_OAUTH_CLIENT_SECRET = os.getenv("GITHUB_OAUTH_CLIENT_SECRET") or GITHUB_CLIENT_SECRET
 
 # ── AI Tutor ────────────────────────────────────────────────────────────────────
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -557,8 +567,8 @@ SITE_ID = 1
 SOCIALACCOUNT_PROVIDERS = {
     "github": {
         "APP": {
-            "client_id": os.getenv("GITHUB_OAUTH_CLIENT_ID"),
-            "secret": os.getenv("GITHUB_OAUTH_CLIENT_SECRET"),
+            "client_id": GITHUB_CLIENT_ID,
+            "secret": GITHUB_CLIENT_SECRET,
         },
         "SCOPE": [
             "user",
