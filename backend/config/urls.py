@@ -25,6 +25,7 @@ urlpatterns = [
     path("api/admin/", include("apps.monitoring.urls")),
     path("api/monitoring/", include("apps.monitoring.urls")),
     path("api/admin/core/", include("apps.core.urls")),
+    path("api/admin/db/", include("apps.core.urls")),
     # ── Health Checks ──────────────────────────────────────────────────────────
     path("health/", include("apps.health.urls")),
     path("health/legacy/", health_view, name="health"),

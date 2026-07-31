@@ -1166,3 +1166,46 @@ class LeaderboardRank(models.Model):
         managed = False
         db_table = "progress_leaderboard_mv"
         ordering = ["rank"]
+
+
+class WeeklyGoal(models.Model):
+    """Tracks weekly learning goals (lessons, XP, minutes) per user per week."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="weekly_goals",
+    )
+    week_start_date = models.DateField(db_index=True)
+    target_lessons = models.PositiveIntegerField(default=5)
+    target_xp = models.PositiveIntegerField(default=500)
+    target_minutes = models.PositiveIntegerField(default=120)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-week_start_date"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "week_start_date"], name="unique_user_weekly_goal"
+            )
+        ]
+
+    def __str__(self):
+        return f"WeeklyGoal(user={self.user_id}, week={self.week_start_date})"
+
+    @classmethod
+    def get_or_create_current(cls, user) -> "WeeklyGoal":
+        today = timezone.now().date()
+        week_start = today - timezone.timedelta(days=today.weekday())
+        goal, _ = cls.objects.get_or_create(
+            user=user,
+            week_start_date=week_start,
+            defaults={
+                "target_lessons": 5,
+                "target_xp": 500,
+                "target_minutes": 120,
+            },
+        )
+        return goal
+

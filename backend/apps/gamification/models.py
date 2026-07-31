@@ -152,3 +152,49 @@ class Purchase(models.Model):
 
     def __str__(self):
         return f"{self.user} bought {self.item.name} ({self.xp_spent} XP)"
+
+
+class SignedCertificate(models.Model):
+    """Cryptographically signed course completion certificate."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="signed_certificates",
+    )
+    course_name = models.CharField(max_length=255)
+    payload = models.JSONField(default=dict)
+    signature = models.TextField()
+    verification_hash = models.CharField(max_length=64, unique=True, db_index=True)
+    public_key_fingerprint = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"SignedCertificate {self.verification_hash} ({self.course_name})"
+
+
+class AntiCheatFlag(models.Model):
+    """Security flag raised by anti-cheat heuristics."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="anti_cheat_flags",
+    )
+    reason = models.CharField(max_length=128)
+    risk_score = models.FloatField(
+        validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
+    )
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"AntiCheatFlag user={self.user_id} reason={self.reason}"

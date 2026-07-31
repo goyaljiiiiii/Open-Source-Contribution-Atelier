@@ -96,3 +96,29 @@ export interface CertificateResponse {
   has_certificate?: boolean;
   certificate?: CertificateInfo;
 }
+
+export interface WeeklyGoalDay {
+  day_name: string;
+  date: string;
+  is_active: boolean;
+  is_today: boolean;
+  is_future: boolean;
+}
+
+export interface WeeklyGoalData {
+  id: number;
+  week_start_date: string;
+  week_end_date: string;
+  target_lessons: number;
+  target_xp: number;
+  target_minutes: number;
+  completed_lessons: number;
+  earned_xp: number;
+  minutes_spent: number;
+  lessons_progress_pct: number;
+  xp_progress_pct: number;
+  minutes_progress_pct: number;
+  overall_progress_pct: number;
+  daily_breakdown: WeeklyGoalDay[];
+}
+

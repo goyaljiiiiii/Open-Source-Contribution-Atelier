@@ -51,16 +51,16 @@ class LeaderboardView(ListAPIView):
     pagination_class = LeaderboardPagination
 
     def list(self, request, *args, **kwargs):
+        from apps.core.cache.stampede import stampede_protected_get_or_set
+
         page = request.query_params.get("page", "1")
         cache_key = f"leaderboard_page_{page}"
 
-        cached_data = cache.get(cache_key)
-        if cached_data is not None:
-            return Response(cached_data)
+        def generate():
+            return super(LeaderboardView, self).list(request, *args, **kwargs).data
 
-        response = super().list(request, *args, **kwargs)
-        cache.set(cache_key, response.data, 300)
-        return response
+        data = stampede_protected_get_or_set(cache_key, generate, timeout=300)
+        return Response(data)
 
     def get_queryset(self):
         timeframe = self.request.query_params.get("timeframe", "all")
@@ -460,8 +460,17 @@ class ContributorDashboardView(APIView):
                 "next_milestone": MilestoneTrackService.get_user_next_milestone(user),
             }
 
+        elif field == "weekly_goal":
+            from apps.progress.models import WeeklyGoal
+            goal = WeeklyGoal.get_or_create_current(user)
+            return {
+                "target_lessons": goal.target_lessons,
+                "target_xp": goal.target_xp,
+                "target_minutes": goal.target_minutes,
+            }
+
     def get(self, request):
-         users = User.objects.filter(
+        users = User.objects.filter(
             is_active=True
         ).annotate(
             total_xp=F('progress__xp')
@@ -470,6 +479,7 @@ class ContributorDashboardView(APIView):
             'username'   
         )
         user = request.user
+
         fields_param = request.query_params.get("fields")
         if fields_param:
             requested_fields = [f.strip() for f in fields_param.split(",") if f.strip()]
@@ -480,6 +490,7 @@ class ContributorDashboardView(APIView):
                 "recent_prs",
                 "progress_tracker",
                 "active_track",
+                "weekly_goal",
             ]
 
         data = {}
@@ -490,6 +501,7 @@ class ContributorDashboardView(APIView):
                 "recent_prs",
                 "progress_tracker",
                 "active_track",
+                "weekly_goal",
             ]:
                 continue
 
@@ -501,6 +513,7 @@ class ContributorDashboardView(APIView):
             data[field] = field_data
 
         return Response(data)
+
 
 
 class ModeratorAnalyticsView(APIView):

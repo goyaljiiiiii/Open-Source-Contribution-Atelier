@@ -204,7 +204,6 @@ INSTALLED_APPS = [
     "apps.events",
     "apps.portfolio",
     "apps.feature_flags",
-    "apps.issues",
     "apps.gamification",
     "apps.ai_tutor",
     "apps.project_health",
@@ -230,8 +229,8 @@ INSTALLED_APPS = [
     "apps.dx_testing",
     "apps.issue_quality",
     "apps.ml_triage",
-    "apps.issues",
 ]
+
 
 # Cache backends are selected with channel layers below (Redis or LocMem fallback).
 
@@ -270,7 +269,9 @@ PERF_TRACK_SAMPLE_RATE = 0.1  # 10% sampling
 MIDDLEWARE = [
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "apps.core.middleware.perf_tracking.PerformanceTrackingMiddleware",
+    "apps.core.middleware.db_pool_monitor.DatabasePoolMonitorMiddleware",
     "apps.core.middleware.request_id.RequestIdMiddleware",
+
     "config.logging_middleware.RequestResponseLoggingMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
@@ -363,8 +364,10 @@ for db_name, db_config in DATABASES.items():
         db_config["ENGINE"] = "django_prometheus.db.backends.sqlite3"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+CONN_MAX_AGE = int(os.getenv("CONN_MAX_AGE", "60"))
 
 DATABASE_ROUTERS = ["config.db_router.PrimaryReplicaRouter"]
+
 
 # ── Read Replica Configuration ─────────────────────────────────────────────
 # Each entry must match a key in DATABASES. Omit or set to [] to disable.
@@ -442,7 +445,9 @@ GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
 # deployments/.env files still using the old *_OAUTH_* naming. Remove
 # once confirmed no active deployment relies on these.
 GITHUB_OAUTH_CLIENT_ID = os.getenv("GITHUB_OAUTH_CLIENT_ID") or GITHUB_CLIENT_ID
-GITHUB_OAUTH_CLIENT_SECRET = os.getenv("GITHUB_OAUTH_CLIENT_SECRET") or GITHUB_CLIENT_SECRET
+GITHUB_OAUTH_CLIENT_SECRET = (
+    os.getenv("GITHUB_OAUTH_CLIENT_SECRET") or GITHUB_CLIENT_SECRET
+)
 
 # ── AI Tutor ────────────────────────────────────────────────────────────────────
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
