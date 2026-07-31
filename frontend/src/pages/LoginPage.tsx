@@ -190,7 +190,10 @@ export function LoginPage() {
         </div>
 
         <div className="space-y-2">
-          <label className="font-black text-slate-500 dark:text-slate-400 ml-1 text-[10px] uppercase tracking-wider">
+          <label
+            htmlFor="login-password"
+            className="font-black text-slate-500 dark:text-slate-400 ml-1 text-[10px] uppercase tracking-wider"
+          >
             Password
           </label>
           <PasswordInput

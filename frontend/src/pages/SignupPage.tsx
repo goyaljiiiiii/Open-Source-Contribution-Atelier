@@ -178,7 +178,10 @@ export function SignupPage() {
 
         {/* ── PASSWORD ── */}
         <div className="space-y-2">
-          <label className="font-bold text-black ml-2 uppercase tracking-wide text-sm">
+          <label
+            htmlFor="signup-password"
+            className="font-bold text-black ml-2 uppercase tracking-wide text-sm"
+          >
             Password
           </label>
           <PasswordInput
