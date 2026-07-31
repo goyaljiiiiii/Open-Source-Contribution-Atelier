@@ -36,6 +36,7 @@ import LogoutButtonWithConfirm from "./LogoutButtonWithConfirm";
 import { SyncStatusIndicator } from "../ui/SyncStatusIndicator";
 import { NotificationMenu } from "../ui/NotificationMenu";
 import { ThemeToggle } from "../ui/ThemeToggle";
+import { useTranslate } from "../../i18n/useTranslate";
 
 const navGroups = [
   {
@@ -109,6 +110,7 @@ const navGroups = [
 export function Navigation() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslate();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<{
     lessons: {
@@ -228,7 +230,7 @@ export function Navigation() {
                       }
                     >
                       <Icon size={14} />
-                      <span>{item.label}</span>
+                      <span>{item.label === 'Dashboard' ? t('nav.dashboard', {defaultValue: 'Dashboard'}) : item.label === 'Lessons' ? t('nav.lessons', {defaultValue: 'Lessons'}) : item.label === 'Leaderboard' ? t('nav.leaderboard', {defaultValue: 'Leaderboard'}) : item.label === 'Playground' ? t('nav.sandbox', {defaultValue: 'Playground'}) : item.label}</span>
                     </NavLink>
                   );
                 })}
@@ -382,7 +384,7 @@ export function Navigation() {
                   to="/login"
                   className="rounded-xl bg-white border-2 border-black px-4 py-2 text-sm font-bold text-text shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all dark:bg-[#151411] dark:text-[#f0ebe2] dark:border-[#2e2924]"
                 >
-                  Log In
+                  {t('nav.login', {defaultValue: 'Log In'})}
                 </Link>
                 <Link
                   to="/signup"

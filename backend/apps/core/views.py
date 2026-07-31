@@ -58,3 +58,34 @@ class PerformanceDashboardView(APIView):
         return Response(
             {"hourly_trends": hourly_trends, "top_slowest_endpoints": list(top_slowest)}
         )
+
+
+class I18nDetectView(APIView):
+    permission_classes = []
+
+    def get(self, request):
+        accept_lang = request.headers.get("Accept-Language", "")
+        langs = [lang.split(";")[0].strip() for lang in accept_lang.split(",") if lang]
+        locale = "en"
+        supported = ["en", "fr", "es", "hi", "pt-BR", "zh-CN", "ar", "de", "ja"]
+        
+        for lang in langs:
+            if lang in supported:
+                locale = lang
+                break
+            prefix = lang.split("-")[0]
+            if prefix in supported:
+                locale = prefix
+                break
+        
+        fallback_chain = [locale]
+        if locale != "en":
+            prefix = locale.split("-")[0]
+            if prefix != locale and prefix not in fallback_chain:
+                fallback_chain.append(prefix)
+            fallback_chain.append("en")
+            
+        return Response({
+            "locale": locale,
+            "fallback_chain": fallback_chain
+        })
