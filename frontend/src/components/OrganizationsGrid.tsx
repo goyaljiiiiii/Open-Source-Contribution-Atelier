@@ -111,6 +111,7 @@ const OrganizationsGrid: React.FC = () => {
             </div>
           ))}
         </div>
+      </div>
     </div>
   );
 };

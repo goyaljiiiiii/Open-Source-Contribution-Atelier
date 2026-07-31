@@ -8,6 +8,7 @@ import { toast } from "react-hot-toast";
 import { DraggableSticker } from "../components/ui/DraggableSticker";
 import { DemoLoginButton } from "../features/auth/DemoLoginButton";
 import { formatGoogleOAuthError } from "../lib/googleOAuth";
+import { PasswordInput } from "../components/PasswordInput";
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
@@ -21,7 +22,6 @@ export function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  // ✅ Check for session expired parameter
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const expired = params.get("expired");
@@ -35,7 +35,6 @@ export function LoginPage() {
       });
     }
 
-    // If there's a redirect parameter, store it for after login
     if (redirect) {
       sessionStorage.setItem("login_redirect", redirect);
     }
@@ -79,7 +78,6 @@ export function LoginPage() {
 
       login(tokens);
 
-      // ✅ Show success toast
       toast.success("Welcome back! 🎉", {
         duration: 3000,
         position: "bottom-center",
@@ -104,7 +102,6 @@ export function LoginPage() {
       subtitle="Sign in to access your dashboard, complete challenges, and track your progress."
     >
       <form className="space-y-5" onSubmit={handleSubmit}>
-        {/* Draggable Stickers scattered in the background */}
         <div className="hidden lg:block select-none pointer-events-auto">
           <DraggableSticker
             initialX={-280}
@@ -145,7 +142,6 @@ export function LoginPage() {
           </div>
         )}
 
-        {/* Google Login Button */}
         <button
           type="button"
           onClick={() => googleLogin()}
@@ -197,9 +193,9 @@ export function LoginPage() {
           <label className="font-black text-slate-500 dark:text-slate-400 ml-1 text-[10px] uppercase tracking-wider">
             Password
           </label>
-          <input
+          <PasswordInput
+            id="login-password"
             className="w-full rounded-xl border-2 border-black bg-white dark:bg-[#12121a] px-4 py-3 text-slate-900 dark:text-white font-bold outline-none placeholder:text-slate-400 focus:shadow-[2px_2px_0px_0px_#000000] transition-all text-sm"
-            type="password"
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
