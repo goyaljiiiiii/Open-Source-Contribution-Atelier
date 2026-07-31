@@ -28,12 +28,15 @@ from .views import (
     StreakRecoveryView,
     StreakStatusView,
     UserProgressPDFExportView,
+    WeeklyGoalView,
 )
 
 urlpatterns = [
     # Badges
     path("leaderboard/", LeaderboardView.as_view(), name="leaderboard"),
+    path("weekly-goal/", WeeklyGoalView.as_view(), name="weekly-goal"),
     path("buffer-metrics/", BufferMetricsView.as_view(), name="buffer-metrics"),
+
     path("heatmap/", HeatmapView.as_view(), name="heatmap"),
     path("heatmap/export/", HeatmapCSVExportView.as_view(), name="heatmap-export-csv"),
     path("streak/", StreakStatusView.as_view(), name="streak-status"),
