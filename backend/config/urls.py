@@ -12,9 +12,10 @@ from graphene_django.views import GraphQLView
 from apps.billing.views import CheckoutSessionView
 from apps.billing.webhooks import stripe_webhook
 from apps.dashboard.views import LeaderboardView
+from apps.content.views_notes import LessonNoteAPIView
 
 from .health_view import health_view
-from .version_view import version_view, api_versions_view
+from .version_view import api_versions_view, version_view
 
 urlpatterns = [
     # ── Django Admin & External Webhooks ──────────────────────────────────────
@@ -24,7 +25,7 @@ urlpatterns = [
     path("api/admin/", include("apps.monitoring.urls")),
     path("api/monitoring/", include("apps.monitoring.urls")),
     path("api/admin/core/", include("apps.core.urls")),
-
+    path("api/admin/db/", include("apps.core.urls")),
     # ── Health Checks ──────────────────────────────────────────────────────────
     path("health/", include("apps.health.urls")),
     path("health/legacy/", health_view, name="health"),
@@ -39,6 +40,8 @@ urlpatterns = [
     path("api/users/", include("apps.accounts.user_urls")),
     # ── Core Apps ──────────────────────────────────────────────────────────────
     path("api/content/", include("apps.content.urls")),
+    path("api/lessons/<str:lesson_id>/notes", LessonNoteAPIView.as_view(), name="api-lesson-notes"),
+    path("api/lessons/<str:lesson_id>/notes/", LessonNoteAPIView.as_view(), name="api-lesson-notes-slash"),
     path("api/billing/", include("apps.billing.urls")),
     path("api/progress/", include("apps.progress.urls")),
     path("api/localization/", include("apps.localization.urls")),
@@ -112,4 +115,3 @@ if settings.DEBUG:
         path("api/feature-flags/", include("apps.feature_flags.urls")),
         path("graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
     ]
-    

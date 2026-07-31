@@ -197,12 +197,52 @@ class _ProxyAwareThrottle(SlidingWindowAnonThrottle):  # type: ignore
 class UserRateThrottle(BaseDistributedThrottle):
     scope = "user"
 
+    def allow_request(self, request, view):
+        from apps.core.throttling import is_premium_user
+
+        if not request.user or not request.user.is_authenticated:
+            return True
+
+        if is_premium_user(request.user):
+            self.scope = "premium"
+        else:
+            self.scope = "user"
+
+        self.rate = self.get_rate()
+        if self.rate:
+            num_requests, duration = self.parse_rate(self.rate)
+            self.num_requests = num_requests
+            self.duration = duration
+
+        return super().allow_request(request, view)
+
     def get_cache_key(self, request, view):
         if request.user and request.user.is_authenticated:
             ident = request.user.pk
         else:
             ident = self.get_ident(request)
 
+        return self.cache_format % {"scope": self.scope, "ident": ident}
+
+
+class PremiumRateThrottle(BaseDistributedThrottle):
+    scope = "premium"
+
+    def get_cache_key(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return None
+        ident = request.user.pk
+        return self.cache_format % {"scope": self.scope, "ident": ident}
+
+
+class HeavyOperationRateThrottle(BaseDistributedThrottle):
+    scope = "heavy_operation"
+
+    def get_cache_key(self, request, view):
+        if request.user and request.user.is_authenticated:
+            ident = request.user.pk
+        else:
+            ident = self.get_ident(request)
         return self.cache_format % {"scope": self.scope, "ident": ident}
 
 

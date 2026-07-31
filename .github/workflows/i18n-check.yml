@@ -1,0 +1,15 @@
+name: i18n Check
+
+on: [push, pull_request]
+
+jobs:
+  check-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Run coverage check
+        run: python scripts/check_i18n_coverage.py

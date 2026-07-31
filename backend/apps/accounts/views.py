@@ -13,6 +13,7 @@ from urllib.parse import urlencode
 import requests as http_requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.conf import settings
 
 User = get_user_model()
 from django.core.mail import send_mail
@@ -331,9 +332,8 @@ class GoogleLoginView(APIView):
 class GitHubOAuthStartView(APIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [OAuthThrottle]
-
-    def get(self, request):
-        client_id = os.getenv("GITHUB_CLIENT_ID", "")
+def get(self, request):
+        client_id = settings.GITHUB_CLIENT_ID
         if not client_id:
             return Response(
                 {"detail": "GitHub OAuth is not configured."},
@@ -383,8 +383,8 @@ class GitHubOAuthCallbackView(APIView):
                 frontend_url("/", {"auth_error": "GitHub authorization was cancelled."})
             )
 
-        client_id = os.getenv("GITHUB_CLIENT_ID", "")
-        client_secret = os.getenv("GITHUB_CLIENT_SECRET", "")
+        client_id = settings.GITHUB_CLIENT_ID
+        client_secret = settings.GITHUB_CLIENT_SECRET
         if not client_id or not client_secret:
             return redirect(
                 frontend_url("/", {"auth_error": "GitHub OAuth is not configured."})

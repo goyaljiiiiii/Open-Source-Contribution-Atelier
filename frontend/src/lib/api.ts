@@ -1,25 +1,31 @@
 /// <reference types="vite/client" />
 import { enqueueOfflineAction } from "./offlineQueue";
-import { clearAccessToken, getAccessToken } from "./authToken";
+import { clearAccessToken, getAccessToken, setAccessToken } from "./authToken";
 import { broadcastAuthEvent } from "./authSync";
 import { getTraceHeaders } from "./otelProvider";
 import toast from "react-hot-toast";
 
-// 1. Defend the environment variable retrieval against server-side execution crashes
+let refreshPromise: Promise<string | null> | null = null;
+
 const getSafeEnvVar = (key: string): string => {
   if (typeof process !== "undefined" && process.env && process.env[key]) {
     return process.env[key] as string;
   }
-  if (typeof import.meta !== "undefined" && import.meta.env && import.meta.env[key]) {
+  if (
+    typeof import.meta !== "undefined" &&
+    import.meta.env &&
+    import.meta.env[key]
+  ) {
     return import.meta.env[key] as string;
   }
   return "";
 };
 
-// 2. Safely resolve the base URL
 export const API_BASE =
   getSafeEnvVar("VITE_API_BASE_URL").trim() ||
-  (typeof window !== "undefined" ? `${window.location.origin}/api` : "http://127.0.0.1:8000/api");
+  (typeof window !== "undefined"
+    ? `${window.location.origin}/api`
+    : "http://127.0.0.1:8000/api");
 
 type RequestOptions = RequestInit & {
   requireAuth?: boolean;
@@ -28,6 +34,7 @@ type RequestOptions = RequestInit & {
   timeoutMs?: number;
   /** Max retries on network/5xx errors. Default: 1 */
   maxRetries?: number;
+  _isRetry?: boolean;
 };
 
 /**
@@ -109,13 +116,55 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
       }
 
       if (!response.ok) {
+        if (response.status === 401 && !options._isRetry) {
+          try {
+            const refreshToken = localStorage.getItem("refreshToken");
+            if (refreshToken) {
+              if (!refreshPromise) {
+                refreshPromise = fetch(`${API_BASE}/auth/refresh/`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ refresh: refreshToken }),
+                }).then(async (res) => {
+                  if (res.ok) {
+                    const data = await res.json();
+                    if (data.access) {
+                      setAccessToken(data.access);
+                      if (data.refresh) {
+                        localStorage.setItem("refreshToken", data.refresh);
+                      }
+                      return data.access;
+                    }
+                  }
+                  throw new Error("Refresh failed");
+                }).finally(() => {
+                  refreshPromise = null;
+                });
+              }
+              const newAccessToken = await refreshPromise;
+              if (newAccessToken) {
+                return await fetchApi(endpoint, {
+                  ...options,
+                  _isRetry: true,
+                });
+              }
+            }
+          } catch (e) {
+            console.error("[fetchApi] Token refresh failed", e);
+          }
+        }
+
         const errorBody = await response.json().catch(() => ({}));
         let errorMessage =
           errorBody.error ||
           errorBody.message ||
           errorBody.non_field_errors?.[0];
 
-        if (!errorMessage && typeof errorBody === "object" && errorBody !== null) {
+        if (
+          !errorMessage &&
+          typeof errorBody === "object" &&
+          errorBody !== null
+        ) {
           const fieldErrors = Object.values(errorBody)
             .map((msgs) => {
               if (Array.isArray(msgs)) return msgs[0];
@@ -129,7 +178,9 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
           }
         }
 
-        errorMessage = errorMessage || `HTTP error ${response.status} (Req ID: ${requestId})`;
+        errorMessage =
+          errorMessage ||
+          `HTTP error ${response.status} (Req ID: ${requestId})`;
 
         console.error(`[API Error] ReqID=${requestId}`, errorBody);
 

@@ -4,15 +4,14 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from apps.core.models import AuditableModel
+from apps.search.mixins import SearchIndexMixin
 
 User = get_user_model()
 
 
-class Lesson(AuditableModel):
+class Lesson(AuditableModel, SearchIndexMixin):
     class DoesNotExist(ObjectDoesNotExist):
         pass
-
-    objects = models.Manager()
 
     organization = models.ForeignKey(
         "Organization", on_delete=models.CASCADE, null=True, blank=True
@@ -271,37 +270,6 @@ class LessonFeedback(models.Model):
     def __str__(self):
         status = "[DELETED] " if self.is_deleted else ""
         return f"{status}Feedback by {self.user.username} for {self.lesson.title}: {self.rating} stars"
-<<<<<<< HEAD
-class Profile(models.Model):
-    user = models.OneToOneField(
-        User, on_delete=models.CASCADE, related_name="profile"
-    )
-    bio = models.TextField(
-        max_length=160, 
-        blank=True, 
-        default="", 
-        help_text="A short biography or description."
-    )
-    # Individual fields for requested social platforms
-    github_link = models.URLField(
-        blank=True, 
-        default="", 
-        help_text="GitHub profile URL"
-    )
-    linkedin_link = models.URLField(
-        blank=True, 
-        default="", 
-        help_text="LinkedIn profile URL"
-    )
-    portfolio_link = models.URLField(
-        blank=True, 
-        default="", 
-        help_text="Personal portfolio URL"
-    )
-
-    def __str__(self):
-        return f"Profile for {self.user.username}"
-=======
 
 
 class Profile(models.Model):
@@ -312,7 +280,6 @@ class Profile(models.Model):
         default="",
         help_text="A short biography or description.",
     )
-    # Individual fields for requested social platforms
     github_link = models.URLField(
         blank=True, default="", help_text="GitHub profile URL"
     )
@@ -389,4 +356,3 @@ class QuizDraft(models.Model):
 
     def __str__(self):
         return f"Quiz question for {self.lesson.title}"
->>>>>>> 02ece0c8009596a33fbf5bc0bc7298ff74711560

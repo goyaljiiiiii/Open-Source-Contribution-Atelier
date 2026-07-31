@@ -1,5 +1,6 @@
 from django.db import migrations, models
 
+
 class Migration(migrations.Migration):
     dependencies = [
         ("progress", "0008a_backfill_lessonprogress_scores"),

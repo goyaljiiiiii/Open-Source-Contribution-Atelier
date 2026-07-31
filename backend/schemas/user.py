@@ -45,17 +45,11 @@ class UserResponseSchema(BaseModel):
 
     class Config:
         from_attributes = True
-<<<<<<< HEAD
-        
-class UserProfileSchema(BaseModel):
-    """Schema for user profile details"""
-=======
 
 
 class UserProfileSchema(BaseModel):
     """Schema for user profile details"""
 
->>>>>>> 02ece0c8009596a33fbf5bc0bc7298ff74711560
     id: int
     username: str
     email: EmailStr
@@ -65,9 +59,6 @@ class UserProfileSchema(BaseModel):
     avatar_url: Optional[str] = None
 
     class Config:
-<<<<<<< HEAD
-        from_attributes = True
-=======
         from_attributes = True
 
 
@@ -76,4 +67,3 @@ class LoginResponseSchema(BaseModel):
 
     key: str = Field(..., description="Authentication Token")
     user: UserResponseSchema
->>>>>>> 02ece0c8009596a33fbf5bc0bc7298ff74711560

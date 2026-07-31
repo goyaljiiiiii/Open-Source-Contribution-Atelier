@@ -123,6 +123,20 @@ export function useWebSocketWithBackoff(
     setStatus("connecting");
     setLastError(null);
 
+    if (wsRef.current) {
+      wsRef.current.onopen = null;
+      wsRef.current.onmessage = null;
+      wsRef.current.onclose = null;
+      wsRef.current.onerror = null;
+      if (
+        wsRef.current.readyState === WebSocket.OPEN ||
+        wsRef.current.readyState === WebSocket.CONNECTING
+      ) {
+        wsRef.current.close();
+      }
+      wsRef.current = null;
+    }
+
     try {
       const ws = protocols ? new WebSocket(url, protocols) : new WebSocket(url);
       wsRef.current = ws;

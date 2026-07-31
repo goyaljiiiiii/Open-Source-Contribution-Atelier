@@ -11,8 +11,8 @@ import {
   Award,
   HelpCircle,
 } from "lucide-react";
-import { RebaseCommitGraph, RebaseCommit } from "../components/sandbox/RebaseCommitGraph";
-import { RebaseControlsModal } from "../components/sandbox/RebaseControlsModal";
+import { RebaseCommitGraph, RebaseCommit } from "../components/Sandbox/RebaseCommitGraph";
+import { RebaseControlsModal } from "../components/Sandbox/RebaseControlsModal";
 
 interface RebaseScenario {
   id: string;

@@ -34,3 +34,7 @@ class MultiLevelCache:
 
 
 multi_level_cache = MultiLevelCache()
+
+from .coalescing import CoalescingCache
+
+__all__ = ["MultiLevelCache", "multi_level_cache", "CoalescingCache"]

@@ -92,7 +92,7 @@ class ParsedCron:
         self.hours = _parse_field(hour_f, 0, 23)
         self.days = _parse_field(day_f, 1, 31)
         self.months = _parse_field(month_f, 1, 12)
-        self.weekdays = _parse_field(weekday_f, 0, 6)  # 0 = Sunday, cron convention
+        self.weekdays = _parse_field(weekday_f, 0, 7)  # 0 or 7 = Sunday, cron convention
 
         self._day_field_is_wildcard = day_f.strip() == "*"
         self._weekday_field_is_wildcard = weekday_f.strip() == "*"
@@ -109,7 +109,9 @@ class ParsedCron:
         # restricted (non-wildcard), a match on EITHER is sufficient (OR
         # semantics) — a commonly-missed edge case in naive implementations.
         day_matches = dt.day in self.days
-        weekday_matches = (dt.weekday() + 1) % 7 in self.weekdays  # Python Mon=0 -> cron Sun=0
+        python_weekday = dt.weekday()
+        cron_weekday = (python_weekday + 1) % 7
+        weekday_matches = cron_weekday in self.weekdays or (cron_weekday == 0 and 7 in self.weekdays)
 
         if self._day_field_is_wildcard and self._weekday_field_is_wildcard:
             return True

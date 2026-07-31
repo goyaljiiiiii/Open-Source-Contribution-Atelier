@@ -12,6 +12,7 @@ export function NotePanel({ lessonSlug, onClose }: NotePanelProps) {
     useLessonNote(lessonSlug);
   const [content, setContent] = useState("");
   const [width, setWidth] = useState(300); // initial width
+  const [mode, setMode] = useState<"edit" | "preview">("edit");
   const isResizing = useRef(false);
   const saveTimeout = useRef<NodeJS.Timeout | null>(null);
 
@@ -81,16 +82,24 @@ export function NotePanel({ lessonSlug, onClose }: NotePanelProps) {
           <h2 className="text-lg font-black uppercase flex items-center gap-2">
             📝 Private Notes
           </h2>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg border-2 border-black hover:bg-black hover:text-white transition-colors"
-          >
-            <X size={16} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setMode(mode === "edit" ? "preview" : "edit")}
+              className="text-xs font-bold px-2 py-1 border-2 border-black rounded hover:bg-surface-low dark:text-[#f0ebe2]"
+            >
+              {mode === "edit" ? "Preview" : "Edit"}
+            </button>
+            <button
+              onClick={onClose}
+              className="p-1 rounded-lg border-2 border-black hover:bg-black hover:text-white transition-colors"
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
 
         {/* Save Status Indicator */}
-        <div className="px-4 py-2 bg-surface-lowest dark:bg-[#0f0e0c] flex items-center gap-2 border-b-2 border-black/10 dark:border-[#2e2924]/40 text-xs font-bold text-muted dark:text-[#c4bbae]">
+        <div className="px-4 py-2 bg-surface-lowest dark:bg-[#0f0e0c] flex items-center justify-between border-b-2 border-black/10 dark:border-[#2e2924]/40 text-xs font-bold text-muted dark:text-[#c4bbae]">
           {isSaving ? (
             <span className="flex items-center gap-1 text-yellow-600">
               <Save size={14} className="animate-pulse" /> Saving...
@@ -110,16 +119,23 @@ export function NotePanel({ lessonSlug, onClose }: NotePanelProps) {
               <CheckCircle2 size={14} /> Synced
             </span>
           )}
+          <span className="text-[10px] text-muted">Supports Markdown</span>
         </div>
 
-        <div className="flex-1 p-4 bg-surface dark:bg-[#1f1c18]">
-          <textarea
-            className="w-full h-full resize-none bg-white dark:bg-[#151411] border-4 border-black dark:border-[#2e2924] rounded-lg p-4 font-mono text-sm outline-none focus:ring-4 focus:ring-accent/50 transition-all dark:text-[#f0ebe2]"
-            placeholder="Jot down your thoughts, commands, or anything you want to remember..."
-            value={content}
-            onChange={handleContentChange}
-            disabled={isLoading}
-          />
+        <div className="flex-1 p-4 bg-surface dark:bg-[#1f1c18] overflow-y-auto">
+          {mode === "edit" ? (
+            <textarea
+              className="w-full h-full min-h-[300px] resize-none bg-white dark:bg-[#151411] border-4 border-black dark:border-[#2e2924] rounded-lg p-4 font-mono text-sm outline-none focus:ring-4 focus:ring-accent/50 transition-all dark:text-[#f0ebe2]"
+              placeholder="Jot down your thoughts, commands, or anything you want to remember..."
+              value={content}
+              onChange={handleContentChange}
+              disabled={isLoading}
+            />
+          ) : (
+            <div className="w-full h-full min-h-[300px] bg-white dark:bg-[#151411] border-4 border-black dark:border-[#2e2924] rounded-lg p-4 text-sm dark:text-[#f0ebe2] whitespace-pre-wrap font-sans">
+              {content || <span className="italic text-muted">No note content to preview.</span>}
+            </div>
+          )}
         </div>
       </div>
     </div>

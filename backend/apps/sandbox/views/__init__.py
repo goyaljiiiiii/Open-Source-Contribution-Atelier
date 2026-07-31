@@ -10,7 +10,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import (
+from ..models import (
     CodeExecutionTrace,
     CodeReviewThread,
     CodeSnapshot,
@@ -19,7 +19,7 @@ from .models import (
     ProjectFile,
     SnippetCollection,
 )
-from .serializers import (
+from ..serializers import (
     CodeExecutionTraceSerializer,
     CodeReviewThreadSerializer,
     CodeSnapshotSerializer,
@@ -28,8 +28,8 @@ from .serializers import (
     ProjectSerializer,
     SnippetCollectionSerializer,
 )
-from .services import verify_git_command
-from .services.execution_tracker import ExecutionTracker, prevent_duplicate_execution
+from ..services import verify_git_command
+from ..services.execution_tracker import ExecutionTracker, prevent_duplicate_execution
 
 logger = logging.getLogger(__name__)
 
@@ -114,8 +114,8 @@ class CodeSnapshotViewSet(viewsets.ModelViewSet):
 # PROJECTS
 # ============================================================
 
-from .models import Project, ProjectFile
-from .serializers import ProjectFileSerializer, ProjectSerializer
+from ..models import Project, ProjectFile
+from ..serializers import ProjectFileSerializer, ProjectSerializer
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
@@ -168,7 +168,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         from django.db import transaction
 
-        from .models import BulkReplaceOperation
+        from ..models import BulkReplaceOperation
 
         with transaction.atomic():
             for f in files:
@@ -188,7 +188,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def undo_replace(self, request, pk=None):
         project = self.get_object()
-        from .models import BulkReplaceOperation
+        from ..models import BulkReplaceOperation
 
         operation = (
             BulkReplaceOperation.objects.filter(project=project, user=request.user)
@@ -322,8 +322,8 @@ class CodeReviewThreadViewSet(viewsets.ModelViewSet):
 # SNIPPET COLLECTIONS
 # ============================================================
 
-from .models import CodeSnippet, SnippetCollection
-from .serializers import CodeSnippetSerializer, SnippetCollectionSerializer
+from ..models import CodeSnippet, SnippetCollection
+from ..serializers import CodeSnippetSerializer, SnippetCollectionSerializer
 
 
 class SnippetCollectionViewSet(viewsets.ModelViewSet):
@@ -450,8 +450,8 @@ class ClearExecutionView(APIView):
 
 from django.db.models import Q
 
-from .models import WorkspaceSnapshot
-from .serializers import WorkspaceSnapshotSerializer
+from ..models import WorkspaceSnapshot
+from ..serializers import WorkspaceSnapshotSerializer
 
 
 class WorkspaceSnapshotViewSet(viewsets.ModelViewSet):
@@ -479,8 +479,8 @@ class WorkspaceSnapshotViewSet(viewsets.ModelViewSet):
 # MAINTAINER ROLEPLAY
 # ============================================================
 
-from .models import MaintainerEvaluation, MaintainerScenario
-from .serializers import MaintainerEvaluationSerializer, MaintainerScenarioSerializer
+from ..models import MaintainerEvaluation, MaintainerScenario
+from ..serializers import MaintainerEvaluationSerializer, MaintainerScenarioSerializer
 
 
 class MaintainerScenarioViewSet(viewsets.ReadOnlyModelViewSet):
@@ -499,8 +499,8 @@ class MaintainerEvaluationViewSet(viewsets.ModelViewSet):
 
 from django.contrib.auth import get_user_model
 
-from .models import CollabSession
-from .serializers import CollabSessionSerializer
+from ..models import CollabSession
+from ..serializers import CollabSessionSerializer
 
 
 class CollabSessionViewSet(viewsets.ModelViewSet):
@@ -556,8 +556,8 @@ class CollabSessionViewSet(viewsets.ModelViewSet):
 # CI/CD PIPELINE SIMULATOR
 # ============================================================
 
-from .models import PipelineExecution, PipelineJob
-from .serializers import PipelineExecutionSerializer
+from ..models import PipelineExecution, PipelineJob
+from ..serializers import PipelineExecutionSerializer
 
 
 class PipelineExecutionViewSet(viewsets.ModelViewSet):
@@ -572,7 +572,7 @@ class PipelineExecutionViewSet(viewsets.ModelViewSet):
         ).prefetch_related("jobs")
 
     def perform_create(self, serializer):
-        from .services.pipeline_simulator import run_pipeline_simulation
+        from ..services.pipeline_simulator import run_pipeline_simulation
 
         pipeline = serializer.save(user=self.request.user)
 
@@ -595,8 +595,8 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from .models import ConflictAttempt, ConflictScenario
-from .serializers import ConflictAttemptSerializer, ConflictScenarioSerializer
+from ..models import ConflictAttempt, ConflictScenario
+from ..serializers import ConflictAttemptSerializer, ConflictScenarioSerializer
 
 
 class ConflictScenarioViewSet(viewsets.ReadOnlyModelViewSet):
@@ -655,8 +655,8 @@ class ConflictScenarioViewSet(viewsets.ReadOnlyModelViewSet):
 # FEATURE 2: TOXIC COMMUNITY DE-ESCALATION TRAINER
 # ============================================================
 
-from .models import DialogueChoice, DialogueNode, ModerationAttempt, ModerationScenario
-from .serializers import (
+from ..models import DialogueChoice, DialogueNode, ModerationAttempt, ModerationScenario
+from ..serializers import (
     DialogueNodeSerializer,
     ModerationAttemptSerializer,
     ModerationScenarioSerializer,
@@ -747,8 +747,8 @@ class ModerationScenarioViewSet(viewsets.ReadOnlyModelViewSet):
 # FEATURE 3: LICENSE & DEPENDENCY DETECTIVE
 # ============================================================
 
-from .models import DependencyDiff, LicenseAttempt, LicenseScenario
-from .serializers import LicenseAttemptSerializer, LicenseScenarioSerializer
+from ..models import DependencyDiff, LicenseAttempt, LicenseScenario
+from ..serializers import LicenseAttemptSerializer, LicenseScenarioSerializer
 
 
 class LicenseScenarioViewSet(viewsets.ReadOnlyModelViewSet):
@@ -823,8 +823,8 @@ class LicenseScenarioViewSet(viewsets.ReadOnlyModelViewSet):
 # FEATURE 11: ISSUE TRIAGE & LABELING MAINTAINER SCENARIO
 # ============================================================
 
-from .models import TriageAttempt, TriageIssue
-from .serializers import TriageAttemptSerializer, TriageIssueSerializer
+from ..models import TriageAttempt, TriageIssue
+from ..serializers import TriageAttemptSerializer, TriageIssueSerializer
 
 
 def _score_triage(issue: TriageIssue, submitted_labels: list, submitted_response: str):
@@ -1005,8 +1005,8 @@ class TriageIssueViewSet(viewsets.ReadOnlyModelViewSet):
 # FEATURE: ADR Sandbox Simulator
 # ============================================================
 
-from .models import ADRAttempt, ADROption, ADRScenario
-from .serializers import ADRAttemptSerializer, ADRScenarioSerializer
+from ..models import ADRAttempt, ADROption, ADRScenario
+from ..serializers import ADRAttemptSerializer, ADRScenarioSerializer
 
 
 class ADRScenarioViewSet(viewsets.ReadOnlyModelViewSet):
@@ -1056,3 +1056,146 @@ class ADRScenarioViewSet(viewsets.ReadOnlyModelViewSet):
         )
 
         return Response({"is_successful": is_successful, "feedback": feedback})
+
+
+from apps.sandbox.services.rebase_engine import GitRebaseEngine
+
+SCENARIOS = [
+    {
+        "id": "squash-5-to-1",
+        "title": "Squash 5 WIP Draft Commits before PR Merge",
+        "difficulty": "Beginner",
+        "xp_reward": 150,
+        "description": "You created 5 small 'wip' commits while building a feature. Use interactive rebase to squash them into 1 clean commit.",
+        "base_branch": "main",
+        "initial_commits": [
+            {
+                "hash": "a1b2c3d",
+                "message": "feat: add user authentication form",
+                "author": "contributor",
+                "files_changed": ["src/auth.ts"],
+            },
+            {
+                "hash": "e4f5g6h",
+                "message": "wip fix typo in auth",
+                "author": "contributor",
+                "files_changed": ["src/auth.ts"],
+            },
+            {
+                "hash": "i7j8k9l",
+                "message": "wip add validation regex",
+                "author": "contributor",
+                "files_changed": ["src/auth.ts"],
+            },
+            {
+                "hash": "m0n1o2p",
+                "message": "wip update styles",
+                "author": "contributor",
+                "files_changed": ["src/styles.css"],
+            },
+            {
+                "hash": "q3r4s5t",
+                "message": "wip cleanup console.log",
+                "author": "contributor",
+                "files_changed": ["src/auth.ts"],
+            },
+        ],
+    },
+    {
+        "id": "reword-and-clean",
+        "title": "Reword Bad Messages & Drop Debug Code",
+        "difficulty": "Intermediate",
+        "xp_reward": 200,
+        "description": "Fix non-descriptive commit messages with 'reword' and remove temporary debug logging commits with 'drop'.",
+        "base_branch": "main",
+        "initial_commits": [
+            {
+                "hash": "b8c9d0e",
+                "message": "add stuff",
+                "author": "contributor",
+                "files_changed": ["src/api.ts"],
+            },
+            {
+                "hash": "f1g2h3i",
+                "message": "TEMP: debug print statements",
+                "author": "contributor",
+                "files_changed": ["src/api.ts"],
+            },
+            {
+                "hash": "j4k5l6m",
+                "message": "feat: connect websocket client",
+                "author": "contributor",
+                "files_changed": ["src/ws.ts"],
+            },
+        ],
+    },
+    {
+        "id": "resolve-rebase-conflict",
+        "title": "Interactive Rebase & Conflict Resolution",
+        "difficulty": "Advanced",
+        "xp_reward": 300,
+        "description": "Rebase your feature branch onto updated main where conflicting changes exist in settings.py.",
+        "base_branch": "main",
+        "initial_commits": [
+            {
+                "hash": "c1d2e3f",
+                "message": "feat: custom settings configuration",
+                "author": "contributor",
+                "files_changed": ["config/settings.py"],
+            },
+            {
+                "hash": "g4h5i6j",
+                "message": "conflict: update database lock timeout",
+                "author": "contributor",
+                "files_changed": ["config/settings.py"],
+            },
+        ],
+    },
+]
+
+
+class GitRebaseSimulatorViewSet(viewsets.ViewSet):
+    """
+    API ViewSet for Interactive Git Rebase & Commit Squashing Scenario Simulator (#2319).
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def list(self, request):
+        """
+        List all available Git rebase challenge scenarios.
+        """
+        return Response({"scenarios": SCENARIOS}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["post"], url_path="execute")
+    def execute_rebase(self, request):
+        """
+        Execute interactive rebase actions on commit DAG.
+        """
+        base_commit = request.data.get("base_commit", "main")
+        commit_actions = request.data.get("commit_actions", [])
+        scenario_id = request.data.get("scenario_id", "default")
+
+        engine = GitRebaseEngine()
+        result = engine.execute_interactive_rebase(
+            base_commit=base_commit,
+            commit_actions=commit_actions,
+            scenario_id=scenario_id,
+        )
+
+        return Response(result, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["post"], url_path="verify")
+    def verify_rebase(self, request):
+        """
+        Verify if user successfully completed the scenario requirements.
+        """
+        scenario_id = request.data.get("scenario_id", "default")
+        rebased_commits = request.data.get("rebased_commits", [])
+
+        engine = GitRebaseEngine()
+        verification = engine.validate_scenario_completion(
+            scenario_id=scenario_id, rebased_commits=rebased_commits
+        )
+
+        return Response(verification, status=status.HTTP_200_OK)

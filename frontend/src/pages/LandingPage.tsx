@@ -4,21 +4,6 @@ import { useGoogleLogin } from "@react-oauth/google";
 import { GitBranch, Moon, Sun } from "lucide-react";
 import { fetchApi } from "../lib/api";
 import { useAuth } from "../features/auth/AuthContext";
-<<<<<<< HEAD
-import { useTheme } from "../context/ThemeContext";
-import OrganizationsGrid from "../components/OrganizationsGrid";
-import { useTranslation } from "react-i18next";
-import SkeletonContributorDashboard from "../components/ui/skeletons/SkeletonContributorDashboard";
-
-// Safely look up variables across Next.js compilation bundles and Vite browser environments
-const getEnvVar = (key: string): string => {
-  if (typeof process !== "undefined" && process.env && process.env[key]) {
-    return process.env[key] as string;
-  }
-  if (typeof import.meta !== "undefined" && import.meta.env && import.meta.env[key]) {
-    return import.meta.env[key] as string;
-  }
-=======
 import { useTheme } from "../hooks/useTheme";
 import { DraggableSticker } from "../components/ui/DraggableSticker";
 import { DemoLoginButton } from "../features/auth/DemoLoginButton";
@@ -34,7 +19,6 @@ const getEnvVar = (key: string): string => {
     import.meta.env[key]
   )
     return import.meta.env[key] as string;
->>>>>>> 02ece0c8009596a33fbf5bc0bc7298ff74711560
   return "";
 };
 
@@ -43,58 +27,31 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 export function LandingPage() {
-<<<<<<< HEAD
-  const { t } = useTranslation();
-  
-  // Safely obtain login function; if AuthContext is not provided, default to a no-op.
-=======
   const navigate = useNavigate();
->>>>>>> 02ece0c8009596a33fbf5bc0bc7298ff74711560
   let login: (tokens: { access: string; refresh: string }) => void = () => {};
   try {
     const auth = useAuth();
     login = auth.login;
-<<<<<<< HEAD
-  } catch {
-    // No AuthProvider in the tree; proceed with fallback login.
-  }
-=======
   } catch {}
->>>>>>> 02ece0c8009596a33fbf5bc0bc7298ff74711560
 
   const { theme, toggleTheme } = useTheme();
   const [authRole, setAuthRole] = useState<"student" | "admin">("student");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [githubUrl, setGithubUrl] = useState("");
 
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [isEmailFocused, setIsEmailFocused] = useState(false);
 
   useEffect(() => {
-<<<<<<< HEAD
-    // Ensure window environment lookups only run safely on the browser client thread
-    if (typeof window !== "undefined") {
-      const authError = new URLSearchParams(window.location.search).get("auth_error");
-=======
     if (typeof window !== "undefined") {
       const authError = new URLSearchParams(window.location.search).get(
         "auth_error",
       );
->>>>>>> 02ece0c8009596a33fbf5bc0bc7298ff74711560
       if (authError) {
         setError(authError);
         window.history.replaceState({}, "", window.location.pathname);
       }
-<<<<<<< HEAD
-
-      // Construct OAuth URLs dynamically on the client hook initialization layer
-      const baseGithub = getEnvVar("VITE_GITHUB_OAUTH_URL") || 
-        `${getEnvVar("VITE_API_BASE_URL") || "http://localhost:8000/api"}/auth/github/`;
-      setGithubUrl(baseGithub);
-=======
->>>>>>> 02ece0c8009596a33fbf5bc0bc7298ff74711560
     }
   }, []);
 
@@ -108,27 +65,12 @@ export function LandingPage() {
         body: JSON.stringify({ username: email, password }),
       });
       login(tokens);
-<<<<<<< HEAD
-      if (typeof window !== "undefined") {
-        window.location.href = "/dashboard";
-      }
-=======
       navigate("/dashboard");
->>>>>>> 02ece0c8009596a33fbf5bc0bc7298ff74711560
     } catch (err: unknown) {
       setError(getErrorMessage(err, "Login failed. Check your credentials."));
     }
   };
 
-<<<<<<< HEAD
-  const handleGithubSignIn = () => {
-    if (typeof window !== "undefined" && githubUrl) {
-      window.location.href = githubUrl;
-    }
-  };
-
-=======
->>>>>>> 02ece0c8009596a33fbf5bc0bc7298ff74711560
   const googleLoginHandler = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
@@ -138,13 +80,7 @@ export function LandingPage() {
           body: JSON.stringify({ access_token: tokenResponse.access_token }),
         });
         login(tokens);
-<<<<<<< HEAD
-        if (typeof window !== "undefined") {
-          window.location.href = "/dashboard";
-        }
-=======
         navigate("/dashboard");
->>>>>>> 02ece0c8009596a33fbf5bc0bc7298ff74711560
       } catch (err: unknown) {
         setError(formatGoogleOAuthError(err, "backend"));
       }
@@ -154,18 +90,6 @@ export function LandingPage() {
     },
   });
 
-<<<<<<< HEAD
-  return (
-    <div className="min-h-[85vh] flex items-center justify-center p-4 relative">
-      <button
-        onClick={toggleTheme}
-        aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
-        title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
-        className="fixed top-4 right-6 sm:right-8 z-50 rounded-lg bg-surface-low p-2 text-muted hover:text-text border-2 border-black dark:border-[#4a4238] shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2]"
-      >
-        {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
-      </button>
-=======
   const getFeedbackBubble = () => {
     if (isPasswordFocused) {
       if (password.length === 0)
@@ -184,7 +108,6 @@ export function LandingPage() {
     }
     return { emoji: "👋", text: "Welcome back to the Atelier!" };
   };
->>>>>>> 02ece0c8009596a33fbf5bc0bc7298ff74711560
 
   const bubble = getFeedbackBubble();
 
@@ -258,47 +181,6 @@ export function LandingPage() {
             </p>
           </div>
 
-<<<<<<< HEAD
-          <h2 className="text-3xl font-black mb-6 text-center text-text dark:text-[#f0ebe2]">
-            {authRole === "student" ? t("landing.enter_sandbox") : t("landing.maintainer_login")}
-          </h2>
-
-          {error && (
-            <div className="text-black font-bold text-sm bg-primary p-3 rounded-lg border-4 border-black shadow-card-sm mb-4">
-              {error}
-            </div>
-          )}
-          <OrganizationsGrid />
-          <form onSubmit={handleStandardLogin} className="space-y-4">
-            <button
-              type="button"
-              onClick={() => googleLoginHandler()}
-              className="w-full bg-white border-4 border-black rounded-2xl p-4 flex items-center justify-center gap-3 font-bold text-black hover:bg-surface-low transition-colors shadow-card-sm active:translate-y-1 active:shadow-none"
-            >
-              <svg className="w-6 h-6" viewBox="0 0 24 24" aria-hidden="true">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-              </svg>
-              {t("landing.sign_in_google")}
-            </button>
-
-            <button
-              type="button"
-              onClick={handleGithubSignIn}
-              className="group relative w-full overflow-hidden bg-black text-white border-4 border-black rounded-lg p-4 flex items-center justify-center gap-3 font-black shadow-card-sm transition-all duration-300 hover:-translate-y-1 hover:bg-text hover:shadow-card-lg active:translate-y-1 active:shadow-none uppercase before:absolute before:inset-0 before:-translate-x-full before:bg-gradient-to-r before:from-transparent before:via-white/25 before:to-transparent before:transition-transform before:duration-500 hover:before:translate-x-full"
-              aria-label={t("landing.sign_in_github")}
-            >
-              <GitBranch className="relative h-6 w-6 transition-transform duration-300 group-hover:rotate-[-8deg] group-hover:scale-110" strokeWidth={2.75} aria-hidden="true" />
-              <span className="relative">{t("landing.sign_in_github")}</span>
-            </button>
-
-            <div className="flex items-center gap-4 my-6">
-              <div className="flex-1 h-1 bg-black dark:bg-[#4a4238]"></div>
-              <span className="font-black text-muted dark:text-[#9b8f80] text-sm uppercase">{t("landing.or")}</span>
-              <div className="flex-1 h-1 bg-black dark:bg-[#4a4238]"></div>
-=======
           {/* Right Side: Login Card */}
           <div className="w-full max-w-md mx-auto bg-white dark:bg-[#151411] rounded-[2.5rem] border-4 border-black dark:border-[#4a4238] shadow-card p-6 sm:p-8">
             {/* Contributor / Maintainer Tabs */}
@@ -368,7 +250,6 @@ export function LandingPage() {
                 label="🚀 Demo Mode (explicit local demo)"
                 className="w-full bg-green-200 border-4 border-black rounded-2xl py-3 px-4 flex items-center justify-center gap-3 font-black text-black hover:bg-green-300 transition-all shadow-card-sm active:translate-y-1 active:shadow-none text-sm"
               />
->>>>>>> 02ece0c8009596a33fbf5bc0bc7298ff74711560
             </div>
 
             <div className="flex items-center gap-4 my-5">
@@ -408,19 +289,12 @@ export function LandingPage() {
               </button>
             </form>
 
-<<<<<<< HEAD
-            <div className="flex items-center gap-4 my-6">
-              <div className="flex-1 h-1 bg-black dark:bg-[#4a4238]"></div>
-              <span className="font-black text-muted dark:text-[#9b8f80] text-sm uppercase">{t("landing.new_contributors")}</span>
-              <div className="flex-1 h-1 bg-black dark:bg-[#4a4238]"></div>
-=======
             <div className="flex items-center gap-4 my-5">
               <div className="flex-1 h-[2px] bg-black dark:bg-[#4a4238]" />
               <span className="font-black text-muted dark:text-[#9b8f80] text-[10px] uppercase tracking-wider">
                 New Contributors
               </span>
               <div className="flex-1 h-[2px] bg-black dark:bg-[#4a4238]" />
->>>>>>> 02ece0c8009596a33fbf5bc0bc7298ff74711560
             </div>
 
             <a

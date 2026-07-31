@@ -79,8 +79,13 @@ def publish_user_deindexed_event(sender, instance, **kwargs):
 def log_user_activity_on_login(sender, request, user, **kwargs):
     from apps.progress.models import DailyActivity
 
+    try:
+        local_date = user.user_profile.local_today
+    except Exception:
+        local_date = timezone.now().date()
+
     DailyActivity.log_and_update_streak(
         user=user,
-        date=timezone.now().date(),
+        date=local_date,
         activity_type="login",
     )

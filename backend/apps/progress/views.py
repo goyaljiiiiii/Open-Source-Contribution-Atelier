@@ -22,6 +22,7 @@ from rest_framework.views import APIView
 from apps.content.models import Lesson
 from apps.content.serializers import LessonSerializer
 from apps.core.throttling import SlidingWindowAnonThrottle, SlidingWindowScopedThrottle
+from apps.deduplication.idempotency import idempotent
 from apps.progress.constants import XP_PER_LEVEL
 from apps.progress.models import XPEvent
 
@@ -30,12 +31,14 @@ from .models import (
     Badge,
     Certificate,
     CodeSubmission,
+    DailyActivity,
     ExerciseAttempt,
     HelpRequest,
     LessonBookmark,
     LessonProgress,
     QuizAttempt,
     UserBadge,
+    WeeklyGoal,
 )
 from .serializers import (
     BadgeSerializer,
@@ -46,8 +49,10 @@ from .serializers import (
     LessonProgressCreateSerializer,
     LessonProgressSerializer,
     QuizAttemptSerializer,
+    WeeklyGoalSerializer,
 )
 from .throttles import HelpRequestRateThrottle
+
 
 # ============================================================
 # ✅ ADD: Notes Export View
@@ -254,6 +259,7 @@ class MyProgressView(APIView):
         serializer = LessonProgressSerializer(progress, many=True)
         return Response(serializer.data)
 
+    @idempotent
     def post(self, request):
         from apps.content.models import Lesson
         from apps.progress.services.progress_buffer import ProgressBufferService
@@ -326,6 +332,7 @@ class MyProgressView(APIView):
 class BulkSyncProgressView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @idempotent
     def post(self, request):
         serializer = BulkSyncSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -572,39 +579,47 @@ class CommunityStatsView(APIView):
             if user and user.is_authenticated
             else None
         )
+        
+        cache_key = f"community:stats:{org.id}" if org else "community:stats"
 
-        user_count = User.objects.count()
+        def compute_stats():
+            user_count = User.objects.count()
 
-        if org:
-            completed_lessons = LessonProgress.objects.filter(
-                organization=org,
-                completed=True,
-            ).count()
+            if org:
+                completed_lessons = LessonProgress.objects.filter(
+                    organization=org,
+                    completed=True,
+                ).count()
 
-            open_help_requests = HelpRequest.objects.filter(
-                organization=org,
-                status=HelpRequest.Status.OPEN,
-            ).count()
-        else:
-            completed_lessons = LessonProgress.objects.filter(
-                completed=True,
-            ).count()
+                open_help_requests = HelpRequest.objects.filter(
+                    organization=org,
+                    status=HelpRequest.Status.OPEN,
+                ).count()
+            else:
+                completed_lessons = LessonProgress.objects.filter(
+                    completed=True,
+                ).count()
 
-            open_help_requests = HelpRequest.objects.filter(
-                status=HelpRequest.Status.OPEN,
-            ).count()
+                open_help_requests = HelpRequest.objects.filter(
+                    status=HelpRequest.Status.OPEN,
+                ).count()
 
-        active_contributors = 100 + user_count
-        merged_prs = 300 + completed_lessons
-
-        return Response(
-            {
+            active_contributors = 100 + user_count
+            merged_prs = 300 + completed_lessons
+            return {
                 "active_contributors": active_contributors,
                 "merged_prs": merged_prs,
                 "response_sla": "3.5h",
                 "open_requests": open_help_requests,
             }
-        )
+
+        from apps.core.cache.coalescing import CoalescingCache
+
+        org_id = org.id if org else "none"
+        cache_key = f"community_stats_org_{org_id}"
+        stats = CoalescingCache().get_or_set_coalesced(cache_key, 300, compute_stats)
+
+        return Response(stats)
 
 
 class UserAchievementsView(APIView):
@@ -796,6 +811,7 @@ class QuizNonceView(APIView):
 class QuizAttemptView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @idempotent
     def post(self, request):
         # NEW: Validate the cryptographic nonce
         nonce = request.data.get("nonce")
@@ -1249,11 +1265,13 @@ class LeaderboardView(APIView):
                 if search_username:
                     query = query.filter(user__username__icontains=search_username)
 
-                total_users = query.count()
-                if total_users > 0:
+                def compute_leaderboard():
+                    total_users_count = query.count()
+                    if total_users_count == 0:
+                        return 0, []
                     offset = (page - 1) * limit
                     ranks = query[offset : offset + limit]
-                    leaderboard = [
+                    leaderboard_data = [
                         {
                             "user_id": r.user_id,
                             "username": r.user.username,
@@ -1262,7 +1280,16 @@ class LeaderboardView(APIView):
                         }
                         for r in ranks
                     ]
+                    return total_users_count, leaderboard_data
 
+                from apps.core.cache.coalescing import CoalescingCache
+
+                cache_key = f"leaderboard_all_time_p{page}_l{limit}_u{search_username or 'none'}"
+                total_users, leaderboard = CoalescingCache().get_or_set_coalesced(
+                    cache_key, 300, compute_leaderboard
+                )
+
+                if total_users > 0:
                     personal_rank = None
                     if request.user.is_authenticated and not search_username:
                         try:
@@ -1374,24 +1401,26 @@ class HeatmapView(APIView):
                 )
             user = request.user
 
-        start_param = request.query_params.get("start_date")
-        end_param = request.query_params.get("end_date")
+        try:
+            today = user.user_profile.local_today
+        except Exception:
+            today = datetime.date.today()
 
         if start_param:
             try:
                 start_date = datetime.datetime.strptime(start_param, "%Y-%m-%d").date()
             except ValueError:
-                start_date = datetime.date.today() - datetime.timedelta(days=365)
+                start_date = today - datetime.timedelta(days=365)
         else:
-            start_date = datetime.date.today() - datetime.timedelta(days=365)
+            start_date = today - datetime.timedelta(days=365)
 
         if end_param:
             try:
                 end_date = datetime.datetime.strptime(end_param, "%Y-%m-%d").date()
             except ValueError:
-                end_date = datetime.date.today()
+                end_date = today
         else:
-            end_date = datetime.date.today()
+            end_date = today
 
         activity_type_filter = request.query_params.get("activity_type")
 
@@ -1544,21 +1573,26 @@ class HeatmapCSVExportView(APIView):
         end_param = request.query_params.get("end_date")
         activity_type_filter = request.query_params.get("activity_type")
 
+        try:
+            today = user.user_profile.local_today
+        except Exception:
+            today = datetime.date.today()
+
         if start_param:
             try:
                 start_date = datetime.datetime.strptime(start_param, "%Y-%m-%d").date()
             except ValueError:
-                start_date = datetime.date.today() - datetime.timedelta(days=365)
+                start_date = today - datetime.timedelta(days=365)
         else:
-            start_date = datetime.date.today() - datetime.timedelta(days=365)
+            start_date = today - datetime.timedelta(days=365)
 
         if end_param:
             try:
                 end_date = datetime.datetime.strptime(end_param, "%Y-%m-%d").date()
             except ValueError:
-                end_date = datetime.date.today()
+                end_date = today
         else:
-            end_date = datetime.date.today()
+            end_date = today
 
         activity_breakdown = defaultdict(
             lambda: {"reading": 0, "quizzes": 0, "code_submissions": 0}
@@ -1653,3 +1687,108 @@ class HeatmapCSVExportView(APIView):
                 )
 
         return response
+
+
+class WeeklyGoalView(APIView):
+    """
+    GET /api/progress/weekly-goal/
+    PUT /api/progress/weekly-goal/
+
+    View and update current weekly learning goal targets and progress metrics.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        goal = WeeklyGoal.get_or_create_current(user)
+
+        today = timezone.now().date()
+        week_start = goal.week_start_date
+        week_end = week_start + timezone.timedelta(days=6)
+
+        # Completed lessons this week
+        completed_lessons = LessonProgress.objects.filter(
+            user=user,
+            completed=True,
+            updated_at__date__gte=week_start,
+            updated_at__date__lte=week_end,
+        ).count()
+
+        # XP earned this week
+        earned_xp = (
+            XPEvent.objects.filter(
+                user=user,
+                created_at__date__gte=week_start,
+                created_at__date__lte=week_end,
+            ).aggregate(total=Sum("xp_delta"))["total"]
+            or 0
+        )
+
+        # Active learning days and estimated learning time (30 mins per active day)
+        activity_dates = set(
+            DailyActivity.objects.filter(
+                user=user,
+                date__gte=week_start,
+                date__lte=week_end,
+            ).values_list("date", flat=True)
+        )
+        minutes_spent = max(len(activity_dates) * 30, completed_lessons * 15)
+
+        # Calculate percentages
+        lessons_pct = (
+            min(100, int((completed_lessons / goal.target_lessons) * 100))
+            if goal.target_lessons > 0
+            else 0
+        )
+        xp_pct = (
+            min(100, int((earned_xp / goal.target_xp) * 100))
+            if goal.target_xp > 0
+            else 0
+        )
+        minutes_pct = (
+            min(100, int((minutes_spent / goal.target_minutes) * 100))
+            if goal.target_minutes > 0
+            else 0
+        )
+        overall_pct = min(100, int((lessons_pct + xp_pct + minutes_pct) / 3))
+
+        days_of_week = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        daily_breakdown = []
+        for i in range(7):
+            d = week_start + timezone.timedelta(days=i)
+            daily_breakdown.append(
+                {
+                    "day_name": days_of_week[i],
+                    "date": d.isoformat(),
+                    "is_active": d in activity_dates,
+                    "is_today": d == today,
+                    "is_future": d > today,
+                }
+            )
+
+        serializer = WeeklyGoalSerializer(goal)
+        data = serializer.data
+        data.update(
+            {
+                "week_end_date": week_end.isoformat(),
+                "completed_lessons": completed_lessons,
+                "earned_xp": earned_xp,
+                "minutes_spent": minutes_spent,
+                "lessons_progress_pct": lessons_pct,
+                "xp_progress_pct": xp_pct,
+                "minutes_progress_pct": minutes_pct,
+                "overall_progress_pct": overall_pct,
+                "daily_breakdown": daily_breakdown,
+            }
+        )
+        return Response(data)
+
+    def put(self, request):
+        user = request.user
+        goal = WeeklyGoal.get_or_create_current(user)
+        serializer = WeeklyGoalSerializer(goal, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return self.get(request)
+
