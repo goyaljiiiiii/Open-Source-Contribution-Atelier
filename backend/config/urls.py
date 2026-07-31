@@ -12,9 +12,10 @@ from graphene_django.views import GraphQLView
 from apps.billing.views import CheckoutSessionView
 from apps.billing.webhooks import stripe_webhook
 from apps.dashboard.views import LeaderboardView
+from apps.content.views_notes import LessonNoteAPIView
 
 from .health_view import health_view
-from .version_view import version_view, api_versions_view
+from .version_view import api_versions_view, version_view
 
 urlpatterns = [
     # ── Django Admin & External Webhooks ──────────────────────────────────────
@@ -24,7 +25,6 @@ urlpatterns = [
     path("api/admin/", include("apps.monitoring.urls")),
     path("api/monitoring/", include("apps.monitoring.urls")),
     path("api/admin/core/", include("apps.core.urls")),
-
     # ── Health Checks ──────────────────────────────────────────────────────────
     path("health/", include("apps.health.urls")),
     path("health/legacy/", health_view, name="health"),
@@ -39,6 +39,8 @@ urlpatterns = [
     path("api/users/", include("apps.accounts.user_urls")),
     # ── Core Apps ──────────────────────────────────────────────────────────────
     path("api/content/", include("apps.content.urls")),
+    path("api/lessons/<str:lesson_id>/notes", LessonNoteAPIView.as_view(), name="api-lesson-notes"),
+    path("api/lessons/<str:lesson_id>/notes/", LessonNoteAPIView.as_view(), name="api-lesson-notes-slash"),
     path("api/billing/", include("apps.billing.urls")),
     path("api/progress/", include("apps.progress.urls")),
     path("api/localization/", include("apps.localization.urls")),
@@ -57,6 +59,7 @@ urlpatterns = [
     # ============================================================
     # WEBHOOKS & UPLOADS
     # ============================================================
+    path("api/webhooks/", include("apps.webhooks.urls")),
     path("api/uploads/", include("apps.uploads.urls")),
     # ── RBAC ───────────────────────────────────────────────────────────────────
     path("api/rbac/", include("apps.rbac.urls")),
@@ -97,7 +100,7 @@ urlpatterns = [
     # ============================================================
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
-        "docs/",
+        "api/docs/",
         SpectacularSwaggerView.as_view(url_name="schema"),
         name="swagger-ui",
     ),
@@ -109,4 +112,5 @@ if settings.DEBUG:
     urlpatterns += [
         path("api/v1/feature-flags/", include("apps.feature_flags.urls")),
         path("api/feature-flags/", include("apps.feature_flags.urls")),
+        path("graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
     ]

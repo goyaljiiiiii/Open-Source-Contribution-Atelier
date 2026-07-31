@@ -1,4 +1,5 @@
 import pytest
+
 from apps.progress.models import StreakProfile
 
 

@@ -15,6 +15,7 @@ from .views import (
     CollabSessionViewSet,
     ConflictScenarioViewSet,
     ExecutionStatusView,
+    GitRebaseSimulatorViewSet,
     LicenseScenarioViewSet,
     MaintainerEvaluationViewSet,
     MaintainerScenarioViewSet,
@@ -27,7 +28,6 @@ from .views import (
     TriageIssueViewSet,
     WorkspaceSnapshotViewSet,
 )
-from .views.rebase_views import GitRebaseSimulatorViewSet
 
 # ============================================================
 # Router Configuration
@@ -64,7 +64,9 @@ router.register(
 )
 router.register(r"triage-issues", TriageIssueViewSet, basename="triage-issue")
 router.register(r"adr-scenarios", ADRScenarioViewSet, basename="adr-scenario")
-router.register(r"rebase-simulator", GitRebaseSimulatorViewSet, basename="rebase-simulator")
+router.register(
+    r"rebase-simulator", GitRebaseSimulatorViewSet, basename="rebase-simulator"
+)
 
 # ============================================================
 # URL Patterns

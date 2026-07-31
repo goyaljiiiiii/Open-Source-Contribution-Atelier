@@ -22,6 +22,7 @@ from rest_framework.views import APIView
 from apps.content.models import Lesson
 from apps.content.serializers import LessonSerializer
 from apps.core.throttling import SlidingWindowAnonThrottle, SlidingWindowScopedThrottle
+from apps.deduplication.idempotency import idempotent
 from apps.progress.constants import XP_PER_LEVEL
 from apps.progress.models import XPEvent
 
@@ -254,6 +255,7 @@ class MyProgressView(APIView):
         serializer = LessonProgressSerializer(progress, many=True)
         return Response(serializer.data)
 
+    @idempotent
     def post(self, request):
         from apps.content.models import Lesson
         from apps.progress.services.progress_buffer import ProgressBufferService
@@ -326,6 +328,7 @@ class MyProgressView(APIView):
 class BulkSyncProgressView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @idempotent
     def post(self, request):
         serializer = BulkSyncSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -796,6 +799,7 @@ class QuizNonceView(APIView):
 class QuizAttemptView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @idempotent
     def post(self, request):
         # NEW: Validate the cryptographic nonce
         nonce = request.data.get("nonce")

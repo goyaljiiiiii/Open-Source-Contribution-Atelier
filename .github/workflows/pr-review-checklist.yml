@@ -1,0 +1,77 @@
+name: PR Review Checklist
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  review-checklist:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Generate & Post Review Checklist Comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const { execSync } = require('child_process');
+
+            const pr = context.payload.pull_request;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            // Fetch list of changed files in this PR
+            const filesResponse = await github.paginate(github.rest.pulls.listFiles, {
+              owner,
+              repo,
+              pull_number: pr.number,
+              per_page: 100
+            });
+
+            const filenames = filesResponse.map(f => f.filename);
+            fs.writeFileSync('pr_changed_files.json', JSON.stringify(filenames, null, 2));
+
+            // Execute Python generator script
+            const output = execSync('python scripts/pr_review_checklist.py --input-file pr_changed_files.json', { encoding: 'utf-8' });
+            const checklistBody = output.trim();
+            const marker = '<!-- pr-review-checklist -->';
+
+            // Find existing checklist comment if any
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: pr.number
+            });
+
+            const existingComment = comments.find(c => c.body && c.body.includes(marker));
+
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existingComment.id,
+                body: checklistBody
+              });
+              console.log(`Updated PR review checklist comment ID ${existingComment.id}`);
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: pr.number,
+                body: checklistBody
+              });
+              console.log(`Created new PR review checklist comment on PR #${pr.number}`);
+            }

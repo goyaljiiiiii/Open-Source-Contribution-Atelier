@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, cleanup } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import CopyButton from "./CopyButton";
 
@@ -12,6 +12,7 @@ function mockExecCommand(result: boolean) {
 
 describe("CopyButton", () => {
   afterEach(() => {
+    cleanup();
     vi.restoreAllMocks();
     Reflect.deleteProperty(document, "execCommand");
   });
@@ -28,7 +29,8 @@ describe("CopyButton", () => {
     expect(
       await screen.findByRole("button", { name: "Copied!" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("Copied!.");
+    const statusElements = screen.getAllByRole("status");
+    expect(statusElements[statusElements.length - 1]).toHaveTextContent("Copied!.");
   });
 
   it("shows accessible failure feedback", async () => {
@@ -48,7 +50,8 @@ describe("CopyButton", () => {
     expect(
       await screen.findByRole("button", { name: "Copy failed" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent(
+    const statusElements = screen.getAllByRole("status");
+    expect(statusElements[statusElements.length - 1]).toHaveTextContent(
       "Clipboard permission was denied.",
     );
   });

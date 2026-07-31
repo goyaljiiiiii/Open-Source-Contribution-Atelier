@@ -4,20 +4,22 @@ import { clearAccessToken, getAccessToken } from "./authToken";
 import { broadcastAuthEvent } from "./authSync";
 import toast from "react-hot-toast";
 
-const getApiBaseUrl = () => {
-  if (typeof import.meta !== "undefined" && import.meta.env) {
-    return import.meta.env.VITE_API_BASE_URL;
+const getSafeEnvVar = (key: string): string => {
+  if (typeof process !== "undefined" && process.env && process.env[key]) {
+    return process.env[key] as string;
   }
-  // @ts-ignore - process might not be defined in Vite environments
-  if (typeof process !== "undefined" && process.env) {
-    // @ts-ignore
-    return process.env.NEXT_PUBLIC_API_URL || process.env.VITE_API_BASE_URL;
+  if (
+    typeof import.meta !== "undefined" &&
+    import.meta.env &&
+    import.meta.env[key]
+  ) {
+    return import.meta.env[key] as string;
   }
-  return undefined;
+  return "";
 };
 
 export const API_BASE =
-  getApiBaseUrl()?.trim() ||
+  getSafeEnvVar("VITE_API_BASE_URL").trim() ||
   (typeof window !== "undefined"
     ? `${window.location.origin}/api`
     : "http://127.0.0.1:8000/api");
@@ -109,7 +111,11 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
           errorBody.message ||
           errorBody.non_field_errors?.[0];
 
-        if (!errorMessage && typeof errorBody === "object" && errorBody !== null) {
+        if (
+          !errorMessage &&
+          typeof errorBody === "object" &&
+          errorBody !== null
+        ) {
           const fieldErrors = Object.values(errorBody)
             .map((msgs) => {
               if (Array.isArray(msgs)) return msgs[0];
@@ -123,7 +129,9 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
           }
         }
 
-        errorMessage = errorMessage || `HTTP error ${response.status} (Req ID: ${requestId})`;
+        errorMessage =
+          errorMessage ||
+          `HTTP error ${response.status} (Req ID: ${requestId})`;
 
         console.error(`[API Error] ReqID=${requestId}`, errorBody);
 

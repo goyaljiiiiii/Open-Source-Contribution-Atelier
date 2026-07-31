@@ -1,6 +1,7 @@
 import pytest
-from apps.pr_review_bot.services.impact_analyzer import PRImpactAnalyzer
+
 from apps.ml_triage.models.flaky_test_predictor import FlakyTestPredictor
+from apps.pr_review_bot.services.impact_analyzer import PRImpactAnalyzer
 
 
 class TestPRImpactAnalyzer:
@@ -35,20 +36,26 @@ import { api } from '../../api';
     def test_map_affected_tests(self):
         changed_files = [
             "backend/apps/webhooks/views.py",
-            "frontend/src/pages/SkillTreePage.tsx"
+            "frontend/src/pages/SkillTreePage.tsx",
         ]
         affected_tests = self.analyzer.map_affected_tests(changed_files)
         assert any("webhooks/tests" in t for t in affected_tests)
         assert any("SkillTreePage" in t for t in affected_tests)
 
     def test_predict_pr_risk(self):
-        changed_files = ["backend/apps/webhooks/views.py", "backend/apps/webhooks/tasks.py"]
-        affected_tests = ["backend/apps/webhooks/tests.py", "integration/e2e_async_test.py"]
+        changed_files = [
+            "backend/apps/webhooks/views.py",
+            "backend/apps/webhooks/tasks.py",
+        ]
+        affected_tests = [
+            "backend/apps/webhooks/tests.py",
+            "integration/e2e_async_test.py",
+        ]
         result = self.predictor.predict_pr_risk(
             changed_files=changed_files,
             added_lines=150,
             deleted_lines=30,
-            affected_tests=affected_tests
+            affected_tests=affected_tests,
         )
         assert "risk_score" in result
         assert "risk_level" in result
@@ -61,7 +68,7 @@ import { api } from '../../api';
             repository="Open-Source-Contribution-Atelier",
             changed_files=["backend/apps/webhooks/views.py"],
             added_lines=50,
-            deleted_lines=10
+            deleted_lines=10,
         )
         assert result["pr_number"] == 2321
         assert "markdown_comment" in result

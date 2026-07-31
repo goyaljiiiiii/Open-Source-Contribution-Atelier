@@ -281,7 +281,6 @@ class Profile(models.Model):
         default="",
         help_text="A short biography or description.",
     )
-    # Individual fields for requested social platforms
     github_link = models.URLField(
         blank=True, default="", help_text="GitHub profile URL"
     )

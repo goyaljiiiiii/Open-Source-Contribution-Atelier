@@ -2,10 +2,7 @@ from datetime import timedelta
 
 from django.contrib.auth import get_user_model
 
- feat/notification-system-test-suite-2295
-
 User = get_user_model()
- main
 from django.db import models
 from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce, TruncDate
@@ -22,15 +19,11 @@ from apps.core.cache import multi_level_cache as cache
 from apps.dashboard.models import Issue, PullRequest
 from apps.progress.models import (
     CodeSubmission,
+    DailyActivity,
     LessonProgress,
     QuizAttempt,
     XPEvent,
 )
- feat/notification-system-test-suite-2295
-
-User = get_user_model()
-
- main
 
 
 class LeaderboardPagination(PageNumberPagination):
@@ -555,5 +548,120 @@ class ModeratorAnalyticsView(APIView):
                 "progress_stats": list(progress_stats),
                 "quiz_stats": list(quiz_stats),
                 "challenge_stats": list(challenge_stats),
+            }
+        )
+
+
+from zoneinfo import available_timezones
+
+
+class UsageAnalyticsView(APIView):
+    def get_permissions(self):
+        from rest_framework import permissions
+
+        from apps.rbac.permissions import HasAnyRole
+
+        return [permissions.IsAuthenticated(), HasAnyRole(["Admin"])]
+
+    def get(self, request):
+        today = timezone.now().date()
+        thirty_days_ago = today - timedelta(days=30)
+        twelve_months_ago = today - timedelta(days=365)
+
+        # 1. Daily Active Users (last 30 days)
+        daily_active = (
+            DailyActivity.objects.filter(date__gte=thirty_days_ago)
+            .values("date")
+            .annotate(count=Count("user", distinct=True))
+            .order_by("date")
+        )
+
+        # 2. Monthly Active Users (last 12 months)
+        from django.db.models.functions import TruncMonth
+
+        monthly_active = (
+            DailyActivity.objects.filter(date__gte=twelve_months_ago)
+            .annotate(month=TruncMonth("date"))
+            .values("month")
+            .annotate(count=Count("user", distinct=True))
+            .order_by("month")
+        )
+
+        # 3. Most Popular Lessons (by completion count)
+        popular_lessons = (
+            LessonProgress.objects.filter(completed=True)
+            .values("lesson__slug", "lesson__title")
+            .annotate(count=Count("id"))
+            .order_by("-count")[:10]
+        )
+
+        # 4. Lesson Completion Rates
+        total_lessons = Lesson.objects.count()
+        lesson_completion_rates = []
+        for lesson in Lesson.objects.all():
+            total = LessonProgress.objects.filter(lesson=lesson).count()
+            completed = LessonProgress.objects.filter(
+                lesson=lesson, completed=True
+            ).count()
+            rate = round((completed / total * 100), 1) if total > 0 else 0
+            lesson_completion_rates.append(
+                {
+                    "slug": lesson.slug,
+                    "title": lesson.title,
+                    "total_attempts": total,
+                    "completed": completed,
+                    "completion_rate": rate,
+                }
+            )
+        lesson_completion_rates.sort(key=lambda x: x["completion_rate"], reverse=True)
+
+        # 5. User Signup Trend (last 12 months)
+        signup_trend = (
+            User.objects.filter(date_joined__gte=twelve_months_ago)
+            .annotate(month=TruncMonth("date_joined"))
+            .values("month")
+            .annotate(count=Count("id"))
+            .order_by("month")
+        )
+
+        # 6. Average Session Duration (approximated via DailyActivity count per user)
+        from django.db.models import Avg
+
+        avg_sessions = (
+            DailyActivity.objects.filter(date__gte=thirty_days_ago)
+            .values("user")
+            .annotate(active_days=Count("date", distinct=True))
+            .aggregate(avg_active_days=Avg("active_days"))
+        )
+        average_session_duration_minutes = round(
+            (avg_sessions["avg_active_days"] or 0) * 15, 1
+        )
+
+        # 7. Geographic Distribution (by timezone)
+        geo_distribution = (
+            User.objects.filter(
+                profile__timezone__isnull=False,
+                is_active=True,
+            )
+            .values("profile__timezone")
+            .annotate(count=Count("id"))
+            .order_by("-count")
+        )
+
+        return Response(
+            {
+                "daily_active_users": list(daily_active),
+                "monthly_active_users": list(monthly_active),
+                "popular_lessons": list(popular_lessons),
+                "lesson_completion_rates": lesson_completion_rates,
+                "signup_trend": list(signup_trend),
+                "average_session_duration_minutes": average_session_duration_minutes,
+                "geo_distribution": [
+                    {
+                        "timezone": item["profile__timezone"],
+                        "count": item["count"],
+                    }
+                    for item in geo_distribution
+                ],
             }
         )

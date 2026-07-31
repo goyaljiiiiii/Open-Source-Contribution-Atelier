@@ -83,6 +83,12 @@ const MarkdownRenderer = React.lazy(() =>
     default: module.MarkdownRenderer,
   })),
 );
+
+const VirtualizedMarkdownRenderer = React.lazy(() =>
+  import("../components/ui/VirtualizedMarkdownRenderer").then((module) => ({
+    default: module.VirtualizedMarkdownRenderer,
+  })),
+);
 import { LessonHistoryModal } from "../components/LessonHistoryModal";
 import { GitGraph } from "../components/ui/GitGraph";
 import { NotePanel } from "../components/ui/NotePanel";
@@ -304,6 +310,9 @@ useEffect(() => {
         );
       }
       console.error("Failed to submit quiz attempt:", err);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["userProgress"] });
     },
   });
 
@@ -973,7 +982,11 @@ useEffect(() => {
                         <div className="w-full h-64 animate-pulse rounded-2xl border-4 border-black/20 bg-surface-low dark:border-[#2e2924]/50 dark:bg-[#151411]" />
                       }
                     >
-                      <MarkdownRenderer content={markdownContent} />
+                      {markdownContent.length > 102400 ? (
+                        <VirtualizedMarkdownRenderer content={markdownContent} />
+                      ) : (
+                        <MarkdownRenderer content={markdownContent} />
+                      )}
                       {lesson?.updatedAt && (
                         <div className="mt-8 border-t pt-4 text-sm text-muted-foreground">
                           <strong>Last updated:</strong>{" "}

@@ -146,7 +146,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="user_profile",  # Changed from "profile" to "user_profile"
+        related_name="user_profile",
     )
     avatar = models.ImageField(
         upload_to="avatars/",

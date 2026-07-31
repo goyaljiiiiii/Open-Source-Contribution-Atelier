@@ -12,6 +12,7 @@ class PRImpactAnalysisViewSet(viewsets.ViewSet):
     """
     API ViewSet for Automated PR Code Impact & Flaky Test Risk Prediction Engine (#2321).
     """
+
     permission_classes = [AllowAny]
 
     def create(self, request):
@@ -29,7 +30,7 @@ class PRImpactAnalysisViewSet(viewsets.ViewSet):
         if not pr_number:
             return Response(
                 {"error": "Field 'pr_number' is required."},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         if async_run:
@@ -40,15 +41,15 @@ class PRImpactAnalysisViewSet(viewsets.ViewSet):
                 changed_files=changed_files,
                 added_lines=added_lines,
                 deleted_lines=deleted_lines,
-                raw_diff=raw_diff
+                raw_diff=raw_diff,
             )
             return Response(
                 {
                     "message": f"Impact analysis task queued for PR #{pr_number}.",
                     "pr_number": pr_number,
-                    "status": "processing"
+                    "status": "processing",
                 },
-                status=status.HTTP_202_ACCEPTED
+                status=status.HTTP_202_ACCEPTED,
             )
 
         # Synchronous execution
@@ -59,7 +60,7 @@ class PRImpactAnalysisViewSet(viewsets.ViewSet):
             changed_files=changed_files,
             added_lines=added_lines,
             deleted_lines=deleted_lines,
-            raw_diff=raw_diff
+            raw_diff=raw_diff,
         )
 
         return Response(result, status=status.HTTP_200_OK)
@@ -69,25 +70,31 @@ class PRImpactAnalysisViewSet(viewsets.ViewSet):
         List or query historical PR impact health metrics.
         """
         pr_number = request.query_params.get("pr_number")
-        repository = request.query_params.get("repository", "Open-Source-Contribution-Atelier")
+        repository = request.query_params.get(
+            "repository", "Open-Source-Contribution-Atelier"
+        )
 
         if pr_number:
-            review = PRReview.objects.filter(pr_number=pr_number, repository=repository).first()
+            review = PRReview.objects.filter(
+                pr_number=pr_number, repository=repository
+            ).first()
             if not review:
                 return Response(
                     {"error": f"No impact record found for PR #{pr_number}."},
-                    status=status.HTTP_404_NOT_FOUND
+                    status=status.HTTP_404_NOT_FOUND,
                 )
 
-            return Response({
-                "pr_number": review.pr_number,
-                "repository": review.repository,
-                "title": review.pr_title,
-                "author": review.pr_author,
-                "risk_score": round(100.0 - review.test_coverage_score, 1),
-                "summary": review.summary,
-                "processed_at": review.processed_at,
-            })
+            return Response(
+                {
+                    "pr_number": review.pr_number,
+                    "repository": review.repository,
+                    "title": review.pr_title,
+                    "author": review.pr_author,
+                    "risk_score": round(100.0 - review.test_coverage_score, 1),
+                    "summary": review.summary,
+                    "processed_at": review.processed_at,
+                }
+            )
 
         reviews = PRReview.objects.all()[:20]
         data = [
