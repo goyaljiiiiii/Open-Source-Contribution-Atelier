@@ -35,6 +35,34 @@ FILE_TYPES: dict[str, DetectedFileType] = {
 DEFAULT_ALLOWED_TYPES = tuple(FILE_TYPES)
 AVATAR_ALLOWED_TYPES = ("jpeg", "png", "webp", "gif", "svg")
 
+DANGEROUS_EXTENSIONS = {
+    ".php",
+    ".phtml",
+    ".php3",
+    ".php4",
+    ".php5",
+    ".phar",
+    ".exe",
+    ".bat",
+    ".cmd",
+    ".sh",
+    ".bash",
+    ".cgi",
+    ".pl",
+    ".jsp",
+    ".asp",
+    ".aspx",
+    ".dll",
+    ".scr",
+    ".vbs",
+    ".js",
+    ".mjs",
+    ".py",
+    ".rb",
+    ".ps1",
+    ".jar",
+}
+
 DANGEROUS_TEXT_MARKERS = (
     b"<?php",
     b"<%",
@@ -42,6 +70,17 @@ DANGEROUS_TEXT_MARKERS = (
     b"#!/bin/bash",
     b"#!/usr/bin/env python",
 )
+
+
+def validate_filename_extensions(filename: str) -> None:
+    """Ensure filename does not contain any prohibited executable extensions in any suffix position."""
+    path = Path(filename)
+    suffixes = {s.lower() for s in path.suffixes}
+    dangerous = suffixes.intersection(DANGEROUS_EXTENSIONS)
+    if dangerous:
+        ext_list = ", ".join(sorted(dangerous))
+        raise ValidationError(f"Prohibited executable file extension found: {ext_list}")
+
 
 SVG_DANGEROUS_TAGS = {"script", "foreignObject"}
 SVG_URL_ATTRIBUTES = {"href", "{http://www.w3.org/1999/xlink}href"}
@@ -162,8 +201,10 @@ def validate_file(
 
     path = Path(file_path)
     validate_declared_size(path.stat().st_size, upload_type)
+    validate_filename_extensions(original_filename)
 
     extension = Path(original_filename).suffix.lower()
+
     allowed_types = (
         getattr(settings, "UPLOAD_AVATAR_ALLOWED_TYPES", AVATAR_ALLOWED_TYPES)
         if upload_type == "avatar"

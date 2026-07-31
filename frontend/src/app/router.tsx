@@ -15,6 +15,12 @@ import { RouteSuspenseWrapper } from "../components/ui/SkeletonRegistry";
  * are mapped to the default export shape required by React.lazy().
  */
 
+const FullStackDocsPage = lazy(() =>
+  import("../pages/docs/FullStackDocsPage").then((module) => ({
+    default: module.FullStackDocsPage,
+  })),
+);
+
 const ChallengePage = lazy(() =>
   import("../pages/ChallengePage").then((module) => ({
     default: module.ChallengePage,
@@ -496,6 +502,23 @@ export function AppRouter() {
             element={
               <ProtectedRoute>
                 <PathwayPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/docs/fullstack"
+            element={
+              <ProtectedRoute>
+                <FullStackDocsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/documentation"
+            element={
+              <ProtectedRoute>
+                <FullStackDocsPage />
               </ProtectedRoute>
             }
           />

@@ -122,29 +122,23 @@ class UnifiedSearchView(generics.ListAPIView):
 
         version = get_search_cache_version()
         cache_key = f"search_api:v{version}:q:{q}:type:{content_type_filter}"
+        
+        from apps.core.cache.stampede import stampede_protected_get_or_set
 
-        # Only cache un-paginated metadata; actual pages are not cached to
-        # keep memory usage bounded.
-        cached_data = cache.get(cache_key)
-        if cached_data is not None:
-            return Response(cached_data)
+        def generate():
+            queryset = self._build_queryset(q, content_type_filter)
 
-        queryset = self._build_queryset(q, content_type_filter)
+            # Paginate
+            page_obj = self.paginate_queryset(queryset)
+            if page_obj is not None:
+                serializer = self.get_serializer(page_obj, many=True)
+                return self.get_paginated_response(serializer.data).data
 
-        # Paginate
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            response = self.get_paginated_response(serializer.data)
-            # Cache the full paginated envelope
-            timeout = getattr(settings, "SEARCH_CACHE_TIMEOUT", 3600)
-            cache.set(cache_key, response.data, timeout=timeout)
-            return response
+            serializer = self.get_serializer(queryset, many=True)
+            return serializer.data
 
-        serializer = self.get_serializer(queryset, many=True)
-        data = serializer.data
         timeout = getattr(settings, "SEARCH_CACHE_TIMEOUT", 3600)
-        cache.set(cache_key, data, timeout=timeout)
+        data = stampede_protected_get_or_set(cache_key, generate, timeout=timeout)
         return Response(data)
 
     # ------------------------------------------------------------------ queryset

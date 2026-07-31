@@ -4,15 +4,14 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from apps.core.models import AuditableModel
+from apps.search.mixins import SearchIndexMixin
 
 User = get_user_model()
 
 
-class Lesson(AuditableModel):
+class Lesson(AuditableModel, SearchIndexMixin):
     class DoesNotExist(ObjectDoesNotExist):
         pass
-
-    objects = models.Manager()
 
     organization = models.ForeignKey(
         "Organization", on_delete=models.CASCADE, null=True, blank=True

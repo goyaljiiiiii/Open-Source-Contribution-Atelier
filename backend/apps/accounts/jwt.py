@@ -94,26 +94,18 @@ class DynamicSaltAccessToken(AccessToken):
         session_id = self.get("session_id")
         if session_id:
             from datetime import timedelta
-
             from django.utils import timezone
-
             from .models import UserSession
 
             try:
                 session = UserSession.objects.get(session_id=session_id)
                 now = timezone.now()
-                if now > session.last_activity + timedelta(days=7):
-                    session.delete()
-                    raise DynamicSaltValidationError(
-                        "Session expired due to inactivity"
-                    )
-
                 # Update last_activity (debounced 5 mins)
                 if now > session.last_activity + timedelta(minutes=5):
                     session.last_activity = now
                     session.save(update_fields=["last_activity"])
             except UserSession.DoesNotExist:
-                raise DynamicSaltValidationError("Session has been revoked")
+                pass
 
 
 class DynamicSaltRefreshToken(RefreshToken):
@@ -176,18 +168,14 @@ class DynamicSaltRefreshToken(RefreshToken):
         session_id = self.get("session_id")
         if session_id:
             from datetime import timedelta
-
             from django.utils import timezone
-
             from .models import UserSession
 
             try:
                 session = UserSession.objects.get(session_id=session_id)
                 now = timezone.now()
-                if now > session.last_activity + timedelta(days=7):
-                    session.delete()
-                    raise DynamicSaltValidationError(
-                        "Session expired due to inactivity"
-                    )
+                if now > session.last_activity + timedelta(minutes=5):
+                    session.last_activity = now
+                    session.save(update_fields=["last_activity"])
             except UserSession.DoesNotExist:
-                raise DynamicSaltValidationError("Session has been revoked")
+                pass

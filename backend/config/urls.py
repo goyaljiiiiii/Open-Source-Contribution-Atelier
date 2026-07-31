@@ -25,6 +25,7 @@ urlpatterns = [
     path("api/admin/", include("apps.monitoring.urls")),
     path("api/monitoring/", include("apps.monitoring.urls")),
     path("api/admin/core/", include("apps.core.urls")),
+    path("api/admin/db/", include("apps.core.urls")),
     # ── Health Checks ──────────────────────────────────────────────────────────
     path("health/", include("apps.health.urls")),
     path("health/legacy/", health_view, name="health"),
@@ -37,6 +38,9 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     path("api/auth/", include("apps.accounts.urls")),
     path("api/users/", include("apps.accounts.user_urls")),
+    # ── OAuth 2.0 & OpenID Connect ──────────────────────────────────────────────
+    path("oauth/", include("apps.oauth.urls")),
+    path("", include("apps.oauth.urls")),
     # ── Core Apps ──────────────────────────────────────────────────────────────
     path("api/content/", include("apps.content.urls")),
     path("api/lessons/<str:lesson_id>/notes", LessonNoteAPIView.as_view(), name="api-lesson-notes"),

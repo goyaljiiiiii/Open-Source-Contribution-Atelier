@@ -177,16 +177,8 @@ export function App({ children }: { children?: React.ReactNode }) {
             {children || <AppRouter />}
             <CommandPalette />
             <DocSearchModal />
-            <ReportIssueButton />
             <CustomCursor />
             <WebSocketStatusIndicator url="" />
-
-            {/* ✅ Back to Top Button - Appears on all pages */}
-            <BackToTop 
-              threshold={300} 
-              behavior="smooth"
-              showProgress={true}
-            />
 
             {/* Pure React Onboarding Modals Highlight Tour Overlay Portal */}
             {currentStep >= 0 && coords && (

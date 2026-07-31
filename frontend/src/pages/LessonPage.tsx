@@ -46,8 +46,10 @@ import { OfflineStatusBadge } from "../components/ui/OfflineStatusBadge";
 import { OfflineBanner } from "../components/ui/OfflineBanner";
 import { CurriculumDriftBanner } from "../components/ui/CurriculumDriftBanner";
 import { AITutorFloatingPanel } from "../components/ui/AITutorPanel";
+import { Breadcrumb, type BreadcrumbItem } from "../components/ui/Breadcrumb";
 
 const SESSION_KEY_RECENT = "recentlyViewedLessonsV1";
+
 const MAX_RECENT_ITEMS = 3;
 
 function safeParseRecentlyViewedLessons(
@@ -731,7 +733,34 @@ useEffect(() => {
     mod.lessons.some((les) => les.slug === lesson.slug),
   )?.id;
 
+  const breadcrumbItems: BreadcrumbItem[] = useMemo(() => {
+    const activeModule = modules.find((mod) =>
+      mod.lessons.some((les) => les.slug === lesson.slug),
+    );
+
+    const items: BreadcrumbItem[] = [
+      { label: "Dashboard", href: "/dashboard" },
+      { label: "Pathway", href: "/pathway" },
+    ];
+
+    if (activeModule) {
+      items.push({
+        label: activeModule.title,
+      });
+    }
+
+    if (lesson?.title) {
+      items.push({
+        label: lesson.title,
+        isCurrent: true,
+      });
+    }
+
+    return items;
+  }, [modules, lesson]);
+
   return (
+
     <div className="w-full h-screen flex flex-col overflow-hidden bg-white dark:bg-[#0a0a0f]">
       {/* Immersive Lesson Top Header Bar */}
       <header className="h-[72px] border-b-4 border-black dark:border-[#2e2924] bg-white dark:bg-[#0f0e0c] flex items-center justify-between px-4 sm:px-6 flex-shrink-0 z-40">
@@ -864,7 +893,9 @@ useEffect(() => {
             className="flex-1 overflow-y-auto p-6 sm:p-10 space-y-8"
           >
             <div className="max-w-3xl mx-auto space-y-6">
+              <Breadcrumb items={breadcrumbItems} className="mb-2" />
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-[10px] font-mono font-black bg-accent text-black px-3 py-1 rounded-full border-2 border-black rotate-[-1deg] inline-block shadow-card-sm uppercase">
@@ -1691,63 +1722,7 @@ useEffect(() => {
           />
         )}
       </div>
-      {showBackToTop && (
-        <div className="fixed bottom-24 right-8 lg:right-12 xl:right-16 z-[9999] group">
-        {/* Tooltip */}
-          <div
-            className="
-              absolute
-              bottom-16
-              right-0
-              opacity-0
-              scale-95
-              pointer-events-none
-              transition-all
-              duration-200
-              group-hover:opacity-100
-              group-hover:scale-100
-            "
-          >
-          <div className="relative bg-black text-white text-xs font-black px-3 py-2 rounded-lg border-2 border-white shadow-lg whitespace-nowrap">
-            Back to top
-          {/* Tooltip arrow */}
-          <div className="absolute top-full right-4 w-3 h-3 bg-black border-r-2 border-b-2 border-white rotate-45 -mt-[6px]" />
-        </div>
-      </div>
-
-      {/* Button */}
-      <button
-        onClick={() =>
-          mainContentRef.current?.scrollTo({
-            top: 0,
-            behavior: "smooth",
-          })
-        }
-        className="
-          h-12
-          w-12
-          flex
-          items-center
-          justify-center
-          rounded-full
-          border-4
-          border-black
-          bg-primary
-          text-black
-          text-2xl
-          font-black
-          shadow-[4px_4px_0px_#000]
-          transition-all
-          hover:-translate-y-1
-          hover:scale-105
-        "
-        aria-label="Back to top"
-      >
-          ↑
-        </button>
-      </div>
-    )}
-    
+      
       <AITutorFloatingPanel
         lessonSlug={lesson.slug}
         lessonTitle={lesson.title}

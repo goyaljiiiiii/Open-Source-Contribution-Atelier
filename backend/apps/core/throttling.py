@@ -41,7 +41,7 @@ def is_premium_user(user) -> bool:
         return True
 
     try:
-        from billing.models import CustomerSubscription
+        from apps.billing.models import CustomerSubscription
 
         return CustomerSubscription.objects.filter(user=user, active=True).exists()
     except Exception:

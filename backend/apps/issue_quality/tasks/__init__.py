@@ -1,0 +1,1 @@
+"""Issue quality Celery tasks."""

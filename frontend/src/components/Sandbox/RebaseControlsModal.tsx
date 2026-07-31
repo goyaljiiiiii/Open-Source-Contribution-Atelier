@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { AlertTriangle, Check, X, Code, Sparkles, Terminal } from "lucide-react";
+import { AlertTriangle, Check, X, Sparkles } from "lucide-react";
 import { RebaseCommit } from "./RebaseCommitGraph";
 
 interface RebaseControlsModalProps {
@@ -10,7 +10,6 @@ interface RebaseControlsModalProps {
 }
 
 export const RebaseControlsModal: React.FC<RebaseControlsModalProps> = ({
-  commits,
   conflicts,
   onResolveConflict,
   onClose,
@@ -29,46 +28,46 @@ export const RebaseControlsModal: React.FC<RebaseControlsModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden text-slate-100"
+        className="relative w-full max-w-2xl bg-white dark:bg-[#151411] border-2 border-black/10 dark:border-[#2e2924] rounded-3xl shadow-2xl overflow-hidden text-text dark:text-[#f0ebe2]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-5 bg-slate-950 border-b border-slate-800">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-amber-400" />
-            <h3 className="text-base font-bold text-white">
+        <div className="flex items-center justify-between p-5 bg-surface-low dark:bg-[#0f0e0c] border-b-2 border-black/10 dark:border-[#2e2924]">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="w-5 h-5 text-amber-500" />
+            <h3 className="text-base font-black text-text dark:text-white">
               Interactive Rebase Conflict Resolution
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+            className="p-1.5 text-slate-400 hover:text-text dark:hover:text-white rounded-lg hover:bg-black/5 dark:hover:bg-white/5"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Conflict Hunks List */}
-        <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
-          <p className="text-xs text-slate-300">
-            Git rebase paused due to conflicting changes in reordered commits. Resolve the conflict markers below to continue rebase.
+        <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+          <p className="text-xs text-slate-400 font-medium">
+            Git rebase paused due to conflicting changes in reordered commits. Resolve the conflict markers below to execute <code className="font-mono text-amber-500">git rebase --continue</code>.
           </p>
 
           {conflicts.map((conflict, idx) => (
             <div
               key={idx}
-              className="p-4 bg-slate-950 border border-amber-900/50 rounded-xl space-y-3"
+              className="p-4 bg-surface-low/50 dark:bg-[#0f0e0c] border-2 border-amber-500/30 rounded-2xl space-y-3"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-mono font-bold text-amber-400">
+                <span className="text-xs font-mono font-bold text-amber-500">
                   File: {conflict.file} ({conflict.commit_hash.substring(0, 7)})
                 </span>
                 <button
                   onClick={() => handleToggleResolve(idx)}
-                  className={`px-3 py-1 text-xs font-bold rounded-lg border transition-all flex items-center gap-1 ${
+                  className={`px-3 py-1 text-xs font-bold rounded-xl border-2 transition-all flex items-center gap-1 ${
                     resolvedHunks[idx]
-                      ? "bg-emerald-950 text-emerald-300 border-emerald-800"
-                      : "bg-amber-950 text-amber-300 border-amber-800 hover:bg-amber-900"
+                      ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30"
+                      : "bg-amber-500/10 text-amber-500 border-amber-500/30 hover:bg-amber-500/20"
                   }`}
                 >
                   <Check className="w-3.5 h-3.5" />
@@ -76,7 +75,7 @@ export const RebaseControlsModal: React.FC<RebaseControlsModalProps> = ({
                 </button>
               </div>
 
-              <pre className="p-3 bg-slate-900 border border-slate-800 rounded-lg font-mono text-xs text-rose-300 overflow-x-auto">
+              <pre className="p-3 bg-white dark:bg-[#1a1714] border border-black/10 dark:border-[#2e2924] rounded-xl font-mono text-xs text-rose-500 dark:text-rose-400 overflow-x-auto">
                 {conflict.conflict_hunk}
               </pre>
             </div>
@@ -84,10 +83,10 @@ export const RebaseControlsModal: React.FC<RebaseControlsModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between">
+        <div className="p-4 bg-surface-low dark:bg-[#0f0e0c] border-t-2 border-black/10 dark:border-[#2e2924] flex items-center justify-between">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl"
+            className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-text rounded-xl"
           >
             Cancel Rebase
           </button>
@@ -95,10 +94,10 @@ export const RebaseControlsModal: React.FC<RebaseControlsModalProps> = ({
           <button
             onClick={onResolveConflict}
             disabled={!allResolved}
-            className={`px-5 py-2.5 text-xs font-bold rounded-xl flex items-center gap-2 transition-all shadow-lg ${
+            className={`px-5 py-2.5 text-xs font-black rounded-xl flex items-center gap-2 transition-all shadow-card-sm ${
               allResolved
-                ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/30"
-                : "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
+                ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                : "bg-surface-low text-slate-400 cursor-not-allowed border border-black/10 dark:border-[#2e2924]"
             }`}
           >
             <Sparkles className="w-4 h-4" />

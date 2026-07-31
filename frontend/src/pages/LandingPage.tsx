@@ -9,6 +9,7 @@ import { DraggableSticker } from "../components/ui/DraggableSticker";
 import { DemoLoginButton } from "../features/auth/DemoLoginButton";
 import { formatGoogleOAuthError } from "../lib/googleOAuth";
 import { TrendingReels } from "../components/ui/TrendingReels";
+import { PasswordInput } from "../components/PasswordInput";
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
@@ -191,9 +192,9 @@ export function LandingPage() {
                 onBlur={() => setIsEmailFocused(false)}
                 required
               />
-              <input
+              <PasswordInput
+                id="landing-password"
                 className="w-full rounded-xl border-4 border-black dark:border-[#4a4238] bg-surface-lowest dark:bg-[#0f0e0c] px-4 py-3 text-text dark:text-[#f0ebe2] font-black outline-none placeholder:text-muted/60 dark:placeholder:text-[#9b8f80]/70 focus:bg-surface-low dark:focus:bg-[#1f1c18] focus:ring-0 transition-colors shadow-sm text-sm"
-                type="password"
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

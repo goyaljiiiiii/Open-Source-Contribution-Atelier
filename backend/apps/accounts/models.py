@@ -5,6 +5,7 @@ from django.db import models, transaction
 
 from apps.content.models import Lesson
 from apps.core.fields import EncryptedCharField
+from apps.core.models import AuditableModel
 
 
 class MentorProfile(models.Model):
@@ -137,7 +138,7 @@ def get_timezone_choices():
     return sorted((tz, tz) for tz in available_timezones())
 
 
-class UserProfile(models.Model):
+class UserProfile(AuditableModel):
     """
     Standard user profile linking to the main User model.
     Stores the user's avatar image and JWT token version.
@@ -199,6 +200,15 @@ class UserProfile(models.Model):
 
     class Meta:
         db_table = "accounts_userprofile"
+
+    def audit_snapshot_fields(self) -> list:
+        exclude = {
+            "github_access_token",
+            "github_access_token_hash",
+            "google_oauth_token",
+            "google_oauth_token_hash",
+        }
+        return [f.name for f in self._meta.fields if f.name not in exclude]
 
     def __str__(self):
         return f"UserProfile({self.user.username})"

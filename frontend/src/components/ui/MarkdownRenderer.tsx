@@ -237,20 +237,33 @@ export function MarkdownRenderer({
           <ArchitectureViewer key={index} chart={codeContent.trim()} />
         );
       } else {
+        const displayLang = lang ? lang.toUpperCase() : "CODE";
         blocks.push(
-          <div key={index} className="relative my-4 group">
-            <div className="absolute top-2 right-2 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-              <CopyButton text={codeContent.trim()} />
+          <div
+            key={index}
+            className="relative my-4 group rounded-2xl border-4 border-black dark:border-[#2e2924] bg-[#1a1510] overflow-hidden shadow-card-sm"
+          >
+            {/* Header bar with language badge and Copy code button */}
+            <div className="flex items-center justify-between px-4 py-2 bg-[#120f0b] border-b-2 border-black/40 dark:border-[#2e2924]">
+              <span className="font-mono text-[10px] font-black tracking-widest text-[#ffebc2]/80 bg-black/40 px-2.5 py-0.5 rounded border border-white/10">
+                {displayLang}
+              </span>
+              <CopyButton
+                text={codeContent.trim()}
+                label="Copy code"
+                copiedLabel="Copied code!"
+              />
             </div>
 
-            <pre className="w-full overflow-x-auto p-4 bg-[#1a1510] text-[#ffebc2] border-4 border-black rounded-2xl font-mono text-sm shadow-card-sm dark:border-[#2e2924]">
-             <code className="block whitespace-pre-wrap break-words">{codeContent.trim()}</code>
+            <pre className="w-full overflow-x-auto p-4 text-[#ffebc2] font-mono text-sm">
+              <code className="block whitespace-pre">{codeContent.trim()}</code>
             </pre>
           </div>,
         );
       }
       continue;
     }
+
 
     // 3. Headings: #, ##, ###
     if (line.startsWith("# ")) {

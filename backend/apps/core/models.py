@@ -208,6 +208,15 @@ class AuditableModel(models.Model):
     class Meta:
         abstract = True
 
+    def audit_snapshot_fields(self) -> list:
+        """
+        Field names included in audit before/after snapshots.
+
+        Subclasses can override this to exclude sensitive or noisy fields
+        (e.g. encrypted tokens) from being persisted in the audit trail.
+        """
+        return [f.name for f in self._meta.fields]
+
 
 # ============================================================
 # Cross-tenant data isolation primitives (issue #1940)

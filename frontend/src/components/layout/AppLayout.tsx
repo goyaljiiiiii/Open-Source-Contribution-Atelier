@@ -48,7 +48,7 @@ export function AppLayout() {
         Skip to main content
       </a>
 
-      <div className="min-h-screen bg-surface text-text dark:bg-[#0a0a0f] dark:text-[#f0ebe2]">
+      <div className="min-h-screen bg-surface text-text dark:bg-[#0a0a0f] dark:text-[#f0ebe2] overflow-x-hidden">
         {!location.pathname.startsWith("/lessons/") && <Navigation />}
         <main
           id="main-content"
@@ -56,14 +56,14 @@ export function AppLayout() {
           className={
             location.pathname.startsWith("/lessons/")
               ? "w-full min-h-screen"
-              : "lg:pl-[240px]"
+              : "lg:pl-[240px] pt-[72px] min-h-screen max-w-full overflow-x-hidden"
           }
         >
           <div
             className={
               location.pathname.startsWith("/lessons/")
                 ? "w-full h-screen overflow-hidden"
-                : "px-4 pb-24 pt-24 sm:px-6 sm:pb-28 lg:px-8 lg:pb-10"
+                : "px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 max-w-7xl mx-auto w-full min-w-0 pb-20 sm:pb-24 lg:pb-10"
             }
           >
             <Outlet />
