@@ -205,13 +205,9 @@ INSTALLED_APPS = [
     "apps.portfolio",
     "apps.feature_flags",
     "apps.issues",
-<<<<<<< HEAD
-"apps.moderation",
-=======
     "apps.gamification",
     "apps.ai_tutor",
     "apps.project_health",
->>>>>>> 02ece0c8009596a33fbf5bc0bc7298ff74711560
     "django_q",
     "apps.monitoring",
     "waffle",
@@ -270,6 +266,7 @@ PERF_TRACK_SAMPLE_RATE = 0.1  # 10% sampling
 
 MIDDLEWARE = [
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
+    "apps.monitoring.middleware.tracing_middleware.TracingMiddleware",
     "apps.core.middleware.perf_tracking.PerformanceTrackingMiddleware",
     "apps.core.middleware.request_id.RequestIdMiddleware",
     "config.logging_middleware.RequestResponseLoggingMiddleware",
@@ -896,6 +893,12 @@ NOTIFICATION_CHANNELS = {
     "webhook": "apps.notifications.channels.webhook_channel.WebhookChannel",
     "slack": "apps.notifications.channels.slack_channel.SlackChannel",
 }
+
+# ──────────────────────────────────────────
+# Certificate Signing (Ed25519)
+# ──────────────────────────────────────────
+CERT_SIGNING_PRIVATE_KEY_PEM = os.getenv("CERT_SIGNING_PRIVATE_KEY_PEM", "")
+CERT_SIGNING_PUBLIC_KEY_PEM = os.getenv("CERT_SIGNING_PUBLIC_KEY_PEM", "")
 
 # ── Test Environment Settings ──────────────────────────────────────────────
 TESTING = ("test" in sys.argv) or any("pytest" in arg for arg in sys.argv)
