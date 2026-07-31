@@ -204,14 +204,9 @@ INSTALLED_APPS = [
     "apps.events",
     "apps.portfolio",
     "apps.feature_flags",
-    "apps.issues",
-<<<<<<< HEAD
-"apps.moderation",
-=======
     "apps.gamification",
     "apps.ai_tutor",
     "apps.project_health",
->>>>>>> 02ece0c8009596a33fbf5bc0bc7298ff74711560
     "django_q",
     "apps.monitoring",
     "waffle",
@@ -233,6 +228,7 @@ INSTALLED_APPS = [
     "apps.dx_testing",
     "apps.issue_quality",
     "apps.ml_triage",
+    "apps.issues",
 ]
 
 # Cache backends are selected with channel layers below (Redis or LocMem fallback).

@@ -16,8 +16,9 @@ class SandboxConsumer(AsyncWebsocketConsumer):
         self.debug_file = None
         self.debug_task = None
 
-        from .services.execution_tracker import ExecutionTracker
         from asgiref.sync import sync_to_async
+
+        from .services.execution_tracker import ExecutionTracker
 
         await sync_to_async(ExecutionTracker.set_session_state)(self.session_id, {})
 
@@ -31,8 +32,9 @@ class SandboxConsumer(AsyncWebsocketConsumer):
             )
             await self._cleanup_debug_session()
         finally:
-            from .services.execution_tracker import ExecutionTracker
             from asgiref.sync import sync_to_async
+
+            from .services.execution_tracker import ExecutionTracker
 
             await sync_to_async(ExecutionTracker.reset)(self.session_id)
 
