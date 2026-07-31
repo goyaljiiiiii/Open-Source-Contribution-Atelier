@@ -112,7 +112,7 @@ urlpatterns = [
     path("health/", include("apps.health.urls")),
     path("health/legacy/", health_view, name="health"),
     # ── Version Discovery (root /api/versions/) ─────────────────────────────
-    path("api/versions/", api_versions_view, name="root-api-versions"),
+    path("api/versions/", version_view, name="root-api-versions"),
     # ── Stable Versioned API (/api/v1/) ───────────────────────────────────────
     path("api/v1/", include(api_v1_patterns)),
     # ── Unversioned API Fallback (/api/) ───────────────────────────────────────
