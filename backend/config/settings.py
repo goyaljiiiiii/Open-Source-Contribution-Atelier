@@ -215,11 +215,12 @@ INSTALLED_APPS = [
 
 # Cache backends are selected with channel layers below (Redis or LocMem fallback).
 
-# Rate Limit
-DEFAULT_RATE = "100/hour"
-API_RATE_LIMIT_AUTH = int(os.getenv("API_RATE_LIMIT_AUTH", "100"))
-API_RATE_LIMIT_ANON = int(os.getenv("API_RATE_LIMIT_ANON", "20"))
-API_RATE_LIMIT_WINDOW = int(os.getenv("API_RATE_LIMIT_WINDOW", "60"))
+# Rate Limit Tiers (anonymous: 100/hr, authenticated: 1000/hr, premium: 10000/hr, heavy: 10/min)
+API_RATE_LIMIT_ANON = os.getenv("API_RATE_LIMIT_ANON", "100/hour")
+API_RATE_LIMIT_AUTH = os.getenv("API_RATE_LIMIT_AUTH", "1000/hour")
+API_RATE_LIMIT_PREMIUM = os.getenv("API_RATE_LIMIT_PREMIUM", "10000/hour")
+API_RATE_LIMIT_HEAVY = os.getenv("API_RATE_LIMIT_HEAVY", "10/minute")
+API_RATE_LIMIT_WINDOW = int(os.getenv("API_RATE_LIMIT_WINDOW", "3600"))
 
 # ──────────────────────────────────────────
 # Redis / Channels (graceful fallback when Redis is down)
@@ -468,9 +469,11 @@ REST_FRAMEWORK = {
     # Sandbox endpoints
     # Auth endpoints (brute-force + spam protection)
     "DEFAULT_THROTTLE_RATES": {
-        # ── Global Default ───────────────────────────────────────────────────
-        "anon": "100/minute",
-        "user": "1000/minute",
+        # ── Global Tiers ──────────────────────────────────────────────────────
+        "anon": os.getenv("RATE_LIMIT_ANON", API_RATE_LIMIT_ANON),
+        "user": os.getenv("RATE_LIMIT_AUTH", API_RATE_LIMIT_AUTH),
+        "premium": os.getenv("RATE_LIMIT_PREMIUM", API_RATE_LIMIT_PREMIUM),
+        "heavy_operation": os.getenv("RATE_LIMIT_HEAVY", API_RATE_LIMIT_HEAVY),
         # ── Sandbox ──────────────────────────────────────────────────────────
         "sandbox_anon": "10/minute",
         "sandbox_user": "10/minute",
