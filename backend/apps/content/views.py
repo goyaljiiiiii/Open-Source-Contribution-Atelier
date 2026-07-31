@@ -16,6 +16,7 @@ from rest_framework import (
     views,
     viewsets,
 )
+from apps.core.pagination import SecureCursorPagination
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -40,19 +41,21 @@ from .serializers import (
 
 # --- Helper Functions ---
 def get_active_lessons():
-    lessons = cache.get("active_lessons_list")
-    if lessons is None:
-        lessons = list(
+    from apps.core.cache.stampede import stampede_protected_get_or_set
+    
+    def generate():
+        return list(
             Lesson.objects.prefetch_related("exercises", "prerequisites").all()
         )
-        cache.set("active_lessons_list", lessons, 60 * 60 * 24)
-    return lessons
+        
+    return stampede_protected_get_or_set("curriculum:full", generate, timeout=60 * 60 * 24)
 
 
 # --- Existing Views ---
 class LessonViewSet(viewsets.ModelViewSet):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
+    pagination_class = SecureCursorPagination
 
     def get_permissions(self):
         from apps.rbac.permissions import HasPermission
@@ -64,11 +67,6 @@ class LessonViewSet(viewsets.ModelViewSet):
         elif self.action in ["destroy"]:
             return [permissions.IsAuthenticated(), HasPermission("delete_content")]
         return [permissions.AllowAny()]
-
-    def list(self, request, *args, **kwargs):
-        lessons = get_active_lessons()
-        serializer = self.get_serializer(lessons, many=True)
-        return response.Response(serializer.data)
 
     from rest_framework.decorators import action
 

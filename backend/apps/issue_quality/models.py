@@ -90,3 +90,20 @@ class WontfixPattern(models.Model):
 
     def __str__(self):
         return f"{self.category}: {self.pattern[:50]}"
+
+
+class ScanReport(models.Model):
+    """
+    Stored AST security / complexity scan report for a set of files.
+    """
+
+    files = models.JSONField(default=list)
+    report = models.JSONField(default=dict)
+    risk_score = models.FloatField(default=0.0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"ScanReport #{self.pk} (risk={self.risk_score:.1f})"
