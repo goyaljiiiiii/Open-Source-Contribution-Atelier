@@ -17,11 +17,8 @@ function getErrorMessage(error: unknown, fallback: string) {
 
 export function LandingPage() {
   const navigate = useNavigate();
-  let login: (tokens: { access: string; refresh: string }) => void = () => {};
-  try {
-    const auth = useAuth();
-    login = auth.login;
-  } catch {}
+  const auth = useAuth();
+  const login = auth.login;
 
   const { theme, toggleTheme } = useTheme();
   const [authRole, setAuthRole] = useState<"student" | "admin">("student");
