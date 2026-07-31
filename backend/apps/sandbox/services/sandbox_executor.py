@@ -1,6 +1,7 @@
 import time
 from typing import Any, Dict, Tuple
 
+
 class SandboxExecutor:
     """
     Unified sandboxing service to provide a restricted execution environment
@@ -11,13 +12,32 @@ class SandboxExecutor:
     def _get_safe_globals() -> Dict[str, Any]:
         return {
             "__builtins__": {
-                "abs": abs, "all": all, "any": any, "bool": bool, "dict": dict,
-                "enumerate": enumerate, "filter": filter, "float": float, "int": int,
-                "len": len, "list": list, "map": map, "max": max, "min": min,
-                "pow": pow, "range": range, "round": round, "set": set, "str": str,
-                "sum": sum, "tuple": tuple, "zip": zip,
-                "AssertionError": AssertionError, "Exception": Exception,
-                "ValueError": ValueError, "TypeError": TypeError,
+                "abs": abs,
+                "all": all,
+                "any": any,
+                "bool": bool,
+                "dict": dict,
+                "enumerate": enumerate,
+                "filter": filter,
+                "float": float,
+                "int": int,
+                "len": len,
+                "list": list,
+                "map": map,
+                "max": max,
+                "min": min,
+                "pow": pow,
+                "range": range,
+                "round": round,
+                "set": set,
+                "str": str,
+                "sum": sum,
+                "tuple": tuple,
+                "zip": zip,
+                "AssertionError": AssertionError,
+                "Exception": Exception,
+                "ValueError": ValueError,
+                "TypeError": TypeError,
             }
         }
 
@@ -35,7 +55,9 @@ class SandboxExecutor:
             return {"passed": False, "error": str(e)}
 
     @classmethod
-    def execute_timed(cls, code: str, safe_globals: Dict[str, Any] = None) -> Tuple[float, Dict[str, Any]]:
+    def execute_timed(
+        cls, code: str, safe_globals: Dict[str, Any] = None
+    ) -> Tuple[float, Dict[str, Any]]:
         """
         Executes untrusted code and returns the wall-clock time in seconds,
         along with the regular execution result.

@@ -1,5 +1,6 @@
 from django.db import migrations
 
+
 def backfill(apps, schema_editor):
     LessonProgress = apps.get_model("progress", "LessonProgress")
     BATCH = 5000
@@ -15,6 +16,7 @@ def backfill(apps, schema_editor):
             row.multiplier_applied = 1.0
         LessonProgress.objects.bulk_update(rows, ["base_score", "multiplier_applied"])
         last = rows[-1].pk
+
 
 class Migration(migrations.Migration):
     dependencies = [

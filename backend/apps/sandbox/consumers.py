@@ -16,8 +16,9 @@ class SandboxConsumer(AsyncWebsocketConsumer):
         self.debug_file = None
         self.debug_task = None
 
-        from .services.execution_tracker import ExecutionTracker
         from asgiref.sync import sync_to_async
+
+        from .services.execution_tracker import ExecutionTracker
 
         await sync_to_async(ExecutionTracker.set_session_state)(self.session_id, {})
 
@@ -31,24 +32,20 @@ class SandboxConsumer(AsyncWebsocketConsumer):
             )
             await self._cleanup_debug_session()
         finally:
-            from .services.execution_tracker import ExecutionTracker
             from asgiref.sync import sync_to_async
+
+            from .services.execution_tracker import ExecutionTracker
 
             await sync_to_async(ExecutionTracker.reset)(self.session_id)
 
     @database_sync_to_async
     def check_rate_limit(self, key, limit, period):
-        count = cache.get(key, 0)
-        if count >= limit:
-            return False
-        if count == 0:
+        try:
+            count = cache.incr(key)
+        except ValueError:
             cache.set(key, 1, timeout=period)
-        else:
-            try:
-                cache.incr(key)
-            except ValueError:
-                cache.set(key, count + 1, timeout=period)
-        return True
+            count = 1
+        return count <= limit
 
     async def receive(self, text_data):
         try:
@@ -111,6 +108,22 @@ class SandboxConsumer(AsyncWebsocketConsumer):
                 ):
                     user_id = str(self.scope["user"].id)
                     db_user = self.scope["user"]
+                else:
+                    user_id = self.channel_name
+
+                is_allowed = await self.check_rate_limit(
+                    f"throttle_sandbox_ws_{user_id}", 10, 60
+                )
+                if not is_allowed:
+                    await self.send(
+                        text_data=json.dumps(
+                            {
+                                "type": "error",
+                                "message": "Rate limit exceeded. You can only execute 10 sandbox requests per minute.",
+                            }
+                        )
+                    )
+                    return
 
                 trace_events = await run_code_trace(code, user_id=user_id)
 
@@ -136,6 +149,28 @@ class SandboxConsumer(AsyncWebsocketConsumer):
                 import os
 
                 from .services import start_debug_session
+
+                user_id = "anonymous"
+                if self.scope.get("user") and getattr(
+                    self.scope["user"], "is_authenticated", False
+                ):
+                    user_id = str(self.scope["user"].id)
+                else:
+                    user_id = self.channel_name
+
+                is_allowed = await self.check_rate_limit(
+                    f"throttle_sandbox_ws_{user_id}", 10, 60
+                )
+                if not is_allowed:
+                    await self.send(
+                        text_data=json.dumps(
+                            {
+                                "type": "error",
+                                "message": "Rate limit exceeded. You can only execute 10 sandbox requests per minute.",
+                            }
+                        )
+                    )
+                    return
 
                 await self._cleanup_debug_session()
 

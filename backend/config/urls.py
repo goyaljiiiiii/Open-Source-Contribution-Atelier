@@ -15,7 +15,7 @@ from apps.dashboard.views import LeaderboardView
 from apps.content.views_notes import LessonNoteAPIView
 
 from .health_view import health_view
-from .version_view import version_view, api_versions_view
+from .version_view import api_versions_view, version_view
 
 urlpatterns = [
     # ── Django Admin & External Webhooks ──────────────────────────────────────
@@ -25,7 +25,6 @@ urlpatterns = [
     path("api/admin/", include("apps.monitoring.urls")),
     path("api/monitoring/", include("apps.monitoring.urls")),
     path("api/admin/core/", include("apps.core.urls")),
-
     # ── Health Checks ──────────────────────────────────────────────────────────
     path("health/", include("apps.health.urls")),
     path("health/legacy/", health_view, name="health"),
@@ -115,4 +114,3 @@ if settings.DEBUG:
         path("api/feature-flags/", include("apps.feature_flags.urls")),
         path("graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
     ]
-    

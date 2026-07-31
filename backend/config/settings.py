@@ -214,6 +214,7 @@ INSTALLED_APPS = [
     "apps.plugins.apps.PluginsConfig",
     "apps.oauth",
     "apps.security",
+    "apps.deduplication",
     # ── Scaffolded Apps ────────────────────────────────────────────────────────
     "apps.burnout_detection",
     "apps.advanced_search",
@@ -229,15 +230,17 @@ INSTALLED_APPS = [
     "apps.dx_testing",
     "apps.issue_quality",
     "apps.ml_triage",
+    "apps.issues",
 ]
 
 # Cache backends are selected with channel layers below (Redis or LocMem fallback).
 
-# Rate Limit
-DEFAULT_RATE = "100/hour"
-API_RATE_LIMIT_AUTH = int(os.getenv("API_RATE_LIMIT_AUTH", "100"))
-API_RATE_LIMIT_ANON = int(os.getenv("API_RATE_LIMIT_ANON", "20"))
-API_RATE_LIMIT_WINDOW = int(os.getenv("API_RATE_LIMIT_WINDOW", "60"))
+# Rate Limit Tiers (anonymous: 100/hr, authenticated: 1000/hr, premium: 10000/hr, heavy: 10/min)
+API_RATE_LIMIT_ANON = os.getenv("API_RATE_LIMIT_ANON", "100/hour")
+API_RATE_LIMIT_AUTH = os.getenv("API_RATE_LIMIT_AUTH", "1000/hour")
+API_RATE_LIMIT_PREMIUM = os.getenv("API_RATE_LIMIT_PREMIUM", "10000/hour")
+API_RATE_LIMIT_HEAVY = os.getenv("API_RATE_LIMIT_HEAVY", "10/minute")
+API_RATE_LIMIT_WINDOW = int(os.getenv("API_RATE_LIMIT_WINDOW", "3600"))
 
 # ──────────────────────────────────────────
 # Redis / Channels (graceful fallback when Redis is down)
@@ -428,8 +431,18 @@ GITHUB_APP = {
 }
 GITHUB_INSTALLATION_ID = os.getenv("GITHUB_INSTALLATION_ID")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
-GITHUB_OAUTH_CLIENT_ID = os.getenv("GITHUB_OAUTH_CLIENT_ID")
-GITHUB_OAUTH_CLIENT_SECRET = os.getenv("GITHUB_OAUTH_CLIENT_SECRET")
+
+# Used by the custom user-login OAuth flow (apps.accounts.views.GitHubOAuthStartView /
+# GitHubOAuthCallbackView). Distinct from GITHUB_APP above, which is for the
+# GitHub App integration (webhooks / API access), not user login.
+GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
+GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
+
+# Deprecated aliases kept for backward compatibility with any existing
+# deployments/.env files still using the old *_OAUTH_* naming. Remove
+# once confirmed no active deployment relies on these.
+GITHUB_OAUTH_CLIENT_ID = os.getenv("GITHUB_OAUTH_CLIENT_ID") or GITHUB_CLIENT_ID
+GITHUB_OAUTH_CLIENT_SECRET = os.getenv("GITHUB_OAUTH_CLIENT_SECRET") or GITHUB_CLIENT_SECRET
 
 # ── AI Tutor ────────────────────────────────────────────────────────────────────
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -497,9 +510,11 @@ REST_FRAMEWORK = {
     # Sandbox endpoints
     # Auth endpoints (brute-force + spam protection)
     "DEFAULT_THROTTLE_RATES": {
-        # ── Global Default ───────────────────────────────────────────────────
-        "anon": "100/minute",
-        "user": "1000/minute",
+        # ── Global Tiers ──────────────────────────────────────────────────────
+        "anon": os.getenv("RATE_LIMIT_ANON", API_RATE_LIMIT_ANON),
+        "user": os.getenv("RATE_LIMIT_AUTH", API_RATE_LIMIT_AUTH),
+        "premium": os.getenv("RATE_LIMIT_PREMIUM", API_RATE_LIMIT_PREMIUM),
+        "heavy_operation": os.getenv("RATE_LIMIT_HEAVY", API_RATE_LIMIT_HEAVY),
         # ── Sandbox ──────────────────────────────────────────────────────────
         "sandbox_anon": "10/minute",
         "sandbox_user": "10/minute",
@@ -577,8 +592,8 @@ SITE_ID = 1
 SOCIALACCOUNT_PROVIDERS = {
     "github": {
         "APP": {
-            "client_id": os.getenv("GITHUB_OAUTH_CLIENT_ID"),
-            "secret": os.getenv("GITHUB_OAUTH_CLIENT_SECRET"),
+            "client_id": GITHUB_CLIENT_ID,
+            "secret": GITHUB_CLIENT_SECRET,
         },
         "SCOPE": [
             "user",

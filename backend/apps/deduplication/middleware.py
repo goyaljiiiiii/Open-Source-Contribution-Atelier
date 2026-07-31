@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 class RequestCoalescer:
     """
-    Coalesces identical concurrent requests.
+    Coalesces identical concurrent requests FROM THE SAME REQUESTER.
     """
 
     def __init__(self):
@@ -27,15 +27,43 @@ class RequestCoalescer:
         self._lock = threading.Lock()
         self._cache_ttl = getattr(settings, "REQUEST_CACHE_TTL", 60)  # 60 seconds
 
-    def get_request_key(self, request) -> str:
+    def _get_requester_identity(self, request) -> Optional[str]:
         """
-        Generate a unique key for the request.
-        Combines method, path, query params, and body.
+        Returns a stable identity string for the requester: the
+        authenticated user's PK if available, otherwise a session-based
+        identifier for anonymous requests. Returns None if no stable
+        identity can be determined at all — callers should treat that as
+        "do not deduplicate" rather than falling back to something
+        shared across requesters.
         """
-        # Basic key: method + path
-        key_parts = [request.method, request.path]
+        user = getattr(request, "user", None)
+        if user is not None and getattr(user, "is_authenticated", False):
+            user_pk = getattr(user, "pk", None)
+            if user_pk is not None:
+                return f"user:{user_pk}"
 
-        # Add query params (sorted for consistency)
+        session = getattr(request, "session", None)
+        if session is not None:
+            session_key = getattr(session, "session_key", None)
+            if session_key:
+                return f"session:{session_key}"
+
+        return None
+
+    def get_request_key(self, request) -> Optional[str]:
+        """
+        Generate a unique key for the request, scoped to the requester's
+        identity so responses are never coalesced or cached across
+        different users. Returns None if no stable requester identity
+        could be determined — callers must treat that as "do not
+        deduplicate this request" rather than using a shared fallback key.
+        """
+        identity = self._get_requester_identity(request)
+        if identity is None:
+            return None
+
+        key_parts = [identity, request.method, request.path]
+
         if request.GET:
             query_str = "&".join(f"{k}={v}" for k, v in sorted(request.GET.items()))
             key_parts.append(query_str)
@@ -47,7 +75,7 @@ class RequestCoalescer:
                 body_dict = json.loads(request.body)
                 body_str = json.dumps(body_dict, sort_keys=True)
                 key_parts.append(body_str)
-            except:
+            except (ValueError, TypeError):
                 key_parts.append(request.body.decode("utf-8", errors="ignore"))
 
         # Generate hash
@@ -121,7 +149,9 @@ class RequestCoalescer:
 
 class DeduplicationMiddleware(MiddlewareMixin):
     """
-    Middleware that deduplicates identical concurrent requests.
+    Middleware that deduplicates identical concurrent requests FROM THE
+    SAME REQUESTER. Never coalesces or caches responses across different
+    users — see RequestCoalescer.get_request_key.
     """
 
     def __init__(self, get_response):
@@ -169,6 +199,11 @@ class DeduplicationMiddleware(MiddlewareMixin):
             return None
 
         request_key = self.coalescer.get_request_key(request)
+        if request_key is None:
+            # No stable requester identity could be determined — do not
+            # deduplicate rather than risk coalescing across an unknown
+            # identity boundary.
+            return None
 
         # Check cache first
         if self.cache_responses:
@@ -224,7 +259,7 @@ class DeduplicationMiddleware(MiddlewareMixin):
                 response_data = json.loads(response.content)
                 if self.cache_responses:
                     self.coalescer.set_cached_response(request_key, response_data)
-            except:
+            except (ValueError, TypeError):
                 pass
 
         # Complete the request and notify waiters

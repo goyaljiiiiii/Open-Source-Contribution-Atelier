@@ -63,4 +63,3 @@ def api_versions_view(request):
             "versions": versions_list,
         }
     )
-

@@ -1,5 +1,6 @@
-from django.db import connection
 from django.conf import settings
+from django.db import connection
+
 
 def apply_lock_timeout(timeout_ms=None):
     if timeout_ms is None:

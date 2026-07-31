@@ -10,6 +10,7 @@
 <p><i>A complete Open Source Learning Platform designed to help beginners confidently transition from zero to real open-source contributions.</i></p>
 
 <!-- Badges -->
+
 [![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://open-source-contribution-atelier.vercel.app)
 [![Backend API](https://img.shields.io/badge/🤗_API-Hugging_Face-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black)](https://nandinigoyaldev-atelier-backend.hf.space)
 [![SSoC 2026](https://img.shields.io/badge/SSoC_2026-Participating-4ECDC4?style=for-the-badge&logo=opensourceinitiative&logoColor=white)](#)
@@ -33,20 +34,19 @@
 
 ## ✨ Features
 
-| Feature | Description |
-|---|---|
-| 🎮 **Gamified Curriculum** | 8 core modules going from mindset basics to advanced conflict resolution |
-| 📝 **Interactive Quizzes** | Multiple-choice testing dashboards with instant feedback |
-| 🏅 **Badges Cabinet** | Earn milestone rewards mapping directly to module progress |
-| 📜 **Printable Certificates** | Gorgeous A4 neobrutalist certificate with verification hashes |
-| 🏆 **Hall of Fame** | Cohort stats, active streak calendars, and GitHub contributor recognition |
-| 📖 **Markdown-Driven Content** | Lessons are parsed dynamically — adding content requires zero code changes |
-| 💬 **Real-Time Community Chat** | End-to-end encrypted WebSocket chat with typing indicators |
-| 👥 **Peer Review System** | Submit code for review and earn XP by reviewing others |
-| 🔍 **Interactive Sandbox** | Git terminal emulator with autocomplete and command replay |
+| Feature                         | Description                                                                |
+| ------------------------------- | -------------------------------------------------------------------------- |
+| 🎮 **Gamified Curriculum**      | 8 core modules going from mindset basics to advanced conflict resolution   |
+| 📝 **Interactive Quizzes**      | Multiple-choice testing dashboards with instant feedback                   |
+| 🏅 **Badges Cabinet**           | Earn milestone rewards mapping directly to module progress                 |
+| 📜 **Printable Certificates**   | Gorgeous A4 neobrutalist certificate with verification hashes              |
+| 🏆 **Hall of Fame**             | Cohort stats, active streak calendars, and GitHub contributor recognition  |
+| 📖 **Markdown-Driven Content**  | Lessons are parsed dynamically — adding content requires zero code changes |
+| 💬 **Real-Time Community Chat** | End-to-end encrypted WebSocket chat with typing indicators                 |
+| 👥 **Peer Review System**       | Submit code for review and earn XP by reviewing others                     |
+| 🔍 **Interactive Sandbox**      | Git terminal emulator with autocomplete and command replay                 |
 
 ---
-
 
 ## 🛠️ Technical Stack
 
@@ -55,6 +55,7 @@
 <td align="center" width="50%">
 
 ### ⚡ Frontend
+
 React 19 · TypeScript · Vite · Tailwind CSS<br/>
 React Router 7 · TanStack React Query · Redux Toolkit
 
@@ -62,6 +63,7 @@ React Router 7 · TanStack React Query · Redux Toolkit
 <td align="center" width="50%">
 
 ### 🔧 Backend
+
 Django 5.0 · Django REST Framework · Simple JWT<br/>
 Django Channels · Celery · Redis · PostgreSQL
 
@@ -71,6 +73,7 @@ Django Channels · Celery · Redis · PostgreSQL
 <td align="center">
 
 ### ☁️ Deployment
+
 Vercel (Frontend) · Hugging Face (Backend API)<br/>
 Neon (PostgreSQL) · Upstash (Redis)
 
@@ -78,6 +81,7 @@ Neon (PostgreSQL) · Upstash (Redis)
 <td align="center">
 
 ### 🧪 Testing & CI
+
 Vitest · Playwright · Pytest<br/>
 GitHub Actions CI · ESLint · Prettier · Black
 
@@ -90,6 +94,7 @@ GitHub Actions CI · ESLint · Prettier · Black
 ## 🚀 Quick Start (Local Development)
 
 ### 1. Setup Environment
+
 ```bash
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
@@ -108,6 +113,7 @@ cp frontend/.env.example frontend/.env
 
 > [!WARNING]
 > **GitHub OAuth login requires GitHub OAuth credentials.**
+>
 > 1. Go to [GitHub OAuth Apps Settings](https://github.com/settings/developers)
 > 2. Click "OAuth Apps" → "New OAuth App"
 > 3. Fill in:
@@ -116,8 +122,8 @@ cp frontend/.env.example frontend/.env
 >    - **Authorization callback URL**: `http://localhost:8000/accounts/github/login/callback/`
 > 4. Copy `Client ID` and `Client Secret` to `backend/.env`:
 >    ```
->    GITHUB_OAUTH_CLIENT_ID=your_client_id
->    GITHUB_OAUTH_CLIENT_SECRET=your_client_secret
+>    GITHUB_CLIENT_ID=your_client_id
+>    GITHUB_CLIENT_SECRET=your_client_secret
 >    ```
 
 ### 2. Run the Backend (Django)
@@ -151,12 +157,15 @@ python manage.py runserver
 - API: `http://localhost:8000/api/`
 
 ### 3. Run the Frontend (React + Vite)
+
 Ensure you are using **Node 20+**.
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+
 - SPA: `http://localhost:5173/`
 
 ---
@@ -171,13 +180,13 @@ docker compose up --build
 
 This boots:
 
-| Service | URL | Description |
-|---|---|---|
-| **postgres** | `localhost:5432` | Database |
-| **redis** | `localhost:6379` | Celery broker + Channels cache |
-| **backend** | `http://localhost:8000/api/` | Django REST API with hot-reload |
-| **celery_worker** | — | Background task processor for email notifications |
-| **frontend** | `http://localhost:5173/` | Vite dev server with hot-reload |
+| Service           | URL                          | Description                                       |
+| ----------------- | ---------------------------- | ------------------------------------------------- |
+| **postgres**      | `localhost:5432`             | Database                                          |
+| **redis**         | `localhost:6379`             | Celery broker + Channels cache                    |
+| **backend**       | `http://localhost:8000/api/` | Django REST API with hot-reload                   |
+| **celery_worker** | —                            | Background task processor for email notifications |
+| **frontend**      | `http://localhost:5173/`     | Vite dev server with hot-reload                   |
 
 If you hit any setup issues, see [TROUBLESHOOTING.md](./docs/TROUBLESHOOTING.md).
 
@@ -202,17 +211,18 @@ cp backend/.env.example backend/.env
 
 Key variables for Docker:
 
-| Variable | Default | Notes |
-|---|---|---|
-| `DATABASE_URL` | `postgres://atelier:atelier@postgres:5432/atelier` | Auto-configured |
-| `REDIS_URL` | `redis://redis:6379/0` | Auto-configured |
-| `DEBUG` | `True` | Development mode |
+| Variable       | Default                                            | Notes            |
+| -------------- | -------------------------------------------------- | ---------------- |
+| `DATABASE_URL` | `postgres://atelier:atelier@postgres:5432/atelier` | Auto-configured  |
+| `REDIS_URL`    | `redis://redis:6379/0`                             | Auto-configured  |
+| `DEBUG`        | `True`                                             | Development mode |
 
 ---
 
 ## ☁️ Deployment (Vercel)
 
 This project is fully configured to be deployed on **Vercel** as a monorepo.
+
 1. Import the repository into your Vercel dashboard.
 2. Vercel will automatically detect the configuration in `vercel.json` and deploy both the Vite frontend and the Django backend as a serverless API.
 3. Ensure you add all backend environment variables (from `backend/.env.example`) into your Vercel project settings.
@@ -227,12 +237,13 @@ We welcome contributions of all levels suitable for **SSoC 2026** and long-term 
 > **Before requesting an issue**, please read the pinned guide issues on the [Issues tab](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/issues) to understand the keyword assignment rules, CI checks, and the 3-day stale policy.
 
 ### Quick Links
-| Resource | Description |
-|---|---|
-| 📋 [CONTRIBUTING.md](.github/CONTRIBUTING.md) | Forking, branching guidelines, commit conventions, and review cycles |
-| 💬 [CODE_OF_CONDUCT.md](.github/CODE_OF_CONDUCT.md) | Community participation guidelines |
-| 🔒 [SECURITY.md](.github/SECURITY.md) | Responsible vulnerability disclosure policy |
-| 📖 [Content Guide](docs/CONTENT_GUIDE.md) | How to add lessons, modules, and quizzes (zero code changes!) |
+
+| Resource                                            | Description                                                          |
+| --------------------------------------------------- | -------------------------------------------------------------------- |
+| 📋 [CONTRIBUTING.md](.github/CONTRIBUTING.md)       | Forking, branching guidelines, commit conventions, and review cycles |
+| 💬 [CODE_OF_CONDUCT.md](.github/CODE_OF_CONDUCT.md) | Community participation guidelines                                   |
+| 🔒 [SECURITY.md](.github/SECURITY.md)               | Responsible vulnerability disclosure policy                          |
+| 📖 [Content Guide](docs/CONTENT_GUIDE.md)           | How to add lessons, modules, and quizzes (zero code changes!)        |
 
 ---
 

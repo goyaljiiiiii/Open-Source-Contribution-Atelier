@@ -273,7 +273,6 @@ class LessonFeedback(models.Model):
         return f"{status}Feedback by {self.user.username} for {self.lesson.title}: {self.rating} stars"
 
 
-
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     bio = models.TextField(
@@ -282,7 +281,6 @@ class Profile(models.Model):
         default="",
         help_text="A short biography or description.",
     )
-    # Individual fields for requested social platforms
     github_link = models.URLField(
         blank=True, default="", help_text="GitHub profile URL"
     )

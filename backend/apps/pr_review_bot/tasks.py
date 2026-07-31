@@ -3,6 +3,7 @@ Celery tasks for PR review bot and PR Code Impact Analysis.
 """
 
 import logging
+
 from celery import shared_task
 from django.conf import settings
 from django.utils import timezone
@@ -45,13 +46,15 @@ def analyze_pr_impact_task(
     changed_files: list,
     added_lines: int = 0,
     deleted_lines: int = 0,
-    raw_diff: str = ""
+    raw_diff: str = "",
 ):
     """
     Asynchronously analyzes PR code impact, maps affected test suites,
     runs the ML flaky test prediction model, and records the result.
     """
-    logger.info(f"Starting PR Code Impact & Flaky Test Analysis for PR #{pr_number} in {repository}")
+    logger.info(
+        f"Starting PR Code Impact & Flaky Test Analysis for PR #{pr_number} in {repository}"
+    )
 
     analyzer = PRImpactAnalyzer()
     analysis_result = analyzer.analyze_pr_impact(
@@ -60,7 +63,7 @@ def analyze_pr_impact_task(
         changed_files=changed_files,
         added_lines=added_lines,
         deleted_lines=deleted_lines,
-        raw_diff=raw_diff
+        raw_diff=raw_diff,
     )
 
     # Save to PRReview instance if found
@@ -72,5 +75,7 @@ def analyze_pr_impact_task(
         review.processed_at = timezone.now()
         review.save()
 
-    logger.info(f"Completed Impact Analysis for PR #{pr_number}. Risk Score: {analysis_result['risk_score']}%")
+    logger.info(
+        f"Completed Impact Analysis for PR #{pr_number}. Risk Score: {analysis_result['risk_score']}%"
+    )
     return analysis_result
