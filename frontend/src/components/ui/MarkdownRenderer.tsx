@@ -244,7 +244,7 @@ export function MarkdownRenderer({
             </div>
 
             <pre className="w-full overflow-x-auto p-4 bg-[#1a1510] text-[#ffebc2] border-4 border-black rounded-2xl font-mono text-sm shadow-card-sm dark:border-[#2e2924]">
-              <code className="block whitespace-pre">{codeContent.trim()}</code>
+             <code className="block whitespace-pre-wrap break-words">{codeContent.trim()}</code>
             </pre>
           </div>,
         );
