@@ -9,10 +9,16 @@ from rest_framework import permissions, status, views
 from rest_framework.response import Response
 
 from .models import UploadSession
-from .tasks import enqueue_upload_scan
-from .validators import sanitize_svg_file, validate_declared_size, validate_file
+from .validators import (
+    max_size_for,
+    sanitize_svg_file,
+    validate_declared_size,
+    validate_file,
+    validate_filename_extensions,
+)
 import unicodedata
 import uuid
+
 
 
 def sanitize_filename_ascii(filename: str) -> str:
@@ -46,11 +52,13 @@ class StartUploadView(views.APIView):
             )
 
         try:
+            validate_filename_extensions(filename)
             total_size = int(total_size)
             total_chunks = int(total_chunks)
             if total_chunks <= 0:
                 raise ValueError
             validate_declared_size(total_size, upload_type)
+
         except (TypeError, ValueError, ValidationError) as exc:
             message = (
                 exc.messages[0]
@@ -114,14 +122,39 @@ class UploadChunkView(views.APIView):
                 {"message": "Chunk already uploaded"}, status=status.HTTP_200_OK
             )
 
-        chunk_path = os.path.join(session.get_temp_dir(), f"{chunk_index}.part")
+        MAX_CHUNK_SIZE = 10 * 1024 * 1024  # 10MB limit per chunk
+        if file_chunk.size > MAX_CHUNK_SIZE:
+            return Response(
+                {"error": "Chunk size exceeds maximum allowed limit of 10MB"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        temp_dir = session.get_temp_dir()
+        chunk_path = os.path.join(temp_dir, f"{chunk_index}.part")
         with open(chunk_path, "wb+") as destination:
             for chunk in file_chunk.chunks():
                 destination.write(chunk)
 
+        # Verify cumulative size of uploaded chunks on disk doesn't exceed upload type limit
+        max_allowed = max_size_for(session.upload_type)
+        current_total = sum(
+            os.path.getsize(os.path.join(temp_dir, f))
+            for f in os.listdir(temp_dir)
+            if f.endswith(".part")
+        )
+        if current_total > max_allowed:
+            os.remove(chunk_path)
+            return Response(
+                {
+                    "error": f"Total uploaded size exceeds allowed limit of {max_allowed // (1024 * 1024)}MB for {session.upload_type}"
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         session.uploaded_chunks = [*session.uploaded_chunks, chunk_index]
         session.status = UploadSession.Status.UPLOADING
         session.save(update_fields=["uploaded_chunks", "status", "updated_at"])
+
         return Response(
             {"message": "Chunk uploaded successfully"}, status=status.HTTP_200_OK
         )

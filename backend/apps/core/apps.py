@@ -105,7 +105,18 @@ class CoreConfig(AppConfig):
                     "repeats": -1,
                 },
             )
+            # Connection pool auto-tuning every 5 minutes
+            Schedule.objects.get_or_create(
+                name="tune-connection-pool-5min",
+                defaults={
+                    "func": "apps.core.tasks.tune_connection_pool_task",
+                    "schedule_type": Schedule.MINUTES,
+                    "minutes": 5,
+                    "repeats": -1,
+                },
+            )
         except Exception as e:
             logger.warning("Caught exception: %s", e)
             # Table might not be migrated yet or django_q not installed
             pass
+

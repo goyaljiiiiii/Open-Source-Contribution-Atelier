@@ -55,8 +55,9 @@ def is_redis_available(url: str, timeout: float = 0.5) -> bool:
     """
     True when Redis accepts a PING (preferred) or at least a TCP connect.
     """
-    if not url:
+    if not url or _truthy(os.getenv("FORCE_INMEMORY_CHANNEL_LAYER")):
         return False
+
 
     # Prefer a real Redis PING when the client library is installed.
     try:

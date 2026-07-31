@@ -565,6 +565,7 @@ class CommunityStatsView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
+        from apps.core.cache.stampede import stampede_protected_get_or_set
         from django.contrib.auth import get_user_model
 
         User = get_user_model()
@@ -575,39 +576,43 @@ class CommunityStatsView(APIView):
             if user and user.is_authenticated
             else None
         )
+        
+        cache_key = f"community:stats:{org.id}" if org else "community:stats"
 
-        user_count = User.objects.count()
+        def generate_stats():
+            user_count = User.objects.count()
 
-        if org:
-            completed_lessons = LessonProgress.objects.filter(
-                organization=org,
-                completed=True,
-            ).count()
+            if org:
+                completed_lessons = LessonProgress.objects.filter(
+                    organization=org,
+                    completed=True,
+                ).count()
 
-            open_help_requests = HelpRequest.objects.filter(
-                organization=org,
-                status=HelpRequest.Status.OPEN,
-            ).count()
-        else:
-            completed_lessons = LessonProgress.objects.filter(
-                completed=True,
-            ).count()
+                open_help_requests = HelpRequest.objects.filter(
+                    organization=org,
+                    status=HelpRequest.Status.OPEN,
+                ).count()
+            else:
+                completed_lessons = LessonProgress.objects.filter(
+                    completed=True,
+                ).count()
 
-            open_help_requests = HelpRequest.objects.filter(
-                status=HelpRequest.Status.OPEN,
-            ).count()
+                open_help_requests = HelpRequest.objects.filter(
+                    status=HelpRequest.Status.OPEN,
+                ).count()
 
-        active_contributors = 100 + user_count
-        merged_prs = 300 + completed_lessons
+            active_contributors = 100 + user_count
+            merged_prs = 300 + completed_lessons
 
-        return Response(
-            {
+            return {
                 "active_contributors": active_contributors,
                 "merged_prs": merged_prs,
                 "response_sla": "3.5h",
                 "open_requests": open_help_requests,
             }
-        )
+
+        data = stampede_protected_get_or_set(cache_key, generate_stats, timeout=300)
+        return Response(data)
 
 
 class UserAchievementsView(APIView):

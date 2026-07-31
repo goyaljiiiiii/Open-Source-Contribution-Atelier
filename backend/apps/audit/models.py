@@ -62,3 +62,14 @@ class AuditEvent(models.Model):
 
     def delete(self, *args, **kwargs):  # type: ignore[override]
         raise PermissionError("AuditEvent records are immutable and cannot be deleted.")
+
+
+class RBAC(AuditEvent):
+    """
+    Proxy model to provide a dedicated /admin/audit/rbac/ view for RBAC changes.
+    """
+
+    class Meta:
+        proxy = True
+        verbose_name = "RBAC Audit Event"
+        verbose_name_plural = "RBAC Audit Events"

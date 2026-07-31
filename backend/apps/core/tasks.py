@@ -405,3 +405,15 @@ def anonymize_performance_samples():
         timestamp__lt=one_day_ago, user_id__isnull=False
     ).update(user_id=None)
     logger.info(f"Anonymized {updated} performance samples")
+
+
+@shared_task
+def tune_connection_pool_task():
+    """Run tune_connection_pool management command periodically."""
+    from django.core.management import call_command
+
+    try:
+        call_command("tune_connection_pool")
+    except Exception as e:
+        logger.error(f"Error executing tune_connection_pool task: {e}")
+
