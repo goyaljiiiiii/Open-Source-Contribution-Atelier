@@ -41,22 +41,26 @@ const getToastIcon = (type: ToastType) => {
 const Toast: React.FC<ToastProps> = ({ toast, onClose }) => {
   return (
     <motion.div
-      layout
-      initial={{ opacity: 0, y: 50, scale: 0.3 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
-      role={toast.type === "error" ? "alert" : "status"}
-      aria-live={toast.type === "error" ? "assertive" : "polite"}
-      className={`relative flex items-center gap-3 w-full max-w-sm p-4 rounded-2xl border-4 shadow-card ${getToastStyles(
-        toast.type,
-      )}`}
-    >
+  layout
+  initial={{ opacity: 0, y: 50, scale: 0.3 }}
+  animate={{ opacity: 1, y: 0, scale: 1 }}
+  exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
+  role={toast.type === "error" ? "alert" : "status"}
+  aria-live={toast.type === "error" ? "assertive" : "polite"}
+  onClick={() => onClose(toast.id)}
+  className={`relative flex items-center gap-3 w-full max-w-sm p-4 rounded-2xl border-4 shadow-card cursor-pointer ${getToastStyles(
+    toast.type,
+  )}`}
+>
       <div className="flex-shrink-0">{getToastIcon(toast.type)}</div>
       <div className="flex-1">
         <p className="font-bold text-sm leading-snug">{toast.message}</p>
       </div>
       <button
-        onClick={() => onClose(toast.id)}
+        onClick={(e) => {
+             e.stopPropagation();
+             onClose(toast.id);
+        }}
         className="flex-shrink-0 p-1 hover:bg-black/10 rounded-full transition-colors focus:outline-none"
         aria-label="Close notification"
       >
