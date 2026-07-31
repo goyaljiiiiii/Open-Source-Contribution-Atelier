@@ -230,8 +230,8 @@ INSTALLED_APPS = [
     "apps.dx_testing",
     "apps.issue_quality",
     "apps.ml_triage",
-    "apps.issues",
 ]
+
 
 # Cache backends are selected with channel layers below (Redis or LocMem fallback).
 
