@@ -1,4 +1,5 @@
 import axios from "axios";
+import { createApiError } from "./lib/apiErrors";
 
 const getApiBaseUrl = () => {
   if (typeof import.meta !== "undefined" && import.meta.env) {
@@ -26,10 +27,22 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     const requestId = error.config?.requestId || "unknown";
+    const status = error.response?.status;
+    const friendlyMessage = status
+      ? createApiError({
+          status,
+          endpoint: error.config?.url,
+        }).message
+      : "We couldn't complete your request. Please try again in a moment.";
     console.error(
       `[API Error] ReqID=${requestId}`,
       error.response?.data || error.message,
     );
+    if (status && status >= 400) {
+      error.message = friendlyMessage;
+      error.userMessage = friendlyMessage;
+      error.status = status;
+    }
     return Promise.reject(error);
   },
 );
