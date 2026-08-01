@@ -7,11 +7,32 @@ import process from "node:process";
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 import viteCompression from "vite-plugin-compression";
 import { visualizer } from "rollup-plugin-visualizer";
+import zlib from "node:zlib";
 
 const dirname =
   typeof __dirname !== "undefined"
     ? __dirname
     : path.dirname(fileURLToPath(import.meta.url));
+
+function visualizerThresholdPlugin(maxGzipKB = 250): Plugin {
+  return {
+    name: "visualizer-threshold-check",
+    apply: "build",
+    generateBundle(_, bundle) {
+      for (const [fileName, chunk] of Object.entries(bundle)) {
+        if (chunk.type === "chunk" && fileName.endsWith(".js")) {
+          const gzipped = zlib.gzipSync(Buffer.from(chunk.code));
+          const gzipKB = gzipped.length / 1024;
+          if (gzipKB > maxGzipKB) {
+            this.error(
+              `Chunk "${fileName}" (${gzipKB.toFixed(1)} KB gzipped) exceeds the maximum allowed threshold of ${maxGzipKB} KB gzipped.`
+            );
+          }
+        }
+      }
+    },
+  };
+}
 
 function buildMetadataPlugin(): Plugin {
   return {
@@ -59,6 +80,7 @@ export default defineConfig({
   base: process.env.VITE_CDN_URL || "/",
   plugins: [
     buildMetadataPlugin(),
+    visualizerThresholdPlugin(250),
     react(),
     viteCompression({ algorithm: "brotliCompress", ext: ".br" }),
     viteCompression({ algorithm: "gzip", ext: ".gz" }),
