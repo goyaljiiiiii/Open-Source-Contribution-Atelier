@@ -12,6 +12,8 @@ from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.pagination import SecureCursorPagination
+
 from .models import Challenge, ChallengeCompletion, ChallengeOfTheDay
 from .serializers import ChallengeSerializer
 from .throttles import SandboxAnonRateThrottle, SandboxUserRateThrottle
@@ -30,6 +32,7 @@ class ChallengeViewSet(viewsets.ModelViewSet):
 
     serializer_class = ChallengeSerializer
     permission_classes = [AllowAny]
+    pagination_class = SecureCursorPagination
 
     def get_permissions(self):
         from rest_framework import permissions

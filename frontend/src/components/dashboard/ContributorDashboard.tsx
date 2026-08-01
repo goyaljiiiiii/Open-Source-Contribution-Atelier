@@ -30,7 +30,9 @@ import SkeletonContributorDashboard from "../ui/skeletons/SkeletonContributorDas
 import { CertificateModal } from "./CertificateModal";
 import { ProgressReportModal } from "./ProgressReportModal";
 import { StatsCards } from "./StatsCards";
+import { WeeklyGoalTracker } from "./WeeklyGoalTracker";
 import { AchievementCardModal } from "./AchievementCardModal";
+
 import { LessonsChart } from "../LessonsChart";
 import type {
   CertificateResponse,
@@ -354,6 +356,12 @@ export function ContributorDashboard() {
           completedLessonsCount={completedLessonsCount}
         />
       </section>
+
+      {/* 2. Weekly Learning Goal Tracker */}
+      <section id="tour-weekly-goal">
+        <WeeklyGoalTracker />
+      </section>
+
 
       {/* 2. Personalized Next Step */}
       {learningPathData?.next_step && (

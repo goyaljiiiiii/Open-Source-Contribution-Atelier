@@ -208,6 +208,15 @@ class AuditableModel(models.Model):
     class Meta:
         abstract = True
 
+    def audit_snapshot_fields(self) -> list:
+        """
+        Field names included in audit before/after snapshots.
+
+        Subclasses can override this to exclude sensitive or noisy fields
+        (e.g. encrypted tokens) from being persisted in the audit trail.
+        """
+        return [f.name for f in self._meta.fields]
+
 
 # ============================================================
 # Cross-tenant data isolation primitives (issue #1940)
@@ -319,3 +328,31 @@ class TenantAwareModel(models.Model):
 
     class Meta:
         abstract = True
+
+
+class PerformanceSample(models.Model):
+    """
+    Records per-request performance metrics for endpoint telemetry.
+    """
+
+    view_name = models.CharField(max_length=255, db_index=True)
+    method = models.CharField(max_length=10)
+    duration_ms = models.FloatField()
+    db_query_count = models.IntegerField()
+    db_duration_ms = models.FloatField()
+    cache_hits = models.IntegerField(default=0)
+    cache_misses = models.IntegerField(default=0)
+    serialization_ms = models.FloatField(default=0)
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
+    user_id = models.IntegerField(
+        null=True, blank=True, help_text="Anonymized after 24h"
+    )
+
+    class Meta:
+        ordering = ["-timestamp"]
+        indexes = [
+            models.Index(fields=["view_name", "timestamp"]),
+        ]
+
+    def __str__(self):
+        return f"{self.method} {self.view_name} - {self.duration_ms}ms"

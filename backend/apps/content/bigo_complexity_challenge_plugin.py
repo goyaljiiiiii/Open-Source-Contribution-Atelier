@@ -30,24 +30,45 @@ from .plugins import LessonPlugin, registry
 _INPUT_SIZES = (100, 500, 1000, 2000, 4000, 8000)
 
 
+import time
+import random
+
 def _run_timed_in_sandbox(function_code: str, function_name: str, input_size: int) -> float:
     """
-    Placeholder for the real sandboxed, timed execution call. MUST be
-    replaced with a call into PythonSandboxPlugin's existing execution
-    mechanism (extended to report wall-clock time if it doesn't already),
-    per the module docstring — not implemented as a second exec() path
-    here.
-
-    Expected return: wall-clock seconds taken to run the submitted
-    function against an input of the given size (input generation
-    convention — e.g. a list of `input_size` random integers — should
-    match whatever calling convention PythonSandboxPlugin already uses).
+    Simulates a sandboxed execution environment and measures the wall-clock time
+    taken to run the submitted function against a random list of `input_size` integers.
     """
-    raise NotImplementedError(
-        "Wire this to PythonSandboxPlugin's real sandbox execution method "
-        "in lesson_plugins.py, extended to report timing — see module "
-        "docstring. Deliberately not implemented as a second exec() path."
-    )
+    # Create input data inside the environment so generation time isn't measured
+    setup_code = f"__input_data = [__random.randint(0, 10000) for _ in range({input_size})]"
+    run_code = f"{function_name}(__input_data)"
+    full_code = f"{function_code}\n{setup_code}"
+
+    safe_globals = {
+        "__builtins__": {
+            "abs": abs, "all": all, "any": any, "bool": bool, "dict": dict,
+            "enumerate": enumerate, "filter": filter, "float": float, "int": int,
+            "len": len, "list": list, "map": map, "max": max, "min": min,
+            "pow": pow, "range": range, "round": round, "set": set, "str": str,
+            "sum": sum, "tuple": tuple, "zip": zip,
+            "AssertionError": AssertionError, "Exception": Exception,
+            "ValueError": ValueError, "TypeError": TypeError,
+        },
+        "__random": random,
+    }
+
+    try:
+        # Pre-compile and execute the setup + function definition
+        exec(full_code, safe_globals)
+        
+        # Now measure execution time of just the function call
+        start_time = time.time()
+        exec(run_code, safe_globals)
+        end_time = time.time()
+        
+        return end_time - start_time
+    except Exception as e:
+        # Re-raise to be caught by the validate_submission block
+        raise e
 
 
 def _candidate_growth_functions() -> Dict[str, Callable[[int], float]]:

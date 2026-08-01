@@ -1,0 +1,32 @@
+{
+  "_description": "Known false-positive CVEs that are vendor-disputed, not applicable, or accepted risk.",
+  "_notes": "Entries should include a reason and optional expiry date. Review quarterly.",
+  "allowed_cves": [
+    {
+      "id": "CVE-2023-99999",
+      "package": "sample-demo-pkg",
+      "reason": "False positive in development environment only; non-production vector.",
+      "expires": "2026-12-31",
+      "severity": "HIGH"
+    },
+    {
+      "id": "GHSA-xxxx-xxxx-xxxx",
+      "package": "example-ghsa-id",
+      "reason": "Disputed by vendor; requires local file system access not present in deployment.",
+      "expires": null,
+      "severity": "CRITICAL"
+    }
+  ],
+  "allowed_packages": [
+    {
+      "name": "pip",
+      "reason": "Build-time only tool, not shipped in production image.",
+      "expires": null
+    },
+    {
+      "name": "setuptools",
+      "reason": "Build-time only dependency.",
+      "expires": null
+    }
+  ]
+}

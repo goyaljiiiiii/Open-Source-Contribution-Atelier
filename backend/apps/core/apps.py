@@ -30,6 +30,11 @@ class CoreConfig(AppConfig):
         except ImportError:
             pass
 
+        from django.db.models.signals import post_migrate
+
+        post_migrate.connect(self.setup_initial_data, sender=self)
+
+    def setup_initial_data(self, sender, **kwargs):
         try:
             from django_q.models import Schedule
 
@@ -80,7 +85,38 @@ class CoreConfig(AppConfig):
                     "repeats": -1,
                 },
             )
+
+            # Performance sample cleanup
+            Schedule.objects.get_or_create(
+                name="perf-sample-prune-daily",
+                defaults={
+                    "func": "apps.core.tasks.prune_performance_samples",
+                    "schedule_type": Schedule.DAILY,
+                    "repeats": -1,
+                },
+            )
+
+            # Performance sample anonymization
+            Schedule.objects.get_or_create(
+                name="perf-sample-anonymize-hourly",
+                defaults={
+                    "func": "apps.core.tasks.anonymize_performance_samples",
+                    "schedule_type": Schedule.HOURLY,
+                    "repeats": -1,
+                },
+            )
+            # Connection pool auto-tuning every 5 minutes
+            Schedule.objects.get_or_create(
+                name="tune-connection-pool-5min",
+                defaults={
+                    "func": "apps.core.tasks.tune_connection_pool_task",
+                    "schedule_type": Schedule.MINUTES,
+                    "minutes": 5,
+                    "repeats": -1,
+                },
+            )
         except Exception as e:
             logger.warning("Caught exception: %s", e)
             # Table might not be migrated yet or django_q not installed
             pass
+

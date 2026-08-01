@@ -3,20 +3,38 @@ Health check aggregator endpoint with async verification.
 """
 
 import asyncio
-import json
 import logging
 import time
-from typing import Any, Dict, Optional
-
-import redis
-from django.conf import settings
-from django.core.cache import cache
+from typing import Dict, Any, Optional
 from django.db import connection
+from django.core.cache import cache
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from django.conf import settings
+import redis
+import json
 
 logger = logging.getLogger(__name__)
+
+
+def _has_internal_access(request) -> bool:
+    """
+    Check whether the requester is allowed to see verbose infrastructure
+    details (worker hostnames, Redis stats, ALLOWED_HOSTS value) rather
+    than just up/down status. Uses a shared-secret header
+    (HEALTH_CHECK_INTERNAL_TOKEN in settings) rather than full user auth,
+    since this endpoint is meant to remain usable by unauthenticated
+    infra probes (load balancers, Kubernetes) for the minimal status
+    check — only the verbose details need gating.
+    """
+    configured_token = getattr(settings, "HEALTH_CHECK_INTERNAL_TOKEN", None)
+    if not configured_token:
+        # No token configured: verbose details are never exposed, even
+        # internally, until a maintainer explicitly opts in by setting one.
+        return False
+    provided_token = request.headers.get("X-Health-Check-Token", "")
+    return provided_token == configured_token
 
 
 class HealthChecker:
@@ -63,14 +81,12 @@ class HealthChecker:
         }
         try:
             start = time.time()
-            # Try to ping Redis
             cache.set("health_check_ping", "pong", timeout=5)
             value = cache.get("health_check_ping")
             if value == "pong":
                 result["details"]["response_time_ms"] = round(
                     (time.time() - start) * 1000, 2
                 )
-                # Get Redis info
                 try:
                     redis_client = redis.from_url(settings.REDIS_URL)
                     info = redis_client.info()
@@ -81,7 +97,7 @@ class HealthChecker:
                         "connected_clients", "N/A"
                     )
                     result["details"]["uptime_days"] = info.get("uptime_in_days", "N/A")
-                except:
+                except Exception:
                     pass
             else:
                 result["status"] = "unhealthy"
@@ -101,7 +117,6 @@ class HealthChecker:
         }
         try:
             from celery.task.control import inspect
-
             from config.celery import app
 
             start = time.time()
@@ -116,7 +131,6 @@ class HealthChecker:
                         (time.time() - start) * 1000, 2
                     )
 
-                    # Get queue sizes
                     active_queues = i.active_queues()
                     if active_queues:
                         result["details"]["active_queues"] = len(active_queues)
@@ -140,20 +154,18 @@ class HealthChecker:
             "details": {},
         }
         try:
-            from asgiref.sync import async_to_sync
             from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
 
             start = time.time()
             channel_layer = get_channel_layer()
 
-            # Check if channel layer is configured
             if channel_layer:
                 result["details"]["channel_layer_type"] = type(channel_layer).__name__
                 result["details"]["response_time_ms"] = round(
                     (time.time() - start) * 1000, 2
                 )
 
-                # Try to create a test group
                 try:
                     group_name = "health_check_group"
                     async_to_sync(channel_layer.group_add)(
@@ -162,7 +174,6 @@ class HealthChecker:
                     result["details"]["group_created"] = True
                 except Exception as e:
                     result["details"]["group_error"] = str(e)
-                    # Don't fail if group creation fails (may be permissions)
             else:
                 result["status"] = "unhealthy"
                 result["details"]["error"] = "Channel layer not available"
@@ -174,7 +185,6 @@ class HealthChecker:
 
     async def run_checks(self) -> Dict[str, Any]:
         """Run all health checks asynchronously."""
-        # Run checks in parallel
         tasks = [
             self.check_postgres(),
             self.check_redis(),
@@ -194,7 +204,6 @@ class HealthChecker:
             else:
                 self.results[result["name"]] = result
 
-        # Calculate overall status
         total_checks = len(self.results)
         healthy_checks = sum(
             1 for r in self.results.values() if r["status"] == "healthy"
@@ -218,6 +227,22 @@ class HealthChecker:
         }
 
 
+def _minimal_response(full_result: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Strip verbose per-service details down to just up/down status, for
+    responses to requests without internal access. Keeps the top-level
+    overall status intact, since that's what a probe actually needs.
+    """
+    return {
+        "status": full_result["status"],
+        "timestamp": full_result["timestamp"],
+        "checks": {
+            name: {"name": check["name"], "status": check["status"]}
+            for name, check in full_result["checks"].items()
+        },
+    }
+
+
 @csrf_exempt
 @require_http_methods(["GET", "HEAD"])
 def health_view(request):
@@ -226,11 +251,14 @@ def health_view(request):
 
     GET /health/
 
-    Returns structured health information for all services.
+    Returns structured health information for all services. Verbose
+    per-service details (worker hostnames, Redis stats, ALLOWED_HOSTS)
+    are only included for requests with a valid internal access token
+    (see _has_internal_access) — unauthenticated requests get minimal
+    up/down status only.
     """
     checker = HealthChecker()
 
-    # Run checks synchronously (Django doesn't support async views out of the box)
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
@@ -238,10 +266,10 @@ def health_view(request):
     finally:
         loop.close()
 
-    # Determine HTTP status code
     status_code = 200 if result["status"] == "healthy" else 503
 
-    return JsonResponse(result, status=status_code)
+    response_body = result if _has_internal_access(request) else _minimal_response(result)
+    return JsonResponse(response_body, status=status_code)
 
 
 @csrf_exempt
@@ -252,7 +280,9 @@ def health_ready_view(request):
 
     GET /health/ready/
 
-    Returns 200 if all services are ready, 503 otherwise.
+    Returns 200 if all services are ready, 503 otherwise. Never includes
+    verbose infrastructure details, regardless of caller — a readiness
+    probe only needs the boolean outcome.
     """
     checker = HealthChecker()
 

@@ -30,7 +30,10 @@ class StreakRecoveryService:
         if not last_date:
             return None
 
-        today = date.today()
+        try:
+            today = user.user_profile.local_today
+        except Exception:
+            today = date.today()
         diff = today - last_date
 
         with transaction.atomic():

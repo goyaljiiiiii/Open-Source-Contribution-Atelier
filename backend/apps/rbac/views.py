@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -31,7 +32,7 @@ def _get_user_organization_ids(user):
         user_org = getattr(user, "organization", None)
         if user_org and getattr(user_org, "id", None):
             org_ids.add(user_org.id)
-    except Exception:
+    except (ObjectDoesNotExist, PermissionDenied):
         pass
 
     try:
@@ -39,7 +40,7 @@ def _get_user_organization_ids(user):
             "organization_id", flat=True
         )
         org_ids.update(memberships)
-    except Exception:
+    except (ObjectDoesNotExist, PermissionDenied):
         pass
 
     roles_orgs = UserRole.objects.filter(
@@ -111,14 +112,18 @@ class AssignRoleView(APIView):
                     status=status.HTTP_404_NOT_FOUND,
                 )
         else:
-            organization_id = _get_user_primary_org_id(request.user) or _get_user_primary_org_id(target_user)
+            organization_id = _get_user_primary_org_id(
+                request.user
+            ) or _get_user_primary_org_id(target_user)
 
         # Enforce multi-tenant organization boundaries for non-superusers
         if not request.user.is_superuser:
             if organization_id is not None:
                 if not _user_belongs_to_org(request.user, organization_id):
                     return Response(
-                        {"error": "You do not have permission to manage roles in this organization"},
+                        {
+                            "error": "You do not have permission to manage roles in this organization"
+                        },
                         status=status.HTTP_403_FORBIDDEN,
                     )
                 if not _user_belongs_to_org(target_user, organization_id):
@@ -129,7 +134,11 @@ class AssignRoleView(APIView):
             else:
                 admin_orgs = _get_user_organization_ids(request.user)
                 target_orgs = _get_user_organization_ids(target_user)
-                if admin_orgs and target_orgs and not admin_orgs.intersection(target_orgs):
+                if (
+                    admin_orgs
+                    and target_orgs
+                    and not admin_orgs.intersection(target_orgs)
+                ):
                     return Response(
                         {"error": "Cross-organization role assignment is forbidden"},
                         status=status.HTTP_403_FORBIDDEN,
@@ -179,14 +188,18 @@ class RevokeRoleView(APIView):
                     status=status.HTTP_404_NOT_FOUND,
                 )
         else:
-            organization_id = _get_user_primary_org_id(request.user) or _get_user_primary_org_id(target_user)
+            organization_id = _get_user_primary_org_id(
+                request.user
+            ) or _get_user_primary_org_id(target_user)
 
         # Enforce multi-tenant organization boundaries for non-superusers
         if not request.user.is_superuser:
             if organization_id is not None:
                 if not _user_belongs_to_org(request.user, organization_id):
                     return Response(
-                        {"error": "You do not have permission to manage roles in this organization"},
+                        {
+                            "error": "You do not have permission to manage roles in this organization"
+                        },
                         status=status.HTTP_403_FORBIDDEN,
                     )
                 if not _user_belongs_to_org(target_user, organization_id):
@@ -197,7 +210,11 @@ class RevokeRoleView(APIView):
             else:
                 admin_orgs = _get_user_organization_ids(request.user)
                 target_orgs = _get_user_organization_ids(target_user)
-                if admin_orgs and target_orgs and not admin_orgs.intersection(target_orgs):
+                if (
+                    admin_orgs
+                    and target_orgs
+                    and not admin_orgs.intersection(target_orgs)
+                ):
                     return Response(
                         {"error": "Cross-organization role revocation is forbidden"},
                         status=status.HTTP_403_FORBIDDEN,

@@ -1,8 +1,11 @@
 import logging
 
 logger = logging.getLogger(__name__)
+import base64
+import hashlib
 import os
 import secrets
+import time
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlencode
@@ -10,6 +13,7 @@ from urllib.parse import urlencode
 import requests as http_requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.conf import settings
 
 User = get_user_model()
 from django.core.mail import send_mail
@@ -69,6 +73,7 @@ from .tasks import (
     send_password_reset_email_task,
 )
 from .throttles import (
+    GitHubOAuthCallbackThrottle,
     LoginThrottle,
     MagicLinkRequestThrottle,
     MagicLinkVerifyThrottle,
@@ -327,14 +332,29 @@ class GoogleLoginView(APIView):
 class GitHubOAuthStartView(APIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [OAuthThrottle]
-
-    def get(self, request):
-        client_id = os.getenv("GITHUB_CLIENT_ID", "")
+def get(self, request):
+        client_id = settings.GITHUB_CLIENT_ID
         if not client_id:
             return Response(
                 {"detail": "GitHub OAuth is not configured."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        state = secrets.token_urlsafe(32)
+        code_verifier = secrets.token_urlsafe(64)
+        code_challenge = (
+            base64.urlsafe_b64encode(
+                hashlib.sha256(code_verifier.encode("ascii")).digest()
+            )
+            .decode("ascii")
+            .rstrip("=")
+        )
+
+        request.session["github_oauth_state"] = {
+            "value": state,
+            "created_at": time.time(),
+        }
+        request.session["github_oauth_verifier"] = code_verifier
 
         callback_url = request.build_absolute_uri("/api/auth/github/callback/")
         params = urlencode(
@@ -342,6 +362,9 @@ class GitHubOAuthStartView(APIView):
                 "client_id": client_id,
                 "redirect_uri": callback_url,
                 "scope": "read:user user:email",
+                "state": state,
+                "code_challenge": code_challenge,
+                "code_challenge_method": "S256",
             }
         )
         return redirect(f"https://github.com/login/oauth/authorize?{params}")
@@ -349,20 +372,47 @@ class GitHubOAuthStartView(APIView):
 
 class GitHubOAuthCallbackView(APIView):
     permission_classes = [permissions.AllowAny]
-    throttle_classes = [OAuthThrottle]
+    throttle_classes = [GitHubOAuthCallbackThrottle]
 
     def get(self, request):
         code = request.query_params.get("code")
+        state = request.query_params.get("state")
+
         if not code:
             return redirect(
                 frontend_url("/", {"auth_error": "GitHub authorization was cancelled."})
             )
 
-        client_id = os.getenv("GITHUB_CLIENT_ID", "")
-        client_secret = os.getenv("GITHUB_CLIENT_SECRET", "")
+        client_id = settings.GITHUB_CLIENT_ID
+        client_secret = settings.GITHUB_CLIENT_SECRET
         if not client_id or not client_secret:
             return redirect(
                 frontend_url("/", {"auth_error": "GitHub OAuth is not configured."})
+            )
+
+        if not state:
+            return Response(
+                {"detail": "Missing state parameter."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        session_state = request.session.pop("github_oauth_state", None)
+        code_verifier = request.session.pop("github_oauth_verifier", None)
+
+        if not session_state or not code_verifier:
+            return Response(
+                {"detail": "OAuth session expired or invalid."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        if state != session_state.get("value"):
+            return Response(
+                {"detail": "Invalid OAuth state."}, status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        if time.time() - session_state.get("created_at", 0) > 600:
+            return Response(
+                {"detail": "OAuth state expired."}, status=status.HTTP_401_UNAUTHORIZED
             )
 
         callback_url = request.build_absolute_uri("/api/auth/github/callback/")
@@ -380,6 +430,7 @@ class GitHubOAuthCallbackView(APIView):
                         "client_secret": client_secret,
                         "code": code,
                         "redirect_uri": callback_url,
+                        "code_verifier": code_verifier,
                     },
                     timeout=5,
                 )
@@ -478,11 +529,12 @@ class GitHubOAuthCallbackView(APIView):
             )
 
 
+from apps.core.mixins import OrganizationScopedQuerySetMixin
 from .permissions import IsAdminOrModeratorRole
 
 
 @extend_schema(responses=UserListSerializer(many=True))
-class UserListView(generics.ListAPIView):
+class UserListView(OrganizationScopedQuerySetMixin, generics.ListAPIView):
     queryset = User.objects.select_related("user_profile").order_by("id")
     permission_classes = [permissions.IsAuthenticated, IsAdminOrModeratorRole]
     serializer_class = UserListSerializer
@@ -524,6 +576,29 @@ class PasswordResetRequestView(APIView):
 
         email = serializer.validated_data["email"].lower()  # type: ignore
         user = User.objects.filter(email__iexact=email).first()
+
+        try:
+            user = User.objects.get(email=email)
+            # Generate reset token
+            token = generate_reset_token(user)
+            
+            # Send email
+            send_mail(
+                'Password Reset',
+                f'Click here to reset: /reset-password/{token}',
+                'noreply@atelier.dev',
+                [email],
+                fail_silently=True,  
+            )
+        except User.DoesNotExist:
+            #  Log silently 
+            logger.info(f'Password reset requested for non-existent email: {email}')
+           
+        
+        
+        return Response({
+            'message': 'If an account with that email exists, we\'ve sent a reset link.'
+        }, status=status.HTTP_200_OK)
 
         if user:
             # Invalidate any existing unused tokens for this user

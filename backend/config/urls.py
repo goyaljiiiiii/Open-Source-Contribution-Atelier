@@ -12,32 +12,39 @@ from graphene_django.views import GraphQLView
 from apps.billing.views import CheckoutSessionView
 from apps.billing.webhooks import stripe_webhook
 from apps.dashboard.views import LeaderboardView
+from apps.content.views_notes import LessonNoteAPIView
 
 from .health_view import health_view
-from .version_view import version_view
+from .version_view import api_versions_view, version_view
 
 urlpatterns = [
-    # ── Admin ──────────────────────────────────────────────────────────────────
+    # ── Django Admin & External Webhooks ──────────────────────────────────────
     path("admin/", admin.site.urls),
     path("api/admin/audit/", include("apps.audit.urls")),
     path("api/audit/", include("apps.audit.urls")),
     path("api/admin/", include("apps.monitoring.urls")),
     path("api/monitoring/", include("apps.monitoring.urls")),
-
+    path("api/admin/core/", include("apps.core.urls")),
+    path("api/admin/db/", include("apps.core.urls")),
     # ── Health Checks ──────────────────────────────────────────────────────────
     path("health/", include("apps.health.urls")),
-    # ── Legacy Health (keep for backward compatibility) ──────────────────────
     path("health/legacy/", health_view, name="health"),
-    # ── API Version ────────────────────────────────────────────────────────────
+    # ── Version Discovery (root /api/versions/) ─────────────────────────────
     path("api/version/", version_view, name="version"),
+    path("api/versions/", api_versions_view, name="root-api-versions"),
     # ── Leaderboard ────────────────────────────────────────────────────────────
     path("api/leaderboard/", LeaderboardView.as_view(), name="leaderboard"),
     # ── Authentication ─────────────────────────────────────────────────────────
     path("accounts/", include("allauth.urls")),
     path("api/auth/", include("apps.accounts.urls")),
     path("api/users/", include("apps.accounts.user_urls")),
+    # ── OAuth 2.0 & OpenID Connect ──────────────────────────────────────────────
+    path("oauth/", include("apps.oauth.urls")),
+    path("", include("apps.oauth.urls")),
     # ── Core Apps ──────────────────────────────────────────────────────────────
     path("api/content/", include("apps.content.urls")),
+    path("api/lessons/<str:lesson_id>/notes", LessonNoteAPIView.as_view(), name="api-lesson-notes"),
+    path("api/lessons/<str:lesson_id>/notes/", LessonNoteAPIView.as_view(), name="api-lesson-notes-slash"),
     path("api/billing/", include("apps.billing.urls")),
     path("api/progress/", include("apps.progress.urls")),
     path("api/localization/", include("apps.localization.urls")),
@@ -56,6 +63,7 @@ urlpatterns = [
     # ============================================================
     # WEBHOOKS & UPLOADS
     # ============================================================
+    path("api/webhooks/", include("apps.webhooks.urls")),
     path("api/uploads/", include("apps.uploads.urls")),
     # ── RBAC ───────────────────────────────────────────────────────────────────
     path("api/rbac/", include("apps.rbac.urls")),
@@ -96,33 +104,21 @@ urlpatterns = [
     # ============================================================
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
-        "docs/",
+        "api/docs/",
         SpectacularSwaggerView.as_view(url_name="schema"),
         name="swagger-ui",
     ),
 ]
 
 urlpatterns = [
-    # ── Django Admin & External Webhooks ──────────────────────────────────────
-    path("admin/", admin.site.urls),
-    path("accounts/", include("allauth.urls")),
-    path("create-checkout-session/", CheckoutSessionView.as_view()),
-    path("webhook/", stripe_webhook),
-    # ── Health Checks ──────────────────────────────────────────────────────────
-    path("health/", include("apps.health.urls")),
-    path("health/legacy/", health_view, name="health"),
-    # ── Version Discovery (root /api/versions/) ─────────────────────────────
     path("api/versions/", version_view, name="root-api-versions"),
-    # ── Stable Versioned API (/api/v1/) ───────────────────────────────────────
-    path("api/v1/", include(api_v1_patterns)),
-    # ── Unversioned API Fallback (/api/) ───────────────────────────────────────
-    path("api/", include(api_v1_patterns)),
+    path("", include(api_v1_patterns)),
 ]
-
 if settings.DEBUG:
     from apps.feature_flags.debug_view import feature_flags_debug_view
 
     urlpatterns += [
         path("api/v1/feature-flags/", include("apps.feature_flags.urls")),
         path("api/feature-flags/", include("apps.feature_flags.urls")),
+        path("graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
     ]

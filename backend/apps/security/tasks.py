@@ -117,7 +117,7 @@ def scan_project_dependencies():
             if (dep.package_name, dep.ecosystem) not in active_packages:
                 dep.delete()
 
-    except Exception as e:
+    except (requests.exceptions.RequestException, ValueError, KeyError) as e:
         logger.error(f"Error fetching Dependabot alerts: {e}")
 
     # 2. Fetch Dependabot created PRs with pagination
@@ -162,7 +162,7 @@ def scan_project_dependencies():
                 pulls_url = None
 
         logger.info("Synced Dependabot PRs.")
-    except Exception as e:
+    except (requests.exceptions.RequestException, ValueError, KeyError) as e:
         logger.error(f"Error syncing Dependabot PRs: {e}")
 
     return "Scan complete."

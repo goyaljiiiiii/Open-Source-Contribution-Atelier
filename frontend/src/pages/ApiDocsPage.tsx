@@ -3,6 +3,7 @@ import { Download, Search, Sliders } from "lucide-react";
 import { Download, Search, Sliders, Activity } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ApiEndpointCard } from "../components/docs/ApiEndpointCard";
+import { WebhookInspector } from "../components/docs/WebhookInspector";
 import { SectionCard } from "../components/ui/SectionCard";
 import { API_BASE } from "../lib/api";
 import { useOpenApiSchema } from "../hooks/useOpenApiSchema";
@@ -66,6 +67,9 @@ export function ApiDocsPage() {
           {schema?.info?.version ? ` (v${schema.info.version})` : ""}.
         </p>
       </SectionCard>
+
+      {/* Webhook Event Payload Inspector */}
+      <WebhookInspector />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <label className="relative block max-w-xl flex-1">

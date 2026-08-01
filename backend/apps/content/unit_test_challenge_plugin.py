@@ -27,6 +27,8 @@ from typing import Any, Dict, List
 from .plugins import LessonPlugin, registry
 
 
+from apps.sandbox.services.sandbox_executor import SandboxExecutor
+
 def _run_in_sandbox(
     test_code: str, implementation_code: str, function_name: str
 ) -> Dict[str, Any]:
@@ -38,44 +40,7 @@ def _run_in_sandbox(
     """
     # Combine implementation and test code
     full_code = f"{implementation_code}\n\n{test_code}\n\n{function_name}()"
-
-    # Restricted globals for basic safety in the simulated sandbox
-    safe_globals = {
-        "__builtins__": {
-            "abs": abs,
-            "all": all,
-            "any": any,
-            "bool": bool,
-            "dict": dict,
-            "enumerate": enumerate,
-            "filter": filter,
-            "float": float,
-            "int": int,
-            "len": len,
-            "list": list,
-            "map": map,
-            "max": max,
-            "min": min,
-            "pow": pow,
-            "range": range,
-            "round": round,
-            "set": set,
-            "str": str,
-            "sum": sum,
-            "tuple": tuple,
-            "zip": zip,
-            "AssertionError": AssertionError,
-            "Exception": Exception,
-            "ValueError": ValueError,
-            "TypeError": TypeError,
-        }
-    }
-
-    try:
-        exec(full_code, safe_globals)
-        return {"passed": True, "error": None}
-    except Exception as e:
-        return {"passed": False, "error": str(e)}
+    return SandboxExecutor.execute(full_code)
 
 
 class UnitTestChallengePlugin(LessonPlugin):

@@ -143,9 +143,13 @@ class ProgressTrackingService:
             )
 
             if completed:
+                try:
+                    local_date = user.user_profile.local_today
+                except Exception:
+                    local_date = timezone.now().date()
                 DailyActivity.log_and_update_streak(
                     user=user,
-                    date=timezone.now().date(),
+                    date=local_date,
                     activity_type="lesson",
                 )
 

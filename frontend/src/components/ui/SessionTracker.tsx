@@ -27,11 +27,11 @@ export function SessionTracker() {
 
   return (
     <div
-      className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-white px-4 py-2 rounded-full border-4 border-black shadow-card text-sm font-black uppercase tracking-wider text-text dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2] dark:shadow-none hover:-translate-y-1 transition-transform"
+      className="hidden lg:flex fixed bottom-6 right-6 z-40 items-center gap-2 bg-white px-4 py-2 rounded-full border-4 border-black shadow-card text-sm font-black uppercase tracking-wider text-text dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2] dark:shadow-none hover:-translate-y-1 transition-transform"
       title="Time Spent Coding this session"
     >
-      <Timer size={16} className="text-primary animate-pulse" />
-      <span>{formatTime(seconds)}</span>
+      <Timer size={16} className="text-primary animate-pulse shrink-0" />
+      <span className="font-mono">{formatTime(seconds)}</span>
     </div>
   );
 }
