@@ -25,7 +25,7 @@ def _client_ip(request) -> str | None:
     return request.META.get("REMOTE_ADDR")
 
 
-class CertificateVerificationView(views.APIView):
+class CertificateVerificationView(APIView):
     """
     GET /api/gamification/verify-certificate/<hash>/
 
@@ -90,7 +90,7 @@ class CertificateVerificationView(views.APIView):
         )
 
 
-class AntiCheatCheckView(views.APIView):
+class AntiCheatCheckView(APIView):
     """
     POST /api/gamification/anti-cheat/check/
 
