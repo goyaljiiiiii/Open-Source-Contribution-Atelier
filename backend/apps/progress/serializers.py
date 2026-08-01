@@ -7,7 +7,9 @@ from .models import (
     LessonProgress,
     QuizAttempt,
     UserBadge,
+    WeeklyGoal,
 )
+
 
 
 class BadgeSerializer(serializers.ModelSerializer):
@@ -190,3 +192,34 @@ class PeerReviewSerializer(serializers.ModelSerializer):
             "points_earned",
             "created_at",
         ]
+
+
+class WeeklyGoalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WeeklyGoal
+        fields = [
+            "id",
+            "week_start_date",
+            "target_lessons",
+            "target_xp",
+            "target_minutes",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "week_start_date", "created_at", "updated_at"]
+
+    def validate_target_lessons(self, value):
+        if value < 1 or value > 100:
+            raise serializers.ValidationError("Target lessons must be between 1 and 100.")
+        return value
+
+    def validate_target_xp(self, value):
+        if value < 10 or value > 50000:
+            raise serializers.ValidationError("Target XP must be between 10 and 50,000.")
+        return value
+
+    def validate_target_minutes(self, value):
+        if value < 10 or value > 10080:
+            raise serializers.ValidationError("Target minutes must be between 10 and 10,080.")
+        return value
+

@@ -3,10 +3,19 @@ from django.conf import settings
 from django.db import migrations, models
 
 
-def create_mv_if_postgres(apps, schema_editor):
-    if schema_editor.connection.vendor == "postgresql":
-        with schema_editor.connection.cursor() as cursor:
-            cursor.execute("""
+def create_leaderboard_view(apps, schema_editor):
+    if schema_editor.connection.vendor == "sqlite":
+        schema_editor.execute("""
+            CREATE VIEW IF NOT EXISTS progress_leaderboard_mv AS
+            SELECT
+                user_id,
+                COALESCE(SUM(xp_delta), 0) as total_xp,
+                ROW_NUMBER() OVER (ORDER BY COALESCE(SUM(xp_delta), 0) DESC) as rank
+            FROM progress_xpevent
+            GROUP BY user_id;
+        """)
+    else:
+        schema_editor.execute("""
             CREATE MATERIALIZED VIEW IF NOT EXISTS progress_leaderboard_mv AS
             SELECT
                 user_id,
@@ -31,29 +40,18 @@ def create_mv_if_postgres(apps, schema_editor):
             AFTER INSERT OR UPDATE OR DELETE ON progress_xpevent
             FOR EACH STATEMENT
             EXECUTE FUNCTION refresh_leaderboard_trigger_func();
-            """)
-    elif schema_editor.connection.vendor == "sqlite":
-        with schema_editor.connection.cursor() as cursor:
-            cursor.execute("""
-            CREATE TABLE IF NOT EXISTS progress_leaderboard_mv (
-                user_id INTEGER PRIMARY KEY,
-                total_xp INTEGER DEFAULT 0,
-                rank INTEGER DEFAULT 1
-            );
-            """)
+        """)
 
 
-def drop_mv_if_postgres(apps, schema_editor):
-    if schema_editor.connection.vendor == "postgresql":
-        with schema_editor.connection.cursor() as cursor:
-            cursor.execute("""
+def drop_leaderboard_view(apps, schema_editor):
+    if schema_editor.connection.vendor == "sqlite":
+        schema_editor.execute("DROP VIEW IF EXISTS progress_leaderboard_mv;")
+    else:
+        schema_editor.execute("""
             DROP TRIGGER IF EXISTS xp_event_leaderboard_trigger ON progress_xpevent;
             DROP FUNCTION IF EXISTS refresh_leaderboard_trigger_func;
             DROP MATERIALIZED VIEW IF EXISTS progress_leaderboard_mv;
-            """)
-    elif schema_editor.connection.vendor == "sqlite":
-        with schema_editor.connection.cursor() as cursor:
-            cursor.execute("DROP TABLE IF EXISTS progress_leaderboard_mv;")
+        """)
 
 
 class Migration(migrations.Migration):
@@ -85,6 +83,8 @@ class Migration(migrations.Migration):
                 "managed": False,
             },
         ),
-        migrations.RunPython(create_mv_if_postgres, drop_mv_if_postgres),
+        migrations.RunPython(
+            create_leaderboard_view,
+            drop_leaderboard_view,
+        ),
     ]
-

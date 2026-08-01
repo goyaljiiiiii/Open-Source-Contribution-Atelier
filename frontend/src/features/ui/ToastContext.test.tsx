@@ -1,5 +1,5 @@
 import React from "react";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import {
   render,
   screen,
@@ -48,13 +48,8 @@ const TestComponent = ({
 };
 
 describe("ToastContext Edge Cases", () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-
   afterEach(() => {
     vi.runOnlyPendingTimers();
-    vi.useRealTimers();
     cleanup();
   });
 
@@ -201,5 +196,33 @@ describe("ToastContext Edge Cases", () => {
     expect(screen.getByText("Toast 1")).toBeInTheDocument();
     expect(screen.queryByText("Toast 2")).not.toBeInTheDocument();
     expect(screen.getByText("Toast 3")).toBeInTheDocument();
+  });
+
+  it("deduplicates duplicate toasts with identical message and type", async () => {
+    const DuplicateToastComponent = () => {
+      const { addToast } = useToast();
+      return (
+        <button
+          onClick={() => {
+            addToast("Correct!", "success", 5000);
+            addToast("Correct!", "success", 5000);
+            addToast("Correct!", "success", 5000);
+          }}
+        >
+          Trigger Duplicates
+        </button>
+      );
+    };
+
+    render(
+      <ToastProvider>
+        <DuplicateToastComponent />
+      </ToastProvider>,
+    );
+
+    fireEvent.click(screen.getByText("Trigger Duplicates"));
+
+    const elements = screen.getAllByText("Correct!");
+    expect(elements).toHaveLength(1);
   });
 });

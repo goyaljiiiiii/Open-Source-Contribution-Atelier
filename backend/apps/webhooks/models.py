@@ -227,6 +227,12 @@ class WebhookDeliveryLog(models.Model):
     response_body = models.TextField(
         blank=True, help_text="Response body or error details."
     )
+    key_id = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+        help_text="The key ID used to verify (or attempted) the delivery signature.",
+    )
     attempted_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

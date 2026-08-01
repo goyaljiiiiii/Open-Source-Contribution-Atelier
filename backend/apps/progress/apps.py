@@ -9,8 +9,13 @@ class ProgressConfig(AppConfig):
     name = "apps.progress"
 
     def ready(self):
+        from django.db.models.signals import post_migrate
+
         import apps.progress.signals  # noqa: F401
 
+        post_migrate.connect(self.setup_initial_data, sender=self)
+
+    def setup_initial_data(self, sender, **kwargs):
         # Register Django-Q schedule for weekly progress summary
         try:
             from django_q.models import Schedule

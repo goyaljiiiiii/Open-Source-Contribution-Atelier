@@ -1,23 +1,28 @@
 /// <reference types="vite/client" />
 import { enqueueOfflineAction } from "./offlineQueue";
-import { clearAccessToken, getAccessToken } from "./authToken";
+import { clearAccessToken, getAccessToken, setAccessToken } from "./authToken";
 import { broadcastAuthEvent } from "./authSync";
+import { getTraceHeaders } from "./otelProvider";
 import toast from "react-hot-toast";
 
-const getApiBaseUrl = () => {
-  if (typeof import.meta !== "undefined" && import.meta.env) {
-    return import.meta.env.VITE_API_BASE_URL;
+let refreshPromise: Promise<string | null> | null = null;
+
+const getSafeEnvVar = (key: string): string => {
+  if (typeof process !== "undefined" && process.env && process.env[key]) {
+    return process.env[key] as string;
   }
-  // @ts-ignore - process might not be defined in Vite environments
-  if (typeof process !== "undefined" && process.env) {
-    // @ts-ignore
-    return process.env.NEXT_PUBLIC_API_URL || process.env.VITE_API_BASE_URL;
+  if (
+    typeof import.meta !== "undefined" &&
+    import.meta.env &&
+    import.meta.env[key]
+  ) {
+    return import.meta.env[key] as string;
   }
-  return undefined;
+  return "";
 };
 
 export const API_BASE =
-  getApiBaseUrl()?.trim() ||
+  getSafeEnvVar("VITE_API_BASE_URL").trim() ||
   (typeof window !== "undefined"
     ? `${window.location.origin}/api`
     : "http://127.0.0.1:8000/api");
@@ -29,6 +34,7 @@ type RequestOptions = RequestInit & {
   timeoutMs?: number;
   /** Max retries on network/5xx errors. Default: 1 */
   maxRetries?: number;
+  _isRetry?: boolean;
 };
 
 /**
@@ -67,9 +73,16 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
 
   const headers = new Headers(customHeaders);
 
-  // Attach X-Request-ID for distributed tracing
+  // Attach X-Request-ID and W3C trace context for distributed tracing
   const requestId = crypto.randomUUID();
   headers.set("X-Request-ID", requestId);
+  const traceHeaders = getTraceHeaders();
+  if (traceHeaders.traceparent) {
+    headers.set("traceparent", traceHeaders.traceparent);
+  }
+  if (traceHeaders.tracestate) {
+    headers.set("tracestate", traceHeaders.tracestate);
+  }
   if (!(config.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
@@ -103,13 +116,55 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
       }
 
       if (!response.ok) {
+        if (response.status === 401 && !options._isRetry) {
+          try {
+            const refreshToken = localStorage.getItem("refreshToken");
+            if (refreshToken) {
+              if (!refreshPromise) {
+                refreshPromise = fetch(`${API_BASE}/auth/refresh/`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ refresh: refreshToken }),
+                }).then(async (res) => {
+                  if (res.ok) {
+                    const data = await res.json();
+                    if (data.access) {
+                      setAccessToken(data.access);
+                      if (data.refresh) {
+                        localStorage.setItem("refreshToken", data.refresh);
+                      }
+                      return data.access;
+                    }
+                  }
+                  throw new Error("Refresh failed");
+                }).finally(() => {
+                  refreshPromise = null;
+                });
+              }
+              const newAccessToken = await refreshPromise;
+              if (newAccessToken) {
+                return await fetchApi(endpoint, {
+                  ...options,
+                  _isRetry: true,
+                });
+              }
+            }
+          } catch (e) {
+            console.error("[fetchApi] Token refresh failed", e);
+          }
+        }
+
         const errorBody = await response.json().catch(() => ({}));
         let errorMessage =
           errorBody.error ||
           errorBody.message ||
           errorBody.non_field_errors?.[0];
 
-        if (!errorMessage && typeof errorBody === "object" && errorBody !== null) {
+        if (
+          !errorMessage &&
+          typeof errorBody === "object" &&
+          errorBody !== null
+        ) {
           const fieldErrors = Object.values(errorBody)
             .map((msgs) => {
               if (Array.isArray(msgs)) return msgs[0];
@@ -123,42 +178,23 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
           }
         }
 
-        errorMessage = errorMessage || `HTTP error ${response.status} (Req ID: ${requestId})`;
+        errorMessage =
+          errorMessage ||
+          `HTTP error ${response.status} (Req ID: ${requestId})`;
 
         console.error(`[API Error] ReqID=${requestId}`, errorBody);
 
         lastError = new Error(errorMessage);
 
         if (!suppressErrorToast) {
-          switch (response.status) {
-            case 400:
-              toast.error(
-                errorMessage || "Invalid request. Please check your inputs.",
-              );
-              break;
-            case 401:
-              clearAccessToken();
-              try {
-                localStorage.removeItem("refreshToken");
-              } catch {
-                /* storage unavailable */
-              }
-              broadcastAuthEvent("LOGOUT");
-              toast.error("Session expired. Please log in again.");
-              break;
-            case 403:
-              toast.error("You do not have permission to perform this action.");
-              break;
-            case 429:
-              toast.error(
-                errorMessage || "Too many requests. Please slow down!",
-              );
-              break;
-            case 500:
-              toast.error("Server error. Our team has been notified.");
-              break;
-            default:
-              toast.error(errorMessage);
+          if (response.status === 401) {
+            clearAccessToken();
+            try {
+              localStorage.removeItem("refreshToken");
+            } catch {
+              /* storage unavailable */
+            }
+            broadcastAuthEvent("LOGOUT");
           }
         }
 

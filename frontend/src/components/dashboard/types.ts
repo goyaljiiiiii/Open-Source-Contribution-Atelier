@@ -1,3 +1,4 @@
+import type { components } from "../../types/api";
 export interface ModuleLesson {
   slug: string;
   title?: string;
@@ -50,15 +51,10 @@ export interface AdminDashboardData {
   pending_prs: PendingPR[];
 }
 
-export interface LeaderboardEntry {
-  username: string;
-  xp: number;
-  prs_merged: number;
-}
+export type LeaderboardEntry = components["schemas"]["Leaderboard"];
 
-export interface LeaderboardResponse {
-  results?: LeaderboardEntry[];
-}
+export type LeaderboardResponse =
+  components["schemas"]["PaginatedLeaderboardList"];
 
 export interface PersonalStats {
   issues_solved: number;
@@ -100,3 +96,29 @@ export interface CertificateResponse {
   has_certificate?: boolean;
   certificate?: CertificateInfo;
 }
+
+export interface WeeklyGoalDay {
+  day_name: string;
+  date: string;
+  is_active: boolean;
+  is_today: boolean;
+  is_future: boolean;
+}
+
+export interface WeeklyGoalData {
+  id: number;
+  week_start_date: string;
+  week_end_date: string;
+  target_lessons: number;
+  target_xp: number;
+  target_minutes: number;
+  completed_lessons: number;
+  earned_xp: number;
+  minutes_spent: number;
+  lessons_progress_pct: number;
+  xp_progress_pct: number;
+  minutes_progress_pct: number;
+  overall_progress_pct: number;
+  daily_breakdown: WeeklyGoalDay[];
+}
+

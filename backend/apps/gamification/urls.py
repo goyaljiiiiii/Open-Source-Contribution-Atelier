@@ -11,12 +11,26 @@ from .views import (
     PurchaseItemView,
     ShopItemListView,
 )
+from .certificate_verification_view import (
+    AntiCheatCheckView,
+    CertificateVerificationView,
+)
 
 router = DefaultRouter()
 router.register("badges", BadgeViewSet, basename="badge")
 
 urlpatterns = [
     path("", include(router.urls)),
+    path(
+        "verify-certificate/<str:hash>/",
+        CertificateVerificationView.as_view(),
+        name="verify-certificate",
+    ),
+    path(
+        "anti-cheat/check/",
+        AntiCheatCheckView.as_view(),
+        name="anti-cheat-check",
+    ),
     path("my-achievements/", MyAchievementsView.as_view(), name="my-achievements"),
     path("my-streak/", MyStreakView.as_view(), name="my-streak"),
     path("my-quests/", MyQuestsView.as_view(), name="my-quests"),

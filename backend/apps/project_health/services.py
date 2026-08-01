@@ -127,6 +127,19 @@ def _compute_health_score(data: dict) -> tuple[int, list, list]:
     return max(0, min(score, 100)), red_flags, green_flags
 
 
+def _fetch_closed_issue_count(owner: str, repo_name: str, token: str | None) -> int:
+    """
+    Fetch the total closed-issue count via the GitHub Search API, which
+    returns a total_count without needing to paginate through every
+    closed issue individually. Excludes pull requests (search API's
+    "issue" results include PRs unless explicitly filtered with
+    type:issue).
+    """
+    query = f"repo:{owner}/{repo_name}+type:issue+state:closed"
+    result = _github_get(f"/search/issues?q={query}&per_page=1", token=token)
+    return result.get("total_count", 0)
+
+
 def analyze_repository(
     repo_url: str,
     token: str | None = None,
@@ -251,6 +264,22 @@ def analyze_repository(
         )
         warnings.append("Contributor statistics could not be retrieved.")
 
+    closed_issue_count = 0
+
+    try:
+        closed_issue_count = _fetch_closed_issue_count(owner, repo_name, token)
+    except (
+        requests.RequestException,
+        KeyError,
+        IndexError,
+        TypeError,
+    ) as exc:
+        logger.warning(
+            "Failed to fetch closed issue count: %s",
+            exc,
+        )
+        warnings.append("Closed issue count could not be retrieved.")
+
     sentiment_score = None
     sentiment_lbl = ""
 
@@ -316,18 +345,18 @@ def analyze_repository(
         "repo_owner": owner,
         "repo_name": repo_name,
         "open_issues": repo_data.get("open_issues_count", 0),
-        "closed_issues": 0,
+        "closed_issues": closed_issue_count,
         "open_prs": open_pr_count,
         "closed_prs": len(closed_prs),
         "avg_pr_close_days": avg_pr_close_days,
-        "contributor_count": contributor_count,
         "last_commit_days_ago": last_commit_days,
+        "contributor_count": contributor_count,
         "sentiment_score": sentiment_score,
         "sentiment_label": sentiment_lbl,
+        "warnings": warnings,
     }
 
     score, red_flags, green_flags = _compute_health_score(data)
-
     data["health_score"] = score
     data["red_flags"] = red_flags
     data["green_flags"] = green_flags

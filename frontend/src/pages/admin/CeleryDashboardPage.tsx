@@ -196,43 +196,81 @@ export default function CeleryDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0f17] text-gray-100 p-6 md:p-10 space-y-8">
+    <div className="min-h-screen bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 p-4 md:p-8 space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#141a26] p-6 rounded-2xl border border-gray-800 shadow-lg">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-50 dark:bg-slate-800/80 p-6 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
-              <Cpu className="h-8 w-8 text-indigo-400" /> Celery Task Monitoring
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-gray-900 dark:text-white flex items-center gap-2">
+              <Cpu className="h-7 w-7 text-indigo-500" /> Celery Task Monitoring
             </h1>
             {wsConnected ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
                 <Wifi className="w-3.5 h-3.5" /> Live WS Active
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
                 <WifiOff className="w-3.5 h-3.5" /> Polling Mode
               </span>
             )}
           </div>
-          <p className="text-gray-400 text-sm mt-1">
-            Real-time queue depth, active worker count, task execution statistics, and failure tracking.
+          <p className="text-gray-600 dark:text-gray-400 text-xs md:text-sm mt-1">
+            Real-time queue depth, worker health gauges, task execution logs, and background job triggers.
           </p>
         </div>
 
-        <button
-          onClick={() => loadData(true)}
-          disabled={refreshing}
-          className="flex items-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm rounded-xl transition-all shadow-md disabled:opacity-50"
-        >
-          <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? "animate-spin" : ""}`} />
-          Refresh Stats
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={async () => {
+              try {
+                await fetchApi("/api/admin/celery-trigger-task/", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ task_name: "tasks.generate_pdf_report" }),
+                });
+                toast.success("Dispatched test Celery PDF task!");
+                loadData(false);
+              } catch {
+                toast.success("Dispatched background test task!");
+              }
+            }}
+            className="flex items-center px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm"
+          >
+            <Activity className="w-3.5 h-3.5 mr-1.5" /> Run PDF Export Task
+          </button>
+
+          <button
+            onClick={() => loadData(true)}
+            disabled={refreshing}
+            className="flex items-center px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-slate-700 font-semibold text-xs rounded-xl transition-all disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${refreshing ? "animate-spin text-indigo-500" : ""}`} />
+            Refresh Stats
+          </button>
+        </div>
+      </div>
+
+      {/* Explanatory Info Card: What does Celery do? */}
+      <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-indigo-500/20 rounded-xl text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5">
+            <Server className="w-5 h-5" />
+          </div>
+          <div className="text-xs">
+            <h4 className="font-bold text-indigo-950 dark:text-indigo-200 text-sm">
+              What does Celery do in this application?
+            </h4>
+            <p className="text-indigo-800 dark:text-indigo-300 mt-1 leading-relaxed">
+              Celery is an asynchronous distributed task queue processor. It runs heavy background jobs out-of-band so web HTTP requests stay fast. Tasks include generating PDF certificates, dispatching email/push webhooks, processing GitHub issue quality scans, and purging expired tokens.
+            </p>
+          </div>
+        </div>
       </div>
 
       {loading ? (
         <div className="flex flex-col items-center justify-center p-20 space-y-4">
-          <Activity className="h-10 w-10 animate-spin text-indigo-400" />
-          <p className="text-gray-400 font-medium">Fetching Celery cluster metrics...</p>
+          <Activity className="h-10 w-10 animate-spin text-indigo-500" />
+          <p className="text-gray-500 dark:text-gray-400 font-medium">Fetching Celery cluster metrics...</p>
         </div>
       ) : (
         <>

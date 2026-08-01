@@ -1,0 +1,13 @@
+{
+  "nav.dashboard": "Dashboard",
+  "nav.sandbox": "Sandbox",
+  "nav.lessons": "Lessons",
+  "nav.leaderboard": "Leaderboard",
+  "nav.login": "Login",
+  "badge.earned": "You earned the {name} badge!",
+  "badge.view": "View my <link>badges</link>",
+  "dashboard.welcome": "Welcome back, {name}",
+  "lesson.title": "Lesson {number}: {title}",
+  "leaderboard.rank": "Rank",
+  "error.not_found": "Page not found."
+}

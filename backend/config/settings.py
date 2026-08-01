@@ -27,9 +27,11 @@ STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 
 stripe.api_key = STRIPE_SECRET_KEY
 
+
 def load_dotenv(dotenv_path: Path) -> None:
     if not dotenv_path.exists():
         return
+
 
 from dotenv import load_dotenv
 
@@ -40,7 +42,23 @@ SECRET_KEY = os.getenv(
 )
 if not SECRET_KEY:
     raise ImproperlyConfigured("SECRET_KEY environment variable is not set")
+
+# Base64 encoded 32-byte key for AES-GCM field encryption.
+# Can be a comma-separated list of keys to support double-read during key rotation.
+FIELD_ENCRYPTION_KEY_RAW = os.getenv("FIELD_ENCRYPTION_KEY", "")
+if FIELD_ENCRYPTION_KEY_RAW:
+    if "," in FIELD_ENCRYPTION_KEY_RAW:
+        FIELD_ENCRYPTION_KEY = [
+            k.strip() for k in FIELD_ENCRYPTION_KEY_RAW.split(",") if k.strip()
+        ]
+    else:
+        FIELD_ENCRYPTION_KEY = FIELD_ENCRYPTION_KEY_RAW.strip()
+else:
+    # Default for development only; this must be set in prod!
+    FIELD_ENCRYPTION_KEY = "MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI="
+
 DEBUG = os.getenv("DEBUG", "False") == "True"
+
 
 # Explicit environment designation, independent of DEBUG. Used below to make
 # sure DEBUG=True (and the wildcard CORS it enables) can never silently reach
@@ -196,6 +214,7 @@ INSTALLED_APPS = [
     "apps.plugins.apps.PluginsConfig",
     "apps.oauth",
     "apps.security",
+    "apps.deduplication",
     # ── Scaffolded Apps ────────────────────────────────────────────────────────
     "apps.burnout_detection",
     "apps.advanced_search",
@@ -213,13 +232,15 @@ INSTALLED_APPS = [
     "apps.ml_triage",
 ]
 
+
 # Cache backends are selected with channel layers below (Redis or LocMem fallback).
 
-# Rate Limit
-DEFAULT_RATE = "100/hour"
-API_RATE_LIMIT_AUTH = int(os.getenv("API_RATE_LIMIT_AUTH", "100"))
-API_RATE_LIMIT_ANON = int(os.getenv("API_RATE_LIMIT_ANON", "20"))
-API_RATE_LIMIT_WINDOW = int(os.getenv("API_RATE_LIMIT_WINDOW", "60"))
+# Rate Limit Tiers (anonymous: 100/hr, authenticated: 1000/hr, premium: 10000/hr, heavy: 10/min)
+API_RATE_LIMIT_ANON = os.getenv("API_RATE_LIMIT_ANON", "100/hour")
+API_RATE_LIMIT_AUTH = os.getenv("API_RATE_LIMIT_AUTH", "1000/hour")
+API_RATE_LIMIT_PREMIUM = os.getenv("API_RATE_LIMIT_PREMIUM", "10000/hour")
+API_RATE_LIMIT_HEAVY = os.getenv("API_RATE_LIMIT_HEAVY", "10/minute")
+API_RATE_LIMIT_WINDOW = int(os.getenv("API_RATE_LIMIT_WINDOW", "3600"))
 
 # ──────────────────────────────────────────
 # Redis / Channels (graceful fallback when Redis is down)
@@ -244,9 +265,15 @@ RATE_LIMIT_BACKEND = os.getenv(
 ).lower()
 RATE_LIMIT_REDIS_URL = ENV_REDIS_URL or CHECK_REDIS_URL
 
+PERF_TRACK_SAMPLE_RATE = 0.1  # 10% sampling
+
 MIDDLEWARE = [
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
+    "apps.monitoring.middleware.tracing_middleware.TracingMiddleware",
+    "apps.core.middleware.perf_tracking.PerformanceTrackingMiddleware",
+    "apps.core.middleware.db_pool_monitor.DatabasePoolMonitorMiddleware",
     "apps.core.middleware.request_id.RequestIdMiddleware",
+
     "config.logging_middleware.RequestResponseLoggingMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
@@ -270,6 +297,7 @@ MIDDLEWARE = [
     "apps.core.middleware.ratelimit.RateLimitMiddleware",
     "apps.sandbox.middleware.SandboxExecutionLogMiddleware",
     "apps.core.middleware.api_version.APIVersionMiddleware",
+    "apps.webhooks.middleware.WebhookSignatureMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
@@ -338,8 +366,10 @@ for db_name, db_config in DATABASES.items():
         db_config["ENGINE"] = "django_prometheus.db.backends.sqlite3"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+CONN_MAX_AGE = int(os.getenv("CONN_MAX_AGE", "60"))
 
 DATABASE_ROUTERS = ["config.db_router.PrimaryReplicaRouter"]
+
 
 # ── Read Replica Configuration ─────────────────────────────────────────────
 # Each entry must match a key in DATABASES. Omit or set to [] to disable.
@@ -383,7 +413,14 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
@@ -399,8 +436,20 @@ GITHUB_APP = {
 }
 GITHUB_INSTALLATION_ID = os.getenv("GITHUB_INSTALLATION_ID")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
-GITHUB_OAUTH_CLIENT_ID = os.getenv("GITHUB_OAUTH_CLIENT_ID")
-GITHUB_OAUTH_CLIENT_SECRET = os.getenv("GITHUB_OAUTH_CLIENT_SECRET")
+
+# Used by the custom user-login OAuth flow (apps.accounts.views.GitHubOAuthStartView /
+# GitHubOAuthCallbackView). Distinct from GITHUB_APP above, which is for the
+# GitHub App integration (webhooks / API access), not user login.
+GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
+GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
+
+# Deprecated aliases kept for backward compatibility with any existing
+# deployments/.env files still using the old *_OAUTH_* naming. Remove
+# once confirmed no active deployment relies on these.
+GITHUB_OAUTH_CLIENT_ID = os.getenv("GITHUB_OAUTH_CLIENT_ID") or GITHUB_CLIENT_ID
+GITHUB_OAUTH_CLIENT_SECRET = (
+    os.getenv("GITHUB_OAUTH_CLIENT_SECRET") or GITHUB_CLIENT_SECRET
+)
 
 # ── AI Tutor ────────────────────────────────────────────────────────────────────
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -468,9 +517,11 @@ REST_FRAMEWORK = {
     # Sandbox endpoints
     # Auth endpoints (brute-force + spam protection)
     "DEFAULT_THROTTLE_RATES": {
-        # ── Global Default ───────────────────────────────────────────────────
-        "anon": "100/minute",
-        "user": "1000/minute",
+        # ── Global Tiers ──────────────────────────────────────────────────────
+        "anon": os.getenv("RATE_LIMIT_ANON", API_RATE_LIMIT_ANON),
+        "user": os.getenv("RATE_LIMIT_AUTH", API_RATE_LIMIT_AUTH),
+        "premium": os.getenv("RATE_LIMIT_PREMIUM", API_RATE_LIMIT_PREMIUM),
+        "heavy_operation": os.getenv("RATE_LIMIT_HEAVY", API_RATE_LIMIT_HEAVY),
         # ── Sandbox ──────────────────────────────────────────────────────────
         "sandbox_anon": "10/minute",
         "sandbox_user": "10/minute",
@@ -483,6 +534,7 @@ REST_FRAMEWORK = {
         "auth_otp_verify": os.getenv("RATE_AUTH_OTP_VERIFY", "5/minute"),
         "auth_password_reset": os.getenv("RATE_AUTH_PASSWORD_RESET", "3/hour"),
         "auth_oauth": os.getenv("RATE_AUTH_OAUTH", "20/minute"),
+        "auth_github_callback": "5/minute",
         "auth_magic_link_request": os.getenv(
             "RATE_AUTH_MAGIC_LINK_REQUEST", "3/minute"
         ),
@@ -507,10 +559,10 @@ REST_FRAMEWORK = {
 # ============================================================
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(
-        minutes=int(os.getenv("ACCESS_TOKEN_LIFETIME_MINUTES", "30"))
+        days=int(os.getenv("ACCESS_TOKEN_LIFETIME_DAYS", "30"))
     ),
     "REFRESH_TOKEN_LIFETIME": timedelta(
-        days=int(os.getenv("REFRESH_TOKEN_LIFETIME_DAYS", "7"))
+        days=int(os.getenv("REFRESH_TOKEN_LIFETIME_DAYS", "365"))
     ),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
@@ -547,8 +599,8 @@ SITE_ID = 1
 SOCIALACCOUNT_PROVIDERS = {
     "github": {
         "APP": {
-            "client_id": os.getenv("GITHUB_OAUTH_CLIENT_ID"),
-            "secret": os.getenv("GITHUB_OAUTH_CLIENT_SECRET"),
+            "client_id": GITHUB_CLIENT_ID,
+            "secret": GITHUB_CLIENT_SECRET,
         },
         "SCOPE": [
             "user",
@@ -863,9 +915,15 @@ NOTIFICATION_CHANNELS = {
     "slack": "apps.notifications.channels.slack_channel.SlackChannel",
 }
 
+# ──────────────────────────────────────────
+# Certificate Signing (Ed25519)
+# ──────────────────────────────────────────
+CERT_SIGNING_PRIVATE_KEY_PEM = os.getenv("CERT_SIGNING_PRIVATE_KEY_PEM", "")
+CERT_SIGNING_PUBLIC_KEY_PEM = os.getenv("CERT_SIGNING_PUBLIC_KEY_PEM", "")
+
 # ── Test Environment Settings ──────────────────────────────────────────────
 TESTING = ("test" in sys.argv) or any("pytest" in arg for arg in sys.argv)
+SILENCED_SYSTEM_CHECKS = ["perf.E001", "fields.E336"]
 if TESTING:
     CELERY_TASK_ALWAYS_EAGER = True
     CELERY_TASK_EAGER_PROPAGATES = True
-

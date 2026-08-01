@@ -1,7 +1,8 @@
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
+from rest_framework.test import APIClient
 
 from apps.accounts.models import UserProfile
 from apps.accounts.tasks import send_notification_email_task
@@ -78,7 +79,24 @@ class NotificationTaskTests(TestCase):
             message_body="Important system maintenance scheduled.",
         )
 
-        self.assertEqual(
+       self.assertEqual(
             result, f"Email sent successfully to {user_without_profile.email}"
         )
         mock_send_mail.assert_called_once()
+
+
+class GitHubOAuthStartViewTests(TestCase):
+    @override_settings(GITHUB_CLIENT_ID="")
+    def test_returns_400_when_not_configured(self):
+        client = APIClient()
+        response = client.get("/api/auth/github/")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("not configured", response.json()["detail"])
+
+    @override_settings(GITHUB_CLIENT_ID="test_client_id_123")
+    def test_redirects_to_github_when_configured(self):
+        client = APIClient()
+        response = client.get("/api/auth/github/", follow=False)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("github.com/login/oauth/authorize", response.url)
+        self.assertIn("client_id=test_client_id_123", response.url)

@@ -4,10 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchApi } from "../lib/api";
 import { mockStudentStats, getTipOfTheDay } from "../lib/dashboardMockData";
 import { Link } from "react-router-dom";
+import { useLocation } from 'react-router-dom';
 import SkeletonCard from "../components/ui/skeletons/SkeletonCard";
 import { PRReviewPredictionWidget } from "../components/PRReviewPredictionWidget";
 import SkeletonAdminDashboard from "../components/ui/skeletons/SkeletonAdminDashboard";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useUserProgress } from "../hooks/useUserProgress";
 import { useBookmarks } from "../hooks/useBookmarks";
 import { useOfflineReadyLessons } from "../hooks/useOfflineReadyLessons";
@@ -30,7 +31,6 @@ export function DashboardPage() {
   const { user } = useAuth();
   const { isLoading: progressLoading, isLessonCompleted } = useUserProgress();
   const { bookmarks, toggleBookmark } = useBookmarks();
-
   const { lessons, isLoading: lessonsLoading } = useCurriculumLessons();
 
   const lessonRefs = useMemo(
@@ -54,12 +54,12 @@ export function DashboardPage() {
     }));
   }, [lessons, isLessonCompleted]);
 
-  const { isLoading: contributorLoading } = useQuery({
-    queryKey: ["contributorStats"],
+  const { data: userProgressData, isLoading: contributorLoading } = useQuery({
+    queryKey: ["myProgress"],
     queryFn: () =>
-      fetchApi("/dashboard/stats/", {
+      fetchApi("/progress/me/", {
         suppressErrorToast: true,
-        timeoutMs: 2000,
+        timeoutMs: 3000,
       }),
     enabled: !!user && !user.is_staff,
   });
@@ -71,16 +71,33 @@ export function DashboardPage() {
   const [showCertificate, setShowCertificate] = useState(false);
   const [showProgressReport, setShowProgressReport] = useState(false);
 
-  const stats = mockStudentStats;
-
   const completedLessonsCount = lessons.filter((l) =>
     isLessonCompleted(l.slug),
   ).length;
-  const totalLessonsCount = lessons.length;
-  const completionPercentage =
-    totalLessonsCount > 0
-      ? Math.round((completedLessonsCount / totalLessonsCount) * 100)
-      : 0;
+  const totalLessonsCount = lessons.length || 1;
+  const completionPercentage = Math.round((completedLessonsCount / totalLessonsCount) * 100);
+
+  const stats = useMemo(() => {
+    const xp = userProgressData?.total_xp ?? user?.xp ?? mockStudentStats.xp;
+    const streakDays = userProgressData?.streak ?? mockStudentStats.streakDays;
+    const longestStreak = userProgressData?.longest_streak ?? mockStudentStats.longestStreak;
+    const currentModuleNum = Math.min(4, Math.floor(completedLessonsCount / 4) + 1);
+
+    return {
+      ...mockStudentStats,
+      xp,
+      streakDays,
+      longestStreak,
+      lessonsCompleted: completedLessonsCount,
+      totalLessons: totalLessonsCount,
+      currentModule: {
+        number: currentModuleNum,
+        title: `Module ${currentModuleNum}: Open Source Mastery`,
+        lessonsCompleted: completedLessonsCount % 4,
+        totalLessons: 4,
+      },
+    };
+  }, [userProgressData, user, completedLessonsCount, totalLessonsCount]);
 
   const { data: certificateData } = useQuery({
     queryKey: ["userCertificate"],

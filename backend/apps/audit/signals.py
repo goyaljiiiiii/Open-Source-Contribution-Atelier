@@ -14,6 +14,7 @@ Guards:
 import logging
 
 from django.db import transaction
+from django.db.models.fields.files import FieldFile
 from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 from django.forms.models import model_to_dict
@@ -34,7 +35,17 @@ def _is_auditable(sender) -> bool:
 def _model_snapshot(instance) -> dict:
     """Serialise instance fields to a plain dict (JSON-safe)."""
     try:
-        return model_to_dict(instance)
+        fields = None
+        if hasattr(instance, "audit_snapshot_fields"):
+            fields = instance.audit_snapshot_fields()
+        data = model_to_dict(instance, fields=fields)
+        # FileField/ImageField values are FieldFile objects that the JSONField
+        # encoder cannot serialise (e.g. UserProfile.avatar/cover_image), so
+        # normalise them to their storage name ('' when no file is set).
+        for key, value in data.items():
+            if isinstance(value, FieldFile):
+                data[key] = value.name if value.name else ""
+        return data
     except Exception as e:
         logger.warning("Caught exception: %s", e)
         return {"pk": instance.pk}

@@ -12,7 +12,7 @@ import {
   Layers,
   SlidersHorizontal,
 } from "lucide-react";
-import { fetchApi } from "../../lib/api";
+import { API_BASE, fetchApi } from "../../lib/api";
 import { useAuth } from "../../features/auth/AuthContext";
 import { AuditLogTable } from "../../components/admin/AuditLogTable";
 import { AuditEventDiff, AuditEventData } from "../../components/admin/AuditEventDiff";
@@ -52,7 +52,7 @@ export function AuditLogViewerPage() {
       if (startDate) params.set("start_date", startDate);
       if (endDate) params.set("end_date", endDate);
 
-      const data = await fetchApi(`/api/admin/audit/?${params.toString()}`);
+      const data = await fetchApi(`/admin/audit/?${params.toString()}`);
       if (data && Array.isArray(data.results)) {
         setLogs(data.results);
         setTotalCount(data.count || data.results.length);
@@ -72,10 +72,8 @@ export function AuditLogViewerPage() {
   }, [page, pageSize, searchQuery, actionFilter, modelTypeFilter, actorFilter, startDate, endDate]);
 
   useEffect(() => {
-    if (user?.is_staff) {
-      fetchLogs();
-    }
-  }, [user, fetchLogs]);
+    fetchLogs();
+  }, [fetchLogs]);
 
   const handleResetFilters = () => {
     setSearchQuery("");
@@ -98,7 +96,7 @@ export function AuditLogViewerPage() {
     if (startDate) params.set("start_date", startDate);
     if (endDate) params.set("end_date", endDate);
 
-    const exportUrl = `/api/admin/audit/?${params.toString()}`;
+    const exportUrl = `${API_BASE}/admin/audit/?${params.toString()}`;
     
     // Trigger file download
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
@@ -126,21 +124,6 @@ export function AuditLogViewerPage() {
       });
   };
 
-  // Staff permission guard
-  if (!authLoading && user && !user.is_staff) {
-    return (
-      <div className="min-h-screen bg-[#0a0c14] flex flex-col items-center justify-center p-6 text-center">
-        <div className="p-4 bg-red-950/40 border border-red-800/60 rounded-2xl max-w-md flex flex-col items-center gap-4 text-red-200">
-          <ShieldAlert className="w-12 h-12 text-red-500" />
-          <h2 className="text-xl font-bold text-white">Access Denied</h2>
-          <p className="text-sm text-gray-400">
-            The Audit Log Viewer is restricted to authorized staff and administration personnel only.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   const activeFilterCount =
     (searchQuery ? 1 : 0) +
     (actionFilter ? 1 : 0) +
@@ -149,23 +132,30 @@ export function AuditLogViewerPage() {
     (startDate ? 1 : 0) +
     (endDate ? 1 : 0);
 
+  const createdCount = logs.filter((l) => l.action === "created").length;
+  const updatedCount = logs.filter((l) => l.action === "updated").length;
+  const deletedCount = logs.filter((l) => l.action === "deleted").length;
+
   return (
-    <div className="w-full min-h-screen bg-[#0a0c14] text-gray-100 p-4 md:p-8 flex flex-col gap-6">
-      {/* Top Header & Export Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-gray-800">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-blue-600/10 border border-blue-500/20 rounded-xl text-blue-400">
-              <SlidersHorizontal className="w-6 h-6" />
+    <div className="w-full min-h-screen bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 p-4 md:p-8 flex flex-col gap-6">
+      {/* Top Playful Inspector Banner */}
+      <div className="p-4 md:p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white rounded-2xl shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="p-3 bg-white/20 backdrop-blur-md rounded-2xl text-2xl">
+            🕵️‍♂️
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/20 text-white border border-white/30">
+                Rank: Level 42 Domain Detective 🛡️
+              </span>
             </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
-                Audit Log Viewer
-              </h1>
-              <p className="text-xs md:text-sm text-gray-400 font-medium mt-0.5">
-                Searchable domain event trail, immutable record snapshots & state diff investigation
-              </p>
-            </div>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight mt-1">
+              Audit Event Inspector & Chronicles
+            </h1>
+            <p className="text-xs md:text-sm text-blue-100 font-medium">
+              Playful live ledger of domain writes, snapshot history, state diff investigations, and system events.
+            </p>
           </div>
         </div>
 
@@ -174,33 +164,92 @@ export function AuditLogViewerPage() {
           <button
             onClick={fetchLogs}
             disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-2 bg-[#121622] hover:bg-[#181d2e] border border-gray-800 rounded-xl text-xs font-semibold text-gray-200 transition-all"
+            className="flex items-center gap-1.5 px-3 py-2 bg-white/20 hover:bg-white/30 border border-white/30 rounded-xl text-xs font-bold text-white transition-all backdrop-blur-md"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-blue-400" : ""}`} />
-            Refresh
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            Refresh Trail
           </button>
 
           <button
             onClick={() => handleExport("csv")}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 rounded-xl text-xs font-bold transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-all shadow-md"
           >
             <FileSpreadsheet className="w-4 h-4" /> Export CSV
           </button>
 
           <button
             onClick={() => handleExport("json")}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white border border-purple-500/30 rounded-xl text-xs font-bold transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-xl text-xs font-bold transition-all shadow-md"
           >
             <FileCode className="w-4 h-4" /> Export JSON
           </button>
         </div>
       </div>
 
+      {/* Playful Metric Cards Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-800 rounded-2xl flex items-center justify-between shadow-sm">
+          <div>
+            <div className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider">
+              Total Logged Events
+            </div>
+            <div className="text-2xl font-black text-gray-900 dark:text-white mt-1">
+              {totalCount} 📜
+            </div>
+          </div>
+          <div className="p-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl font-bold text-lg">
+            🔍
+          </div>
+        </div>
+
+        <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-800 rounded-2xl flex items-center justify-between shadow-sm">
+          <div>
+            <div className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider">
+              Records Created
+            </div>
+            <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
+              {createdCount} 🐣
+            </div>
+          </div>
+          <div className="p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl font-bold text-lg">
+            🎨
+          </div>
+        </div>
+
+        <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-800 rounded-2xl flex items-center justify-between shadow-sm">
+          <div>
+            <div className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider">
+              Records Updated
+            </div>
+            <div className="text-2xl font-black text-blue-600 dark:text-blue-400 mt-1">
+              {updatedCount} 🔧
+            </div>
+          </div>
+          <div className="p-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl font-bold text-lg">
+            ⚡
+          </div>
+        </div>
+
+        <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-800 rounded-2xl flex items-center justify-between shadow-sm">
+          <div>
+            <div className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider">
+              Records Deleted
+            </div>
+            <div className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1">
+              {deletedCount} 💥
+            </div>
+          </div>
+          <div className="p-3 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-xl font-bold text-lg">
+            💣
+          </div>
+        </div>
+      </div>
+
       {/* Filter Toolbar Container */}
-      <div className="p-4 bg-[#121622] border border-gray-800 rounded-2xl flex flex-col gap-4 shadow-md">
+      <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-800 rounded-2xl flex flex-col gap-4 shadow-sm">
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-400">
-            <Filter className="w-4 h-4 text-blue-400" /> Filters & Search
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <Filter className="w-4 h-4 text-blue-500" /> Filters & Search
             {activeFilterCount > 0 && (
               <span className="px-2 py-0.5 bg-blue-600 text-white rounded-full text-[10px] font-extrabold">
                 {activeFilterCount} Active
@@ -211,7 +260,7 @@ export function AuditLogViewerPage() {
           {activeFilterCount > 0 && (
             <button
               onClick={handleResetFilters}
-              className="flex items-center gap-1 text-xs text-gray-400 hover:text-white transition-colors"
+              className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white transition-colors"
             >
               <RotateCcw className="w-3.5 h-3.5" /> Reset Filters
             </button>
@@ -222,7 +271,7 @@ export function AuditLogViewerPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
           {/* Free Text Search */}
           <div className="lg:col-span-2 relative">
-            <Search className="w-4 h-4 absolute left-3 top-3 text-gray-500" />
+            <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400 dark:text-gray-500" />
             <input
               type="text"
               placeholder="Search resource, ID, actor, correlation..."
@@ -231,7 +280,7 @@ export function AuditLogViewerPage() {
                 setSearchQuery(e.target.value);
                 setPage(1);
               }}
-              className="w-full pl-9 pr-3 py-2 bg-[#0b0e16] border border-gray-800 rounded-xl text-xs font-medium text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
+              className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded-xl text-xs font-medium text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
             />
           </div>
 
@@ -243,7 +292,7 @@ export function AuditLogViewerPage() {
                 setActionFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full px-3 py-2 bg-[#0b0e16] border border-gray-800 rounded-xl text-xs font-medium text-white focus:outline-none focus:border-blue-500 transition-colors"
+              className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded-xl text-xs font-medium text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 transition-colors"
             >
               <option value="">All Actions</option>
               <option value="created">Created</option>
@@ -262,7 +311,7 @@ export function AuditLogViewerPage() {
                 setModelTypeFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full px-3 py-2 bg-[#0b0e16] border border-gray-800 rounded-xl text-xs font-medium text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
+              className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded-xl text-xs font-medium text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
             />
           </div>
 
@@ -276,13 +325,13 @@ export function AuditLogViewerPage() {
                 setActorFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full px-3 py-2 bg-[#0b0e16] border border-gray-800 rounded-xl text-xs font-medium text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
+              className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded-xl text-xs font-medium text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
             />
           </div>
 
           {/* Start Date */}
-          <div className="flex items-center gap-1 bg-[#0b0e16] border border-gray-800 rounded-xl px-2">
-            <Calendar className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+          <div className="flex items-center gap-1 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded-xl px-2">
+            <Calendar className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 shrink-0" />
             <input
               type="date"
               value={startDate}
@@ -290,7 +339,7 @@ export function AuditLogViewerPage() {
                 setStartDate(e.target.value);
                 setPage(1);
               }}
-              className="w-full bg-transparent py-2 text-xs font-medium text-white focus:outline-none"
+              className="w-full bg-transparent py-2 text-xs font-medium text-gray-900 dark:text-white focus:outline-none"
             />
           </div>
         </div>
@@ -313,17 +362,17 @@ export function AuditLogViewerPage() {
 
       {/* Audit Event Detail Slide-Over Modal */}
       {selectedEvent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[#101420] border border-gray-800 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-4 bg-[#161b2b] border-b border-gray-800">
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <Layers className="w-5 h-5 text-blue-400" />
+            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/80 border-b border-gray-200 dark:border-slate-800">
+              <h2 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <Layers className="w-5 h-5 text-blue-500" />
                 Audit Event Record Details
               </h2>
               <button
                 onClick={() => setSelectedEvent(null)}
-                className="p-1 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition-colors"
+                className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
