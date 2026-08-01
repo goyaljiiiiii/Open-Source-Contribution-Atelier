@@ -15,6 +15,7 @@ import { useOfflineReadyLessons } from "../hooks/useOfflineReadyLessons";
 import { useCurriculumLessons } from "../hooks/useCurriculum";
 import { BADGES } from "../constants/badges";
 
+import { ContinueLearning } from "../components/ContinueLearning";
 import {
   Flame,
   ArrowRight,
@@ -54,8 +55,8 @@ export function DashboardPage() {
     }));
   }, [lessons, isLessonCompleted]);
 
-  const { data: userProgressData, isLoading: contributorLoading } = useQuery({
-    queryKey: ["myProgress"],
+  const { data: contributorStats, isLoading: contributorLoading } = useQuery<{ continue_learning?: any[] }>({
+    queryKey: ["contributorStats"],
     queryFn: () =>
       fetchApi("/progress/me/", {
         suppressErrorToast: true,
@@ -172,6 +173,9 @@ export function DashboardPage() {
           </div>
         </div>
       </section>
+
+      {/* Continue Learning Section */}
+      <ContinueLearning lessons={contributorStats?.continue_learning} isLoading={contributorLoading} />
 
       {/* PR Review Delay Prediction Widget */}
       <section>

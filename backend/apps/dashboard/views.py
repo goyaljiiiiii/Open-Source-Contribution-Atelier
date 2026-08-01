@@ -460,6 +460,28 @@ class ContributorDashboardView(APIView):
                 "next_milestone": MilestoneTrackService.get_user_next_milestone(user),
             }
 
+        elif field == "continue_learning":
+            incomplete_qs = (
+                LessonProgress.objects.filter(user=user, completed=False)
+                .select_related("lesson")
+                .order_by("-updated_at")[:3]
+            )
+            continue_learning_list = []
+            for lp in incomplete_qs:
+                progress_pct = min(100, int(lp.score)) if lp.score else 0
+                continue_learning_list.append(
+                    {
+                        "id": lp.lesson.id,
+                        "lesson_slug": lp.lesson.slug,
+                        "lesson_title": lp.lesson.title,
+                        "summary": lp.lesson.summary,
+                        "progress_percentage": progress_pct,
+                        "score": lp.score,
+                        "updated_at": lp.updated_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    }
+                )
+            return continue_learning_list
+
         elif field == "weekly_goal":
             from apps.progress.models import WeeklyGoal
             goal = WeeklyGoal.get_or_create_current(user)
@@ -470,14 +492,6 @@ class ContributorDashboardView(APIView):
             }
 
     def get(self, request):
-        users = User.objects.filter(
-            is_active=True
-        ).annotate(
-            total_xp=F('progress__xp')
-        ).order_by(
-            '-total_xp',  
-            'username'   
-        )
         user = request.user
 
         fields_param = request.query_params.get("fields")
@@ -490,21 +504,24 @@ class ContributorDashboardView(APIView):
                 "recent_prs",
                 "progress_tracker",
                 "active_track",
+                "continue_learning",
                 "weekly_goal",
             ]
 
         data = {}
         from apps.core.cache.coalescing import CoalescingCache
 
+        valid_fields = [
+            "personal_stats",
+            "assigned_issues",
+            "recent_prs",
+            "progress_tracker",
+            "active_track",
+            "continue_learning",
+            "weekly_goal",
+        ]
         for field in requested_fields:
-            if field not in [
-                "personal_stats",
-                "assigned_issues",
-                "recent_prs",
-                "progress_tracker",
-                "active_track",
-                "weekly_goal",
-            ]:
+            if field not in valid_fields:
                 continue
 
             cache_key = f"dashboard_contributor_{field}_{user.id}"
