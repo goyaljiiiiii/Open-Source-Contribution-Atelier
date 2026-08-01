@@ -32,6 +32,8 @@ class CheckoutSessionView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
+        stripe.api_key = getattr(settings, "STRIPE_SECRET_KEY", None) or "sk_test_mock"
+        frontend_url = (getattr(settings, "FRONTEND_URL", "") or "http://localhost:5173").rstrip("/")
         plan_id = request.data.get("plan_id")
         try:
             plan = SubscriptionPlan.objects.get(id=plan_id)
