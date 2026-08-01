@@ -3,6 +3,59 @@ from django.conf import settings
 from django.db import migrations, models
 
 
+def create_mv_if_postgres(apps, schema_editor):
+    if schema_editor.connection.vendor == "postgresql":
+        with schema_editor.connection.cursor() as cursor:
+            cursor.execute("""
+            CREATE MATERIALIZED VIEW IF NOT EXISTS progress_leaderboard_mv AS
+            SELECT
+                user_id,
+                SUM(xp_delta) as total_xp,
+                RANK() OVER (ORDER BY SUM(xp_delta) DESC) as rank
+            FROM progress_xpevent
+            GROUP BY user_id;
+
+            CREATE UNIQUE INDEX IF NOT EXISTS progress_leaderboard_mv_user_id_idx
+            ON progress_leaderboard_mv (user_id);
+
+            CREATE OR REPLACE FUNCTION refresh_leaderboard_trigger_func()
+            RETURNS trigger AS $$
+            BEGIN
+                NOTIFY leaderboard_refresh;
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+
+            DROP TRIGGER IF EXISTS xp_event_leaderboard_trigger ON progress_xpevent;
+            CREATE TRIGGER xp_event_leaderboard_trigger
+            AFTER INSERT OR UPDATE OR DELETE ON progress_xpevent
+            FOR EACH STATEMENT
+            EXECUTE FUNCTION refresh_leaderboard_trigger_func();
+            """)
+    elif schema_editor.connection.vendor == "sqlite":
+        with schema_editor.connection.cursor() as cursor:
+            cursor.execute("""
+            CREATE TABLE IF NOT EXISTS progress_leaderboard_mv (
+                user_id INTEGER PRIMARY KEY,
+                total_xp INTEGER DEFAULT 0,
+                rank INTEGER DEFAULT 1
+            );
+            """)
+
+
+def drop_mv_if_postgres(apps, schema_editor):
+    if schema_editor.connection.vendor == "postgresql":
+        with schema_editor.connection.cursor() as cursor:
+            cursor.execute("""
+            DROP TRIGGER IF EXISTS xp_event_leaderboard_trigger ON progress_xpevent;
+            DROP FUNCTION IF EXISTS refresh_leaderboard_trigger_func;
+            DROP MATERIALIZED VIEW IF EXISTS progress_leaderboard_mv;
+            """)
+    elif schema_editor.connection.vendor == "sqlite":
+        with schema_editor.connection.cursor() as cursor:
+            cursor.execute("DROP TABLE IF EXISTS progress_leaderboard_mv;")
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -32,36 +85,6 @@ class Migration(migrations.Migration):
                 "managed": False,
             },
         ),
-        migrations.RunSQL(
-            sql="""
-            CREATE MATERIALIZED VIEW progress_leaderboard_mv AS
-            SELECT
-                user_id,
-                SUM(xp_delta) as total_xp,
-                RANK() OVER (ORDER BY SUM(xp_delta) DESC) as rank
-            FROM progress_xpevent
-            GROUP BY user_id;
-
-            CREATE UNIQUE INDEX progress_leaderboard_mv_user_id_idx
-            ON progress_leaderboard_mv (user_id);
-
-            CREATE OR REPLACE FUNCTION refresh_leaderboard_trigger_func()
-            RETURNS trigger AS $$
-            BEGIN
-                NOTIFY leaderboard_refresh;
-                RETURN NEW;
-            END;
-            $$ LANGUAGE plpgsql;
-
-            CREATE TRIGGER xp_event_leaderboard_trigger
-            AFTER INSERT OR UPDATE OR DELETE ON progress_xpevent
-            FOR EACH STATEMENT
-            EXECUTE FUNCTION refresh_leaderboard_trigger_func();
-            """,
-            reverse_sql="""
-            DROP TRIGGER IF EXISTS xp_event_leaderboard_trigger ON progress_xpevent;
-            DROP FUNCTION IF EXISTS refresh_leaderboard_trigger_func;
-            DROP MATERIALIZED VIEW IF EXISTS progress_leaderboard_mv;
-            """,
-        ),
+        migrations.RunPython(create_mv_if_postgres, drop_mv_if_postgres),
     ]
+

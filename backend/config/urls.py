@@ -16,7 +16,7 @@ from apps.dashboard.views import LeaderboardView
 from .health_view import health_view
 from .version_view import version_view
 
-urlpatterns = [
+api_v1_patterns = [
     # ── Admin ──────────────────────────────────────────────────────────────────
     path("admin/", admin.site.urls),
     path("api/admin/audit/", include("apps.audit.urls")),
@@ -103,20 +103,10 @@ urlpatterns = [
 ]
 
 urlpatterns = [
-    # ── Django Admin & External Webhooks ──────────────────────────────────────
-    path("admin/", admin.site.urls),
-    path("accounts/", include("allauth.urls")),
-    path("create-checkout-session/", CheckoutSessionView.as_view()),
-    path("webhook/", stripe_webhook),
-    # ── Health Checks ──────────────────────────────────────────────────────────
-    path("health/", include("apps.health.urls")),
-    path("health/legacy/", health_view, name="health"),
     # ── Version Discovery (root /api/versions/) ─────────────────────────────
-    path("api/versions/", api_versions_view, name="root-api-versions"),
-    # ── Stable Versioned API (/api/v1/) ───────────────────────────────────────
-    path("api/v1/", include(api_v1_patterns)),
-    # ── Unversioned API Fallback (/api/) ───────────────────────────────────────
-    path("api/", include(api_v1_patterns)),
+    path("api/versions/", version_view, name="root-api-versions"),
+    # ── Main API Routes ──────────────────────────────────────────────────────
+    path("", include(api_v1_patterns)),
 ]
 
 if settings.DEBUG:

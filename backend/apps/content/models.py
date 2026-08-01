@@ -358,3 +358,35 @@ class QuizDraft(models.Model):
 
     def __str__(self):
         return f"Quiz question for {self.lesson.title}"
+
+
+class LearningPath(models.Model):
+    title = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True)
+    description = models.TextField(blank=True)
+    is_published = models.BooleanField(default=True)
+    required_roles = models.ManyToManyField(
+        "rbac.Role",
+        related_name="learning_paths",
+        blank=True,
+        help_text="Roles required to access this learning path. If empty, public to all authenticated users.",
+    )
+    lessons = models.ManyToManyField(Lesson, related_name="learning_paths", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["title"]
+
+    def __str__(self):
+        return self.title
+
+    def has_access(self, user) -> bool:
+        if not self.required_roles.exists():
+            return True
+        if not user or not user.is_authenticated:
+            return False
+        if getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
+            return True
+        user_role_ids = user.user_roles.values_list("role_id", flat=True)
+        return self.required_roles.filter(id__in=user_role_ids).exists()

@@ -5,6 +5,7 @@ from .models import (
     Lesson,
     LessonDraft,
     LessonFeedback,
+    LearningPath,
     ModuleDraft,
     Organization,
     QuizDraft,
@@ -163,3 +164,38 @@ class ModuleDraftSerializer(CamelCaseModelSerializer):
     class Meta:
         model = ModuleDraft
         fields = "__all__"
+
+
+class RoleSerializer(serializers.ModelSerializer):
+    class Meta:
+        from apps.rbac.models import Role
+
+        model = Role
+        fields = ["id", "name", "description"]
+
+
+class LearningPathSerializer(CamelCaseModelSerializer):
+    required_roles_details = RoleSerializer(
+        source="required_roles", many=True, read_only=True
+    )
+    has_access = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LearningPath
+        fields = [
+            "id",
+            "title",
+            "slug",
+            "description",
+            "is_published",
+            "required_roles",
+            "required_roles_details",
+            "has_access",
+            "created_at",
+            "updated_at",
+        ]
+
+    def get_has_access(self, obj) -> bool:
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        return obj.has_access(user)
