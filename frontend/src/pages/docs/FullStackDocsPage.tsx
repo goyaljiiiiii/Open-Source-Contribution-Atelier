@@ -24,6 +24,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { FAQAccordion } from "../../components/docs/FAQAccordion";
 
 interface TechComponent {
   name: string;
@@ -383,6 +384,9 @@ export function FullStackDocsPage() {
           </table>
         </div>
       </div>
+
+      {/* FAQ Accordion */}
+      <FAQAccordion />
     </div>
   );
 }
