@@ -17,7 +17,7 @@ from apps.content.views_notes import LessonNoteAPIView
 from .health_view import health_view
 from .version_view import api_versions_view, version_view
 
-urlpatterns = [
+api_v1_patterns = [
     # ── Django Admin & External Webhooks ──────────────────────────────────────
     path("admin/", admin.site.urls),
     path("api/admin/audit/", include("apps.audit.urls")),
@@ -110,6 +110,10 @@ urlpatterns = [
     ),
 ]
 
+urlpatterns = [
+    path("api/versions/", version_view, name="root-api-versions"),
+    path("", include(api_v1_patterns)),
+]
 if settings.DEBUG:
     from apps.feature_flags.debug_view import feature_flags_debug_view
 
