@@ -1,33 +1,31 @@
 import { useState, useEffect } from "react";
-import { Menu } from "lucide-react";
-import {
-  BookOpen,
-  BriefcaseBusiness,
-  LayoutGrid,
-  MessageSquare,
-  Search,
-  Shield,
-  TerminalSquare,
-  TrendingUp,
-  Trophy,
-  X,
-  Settings,
-  Eye,
-  FileText,
-  Target,
-  FileDiff,
-  SearchCode,
-  MessageSquareHeart,
-  GitMerge,
-  FileEdit,
-  Key,
-  ShoppingBag,
-  Cpu,
-  SlidersHorizontal,
-  Activity,
-  GitBranch,
-  Radio,
-} from "lucide-react";
+import Activity from "lucide-react/dist/esm/icons/activity.js";
+import BookOpen from "lucide-react/dist/esm/icons/book-open.js";
+import BriefcaseBusiness from "lucide-react/dist/esm/icons/briefcase-business.js";
+import Cpu from "lucide-react/dist/esm/icons/cpu.js";
+import Eye from "lucide-react/dist/esm/icons/eye.js";
+import FileDiff from "lucide-react/dist/esm/icons/file-diff.js";
+import FileEdit from "lucide-react/dist/esm/icons/file-edit.js";
+import FileText from "lucide-react/dist/esm/icons/file-text.js";
+import GitBranch from "lucide-react/dist/esm/icons/git-branch.js";
+import GitMerge from "lucide-react/dist/esm/icons/git-merge.js";
+import Key from "lucide-react/dist/esm/icons/key.js";
+import LayoutGrid from "lucide-react/dist/esm/icons/layout-grid.js";
+import Menu from "lucide-react/dist/esm/icons/menu.js";
+import MessageSquare from "lucide-react/dist/esm/icons/message-square.js";
+import MessageSquareHeart from "lucide-react/dist/esm/icons/message-square-heart.js";
+import Radio from "lucide-react/dist/esm/icons/radio.js";
+import Search from "lucide-react/dist/esm/icons/search.js";
+import SearchCode from "lucide-react/dist/esm/icons/search-code.js";
+import Settings from "lucide-react/dist/esm/icons/settings.js";
+import Shield from "lucide-react/dist/esm/icons/shield.js";
+import ShoppingBag from "lucide-react/dist/esm/icons/shopping-bag.js";
+import SlidersHorizontal from "lucide-react/dist/esm/icons/sliders-horizontal.js";
+import Target from "lucide-react/dist/esm/icons/target.js";
+import TerminalSquare from "lucide-react/dist/esm/icons/terminal-square.js";
+import TrendingUp from "lucide-react/dist/esm/icons/trending-up.js";
+import Trophy from "lucide-react/dist/esm/icons/trophy.js";
+import X from "lucide-react/dist/esm/icons/x.js";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/AuthContext";
 import { fetchLessonsApi } from "../../lib/lessons";
