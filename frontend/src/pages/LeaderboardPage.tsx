@@ -134,10 +134,14 @@ export function LeaderboardPage() {
       try {
         const res = (await fetchApi(
           `/progress/leaderboard/?time_period=${timePeriod}&limit=50`,
-          { suppressErrorToast: true }
+          { suppressErrorToast: true },
         )) as any;
 
-        if (res && Array.isArray(res.leaderboard) && res.leaderboard.length > 0) {
+        if (
+          res &&
+          Array.isArray(res.leaderboard) &&
+          res.leaderboard.length > 0
+        ) {
           return res.leaderboard;
         }
         return DEFAULT_LEADERBOARD;
@@ -151,15 +155,17 @@ export function LeaderboardPage() {
 
   const normalizedList = useMemo(() => {
     return rawList.map((item: any, index: number) => {
-      const username = item.username || item.user?.username || `contributor-${index + 1}`;
-      const total_xp = item.total_xp ?? item.xp ?? (1000 - index * 100);
+      const username =
+        item.username || item.user?.username || `contributor-${index + 1}`;
+      const total_xp = item.total_xp ?? item.xp ?? 1000 - index * 100;
       const merged_prs = item.merged_prs ?? Math.max(1, 10 - index);
       const streak_days = item.streak_days ?? Math.max(1, 7 - index);
 
       let tier = "🥉 Bronze Contributor";
       if (merged_prs >= 10 || total_xp >= 1000) tier = "💎 Diamond Contributor";
       else if (merged_prs >= 5 || total_xp >= 600) tier = "🥇 Gold Contributor";
-      else if (merged_prs >= 3 || total_xp >= 300) tier = "🥈 Silver Contributor";
+      else if (merged_prs >= 3 || total_xp >= 300)
+        tier = "🥈 Silver Contributor";
 
       return {
         rank: item.rank || index + 1,
@@ -170,7 +176,9 @@ export function LeaderboardPage() {
         tier,
         avatar_url: item.avatar_url || `https://github.com/${username}.png`,
         html_url: item.html_url || `https://github.com/${username}`,
-        is_me: user?.username ? username.toLowerCase() === user.username.toLowerCase() : username === "nandinigoyaldev",
+        is_me: user?.username
+          ? username.toLowerCase() === user.username.toLowerCase()
+          : username === "nandinigoyaldev",
       };
     });
   }, [rawList, user]);
@@ -178,13 +186,16 @@ export function LeaderboardPage() {
   const filteredList = useMemo(() => {
     if (!search.trim()) return normalizedList;
     return normalizedList.filter((item: ContributorRankData) =>
-      item.username.toLowerCase().includes(search.toLowerCase().trim())
+      item.username.toLowerCase().includes(search.txoLowerCase().trim()),
     );
   }, [normalizedList, search]);
 
   const top3 = useMemo(() => normalizedList.slice(0, 3), [normalizedList]);
   const currentPersonalRank = useMemo(() => {
-    return normalizedList.find((i: ContributorRankData) => i.is_me) || normalizedList[0];
+    return (
+      normalizedList.find((i: ContributorRankData) => i.is_me) ||
+      normalizedList[0]
+    );
   }, [normalizedList]);
 
   return (
@@ -212,7 +223,8 @@ export function LeaderboardPage() {
                 ECSoC '26 Live Leaderboard 🏆
               </span>
               <span className="font-black text-xs bg-black text-white px-3 py-1.5 rounded-full border-2 border-black shadow-card-sm flex items-center gap-1">
-                <Zap className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> Real-time XP
+                <Zap className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />{" "}
+                Real-time XP
               </span>
             </div>
 
@@ -221,7 +233,8 @@ export function LeaderboardPage() {
             </h1>
 
             <p className="text-white/90 font-bold text-base sm:text-lg leading-relaxed">
-              Earn points by merging Pull Requests, completing curriculum modules, and maintaining active contribution streaks!
+              Earn points by merging Pull Requests, completing curriculum
+              modules, and maintaining active contribution streaks!
             </p>
           </div>
 
@@ -232,8 +245,8 @@ export function LeaderboardPage() {
                 Your Rank Position
               </span>
               <div className="text-3xl font-black text-gray-900 flex items-center justify-center gap-2">
-                <Crown className="w-7 h-7 text-amber-500 fill-amber-400" />
-                #{currentPersonalRank.rank}
+                <Crown className="w-7 h-7 text-amber-500 fill-amber-400" />#
+                {currentPersonalRank.rank}
               </div>
               <p className="text-xs font-black text-gray-700">
                 {currentPersonalRank.total_xp} XP Points
@@ -250,7 +263,9 @@ export function LeaderboardPage() {
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <Crown className="w-6 h-6 text-amber-500 fill-amber-400" />
-          <h2 className="text-2xl font-black dark:text-[#f0ebe2]">Top Contributor Podium</h2>
+          <h2 className="text-2xl font-black dark:text-[#f0ebe2]">
+            Top Contributor Podium
+          </h2>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-end">
@@ -265,12 +280,19 @@ export function LeaderboardPage() {
                 alt={top3[1].username}
                 className="w-20 h-20 rounded-full border-4 border-black mx-auto shadow-card object-cover"
                 onError={(e) => {
-                  (e.target as HTMLElement).setAttribute("src", "https://github.com/github.png");
+                  (e.target as HTMLElement).setAttribute(
+                    "src",
+                    "https://github.com/github.png",
+                  );
                 }}
               />
               <div>
-                <h3 className="font-black text-lg dark:text-[#f0ebe2]">@{top3[1].username}</h3>
-                <p className="text-xs font-bold text-gray-600 dark:text-[#c4bbae]">{top3[1].tier}</p>
+                <h3 className="font-black text-lg dark:text-[#f0ebe2]">
+                  @{top3[1].username}
+                </h3>
+                <p className="text-xs font-bold text-gray-600 dark:text-[#c4bbae]">
+                  {top3[1].tier}
+                </p>
               </div>
               <div className="bg-white dark:bg-[#151411] border-2 border-black rounded-xl p-3 shadow-card-sm flex justify-around text-xs font-black">
                 <div>
@@ -290,30 +312,40 @@ export function LeaderboardPage() {
           {top3[0] && (
             <div className="rounded-[2.5rem] border-4 border-black bg-gradient-to-br from-amber-300 via-amber-400 to-yellow-500 p-8 shadow-card text-center space-y-3 relative transform sm:-translate-y-4 text-black">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-black text-amber-300 border-2 border-black px-4 py-1 rounded-full text-xs font-black uppercase tracking-wider shadow-card-sm flex items-center gap-1">
-                <Crown className="w-4 h-4 text-amber-400 fill-amber-400" /> Champion #1
+                <Crown className="w-4 h-4 text-amber-400 fill-amber-400" />{" "}
+                Champion #1
               </div>
               <img
                 src={top3[0].avatar_url}
                 alt={top3[0].username}
                 className="w-24 h-24 rounded-full border-4 border-black mx-auto shadow-card object-cover mt-2"
                 onError={(e) => {
-                  (e.target as HTMLElement).setAttribute("src", "https://github.com/github.png");
+                  (e.target as HTMLElement).setAttribute(
+                    "src",
+                    "https://github.com/github.png",
+                  );
                 }}
               />
               <div>
-                <h3 className="font-black text-2xl text-black">@{top3[0].username}</h3>
+                <h3 className="font-black text-2xl text-black">
+                  @{top3[0].username}
+                </h3>
                 <span className="font-black text-xs bg-black text-white px-3 py-1 rounded-full border-2 border-black inline-block mt-1">
                   {top3[0].tier}
                 </span>
               </div>
               <div className="bg-white border-4 border-black rounded-2xl p-4 shadow-card flex justify-around text-sm font-black text-black">
                 <div>
-                  <p className="text-amber-600 text-base">{top3[0].total_xp} XP</p>
+                  <p className="text-amber-600 text-base">
+                    {top3[0].total_xp} XP
+                  </p>
                   <p className="text-[10px] uppercase text-gray-600">Points</p>
                 </div>
                 <div className="border-r-2 border-black" />
                 <div>
-                  <p className="text-green-600 text-base">{top3[0].merged_prs} PRs</p>
+                  <p className="text-green-600 text-base">
+                    {top3[0].merged_prs} PRs
+                  </p>
                   <p className="text-[10px] uppercase text-gray-600">Merged</p>
                 </div>
               </div>
@@ -331,12 +363,19 @@ export function LeaderboardPage() {
                 alt={top3[2].username}
                 className="w-20 h-20 rounded-full border-4 border-black mx-auto shadow-card object-cover"
                 onError={(e) => {
-                  (e.target as HTMLElement).setAttribute("src", "https://github.com/github.png");
+                  (e.target as HTMLElement).setAttribute(
+                    "src",
+                    "https://github.com/github.png",
+                  );
                 }}
               />
               <div>
-                <h3 className="font-black text-lg dark:text-[#f0ebe2]">@{top3[2].username}</h3>
-                <p className="text-xs font-bold text-gray-600 dark:text-[#c4bbae]">{top3[2].tier}</p>
+                <h3 className="font-black text-lg dark:text-[#f0ebe2]">
+                  @{top3[2].username}
+                </h3>
+                <p className="text-xs font-bold text-gray-600 dark:text-[#c4bbae]">
+                  {top3[2].tier}
+                </p>
               </div>
               <div className="bg-white dark:bg-[#151411] border-2 border-black rounded-xl p-3 shadow-card-sm flex justify-around text-xs font-black">
                 <div>
@@ -448,7 +487,10 @@ export function LeaderboardPage() {
                           alt={row.username}
                           className="w-9 h-9 rounded-full border-2 border-black object-cover shadow-card-sm shrink-0"
                           onError={(e) => {
-                            (e.target as HTMLElement).setAttribute("src", "https://github.com/github.png");
+                            (e.target as HTMLElement).setAttribute(
+                              "src",
+                              "https://github.com/github.png",
+                            );
                           }}
                         />
                         <div>
