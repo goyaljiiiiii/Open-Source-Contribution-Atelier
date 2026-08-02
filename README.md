@@ -31,6 +31,23 @@
 
 ---
 
+## 🏆 ECSoC 2026 Program & Quick Links
+
+<div align="center">
+
+[![ECSoC 2026 Active](https://img.shields.io/badge/Program-ECSoC_2026_Active-8A2BE2?style=for-the-badge&logo=github)](LEADERBOARD.md)
+[![Leaderboard](https://img.shields.io/badge/ECSoC-Leaderboard_🏆-4ECDC4?style=for-the-badge&logo=github)](LEADERBOARD.md)
+
+</div>
+
+Welcome to **ECSoC 2026** at Open-Source Contribution Atelier! Please review our program guides before contributing:
+- 📊 **[Official ECSoC '26 Leaderboard](LEADERBOARD.md)**
+- 📌 **[Participation & Claiming Guide (Issue #2498)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/issues/2498)**
+- 📌 **[PR Rules & Security Policy (Issue #2499)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/issues/2499)**
+- 📌 **[Rewards & Tiers (Issue #2500)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/issues/2500)**
+
+---
+
 ## ✨ Features
 
 | Feature                         | Description                                                                |
