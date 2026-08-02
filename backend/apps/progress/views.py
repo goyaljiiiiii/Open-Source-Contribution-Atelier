@@ -1304,13 +1304,19 @@ class LeaderboardView(APIView):
                 date_filter["updated_at__gte"] = start_date
 
             lesson_progress = (
-                LessonProgress.objects.filter(completed=True, **date_filter)
+                LessonProgress.objects.filter(
+                    user=OuterRef("pk"), completed=True, **date_filter
+                )
                 .values("user")
                 .annotate(total=Sum("score"))
                 .values("total")
             )
             issues_xp = (
-                Issue.objects.filter(status=Issue.Status.SOLVED, **date_filter)
+                Issue.objects.filter(
+                    assigned_to=OuterRef("pk"),
+                    status=Issue.Status.SOLVED,
+                    **date_filter,
+                )
                 .values("assigned_to")
                 .annotate(total=Sum("points") + Sum("bonus_points"))
                 .values("total")
@@ -1323,7 +1329,9 @@ class LeaderboardView(APIView):
             )
             prs_merged = (
                 PullRequest.objects.filter(
-                    status=PullRequest.Status.MERGED, **date_filter
+                    user=OuterRef("pk"),
+                    status=PullRequest.Status.MERGED,
+                    **date_filter,
                 )
                 .values("user")
                 .annotate(total=Count("id"))
