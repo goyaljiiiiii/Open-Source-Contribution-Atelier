@@ -16,6 +16,7 @@ from .views import (
     HeatmapCSVExportView,
     HeatmapView,
     HelpRequestListCreateView,
+    GitHubLeaderboardView,
     LeaderboardView,
     LessonBookmarkView,
     MentorHelpRequestListView,
@@ -34,6 +35,11 @@ from .views import (
 urlpatterns = [
     # Badges
     path("leaderboard/", LeaderboardView.as_view(), name="leaderboard"),
+    path(
+        "leaderboard/github/",
+        GitHubLeaderboardView.as_view(),
+        name="github-leaderboard",
+    ),
     path("weekly-goal/", WeeklyGoalView.as_view(), name="weekly-goal"),
     path("buffer-metrics/", BufferMetricsView.as_view(), name="buffer-metrics"),
 

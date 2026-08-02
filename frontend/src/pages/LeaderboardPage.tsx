@@ -73,6 +73,9 @@ export function LeaderboardPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [leaderboardScope, setLeaderboardScope] = useState<
+    "platform" | "github"
+  >("platform");
   const [timePeriod, setTimePeriod] = useState<string>("all_time");
   const [page, setPage] = useState(1);
   const [rawRows, setRawRows] = useState<any[]>([]);
@@ -81,14 +84,16 @@ export function LeaderboardPage() {
   useEffect(() => {
     setPage(1);
     setRawRows([]);
-  }, [timePeriod]);
+  }, [timePeriod, leaderboardScope]);
 
   // Fetch live leaderboard from the API, one page at a time.
   const { data: apiData, isLoading, isFetching, isError } = useQuery({
-    queryKey: ["leaderboardData", timePeriod, page],
+    queryKey: ["leaderboardData", leaderboardScope, timePeriod, page],
     queryFn: async () => {
       const res = (await fetchApi(
-        `/progress/leaderboard/?time_period=${timePeriod}&limit=${PAGE_SIZE}&page=${page}`,
+        leaderboardScope === "github"
+          ? "/progress/leaderboard/github/"
+          : `/progress/leaderboard/?time_period=${timePeriod}&limit=${PAGE_SIZE}&page=${page}`,
         { suppressErrorToast: true },
       )) as any;
       return {
@@ -361,6 +366,35 @@ export function LeaderboardPage() {
 
         <div className="flex items-center gap-2 flex-wrap">
           {[
+            {
+              id: "platform" as const,
+              label: "Platform XP",
+              title: "Lessons, quizzes, challenges, and platform activity",
+            },
+            {
+              id: "github" as const,
+              label: "GitHub Contributions",
+              title: "Real commits to the project repository",
+            },
+          ].map((scope) => (
+            <button
+              key={scope.id}
+              type="button"
+              title={scope.title}
+              onClick={() => setLeaderboardScope(scope.id)}
+              className={`px-4 py-2 rounded-full border-2 border-black text-xs font-black uppercase tracking-wider transition-all shadow-card-sm ${
+                leaderboardScope === scope.id
+                  ? "bg-amber-400 text-black"
+                  : "bg-white text-black dark:bg-[#1f1c18] dark:text-[#c4bbae] dark:border-[#2e2924]"
+              }`}
+            >
+              {scope.label}
+            </button>
+          ))}
+        </div>
+        {leaderboardScope === "platform" && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {[
             { id: "all_time", label: "All Time 🏆" },
             { id: "seasonal", label: "ECSoC '26 ⚡" },
             { id: "weekly", label: "Weekly 🔥" },
@@ -378,6 +412,7 @@ export function LeaderboardPage() {
             </button>
           ))}
         </div>
+        )}
       </section>
 
       {/* Main Leaderboard Table */}
@@ -385,7 +420,9 @@ export function LeaderboardPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-black dark:text-[#f0ebe2] flex items-center gap-2">
             <Trophy className="w-5 h-5 text-amber-500" />
-            Full Contributor Standings
+            {leaderboardScope === "platform"
+              ? "Platform Learning Standings"
+              : "GitHub Repository Standings"}
             {totalUsers > 0 && (
               <span className="text-sm font-black text-amber-600 dark:text-amber-400">
                 ({totalUsers} contributors)
@@ -405,9 +442,13 @@ export function LeaderboardPage() {
                   <th className="py-4 px-4 w-16 text-center">Rank</th>
                   <th className="py-4 px-4">Contributor</th>
                   <th className="py-4 px-4">Tier Badge</th>
-                  <th className="py-4 px-4 text-center">Merged PRs</th>
+                  <th className="py-4 px-4 text-center">
+                    {leaderboardScope === "platform" ? "Merged PRs" : "Commits"}
+                  </th>
                   <th className="py-4 px-4 text-center">Streak</th>
-                  <th className="py-4 px-4 text-right">Total Points</th>
+                  <th className="py-4 px-4 text-right">
+                    {leaderboardScope === "platform" ? "Total Points" : "Contributions"}
+                  </th>
                   <th className="py-4 px-4 text-center">Profile</th>
                 </tr>
               </thead>

@@ -1,3 +1,5 @@
+import logging
+import os
 import uuid  # NEW: Added for cryptographic nonce generation
 from datetime import datetime
 from datetime import timezone as dt_timezone
@@ -53,6 +55,8 @@ from .serializers import (
 )
 from .throttles import HelpRequestRateThrottle
 
+logger = logging.getLogger(__name__)
+
 
 # ============================================================
 # ✅ ADD: Notes Export View
@@ -79,7 +83,7 @@ class ExportNotesView(APIView):
             .select_related("lesson", "lesson__module")
             .order_by("lesson__module__order", "lesson__order")
         )
-
+        
         if not notes.exists():
             return Response(
                 {"error": "No notes found to export"}, status=status.HTTP_404_NOT_FOUND
@@ -579,7 +583,7 @@ class CommunityStatsView(APIView):
             if user and user.is_authenticated
             else None
         )
-        
+
         cache_key = f"community:stats:{org.id}" if org else "community:stats"
 
         def compute_stats():
@@ -1433,6 +1437,69 @@ class LeaderboardView(APIView):
         )
 
 
+class GitHubLeaderboardView(APIView):
+    """Read-only ranking of real contributions to the configured GitHub repo."""
+
+    permission_classes = [permissions.AllowAny]
+    cache_timeout = 15 * 60
+
+    def get(self, request):
+        repository = os.getenv(
+            "GITHUB_LEADERBOARD_REPOSITORY",
+            "goyaljiiiiii/Open-Source-Contribution-Atelier",
+        )
+        cache_key = f"github_leaderboard:{repository}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
+        try:
+            import requests
+
+            headers = {"Accept": "application/vnd.github+json"}
+            token = os.getenv("GITHUB_TOKEN")
+            if token:
+                headers["Authorization"] = f"Bearer {token}"
+            response = requests.get(
+                f"https://api.github.com/repos/{repository}/contributors",
+                params={"per_page": 100, "anon": "false"},
+                headers=headers,
+                timeout=10,
+            )
+            response.raise_for_status()
+            contributors = response.json()
+        except Exception as exc:
+            logger.warning("GitHub leaderboard request failed: %s", exc)
+            return Response(
+                {"detail": "GitHub contribution data is temporarily unavailable."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        leaderboard = [
+            {
+                "rank": index,
+                "username": contributor["login"],
+                "total_xp": contributor.get("contributions", 0),
+                "merged_prs": contributor.get("contributions", 0),
+                "streak_days": 0,
+                "avatar_url": contributor.get("avatar_url", ""),
+                "html_url": contributor.get("html_url", ""),
+            }
+            for index, contributor in enumerate(contributors, start=1)
+            if contributor.get("login")
+        ]
+        data = {
+            "source": "github",
+            "repository": repository,
+            "leaderboard": leaderboard,
+            "total_users": len(leaderboard),
+            "page": 1,
+            "total_pages": 1,
+        }
+        cache.set(cache_key, data, self.cache_timeout)
+        return Response(data)
+
+
 class BufferMetricsView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
@@ -1874,4 +1941,3 @@ class WeeklyGoalView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return self.get(request)
-
