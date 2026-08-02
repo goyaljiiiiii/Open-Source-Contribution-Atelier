@@ -113,6 +113,7 @@ api_v1_patterns = [
 urlpatterns = [
     path("api/versions/", version_view, name="root-api-versions"),
     path("", include(api_v1_patterns)),
+    path("api/health/", include("apps.health.urls")),
 ]
 if settings.DEBUG:
     from apps.feature_flags.debug_view import feature_flags_debug_view
