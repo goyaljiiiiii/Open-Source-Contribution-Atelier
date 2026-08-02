@@ -2,29 +2,24 @@ import React, { useState } from "react";
 import {
   BookOpen,
   Cpu,
-  Database,
   Layers,
   Search,
   Server,
-  Shield,
   Sparkles,
   Terminal,
   Code,
   Globe,
-  Radio,
-  FileCode,
-  SlidersHorizontal,
-  Key,
-  Trophy,
-  GitBranch,
-  FileText,
-  Activity,
   CheckCircle2,
   ExternalLink,
   ChevronRight,
+  ArrowRight,
+  Zap,
+  Activity,
+  Shield,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { FAQAccordion } from "../../components/docs/FAQAccordion";
+import { CARD_FOCUS_RING } from "../../lib/a11yFocus";
 
 interface TechComponent {
   name: string;
@@ -40,7 +35,7 @@ const REPO_FEATURES: TechComponent[] = [
     name: "Interactive Learning & Content Studio",
     category: "frontend",
     description: "Curriculum viewer, interactive quiz runner, markdown renderer, and teacher content draft studio.",
-    technologies: ["React", "KaTeX", "Vite", "Django REST"],
+    technologies: ["React 19", "KaTeX", "Vite", "Django REST"],
     features: ["Step-by-step progress", "Quiz builder & validation", "Live Markdown preview", "XP awards on completion"],
     endpointOrPath: "/learning-path",
   },
@@ -53,7 +48,7 @@ const REPO_FEATURES: TechComponent[] = [
     endpointOrPath: "/contributor-sandbox",
   },
   {
-    name: "Audit Log Inspector & Chronicles",
+    name: "Audit Log Inspector & Domain Ledger",
     category: "security",
     description: "Immutable domain event ledger tracking created, updated, and deleted model snapshots with JSON state diffs.",
     technologies: ["Django Audit Model", "PostgreSQL JSONB", "Tailwind UI"],
@@ -61,7 +56,7 @@ const REPO_FEATURES: TechComponent[] = [
     endpointOrPath: "/admin/audit",
   },
   {
-    name: "Celery Distributed Task Queue",
+    name: "Celery Distributed Task Worker Queue",
     category: "async",
     description: "Asynchronous background job worker handling PDF generation, webhook dispatches, and issue quality scans.",
     technologies: ["Celery", "Redis Broker", "WebSocket Push", "Django Monitoring"],
@@ -85,7 +80,7 @@ const REPO_FEATURES: TechComponent[] = [
     endpointOrPath: "/git-rebase-simulator",
   },
   {
-    name: "Skill Tree, XP Shop & Leaderboard",
+    name: "Skill Tree, XP Shop & Contributor Rankings",
     category: "realtime",
     description: "Gamified learning progression tree with unlockable nodes, XP store rewards, and real-time contributor rankings.",
     technologies: ["Cytoscape.js", "Recharts", "WebSockets"],
@@ -127,142 +122,183 @@ export function FullStackDocsPage() {
   });
 
   return (
-    <div className="w-full min-h-screen bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 p-4 md:p-8 flex flex-col gap-8">
-      {/* Top Banner */}
-      <div className="p-6 md:p-8 bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 text-white rounded-3xl shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-slate-800">
-        <div className="flex items-start gap-4">
-          <div className="p-3.5 bg-blue-500/20 backdrop-blur-md rounded-2xl text-blue-400 border border-blue-500/30">
-            <BookOpen className="w-8 h-8" />
+    <div className="max-w-5xl mx-auto px-4 pt-28 pb-16 space-y-10 font-sans">
+      {/* Neobrutalist Hero Banner */}
+      <section className="rounded-[2.5rem] border-4 border-black bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-400 p-8 sm:p-10 shadow-card relative overflow-hidden text-white">
+        <div className="absolute -right-10 -bottom-10 text-[12rem] opacity-10 select-none pointer-events-none">
+          📖
+        </div>
+        <div className="relative z-10 space-y-4">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-black text-xs bg-white/90 text-black px-4 py-2 rounded-full border-2 border-black inline-block shadow-card-sm">
+              Full-Stack Architecture & Feature Directory 📖
+            </span>
+            <span className="font-black text-xs bg-amber-300 text-black px-3 py-1.5 rounded-full border-2 border-black shadow-card-sm flex items-center gap-1">
+              <Zap className="w-3.5 h-3.5 fill-black" /> ECSoC '26 Ready
+            </span>
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                Full-Stack Architecture & Feature Directory 📖
-              </span>
+
+          <h1 className="text-3xl sm:text-5xl font-black text-white drop-shadow-[2px_2px_0_rgba(0,0,0,0.3)] tracking-tight">
+            Open-Source Atelier Master Docs
+          </h1>
+          
+          <p className="text-white/90 font-bold text-base sm:text-lg max-w-2xl leading-relaxed">
+            Explore interactive architecture guides, Django REST API endpoint specs, Celery worker queues, OAuth 2.0 security models, and repository modules.
+          </p>
+
+          <div className="pt-2 flex items-center gap-4 flex-wrap">
+            <div className="bg-white/95 text-black px-5 py-3 rounded-2xl border-2 border-black shadow-card-sm flex items-center gap-3">
+              <div className="bg-indigo-500 text-white p-2 rounded-xl border border-black font-black text-sm">
+                30+
+              </div>
+              <div className="text-left">
+                <p className="text-xs font-black uppercase tracking-wider text-gray-500">Modules</p>
+                <p className="text-sm font-black text-gray-900">Full-Stack Features</p>
+              </div>
             </div>
-            <h1 className="text-2xl md:text-4xl font-black tracking-tight mt-1">
-              Open-Source Atelier Master Docs
-            </h1>
-            <p className="text-xs md:text-sm text-slate-300 font-medium mt-1 max-w-2xl leading-relaxed">
-              Complete interactive documentation covering frontend components, Django backend APIs, Celery task queues, database schemas, OAuth 2.0 security, and repository architecture.
-            </p>
+
+            <div className="bg-white/95 text-black px-5 py-3 rounded-2xl border-2 border-black shadow-card-sm flex items-center gap-3">
+              <div className="bg-emerald-400 text-black p-2 rounded-xl border border-black font-black text-sm">
+                100%
+              </div>
+              <div className="text-left">
+                <p className="text-xs font-black uppercase tracking-wider text-gray-500">Coverage</p>
+                <p className="text-sm font-black text-gray-900">API Specifications</p>
+              </div>
+            </div>
           </div>
         </div>
+      </section>
 
-        <div className="grid grid-cols-2 gap-3 text-center text-xs font-bold shrink-0">
-          <div className="p-3 bg-white/10 rounded-2xl border border-white/10 backdrop-blur-md">
-            <div className="text-xl font-black text-blue-400">30+</div>
-            <div className="text-[10px] uppercase text-slate-300">Modules</div>
+      {/* System Architecture Overview Grid */}
+      <section className="rounded-[2rem] border-4 border-black bg-white dark:bg-[#1f1c18] dark:border-[#2e2924] p-6 sm:p-8 shadow-card space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-4 border-black dark:border-[#2e2924] pb-4">
+          <div className="flex items-center gap-3">
+            <div className="bg-indigo-100 dark:bg-indigo-900/30 p-3 rounded-2xl border-2 border-black flex-shrink-0">
+              <Layers className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black dark:text-[#f0ebe2]">
+                System Architecture Overview
+              </h2>
+              <p className="text-xs font-bold text-gray-500 dark:text-[#c4bbae]">
+                Modular 3-Tier Stack: Frontend SPA, Django REST API, Async Queues
+              </p>
+            </div>
           </div>
-          <div className="p-3 bg-white/10 rounded-2xl border border-white/10 backdrop-blur-md">
-            <div className="text-xl font-black text-emerald-400">100%</div>
-            <div className="text-[10px] uppercase text-slate-300">Coverage</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Interactive System Architecture Diagram */}
-      <div className="p-6 bg-slate-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-800 rounded-3xl flex flex-col gap-6 shadow-sm">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-2">
-            <Layers className="w-5 h-5 text-indigo-500" />
-            System Architecture Overview
-          </h2>
-          <span className="text-xs text-gray-500 font-medium">Click any component to open feature</span>
+          <span className="font-black text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 border-2 border-black px-3 py-1.5 rounded-xl shadow-card-sm shrink-0">
+            Interactive Map
+          </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Frontend Layer */}
-          <div className="p-5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl flex flex-col gap-3">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-2">
-              <span className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <Globe className="w-4 h-4 text-blue-500" /> Frontend App Layer
-              </span>
-              <span className="text-[10px] bg-blue-500/10 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded font-mono font-bold">Vite + React</span>
+          <div className="rounded-2xl border-4 border-black bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-[#1a1f2e] dark:to-[#151928] dark:border-[#2e2924] p-5 shadow-card hover:-translate-y-1 transition-transform flex flex-col justify-between space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between border-b-2 border-black dark:border-[#2e2924] pb-2">
+                <span className="font-black text-sm dark:text-[#f0ebe2] flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-blue-600 dark:text-blue-400" /> Frontend App Layer
+                </span>
+                <span className="text-[10px] font-black uppercase bg-blue-400 text-black px-2 py-0.5 rounded-full border border-black shadow-card-sm">
+                  Vite + React
+                </span>
+              </div>
+              <p className="text-xs font-bold text-gray-600 dark:text-[#c4bbae] leading-relaxed">
+                Single-page React application powered by Vite, Neobrutalist design tokens, i18n localization, and TanStack Query state management.
+              </p>
             </div>
-            <p className="text-gray-600 dark:text-gray-400 text-xs">
-              Single-page React application powered by Vite, TailwindCSS design tokens, i18n localization, and Zustand/Context state management.
-            </p>
-            <div className="flex flex-wrap gap-1 mt-auto">
-              <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded font-mono text-[10px]">React Router 6</span>
-              <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded font-mono text-[10px]">Lucide Icons</span>
-              <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded font-mono text-[10px]">Monaco Editor</span>
+            <div className="flex flex-wrap gap-1.5 pt-2">
+              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">React 19</span>
+              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">Lucide Icons</span>
+              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">Monaco Editor</span>
             </div>
           </div>
 
           {/* Backend API Layer */}
-          <div className="p-5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl flex flex-col gap-3">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-2">
-              <span className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <Server className="w-4 h-4 text-purple-500" /> Django REST Backend
-              </span>
-              <span className="text-[10px] bg-purple-500/10 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded font-mono font-bold">Python 3.11</span>
+          <div className="rounded-2xl border-4 border-black bg-gradient-to-br from-purple-50 to-pink-50 dark:from-[#281b2e] dark:to-[#1e1424] dark:border-[#2e2924] p-5 shadow-card hover:-translate-y-1 transition-transform flex flex-col justify-between space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between border-b-2 border-black dark:border-[#2e2924] pb-2">
+                <span className="font-black text-sm dark:text-[#f0ebe2] flex items-center gap-2">
+                  <Server className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Django REST Backend
+                </span>
+                <span className="text-[10px] font-black uppercase bg-purple-400 text-black px-2 py-0.5 rounded-full border border-black shadow-card-sm">
+                  Python 3.11
+                </span>
+              </div>
+              <p className="text-xs font-bold text-gray-600 dark:text-[#c4bbae] leading-relaxed">
+                Modular Django REST Framework service providing JWT authentication, Domain Audit Ledger, Celery worker orchestration, and OpenAPI docs.
+              </p>
             </div>
-            <p className="text-gray-600 dark:text-gray-400 text-xs">
-              Modular Django REST Framework service providing JWT authentication, Audit Logging, Celery job scheduling, and Spectacular OpenAPI docs.
-            </p>
-            <div className="flex flex-wrap gap-1 mt-auto">
-              <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded font-mono text-[10px]">SimpleJWT</span>
-              <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded font-mono text-[10px]">Audit Log Engine</span>
-              <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded font-mono text-[10px]">OAuth 2.0 OIDC</span>
+            <div className="flex flex-wrap gap-1.5 pt-2">
+              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">SimpleJWT</span>
+              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">Audit Engine</span>
+              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">OAuth 2.0 PKCE</span>
             </div>
           </div>
 
           {/* Database & Async Workers */}
-          <div className="p-5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl flex flex-col gap-3">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-2">
-              <span className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <Cpu className="w-4 h-4 text-emerald-500" /> Async & Database
-              </span>
-              <span className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded font-mono font-bold">Celery + Redis</span>
+          <div className="rounded-2xl border-4 border-black bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-[#162722] dark:to-[#0f1f1b] dark:border-[#2e2924] p-5 shadow-card hover:-translate-y-1 transition-transform flex flex-col justify-between space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between border-b-2 border-black dark:border-[#2e2924] pb-2">
+                <span className="font-black text-sm dark:text-[#f0ebe2] flex items-center gap-2">
+                  <Cpu className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Async & Database
+                </span>
+                <span className="text-[10px] font-black uppercase bg-emerald-400 text-black px-2 py-0.5 rounded-full border border-black shadow-card-sm">
+                  Celery + Redis
+                </span>
+              </div>
+              <p className="text-xs font-bold text-gray-600 dark:text-[#c4bbae] leading-relaxed">
+                PostgreSQL relational datastore paired with Redis for Celery background worker queues and Django Channels WebSocket event broadcasts.
+              </p>
             </div>
-            <p className="text-gray-600 dark:text-gray-400 text-xs">
-              PostgreSQL / SQLite relational datastore paired with Redis for Celery background worker queues and Channels WebSocket event broadcasts.
-            </p>
-            <div className="flex flex-wrap gap-1 mt-auto">
-              <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded font-mono text-[10px]">Redis Broker</span>
-              <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded font-mono text-[10px]">WebSockets</span>
-              <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded font-mono text-[10px]">Task Runs</span>
+            <div className="flex flex-wrap gap-1.5 pt-2">
+              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">Redis Broker</span>
+              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">WebSockets</span>
+              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">Async Tasks</span>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Feature & Module Directory Section */}
-      <div className="flex flex-col gap-4">
+      <section className="space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
-              <Code className="w-6 h-6 text-blue-500" />
-              Repository Feature Directory
-            </h2>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-              Explore every feature, service worker, and module built into this repository.
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="bg-amber-100 dark:bg-amber-900/30 p-3 rounded-2xl border-2 border-black flex-shrink-0">
+              <Code className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black dark:text-[#f0ebe2]">
+                Repository Feature Directory
+              </h2>
+              <p className="text-xs font-bold text-gray-500 dark:text-[#c4bbae]">
+                Explore every feature, service worker, and module built into this repository.
+              </p>
+            </div>
           </div>
 
-          {/* Search & Category Filter */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
+          {/* Search & Category Filter Pills */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="relative flex-1 sm:w-64">
+              <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-gray-500" />
               <input
                 type="text"
-                placeholder="Search features or tech..."
+                placeholder="Search modules or tech..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-xs font-medium text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#1f1c18] border-2 border-black dark:border-[#2e2924] rounded-2xl text-sm font-bold dark:text-[#f0ebe2] placeholder-gray-400 shadow-card-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
 
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl text-xs font-semibold">
+            <div className="flex items-center gap-1.5 flex-wrap">
               {["all", "frontend", "security", "async", "realtime"].map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
-                  className={`px-3 py-1.5 rounded-lg uppercase text-[10px] tracking-wider transition-all ${
+                  className={`px-3.5 py-2 rounded-full border-2 border-black text-xs font-black uppercase tracking-wider transition-all shadow-card-sm ${
                     activeCategory === cat
-                      ? "bg-blue-600 text-white font-bold shadow-sm"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                      ? "bg-black text-white dark:bg-white dark:text-black"
+                      : "bg-white text-black dark:bg-[#1f1c18] dark:text-[#c4bbae] dark:border-[#2e2924] hover:bg-gray-100 dark:hover:bg-[#25211c]"
                   }`}
                 >
                   {cat}
@@ -273,42 +309,45 @@ export function FullStackDocsPage() {
         </div>
 
         {/* Feature Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filteredFeatures.map((feat, idx) => (
             <div
               key={idx}
-              className="p-5 bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-800 rounded-2xl flex flex-col justify-between gap-4 shadow-sm hover:shadow-md transition-all group"
+              className="rounded-[2rem] border-4 border-black bg-white dark:bg-[#1f1c18] dark:border-[#2e2924] p-6 shadow-card hover:-translate-y-1 transition-transform flex flex-col justify-between space-y-5"
             >
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-base font-bold text-gray-900 dark:text-white group-hover:text-blue-500 transition-colors">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-xl font-black dark:text-[#f0ebe2]">
                     {feat.name}
                   </h3>
-                  <span className="px-2.5 py-0.5 text-[10px] uppercase font-extrabold rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                  <span className="font-black text-[10px] uppercase bg-amber-300 text-black px-3 py-1 rounded-full border-2 border-black shadow-card-sm shrink-0">
                     {feat.category}
                   </span>
                 </div>
 
-                <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                <p className="text-xs font-bold text-gray-600 dark:text-[#c4bbae] leading-relaxed">
                   {feat.description}
                 </p>
 
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2 pt-1">
                   {feat.features.map((item, fIdx) => (
                     <span
                       key={fIdx}
-                      className="text-[11px] font-medium px-2.5 py-1 bg-slate-100 dark:bg-slate-900 text-gray-700 dark:text-gray-300 rounded-lg flex items-center gap-1 border border-gray-200 dark:border-slate-800"
+                      className="text-[11px] font-extrabold px-3 py-1 bg-green-50 dark:bg-[#162722] text-green-900 dark:text-green-200 rounded-xl border-2 border-black flex items-center gap-1.5 shadow-card-sm"
                     >
-                      <CheckCircle2 className="w-3 h-3 text-emerald-500" /> {item}
+                      <CheckCircle2 className="w-3.5 h-3.5 text-green-600 dark:text-green-400 shrink-0" /> {item}
                     </span>
                   ))}
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-gray-100 dark:border-slate-800/80 flex items-center justify-between">
-                <div className="flex flex-wrap gap-1 font-mono text-[10px] text-gray-500">
+              <div className="pt-4 border-t-2 border-black dark:border-[#2e2924] flex items-center justify-between gap-4">
+                <div className="flex flex-wrap gap-1.5">
                   {feat.technologies.map((t, tIdx) => (
-                    <span key={tIdx} className="bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded border border-gray-200 dark:border-slate-800">
+                    <span
+                      key={tIdx}
+                      className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-900 dark:text-indigo-200 px-2.5 py-0.5 rounded-md border border-black font-mono text-[10px] font-black"
+                    >
                       {t}
                     </span>
                   ))}
@@ -316,77 +355,85 @@ export function FullStackDocsPage() {
 
                 <Link
                   to={feat.endpointOrPath}
-                  className="flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline shrink-0"
+                  className={`inline-flex items-center gap-1.5 rounded-full bg-black text-white px-4 py-2 font-black text-xs border-2 border-black hover:bg-gray-800 transition-colors dark:bg-white dark:text-black dark:hover:bg-gray-200 shrink-0 ${CARD_FOCUS_RING}`}
                 >
-                  Open Module <ChevronRight className="w-3.5 h-3.5" />
+                  Open <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
       {/* Interactive REST API Catalog */}
-      <div className="p-6 bg-slate-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-800 rounded-3xl flex flex-col gap-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-2">
-              <Terminal className="w-5 h-5 text-emerald-500" />
-              Core REST & OpenAPI Catalog
-            </h2>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-              Principal Django REST Framework API endpoints available in the backend.
-            </p>
+      <section className="rounded-[2rem] border-4 border-black bg-white dark:bg-[#1f1c18] dark:border-[#2e2924] p-6 sm:p-8 shadow-card space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-4 border-black dark:border-[#2e2924] pb-4">
+          <div className="flex items-center gap-3">
+            <div className="bg-emerald-100 dark:bg-emerald-900/30 p-3 rounded-2xl border-2 border-black flex-shrink-0">
+              <Terminal className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black dark:text-[#f0ebe2]">
+                Core REST & OpenAPI Catalog
+              </h2>
+              <p className="text-xs font-bold text-gray-500 dark:text-[#c4bbae]">
+                Principal Django REST Framework API endpoints available in the backend.
+              </p>
+            </div>
           </div>
 
           <a
             href="/api/docs/"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 text-xs font-bold px-3 py-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-xl hover:bg-emerald-500 hover:text-white transition-all"
+            className={`inline-flex items-center gap-2 rounded-full bg-emerald-400 text-black px-5 py-2.5 font-black text-xs border-2 border-black shadow-card-sm hover:bg-emerald-300 transition-colors shrink-0 ${CARD_FOCUS_RING}`}
           >
-            Open Swagger UI <ExternalLink className="w-3.5 h-3.5" />
+            Swagger UI Specs <ExternalLink className="w-3.5 h-3.5" />
           </a>
         </div>
 
-        <div className="border border-gray-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-900">
-          <table className="w-full text-left text-xs font-mono border-collapse">
-            <thead>
-              <tr className="bg-slate-50 dark:bg-slate-800/80 text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-slate-800 text-[11px] uppercase tracking-wider">
-                <th className="py-3 px-4 w-20">Method</th>
-                <th className="py-3 px-4">Endpoint Path</th>
-                <th className="py-3 px-4">Description & Contract</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-slate-800">
-              {API_ENDPOINTS.map((api, idx) => (
-                <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <td className="py-3 px-4">
-                    <span
-                      className={`px-2 py-0.5 text-[10px] font-black uppercase rounded ${
-                        api.method === "GET"
-                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                          : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
-                      }`}
-                    >
-                      {api.method}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 font-bold text-gray-900 dark:text-white">
-                    {api.path}
-                  </td>
-                  <td className="py-3 px-4 text-gray-600 dark:text-gray-400 font-sans">
-                    {api.desc}
-                  </td>
+        <div className="rounded-2xl border-4 border-black overflow-hidden bg-white dark:bg-[#151411] shadow-card-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs font-mono border-collapse">
+              <thead>
+                <tr className="bg-gray-100 dark:bg-[#25211c] text-gray-900 dark:text-[#f0ebe2] border-b-4 border-black text-xs font-black uppercase tracking-wider">
+                  <th className="py-3.5 px-4 w-24">Method</th>
+                  <th className="py-3.5 px-4">Endpoint Path</th>
+                  <th className="py-3.5 px-4">Description & Contract</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y-2 divide-black dark:divide-[#2e2924]">
+                {API_ENDPOINTS.map((api, idx) => (
+                  <tr key={idx} className="hover:bg-amber-50/50 dark:hover:bg-[#25211c]/50 transition-colors">
+                    <td className="py-3.5 px-4">
+                      <span
+                        className={`px-2.5 py-1 text-[10px] font-black uppercase rounded-lg border-2 border-black shadow-card-sm ${
+                          api.method === "GET"
+                            ? "bg-emerald-400 text-black"
+                            : "bg-indigo-400 text-black"
+                        }`}
+                      >
+                        {api.method}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 font-black text-gray-900 dark:text-[#f0ebe2] text-xs">
+                      {api.path}
+                    </td>
+                    <td className="py-3.5 px-4 font-sans font-bold text-gray-600 dark:text-[#c4bbae]">
+                      {api.desc}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      </section>
 
-      {/* FAQ Accordion */}
-      <FAQAccordion />
+      {/* FAQ Accordion Section */}
+      <section>
+        <FAQAccordion />
+      </section>
     </div>
   );
 }
