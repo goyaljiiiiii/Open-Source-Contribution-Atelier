@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Search, X, BookOpen, Code, FileText, ArrowRight, CornerDownLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useLessonSearch, SearchResultItem, highlightText } from "../../hooks/useLessonSearch";

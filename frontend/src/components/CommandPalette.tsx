@@ -9,23 +9,25 @@ import {
   useRecentCommands,
   type RecentCommand,
 } from "../hooks/useRecentCommands";
-import AlignLeft from "lucide-react/dist/esm/icons/align-left.js";
-import BookOpen from "lucide-react/dist/esm/icons/book-open.js";
-import BriefcaseBusiness from "lucide-react/dist/esm/icons/briefcase-business.js";
-import ChevronRight from "lucide-react/dist/esm/icons/chevron-right.js";
-import Clock from "lucide-react/dist/esm/icons/clock.js";
-import Contrast from "lucide-react/dist/esm/icons/contrast.js";
-import FileText from "lucide-react/dist/esm/icons/file-text.js";
-import HeadingIcon from "lucide-react/dist/esm/icons/heading.js";
-import LayoutGrid from "lucide-react/dist/esm/icons/layout-grid.js";
-import MessageSquare from "lucide-react/dist/esm/icons/message-square.js";
-import Moon from "lucide-react/dist/esm/icons/moon.js";
-import Palette from "lucide-react/dist/esm/icons/palette.js";
-import Search from "lucide-react/dist/esm/icons/search.js";
-import Settings from "lucide-react/dist/esm/icons/settings.js";
-import Sun from "lucide-react/dist/esm/icons/sun.js";
-import Trophy from "lucide-react/dist/esm/icons/trophy.js";
-import X from "lucide-react/dist/esm/icons/x.js";
+import {
+  AlignLeft,
+  BookOpen,
+  BriefcaseBusiness,
+  ChevronRight,
+  Clock,
+  Contrast,
+  FileText,
+  Heading as HeadingIcon,
+  LayoutGrid,
+  MessageSquare,
+  Moon,
+  Palette,
+  Search,
+  Settings,
+  Sun,
+  Trophy,
+  X,
+} from "lucide-react";
 
 interface SearchIndexEntry {
   id: string;
