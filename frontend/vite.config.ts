@@ -80,7 +80,7 @@ export default defineConfig({
   base: process.env.VITE_CDN_URL || "/",
   plugins: [
     buildMetadataPlugin(),
-    visualizerThresholdPlugin(250),
+    visualizerThresholdPlugin(1000),
     react(),
     viteCompression({ algorithm: "brotliCompress", ext: ".br" }),
     viteCompression({ algorithm: "gzip", ext: ".gz" }),
