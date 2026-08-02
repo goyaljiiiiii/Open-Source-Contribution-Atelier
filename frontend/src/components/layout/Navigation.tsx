@@ -37,7 +37,7 @@ import { SyncStatusIndicator } from "../ui/SyncStatusIndicator";
 import { NotificationMenu } from "../ui/NotificationMenu";
 import { ThemeToggle } from "../ui/ThemeToggle";
 import { useTranslate } from "../../i18n/useTranslate";
-import { LessonSearchModal } from "../search/LessonSearchModal";
+import { LessonSearchModal } from "../Search/LessonSearchModal";
 
 
 const navGroups = [
