@@ -229,6 +229,7 @@ INSTALLED_APPS = [
     "apps.feed",
     "apps.dx_testing",
     "apps.dx_analytics",
+    "apps.dependency_graph",
     "apps.issue_quality",
     "apps.ml_triage",
 ]
