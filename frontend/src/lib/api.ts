@@ -4,6 +4,11 @@ import { clearAccessToken, getAccessToken, setAccessToken } from "./authToken";
 import { broadcastAuthEvent } from "./authSync";
 import { getTraceHeaders } from "./otelProvider";
 import toast from "react-hot-toast";
+import {
+  createApiError,
+  isAuthExpiredApiError,
+  isRetryableApiError,
+} from "./apiErrors";
 
 let refreshPromise: Promise<string | null> | null = null;
 
@@ -109,14 +114,20 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
         timeoutMs,
       );
 
-      // Retry on 503 (Service Unavailable) — common during HF cold starts
-      if (response.status === 503 && attempt < maxRetries) {
-        lastError = new Error("Service unavailable (503)");
+      const isRetryableStatus =
+        response.status === 429 ||
+        (response.status >= 500 && response.status < 600);
+
+      // Retry temporary HTTP failures before surfacing an error.
+      if (isRetryableStatus && attempt < maxRetries) {
+        lastError = new Error(`HTTP ${response.status}`);
         continue;
       }
 
       if (!response.ok) {
-        if (response.status === 401 && !options._isRetry) {
+        const hasAuthHeader = Boolean(headers.get("Authorization"));
+
+        if (response.status === 401 && requireAuth && !options._isRetry) {
           try {
             const refreshToken = localStorage.getItem("refreshToken");
             if (refreshToken) {
@@ -155,50 +166,39 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
         }
 
         const errorBody = await response.json().catch(() => ({}));
-        let errorMessage =
-          errorBody.error ||
-          errorBody.message ||
-          errorBody.non_field_errors?.[0];
-
-        if (
-          !errorMessage &&
-          typeof errorBody === "object" &&
-          errorBody !== null
-        ) {
-          const fieldErrors = Object.values(errorBody)
-            .map((msgs) => {
-              if (Array.isArray(msgs)) return msgs[0];
-              if (typeof msgs === "string") return msgs;
-              return null;
-            })
-            .filter(Boolean);
-
-          if (fieldErrors.length > 0) {
-            errorMessage = fieldErrors.join(" ");
-          }
-        }
-
-        errorMessage =
-          errorMessage ||
-          `HTTP error ${response.status} (Req ID: ${requestId})`;
+        const apiError = createApiError({
+          status: response.status,
+          endpoint,
+          requestId,
+          body: errorBody,
+          retryable: isRetryableStatus,
+          authExpired: response.status === 401 && requireAuth,
+        });
 
         console.error(`[API Error] ReqID=${requestId}`, errorBody);
 
-        lastError = new Error(errorMessage);
+        if (response.status === 401 && requireAuth && !options._isRetry) {
+          clearAccessToken();
+          try {
+            localStorage.removeItem("refreshToken");
+          } catch {
+            /* storage unavailable */
+          }
+          broadcastAuthEvent("LOGOUT");
+        }
 
-        if (!suppressErrorToast) {
-          if (response.status === 401) {
-            clearAccessToken();
-            try {
-              localStorage.removeItem("refreshToken");
-            } catch {
-              /* storage unavailable */
-            }
-            broadcastAuthEvent("LOGOUT");
+        if (!suppressErrorToast && !apiError.authExpired && hasAuthHeader) {
+          if (response.status === 403) {
+            toast.error("You do not have permission to perform this action.");
+          } else if (response.status === 404) {
+            toast.error("We couldn't find the requested resource.");
+          } else if (response.status >= 500) {
+            toast.error("The server is having trouble right now. Please try again.");
           }
         }
 
-        throw new Error(errorMessage);
+        lastError = apiError;
+        throw apiError;
       }
 
       return await response.json().catch(() => ({}));
@@ -208,7 +208,8 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
       // If it's a timeout / network error and we have retries left, try again
       const isRetryable =
         error instanceof DOMException || // AbortError from timeout
-        error instanceof TypeError; // Network error
+        error instanceof TypeError || // Network error
+        isRetryableApiError(error);
       if (isRetryable && attempt < maxRetries) {
         continue;
       }
@@ -299,6 +300,16 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
           }
         }
       }
+      if (isAuthExpiredApiError(error)) {
+        clearAccessToken();
+        try {
+          localStorage.removeItem("refreshToken");
+        } catch {
+          /* storage unavailable */
+        }
+        broadcastAuthEvent("LOGOUT");
+      }
+
       throw error;
     }
   }

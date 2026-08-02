@@ -73,6 +73,7 @@
     "libsodium-wrappers": "^0.8.4",
     "lucide-react": "^0.474.0",
     "mermaid": "^11.16.0",
+    "motion-dom": "^12.43.0",
     "picomatch": "^4.0.5",
     "prismjs": "^1.30.0",
     "pyodide": "^314.0.2",

@@ -77,3 +77,25 @@ jobs:
         run: |
           cd frontend || exit 0
           if [ -f package.json ]; then npm run test -- --shard=${{ matrix.shard }}/2; fi
+
+  bundle-size-check:
+    name: 📦 Bundle Size & Budget Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Build & Check Bundle Size
+        run: |
+          cd frontend
+          npm run analyze-bundle
+

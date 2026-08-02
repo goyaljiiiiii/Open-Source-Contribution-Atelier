@@ -274,6 +274,7 @@ MIDDLEWARE = [
     "apps.core.middleware.perf_tracking.PerformanceTrackingMiddleware",
     "apps.core.middleware.db_pool_monitor.DatabasePoolMonitorMiddleware",
     "apps.core.middleware.request_id.RequestIdMiddleware",
+    "config.middleware.DatabaseConnectionGuardMiddleware",
 
     "config.logging_middleware.RequestResponseLoggingMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -367,7 +368,8 @@ for db_name, db_config in DATABASES.items():
         db_config["ENGINE"] = "django_prometheus.db.backends.sqlite3"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-CONN_MAX_AGE = int(os.getenv("CONN_MAX_AGE", "60"))
+CONN_MAX_AGE = int(os.getenv("CONN_MAX_AGE", "15"))
+DB_MAX_CONNECTIONS = int(os.getenv("DB_MAX_CONNECTIONS", "97"))
 
 DATABASE_ROUTERS = ["config.db_router.PrimaryReplicaRouter"]
 
@@ -663,6 +665,10 @@ CELERY_BEAT_SCHEDULE = {
     "sync-oss-issues-hourly": {
         "task": "apps.recommendations.tasks.sync_oss_issues",
         "schedule": 3600.0,  # Every hour
+    },
+    "report-db-connections": {
+        "task": "config.tasks.report_db_connections",
+        "schedule": 300.0,
     },
 }
 

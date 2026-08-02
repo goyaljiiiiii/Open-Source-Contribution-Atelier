@@ -1,11 +1,12 @@
 import pytest
-
+from rest_framework.test import APIClient
 from apps.progress.models import StreakProfile
 
 
 @pytest.mark.django_db
-def test_contributor_dashboard_personal_stats(client, user):
-    client.force_login(user)
+def test_contributor_dashboard_personal_stats(user):
+    client = APIClient()
+    client.force_authenticate(user=user)
 
     response = client.get("/api/dashboard/contributor/")
 
@@ -17,14 +18,15 @@ def test_contributor_dashboard_personal_stats(client, user):
 
 
 @pytest.mark.django_db
-def test_dashboard_personal_stats_uses_streak_profile(client, user):
-    profile = StreakProfile.objects.create(
+def test_dashboard_personal_stats_uses_streak_profile(user):
+    StreakProfile.objects.create(
         user=user,
         current_streak=5,
         longest_streak=11,
     )
 
-    client.force_login(user)
+    client = APIClient()
+    client.force_authenticate(user=user)
 
     response = client.get("/api/dashboard/contributor/")
 
