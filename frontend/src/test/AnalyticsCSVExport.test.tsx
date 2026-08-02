@@ -3,19 +3,7 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AnalyticsDashboardPage from "../pages/AnalyticsDashboardPage";
 import { ThemeProvider } from "../context/ThemeContext";
-
-vi.mock("../lib/api", async () => {
-  const actual = await vi.importActual("../lib/api");
-  return {
-    ...actual,
-    fetchApi: vi.fn().mockResolvedValue({
-      registrations: [{ date: "2026-07-27", count: 12 }],
-      progress_stats: [{ date: "2026-07-27", enrolled: 15, completed: 8 }],
-      quiz_stats: [{ is_correct: true, count: 20 }],
-      challenge_stats: [{ status: "PASSED", count: 10 }],
-    }),
-  };
-});
+import * as apiModule from "../lib/api";
 
 describe("AnalyticsCSVExport Component", () => {
   let queryClient: QueryClient;
@@ -23,6 +11,14 @@ describe("AnalyticsCSVExport Component", () => {
   beforeEach(() => {
     vi.useRealTimers();
     vi.restoreAllMocks();
+
+    vi.spyOn(apiModule, "fetchApi").mockResolvedValue({
+      registrations: [{ date: "2026-07-27", count: 12 }],
+      progress_stats: [{ date: "2026-07-27", enrolled: 15, completed: 8 }],
+      quiz_stats: [{ is_correct: true, count: 20 }],
+      challenge_stats: [{ status: "PASSED", count: 10 }],
+    });
+
     Object.defineProperty(window, "matchMedia", {
       writable: true,
       configurable: true,
@@ -37,6 +33,7 @@ describe("AnalyticsCSVExport Component", () => {
         dispatchEvent: vi.fn(),
       })),
     });
+
     queryClient = new QueryClient({
       defaultOptions: {
         queries: {

@@ -18,6 +18,15 @@ class TestAnalyticsCSVExport(APITestCase):
         )
         self.export_url = reverse("dashboard:analytics_export_csv")
 
+    def _get_streaming_content(self, response):
+        chunks = []
+        for chunk in response.streaming_content:
+            if isinstance(chunk, bytes):
+                chunks.append(chunk.decode("utf-8"))
+            else:
+                chunks.append(str(chunk))
+        return "".join(chunks)
+
     def test_unauthenticated_user_cannot_export_csv(self):
         response = self.client.get(self.export_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -30,7 +39,7 @@ class TestAnalyticsCSVExport(APITestCase):
         self.assertEqual(response["Content-Type"], "text/csv")
         self.assertIn("attachment; filename=", response["Content-Disposition"])
 
-        content = b"".join(response.streaming_content).decode("utf-8")
+        content = self._get_streaming_content(response)
         self.assertIn("--- REGISTRATIONS ---", content)
         self.assertIn("--- COURSE ENGAGEMENT / PROGRESS STATS ---", content)
         self.assertIn("--- QUIZ ACCURACY STATS ---", content)
@@ -41,6 +50,6 @@ class TestAnalyticsCSVExport(APITestCase):
         response = self.client.get(self.export_url, {"dataset": "registrations", "days": "7"})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        content = b"".join(response.streaming_content).decode("utf-8")
+        content = self._get_streaming_content(response)
         self.assertIn("--- REGISTRATIONS ---", content)
         self.assertNotIn("--- QUIZ ACCURACY STATS ---", content)
