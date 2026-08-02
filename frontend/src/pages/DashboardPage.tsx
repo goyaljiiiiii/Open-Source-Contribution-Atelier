@@ -55,7 +55,7 @@ export function DashboardPage() {
     }));
   }, [lessons, isLessonCompleted]);
 
-  const { data: contributorStats, isLoading: contributorLoading } = useQuery<{ continue_learning?: any[] }>({
+  const { data: contributorStats, isLoading: contributorLoading } = useQuery<{ continue_learning?: any[]; total_xp?: number; streak?: number; longest_streak?: number }>({
     queryKey: ["contributorStats"],
     queryFn: () =>
       fetchApi("/progress/me/", {
@@ -79,9 +79,9 @@ export function DashboardPage() {
   const completionPercentage = Math.round((completedLessonsCount / totalLessonsCount) * 100);
 
   const stats = useMemo(() => {
-    const xp = userProgressData?.total_xp ?? user?.xp ?? mockStudentStats.xp;
-    const streakDays = userProgressData?.streak ?? mockStudentStats.streakDays;
-    const longestStreak = userProgressData?.longest_streak ?? mockStudentStats.longestStreak;
+    const xp = contributorStats?.total_xp ?? mockStudentStats.xp;
+    const streakDays = contributorStats?.streak ?? mockStudentStats.streakDays;
+    const longestStreak = contributorStats?.longest_streak ?? mockStudentStats.longestStreak;
     const currentModuleNum = Math.min(4, Math.floor(completedLessonsCount / 4) + 1);
 
     return {
@@ -98,7 +98,7 @@ export function DashboardPage() {
         totalLessons: 4,
       },
     };
-  }, [userProgressData, user, completedLessonsCount, totalLessonsCount]);
+  }, [contributorStats, user, completedLessonsCount, totalLessonsCount]);
 
   const { data: certificateData } = useQuery({
     queryKey: ["userCertificate"],

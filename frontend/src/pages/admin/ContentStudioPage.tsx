@@ -142,7 +142,7 @@ export function ContentStudioPage() {
   });
 
   const [activeNoteId, setActiveNoteId] = useState<string>(() => notes[0]?.id || "");
-  const [viewMode, setViewMode] = useState<"split" | "editor" | "preview" | "meta" | "quizzes">("split");
+  const [viewMode, setViewMode] = useState<"split" | "editor" | "preview" | "meta" | "quizzes" | "ai_suggestions">("split");
   const [searchQuery, setSearchQuery] = useState("");
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving">("saved");
   const [collapsedFolders, setCollapsedFolders] = useState<Record<string, boolean>>({});
@@ -566,7 +566,7 @@ export function ContentStudioPage() {
                     onApplyFix={(fix) => {
                       if (fix.suggestedFix) {
                         const updated = activeNote.content + "\n\n" + fix.suggestedFix;
-                        handleUpdateNoteContent(updated);
+                        updateActiveNote({ content: updated });
                         toast.success("Applied suggestion to lesson!");
                       }
                     }}
@@ -603,7 +603,7 @@ export function ContentStudioPage() {
                         I
                       </button>
                       <button
-                        onClick={() => handleInsertFormatting("\n\`\`\`typescript\n", "\n\`\`\`\n")}
+                        onClick={() => handleInsertFormatting("\n```typescript\n", "\n```\n")}
                         className="px-2 py-1 text-xs font-mono font-bold text-indigo-400 bg-indigo-500/10 rounded"
                       >
                         Code
@@ -652,7 +652,7 @@ export function ContentStudioPage() {
                       Italic
                     </button>
                     <button
-                      onClick={() => handleInsertFormatting("\n\`\`\`typescript\n", "\n\`\`\`\n")}
+                      onClick={() => handleInsertFormatting("\n```typescript\n", "\n```\n")}
                       className="px-3 py-1 text-xs font-mono font-bold text-indigo-400 bg-indigo-500/10 rounded-lg"
                     >
                       Code Block

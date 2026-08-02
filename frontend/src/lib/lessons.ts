@@ -105,9 +105,9 @@ export type LessonsFetchResult = {
 };
 
 function mapApiLessons(data: unknown[]): Lesson[] {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   return (data as any[]).map((les, index: number) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const firstExercise = (les.exercises as any[] | undefined)?.[0];
     return {
       id: Number(les.id ?? 0),

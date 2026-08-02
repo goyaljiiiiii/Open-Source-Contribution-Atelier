@@ -57,7 +57,7 @@ export function useChat({ roomId, token, username }: UseChatOptions) {
         let plaintext = msg.message as string;
         const senderId = msg.user_id as number;
         const myId = localUserIdRef.current;
-        let matchedLocalId: string | null = null;
+        const matchedLocalId: string | null = null;
 
         if (senderId === myId) {
           setMessages((prev) => {

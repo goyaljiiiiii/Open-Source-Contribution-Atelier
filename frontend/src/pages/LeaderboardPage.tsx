@@ -3,8 +3,6 @@ import { SectionCard } from "../components/ui/SectionCard";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { fetchApi } from "../lib/api";
-import React, { useState, useEffect } from 'react';
-import { fetchApi } from '../lib/api';
 import { DataStateWrapper } from "../components/ui/DataStateWrapper";
 import {
   Trophy,
@@ -25,20 +23,6 @@ type TimePeriod = "all_time" | "weekly" | "monthly" | "seasonal" | string;
 export function LeaderboardPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-
-  
-  const fetchLeaderboard = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams(filters);
-      const result = await fetchApi(`/api/leaderboard/?${params}`);
-      setData(result.leaderboard);
-    } catch (error) {
-      console.error('Failed to fetch leaderboard:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");

@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { usePythonSandbox } from "../hooks/usePythonSandbox";
 
 describe("usePythonSandbox", () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let mockWorker: any;
 
   beforeEach(() => {
@@ -39,7 +39,7 @@ describe("usePythonSandbox", () => {
   it("handles successful code execution", async () => {
     const { result } = renderHook(() => usePythonSandbox());
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     let promise: any;
 
     act(() => {
@@ -55,7 +55,7 @@ describe("usePythonSandbox", () => {
 
     // Simulate worker responding
     const messageHandler = mockWorker.addEventListener.mock.calls.find(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       (call: any[]) => call[0] === "message",
     )[1];
 
@@ -83,7 +83,7 @@ describe("usePythonSandbox", () => {
     vi.useFakeTimers();
     const { result } = renderHook(() => usePythonSandbox());
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     let promise: any;
 
     act(() => {

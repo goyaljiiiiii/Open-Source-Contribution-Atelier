@@ -397,7 +397,7 @@ export function GitSubmoduleSimulator() {
 
   // Helper to extract .gitmodules text
   const generateGitModulesText = (node: SubmoduleNode): string => {
-    let lines: string[] = [];
+    const lines: string[] = [];
     const traverse = (n: SubmoduleNode) => {
       if (n.id !== "root") {
         lines.push(`[submodule "${n.path}"]`);
