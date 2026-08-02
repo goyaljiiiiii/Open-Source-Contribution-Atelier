@@ -22,8 +22,10 @@ describe("AnalyticsCSVExport Component", () => {
 
   beforeEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
     Object.defineProperty(window, "matchMedia", {
       writable: true,
+      configurable: true,
       value: vi.fn().mockImplementation((query) => ({
         matches: false,
         media: query,
@@ -42,7 +44,6 @@ describe("AnalyticsCSVExport Component", () => {
         },
       },
     });
-    vi.restoreAllMocks();
   });
 
   afterEach(() => {
