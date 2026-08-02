@@ -1254,77 +1254,135 @@ class LeaderboardView(APIView):
         page = max(page, 1)
         limit = min(max(limit, 1), 200)
 
-        from datetime import timedelta
+        from datetime import datetime, timedelta
 
-        from django.db.models import Count, Sum
+        from django.contrib.auth import get_user_model
+        from django.db.models import (
+            Count,
+            F,
+            IntegerField,
+            OuterRef,
+            Q,
+            Subquery,
+            Sum,
+            Value,
+        )
         from django.db.models.functions import Coalesce
 
+        from apps.challenges.models import ChallengeCompletion
         from apps.core.cache.coalescing import CoalescingCache
-        from apps.dashboard.models import PullRequest
-        from apps.progress.models import Season, StreakProfile, XPEvent
+        from apps.dashboard.models import Issue, PullRequest
+        from apps.progress.models import LessonProgress, Season, StreakProfile
 
-        # Compute the leaderboard live from the XP event log so it always
-        # reflects real contributions (no stale materialized view / Redis needed).
+        User = get_user_model()
+
+        # Period start boundary (None means all-time).
         now = timezone.now()
-        events = XPEvent.objects.all()
+        start_date = None
         if time_period == "weekly":
-            week_start = now - timedelta(days=now.weekday())
-            week_start = week_start.replace(
+            start_date = (now - timedelta(days=now.weekday())).replace(
                 hour=0, minute=0, second=0, microsecond=0
             )
-            events = XPEvent.objects.filter(created_at__gte=week_start)
         elif time_period == "monthly":
-            month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-            events = XPEvent.objects.filter(created_at__gte=month_start)
+            start_date = now.replace(
+                day=1, hour=0, minute=0, second=0, microsecond=0
+            )
         elif time_period.startswith("seasonal"):
             season = Season.objects.filter(is_active=True).first()
             if season is not None and season.start_date:
-                events = XPEvent.objects.filter(
-                    created_at__date__gte=season.start_date
+                start_date = timezone.make_aware(
+                    datetime.combine(season.start_date, datetime.min.time())
                 )
 
-        if search_username:
-            events = events.filter(user__username__icontains=search_username)
+        # Compute XP the same way as the contributor dashboard so leaderboard
+        # ranks always match a user's dashboard rank. XPEvent is a gamification
+        # ledger that most contribution paths never write, so using it as the
+        # source yields an empty leaderboard even with real contributions.
+        def ranked_users():
+            date_filter = {}
+            if start_date is not None:
+                date_filter["updated_at__gte"] = start_date
+
+            lesson_progress = (
+                LessonProgress.objects.filter(completed=True, **date_filter)
+                .values("user")
+                .annotate(total=Sum("score"))
+                .values("total")
+            )
+            issues_xp = (
+                Issue.objects.filter(status=Issue.Status.SOLVED, **date_filter)
+                .values("assigned_to")
+                .annotate(total=Sum("points") + Sum("bonus_points"))
+                .values("total")
+            )
+            challenge_xp = (
+                ChallengeCompletion.objects.filter(user=OuterRef("pk"))
+                .values("user")
+                .annotate(total=Sum("bonus_earned"))
+                .values("total")
+            )
+            prs_merged = (
+                PullRequest.objects.filter(
+                    status=PullRequest.Status.MERGED, **date_filter
+                )
+                .values("user")
+                .annotate(total=Count("id"))
+                .values("total")
+            )
+
+            users = (
+                User.objects.filter(is_staff=False)
+                .annotate(
+                    lesson_xp=Coalesce(
+                        Subquery(lesson_progress, output_field=IntegerField()),
+                        Value(0),
+                    ),
+                    issues_xp=Coalesce(
+                        Subquery(issues_xp, output_field=IntegerField()), Value(0)
+                    ),
+                    challenge_xp=Coalesce(
+                        Subquery(challenge_xp, output_field=IntegerField()),
+                        Value(0),
+                    ),
+                    prs_merged=Coalesce(
+                        Subquery(prs_merged, output_field=IntegerField()), Value(0)
+                    ),
+                )
+                .annotate(
+                    total_xp=F("lesson_xp") + F("issues_xp") + F("challenge_xp"),
+                )
+                .order_by("-total_xp", "username")
+            )
+            if search_username:
+                users = users.filter(username__icontains=search_username)
+            return users
 
         def compute_leaderboard():
-            rows = (
-                events.values("user_id", "user__username")
-                .annotate(total_xp=Coalesce(Sum("xp_delta"), 0))
-                .order_by("-total_xp", "user__username")
-            )
-            total_users_count = rows.count()
+            users = ranked_users()
+            total_users_count = users.count()
             offset = (page - 1) * limit
-            page_rows = list(rows[offset : offset + limit])
+            page_rows = list(users[offset : offset + limit])
 
-            user_ids = [r["user_id"] for r in page_rows]
-            merged_counts = dict(
-                PullRequest.objects.filter(
-                    user_id__in=user_ids, status=PullRequest.Status.MERGED
-                )
-                .values("user_id")
-                .annotate(total=Count("id"))
-                .values_list("user_id", "total")
-            )
-            streak_days = dict(
+            user_ids = [u.pk for u in page_rows]
+            streak_map = dict(
                 StreakProfile.objects.filter(user_id__in=user_ids).values_list(
                     "user_id", "current_streak"
                 )
             )
 
             leaderboard = []
-            for i, row in enumerate(page_rows):
+            for i, user in enumerate(page_rows):
                 rank = offset + i + 1
-                username = row["user__username"]
                 leaderboard.append(
                     {
-                        "user_id": row["user_id"],
-                        "username": username,
+                        "user_id": user.pk,
+                        "username": user.username,
                         "rank": rank,
-                        "total_xp": row["total_xp"],
-                        "merged_prs": merged_counts.get(row["user_id"], 0),
-                        "streak_days": streak_days.get(row["user_id"], 0),
-                        "avatar_url": f"https://github.com/{username}.png",
-                        "html_url": f"https://github.com/{username}",
+                        "total_xp": user.total_xp,
+                        "merged_prs": user.prs_merged,
+                        "streak_days": streak_map.get(user.pk, 0),
+                        "avatar_url": f"https://github.com/{user.username}.png",
+                        "html_url": f"https://github.com/{user.username}",
                         "is_top_3": rank <= 3,
                     }
                 )
@@ -1338,22 +1396,18 @@ class LeaderboardView(APIView):
             cache_key, 300, compute_leaderboard
         )
 
-        # Add user's personal rank if authenticated and not searching
+        # Personal rank from the same computation so it matches the dashboard.
         personal_rank = None
         if request.user.is_authenticated and not search_username:
-            ranked = events.values("user_id", "user__username").annotate(
-                total_xp=Coalesce(Sum("xp_delta"), 0)
-            )
-            me = ranked.filter(user_id=request.user.id).first()
-            if me:
-                better_count = ranked.filter(total_xp__gt=me["total_xp"]).count()
-                tie_count = ranked.filter(
-                    total_xp=me["total_xp"],
-                    user__username__lt=request.user.username,
+            me = ranked_users().filter(pk=request.user.id).first()
+            if me is not None:
+                better_count = ranked_users().filter(
+                    Q(total_xp__gt=me.total_xp)
+                    | Q(total_xp=me.total_xp, username__lt=me.username)
                 ).count()
                 personal_rank = {
-                    "rank": better_count + tie_count + 1,
-                    "total_xp": me["total_xp"],
+                    "rank": better_count + 1,
+                    "total_xp": me.total_xp,
                 }
 
         total_pages = (total_users + limit - 1) // limit if total_users > 0 else 1

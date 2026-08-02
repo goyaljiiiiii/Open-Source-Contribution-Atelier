@@ -1,5 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { fetchApi } from "../lib/api";
 import { useAuth } from "../features/auth/AuthContext";
 import { Link } from "react-router-dom";
@@ -14,6 +18,7 @@ import {
   Zap,
   LoaderCircle,
   Users,
+  AlertTriangle,
 } from "lucide-react";
 import { CARD_FOCUS_RING } from "../lib/a11yFocus";
 
@@ -66,6 +71,7 @@ function normalizeRows(
 
 export function LeaderboardPage() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [timePeriod, setTimePeriod] = useState<string>("all_time");
   const [page, setPage] = useState(1);
@@ -78,7 +84,7 @@ export function LeaderboardPage() {
   }, [timePeriod]);
 
   // Fetch live leaderboard from the API, one page at a time.
-  const { data: apiData, isLoading, isFetching } = useQuery({
+  const { data: apiData, isLoading, isFetching, isError } = useQuery({
     queryKey: ["leaderboardData", timePeriod, page],
     queryFn: async () => {
       const res = (await fetchApi(
@@ -413,6 +419,28 @@ export function LeaderboardPage() {
                       <p className="mt-3 text-sm font-black text-gray-500 dark:text-[#c4bbae]">
                         Loading live leaderboard...
                       </p>
+                    </td>
+                  </tr>
+                </tbody>
+              ) : isError && rawRows.length === 0 ? (
+                <tbody>
+                  <tr>
+                    <td colSpan={7} className="py-12 text-center">
+                      <AlertTriangle className="w-8 h-8 mx-auto text-amber-500" />
+                      <p className="mt-3 text-sm font-black text-gray-500 dark:text-[#c4bbae]">
+                        Couldn't load the leaderboard right now.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          queryClient.invalidateQueries({
+                            queryKey: ["leaderboardData"],
+                          })
+                        }
+                        className={`mt-4 px-4 py-2 rounded-full border-2 border-black bg-black text-white dark:bg-white dark:text-black text-xs font-black ${CARD_FOCUS_RING}`}
+                      >
+                        Retry
+                      </button>
                     </td>
                   </tr>
                 </tbody>
