@@ -5,17 +5,13 @@ import {
   Layers,
   Search,
   Server,
-  Sparkles,
   Terminal,
   Code,
   Globe,
   CheckCircle2,
   ExternalLink,
-  ChevronRight,
   ArrowRight,
   Zap,
-  Activity,
-  Shield,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { FAQAccordion } from "../../components/docs/FAQAccordion";
