@@ -1,6 +1,8 @@
+import csv
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
+from django.http import StreamingHttpResponse
 
 User = get_user_model()
 from django.db import models
@@ -691,3 +693,97 @@ class UsageAnalyticsView(APIView):
                 ],
             }
         )
+
+
+class Echo:
+    """An object that implements just the write method of the file-like interface."""
+
+    def write(self, value):
+        return value
+
+
+class AnalyticsExportCSVView(APIView):
+    """
+    Server-side streamed CSV export for analytics dashboard metrics.
+    Supports filtering by date range (days) and dataset type.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            days = int(request.query_params.get("days", 30))
+        except (ValueError, TypeError):
+            days = 30
+
+        dataset = request.query_params.get("dataset", "all").lower()
+
+        now = timezone.now()
+        start_date = now - timedelta(days=days)
+
+        pseudo_buffer = Echo()
+        writer = csv.writer(pseudo_buffer)
+
+        def csv_stream():
+            if dataset in ("all", "registrations"):
+                yield writer.writerow(["--- REGISTRATIONS ---"])
+                yield writer.writerow(["Date", "Count"])
+                registrations = (
+                    User.objects.filter(date_joined__gte=start_date)
+                    .annotate(date=TruncDate("date_joined"))
+                    .values("date")
+                    .annotate(count=Count("id"))
+                    .order_by("date")
+                )
+                for item in registrations:
+                    yield writer.writerow([str(item["date"]), item["count"]])
+                yield writer.writerow([])
+
+            if dataset in ("all", "progress_stats"):
+                yield writer.writerow(["--- COURSE ENGAGEMENT / PROGRESS STATS ---"])
+                yield writer.writerow(["Date", "Enrolled", "Completed"])
+                progress_stats = (
+                    LessonProgress.objects.filter(updated_at__gte=start_date)
+                    .annotate(date=TruncDate("updated_at"))
+                    .values("date")
+                    .annotate(
+                        completed=Count("id", filter=models.Q(completed=True)),
+                        enrolled=Count("id"),
+                    )
+                    .order_by("date")
+                )
+                for item in progress_stats:
+                    yield writer.writerow(
+                        [str(item["date"]), item["enrolled"], item["completed"]]
+                    )
+                yield writer.writerow([])
+
+            if dataset in ("all", "quiz_stats"):
+                yield writer.writerow(["--- QUIZ ACCURACY STATS ---"])
+                yield writer.writerow(["Outcome", "Count"])
+                quiz_stats = (
+                    QuizAttempt.objects.filter(created_at__gte=start_date)
+                    .values("is_correct")
+                    .annotate(count=Count("id"))
+                )
+                for item in quiz_stats:
+                    outcome = "Correct" if item["is_correct"] else "Incorrect"
+                    yield writer.writerow([outcome, item["count"]])
+                yield writer.writerow([])
+
+            if dataset in ("all", "challenge_stats"):
+                yield writer.writerow(["--- CHALLENGE SUBMISSIONS STATS ---"])
+                yield writer.writerow(["Status", "Count"])
+                challenge_stats = (
+                    CodeSubmission.objects.filter(created_at__gte=start_date)
+                    .values("status")
+                    .annotate(count=Count("id"))
+                )
+                for item in challenge_stats:
+                    yield writer.writerow([item["status"], item["count"]])
+
+        filename = f"analytics_export_{dataset}_{days}d.csv"
+        response = StreamingHttpResponse(csv_stream(), content_type="text/csv")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
