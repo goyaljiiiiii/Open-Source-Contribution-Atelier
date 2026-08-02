@@ -1,0 +1,160 @@
+name: Issue Assignment & ECSoC Labeler
+
+on:
+  issues:
+    types: [opened]
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  auto-label-ecsoc:
+    if: github.event_name == 'issues' && github.event.action == 'opened'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check ECSoC Checkbox & Label Issue
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issue = context.payload.issue;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const body = issue.body || '';
+
+            // Check if ECSoC 2026 checkbox is checked
+            const isEcsocChecked = /-\s*\[x\]\s*ecsoc\s*2026/i.test(body) || /-\s*\[x\]\s*ecsoc/i.test(body);
+
+            if (isEcsocChecked) {
+              const labelName = 'ECSoC26';
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: labelName });
+              } catch (e) {
+                await github.rest.issues.createLabel({
+                  owner,
+                  repo,
+                  name: labelName,
+                  color: 'd4c5f9',
+                  description: 'ECSoC 2026 Program Issue'
+                });
+              }
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number: issue.number,
+                labels: [labelName]
+              });
+              console.log(`Added label ${labelName} to issue #${issue.number}`);
+            }
+
+  handle-issue-assignment:
+    if: github.event_name == 'issue_comment' && github.event.action == 'created'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Process Claim / Unclaim Commands
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const comment = context.payload.comment;
+            const issue = context.payload.issue;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            // Ignore PR comments
+            if (issue.pull_request) return;
+
+            // Ignore bot comments
+            if (comment.user.type === 'Bot' || comment.user.login.endsWith('[bot]')) return;
+
+            const commenter = comment.user.login;
+            const commentText = (comment.body || '').toLowerCase();
+            const existingAssignees = (issue.assignees || []).map(a => a.login);
+
+            // Handle /unclaim or !unclaim command
+            if (commentText.includes('/unclaim') || commentText.includes('!unclaim')) {
+              if (existingAssignees.includes(commenter)) {
+                await github.rest.issues.removeAssignees({
+                  owner,
+                  repo,
+                  issue_number: issue.number,
+                  assignees: [commenter]
+                });
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: issue.number,
+                  body: `🛠️ @${commenter} has **unclaimed** this issue. It is now open for other contributors.`
+                });
+              }
+              return;
+            }
+
+            // Check if comment is claiming the issue
+            const isClaimCommand = /\b(\/claim|!claim|\/assign|!assign|claim)\b/i.test(commentText) ||
+                                 /\becsoc26?\b/i.test(commentText);
+
+            if (!isClaimCommand) return;
+
+            // Check if issue is already assigned to a non-author user
+            const nonAuthorAssignees = existingAssignees.filter(a => a !== issue.user.login);
+            if (nonAuthorAssignees.length > 0) {
+              if (!existingAssignees.includes(commenter)) {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: issue.number,
+                  body: `⚠️ @${commenter}, this issue is already assigned to @${nonAuthorAssignees.join(', @')}.`
+                });
+              }
+              return;
+            }
+
+            // Check if the issue has the ECSoC26 label
+            const issueLabels = (issue.labels || []).map(l => l.name.toLowerCase());
+            const isEcsocIssue = issueLabels.some(l => l.includes('ecsoc26') || l.includes('ecsoc-26') || l.includes('ecsoc2026') || l === 'ecsoc');
+
+            if (isEcsocIssue) {
+              const hasEcsocKeyword = /\becsoc26?\b/i.test(commentText) || /\becsoc\s*2026\b/i.test(commentText);
+
+              if (!hasEcsocKeyword) {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: issue.number,
+                  body: `⚠️ @${commenter}, this issue is reserved for **ECSoC 2026** contributors! To claim this issue, please include the keyword \`ecsoc26\` in your comment (e.g., \`/claim ecsoc26\`).`
+                });
+                return;
+              }
+            }
+
+            // Assign the user
+            try {
+              await github.rest.issues.addAssignees({
+                owner,
+                repo,
+                issue_number: issue.number,
+                assignees: [commenter]
+              });
+
+              const ecsocNotice = isEcsocIssue ? ' under **ECSoC 2026**' : '';
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issue.number,
+                body: [
+                  `### 🚀 Assigned to @${commenter}${ecsocNotice}!`,
+                  ``,
+                  `Thank you for taking on this issue!`,
+                  `1. Please link this issue in your Pull Request description using \`Fixes #${issue.number}\`.`,
+                  `2. Run local tests before requesting review.`,
+                  ``,
+                  `Happy coding! 🎉`
+                ].join('\n')
+              });
+            } catch (err) {
+              console.error(`Failed to assign issue #${issue.number} to ${commenter}:`, err);
+            }

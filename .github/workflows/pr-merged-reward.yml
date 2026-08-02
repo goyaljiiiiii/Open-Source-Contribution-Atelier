@@ -1,4 +1,4 @@
-name: Merged PR Certificate Generator
+name: Merged PR Reward & Contributor Certificate
 
 on:
   pull_request_target:
@@ -10,14 +10,11 @@ permissions:
   contents: read
 
 jobs:
-  generate-certificate:
+  celebrate-merged-pr:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Post Merged PR Contributor Certificate
+      - name: Post Contributor Certificate & Reward Badge
         uses: actions/github-script@v8
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -27,8 +24,7 @@ jobs:
             const repo = context.repo.repo;
             const author = pr.user.login;
 
-            // Generate custom celebratory certificate comment
-            const tweetText = encodeURIComponent(`🎉 Excited to share that my Pull Request #${pr.number} has been merged into Open-Source Contribution Atelier under #ECSoC26! 🚀\n\nCheck out the project: https://github.com/${owner}/${repo}`);
+            const tweetText = encodeURIComponent(`🎉 Excited to share that my Pull Request #${pr.number} ("${pr.title}") has been merged into Open-Source Contribution Atelier under #ECSoC26! 🚀\n\nCheck out the project: https://github.com/${owner}/${repo}`);
             const linkedinText = encodeURIComponent(`https://github.com/${owner}/${repo}/pull/${pr.number}`);
 
             const certBody = [
@@ -65,3 +61,4 @@ jobs:
               issue_number: pr.number,
               body: certBody
             });
+            console.log(`Posted merged PR certificate for @${author} on PR #${pr.number}`);

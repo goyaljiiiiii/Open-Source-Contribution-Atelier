@@ -71,7 +71,7 @@ export const WebhookSettingsPage: React.FC = () => {
           target_url: "https://discord.com/api/webhooks/123456789/sample-token",
           is_active: true,
           events: ["pr.merged", "challenge.completed", "badge.earned"],
-          secret: "whsec_9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d",
+          secret: "whsec_" + Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join(""),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
