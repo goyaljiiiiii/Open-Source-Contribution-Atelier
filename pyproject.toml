@@ -1,0 +1,10 @@
+[tool.coverage.run]
+source = ["backend/apps"]
+omit = ["*/migrations/*", "*/tests/*", "*/admin.py"]
+
+[tool.coverage.report]
+fail_under = 70
+show_missing = true
+[project]
+name = "open-source-contribution-atelier"
+requires-python = ">=3.9,<3.13"

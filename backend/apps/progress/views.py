@@ -1,46 +1,240 @@
-from datetime import datetime, timezone as dt_timezone
+import logging
+import os
+import uuid  # NEW: Added for cryptographic nonce generation
+from datetime import datetime
+from datetime import timezone as dt_timezone
 
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+from django.core.cache import cache
 from django.db import transaction
-from django.utils import timezone
 from django.db.models import Count, Min, Sum
-from apps.progress.constants import XP_PER_LEVEL
-from apps.progress.models import XPEvent
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import permissions, status
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
-from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
-from django.http import HttpResponse
-from django.core.cache import cache
+
 from apps.content.models import Lesson
 from apps.content.serializers import LessonSerializer
+from apps.core.throttling import SlidingWindowAnonThrottle, SlidingWindowScopedThrottle
+from apps.deduplication.idempotency import idempotent
+from apps.progress.constants import XP_PER_LEVEL
+from apps.progress.models import XPEvent
 
+from .models import UserNote  # ✅ ADD: UserNote model
 from .models import (
     Badge,
     Certificate,
     CodeSubmission,
+    DailyActivity,
     ExerciseAttempt,
     HelpRequest,
     LessonBookmark,
     LessonProgress,
     QuizAttempt,
     UserBadge,
+    WeeklyGoal,
 )
 from .serializers import (
     BadgeSerializer,
     BulkSyncSerializer,
     CertificateVerificationSerializer,
+    DailyProgressSerializer,
     HelpRequestSerializer,
     LessonProgressCreateSerializer,
     LessonProgressSerializer,
     QuizAttemptSerializer,
+    WeeklyGoalSerializer,
 )
 from .throttles import HelpRequestRateThrottle
+
+logger = logging.getLogger(__name__)
+
+
+# ============================================================
+# ✅ ADD: Notes Export View
+# ============================================================
+
+
+class ExportNotesView(APIView):
+    """
+    GET /api/progress/notes/export/
+
+    Export all user notes as a single structured Markdown file.
+    Supports optional format parameter: ?format=md (default) or ?format=json
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        format_type = request.query_params.get("format", "md").lower()
+
+        # Fetch all notes for the user
+        notes = (
+            UserNote.objects.filter(user=user)
+            .select_related("lesson", "lesson__module")
+            .order_by("lesson__module__order", "lesson__order")
+        )
+        
+        if not notes.exists():
+            return Response(
+                {"error": "No notes found to export"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        if format_type == "json":
+            return self._export_json(notes, user)
+        else:
+            return self._export_markdown(notes, user)
+
+    def _export_markdown(self, notes, user):
+        """
+        Export notes as a structured Markdown file.
+        """
+        # Group notes by module
+        modules = {}
+        for note in notes:
+            module_name = (
+                note.lesson.module.title if note.lesson.module else "Uncategorized"
+            )
+            if module_name not in modules:
+                modules[module_name] = {"module": note.lesson.module, "lessons": {}}
+
+            lesson_title = note.lesson.title
+            if lesson_title not in modules[module_name]["lessons"]:
+                modules[module_name]["lessons"][lesson_title] = []
+
+            modules[module_name]["lessons"][lesson_title].append(note)
+
+        # Build Markdown content
+        markdown_lines = []
+
+        # Header
+        markdown_lines.append(f"# 📝 Notes Export - {user.username}")
+        markdown_lines.append(
+            f"**Exported on:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        )
+        markdown_lines.append(f"**Total Notes:** {notes.count()}")
+        markdown_lines.append("")
+        markdown_lines.append("---")
+        markdown_lines.append("")
+
+        # Table of Contents
+        markdown_lines.append("## 📑 Table of Contents")
+        for module_name in modules.keys():
+            markdown_lines.append(
+                f"- [{module_name}](#{module_name.lower().replace(' ', '-')})"
+            )
+        markdown_lines.append("")
+        markdown_lines.append("---")
+        markdown_lines.append("")
+
+        # Notes by module
+        for module_name, module_data in modules.items():
+            markdown_lines.append(f"## {module_name}")
+            markdown_lines.append("")
+
+            for lesson_title, lesson_notes in module_data["lessons"].items():
+                markdown_lines.append(f"### 📖 {lesson_title}")
+                markdown_lines.append("")
+
+                for note in lesson_notes:
+                    # Note metadata
+                    markdown_lines.append(f"**Note ID:** {note.id}")
+                    markdown_lines.append(
+                        f"**Created:** {note.created_at.strftime('%Y-%m-%d %H:%M')}"
+                    )
+                    if note.updated_at and note.updated_at != note.created_at:
+                        markdown_lines.append(
+                            f"**Updated:** {note.updated_at.strftime('%Y-%m-%d %H:%M')}"
+                        )
+
+                    # Note content with tags
+                    if hasattr(note, "tags") and note.tags:
+                        markdown_lines.append(f"**Tags:** {', '.join(note.tags)}")
+
+                    markdown_lines.append("")
+
+                    # Note content
+                    markdown_lines.append("```")
+                    markdown_lines.append(note.content)
+                    markdown_lines.append("```")
+                    markdown_lines.append("")
+
+                    # Separator between notes in same lesson
+                    if len(lesson_notes) > 1:
+                        markdown_lines.append("---")
+                        markdown_lines.append("")
+
+        # Footer
+        markdown_lines.append("---")
+        markdown_lines.append(
+            f"*Exported from Open Source Contribution Atelier on {datetime.now().strftime('%Y-%m-%d')}*"
+        )
+        markdown_lines.append("")
+        markdown_lines.append("_Happy Learning! 🚀_")
+
+        # Create response
+        markdown_content = "\n".join(markdown_lines)
+        filename = f"notes_export_{user.username}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+
+        response = HttpResponse(
+            markdown_content, content_type="text/markdown; charset=utf-8"
+        )
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+        return response
+
+    def _export_json(self, notes, user):
+        """
+        Export notes as JSON.
+        """
+        data = {
+            "username": user.username,
+            "email": user.email,
+            "exported_at": datetime.now().isoformat(),
+            "total_notes": notes.count(),
+            "notes": [],
+        }
+
+        for note in notes:
+            data["notes"].append(
+                {
+                    "id": note.id,
+                    "lesson_title": note.lesson.title,
+                    "module_title": (
+                        note.lesson.module.title if note.lesson.module else None
+                    ),
+                    "content": note.content,
+                    "tags": note.tags if hasattr(note, "tags") else [],
+                    "created_at": note.created_at.isoformat(),
+                    "updated_at": (
+                        note.updated_at.isoformat() if note.updated_at else None
+                    ),
+                }
+            )
+
+        filename = f"notes_export_{user.username}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        json_content = json.dumps(data, indent=2, ensure_ascii=False)
+
+        response = HttpResponse(
+            json_content, content_type="application/json; charset=utf-8"
+        )
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+        return response
+
+
+# ============================================================
+# Rest of the views (existing code continues below)
+# ============================================================
 
 
 @extend_schema(responses=BadgeSerializer(many=True))
@@ -59,6 +253,9 @@ class BadgeListView(ListAPIView):
 class MyProgressView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    def patch(self, request):
+        return self.post(request)
+
     def get(self, request):
         progress = LessonProgress.objects.filter(
             user=request.user, organization=request.user.organization
@@ -66,15 +263,17 @@ class MyProgressView(APIView):
         serializer = LessonProgressSerializer(progress, many=True)
         return Response(serializer.data)
 
+    @idempotent
     def post(self, request):
-        from apps.progress.models import LessonProgressSync, XPMultiplierEvent
-        from django_q.tasks import async_task
+        from apps.content.models import Lesson
+        from apps.progress.services.progress_buffer import ProgressBufferService
+        from apps.progress.services.progress_tracking_service import (
+            ProgressTrackingService,
+        )
 
         lesson_slug = request.data.get("lesson_slug")
         idempotency_key = request.data.get("idempotency_key")
         client_timestamp_ms = request.data.get("client_timestamp")
-
-        multiplier = XPMultiplierEvent.get_active_multiplier()
         base_score = request.data.get("score", 100)
         completed = request.data.get("completed", True)
 
@@ -89,131 +288,42 @@ class MyProgressView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        with transaction.atomic():
-            # Lock the progress row for the full read-modify-write cycle.
-            # Concurrent requests for the same user/lesson are serialized here.
-            progress, created = (
-                LessonProgress.objects.select_for_update().get_or_create(
-                    user=request.user,
-                    lesson=lesson,
-                    defaults={
-                        "organization": request.user.organization,
-                        "completed": completed,
-                        "base_score": base_score,
-                        "multiplier_applied": multiplier,
-                        "score": int(base_score * multiplier),
-                    },
-                )
+        payload = {
+            "user_id": request.user.id,
+            "lesson_slug": lesson_slug,
+            "score": base_score,
+            "completed": completed,
+            "idempotency_key": idempotency_key,
+            "client_timestamp": client_timestamp_ms,
+        }
+
+        buffered = ProgressBufferService.buffer_update(
+            request.user.id, lesson_slug, payload
+        )
+
+        if buffered:
+            # Return accepted response with optimistic in-memory model
+            progress = LessonProgress(
+                user=request.user,
+                lesson=lesson,
+                completed=completed,
+                base_score=base_score,
+                score=base_score,
             )
+            serializer = LessonProgressSerializer(progress)
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
-            # Check idempotency only after the progress row is locked. This
-            # prevents two concurrent requests with the same key from both
-            # applying score and XP side effects.
-            if idempotency_key:
-                sync_row = (
-                    LessonProgressSync.objects.filter(
-                        user=request.user,
-                        lesson=lesson,
-                        idempotency_key=idempotency_key,
-                    )
-                    .first()
-                )
-
-                if sync_row is not None:
-                    serializer = LessonProgressSerializer(progress)
-
-                    transaction.on_commit(
-                        lambda: async_task(
-                            "apps.progress.tasks.evaluate_user_badges_task",
-                            request.user.id,
-                        )
-                    )
-
-                    return Response(
-                        serializer.data,
-                        status=status.HTTP_200_OK,
-                    )
-
-            if created:
-                # Record XP only once for a newly created progress row.
-                if progress.score != 0:
-                    XPEvent.objects.create(
-                        user=request.user,
-                        source_type="lesson",
-                        source_id=lesson.id,
-                        base_points=base_score,
-                        multiplier=multiplier,
-                        xp_delta=progress.score,
-                    )
-            else:
-                skip_update = False
-
-                if client_timestamp_ms:
-                    client_dt = datetime.fromtimestamp(
-                        client_timestamp_ms / 1000.0,
-                        tz=dt_timezone.utc,
-                    )
-
-                    if progress.updated_at > client_dt:
-                        skip_update = True
-
-                if not skip_update and (
-                    progress.base_score != base_score
-                    or progress.completed != completed
-                ):
-                    old_score = progress.score
-
-                    progress.completed = completed
-                    progress.base_score = base_score
-                    progress.multiplier_applied = multiplier
-                    progress.score = int(base_score * multiplier)
-                    progress.organization = request.user.organization
-                    progress.save(
-                        update_fields=[
-                            "completed",
-                            "base_score",
-                            "multiplier_applied",
-                            "score",
-                            "organization",
-                            "updated_at",
-                        ]
-                    )
-
-                    # XP is the actual score delta, not the full replacement score.
-                    xp_delta = progress.score - old_score
-
-                    if xp_delta != 0:
-                        XPEvent.objects.create(
-                            user=request.user,
-                            source_type="lesson",
-                            source_id=lesson.id,
-                            base_points=base_score,
-                            multiplier=multiplier,
-                            xp_delta=xp_delta,
-                        )
-
-            # Store the idempotency ledger in the same transaction as the
-            # progress and XP updates so the state is committed atomically.
-            if idempotency_key:
-                LessonProgressSync.objects.create(
-                    user=request.user,
-                    lesson=lesson,
-                    idempotency_key=idempotency_key,
-                    completed=progress.completed,
-                    base_score=progress.base_score,
-                    multiplier_applied=progress.multiplier_applied,
-                    score=progress.score,
-                    client_timestamp_ms=client_timestamp_ms,
-                    server_updated_at=timezone.now(),
-                )
-
-            # Queue badge evaluation only after the database commit succeeds.
-            transaction.on_commit(
-                lambda: async_task(
-                    "apps.progress.tasks.evaluate_user_badges_task",
-                    request.user.id,
-                )
+        # Fallback to synchronous update if Redis is not available
+        progress, created, idempotency_hit = (
+            ProgressTrackingService.record_lesson_progress(
+                user=request.user,
+                lesson_slug=lesson_slug,
+                base_score=base_score,
+                completed=completed,
+                idempotency_key=idempotency_key,
+                client_timestamp_ms=client_timestamp_ms,
             )
+        )
 
         serializer = LessonProgressSerializer(progress)
 
@@ -226,108 +336,21 @@ class MyProgressView(APIView):
 class BulkSyncProgressView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @idempotent
     def post(self, request):
         serializer = BulkSyncSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        synced = []
+        from apps.progress.services.progress_tracking_service import (
+            ProgressTrackingService,
+        )
 
-        from apps.progress.models import XPMultiplierEvent
-        from django_q.tasks import async_task
-
-        multiplier = XPMultiplierEvent.get_active_multiplier()
-
-        with transaction.atomic():
-            for item in serializer.validated_data["lessons"]:
-                lesson_slug = item["lesson_slug"]
-                base_score = item.get("score", 100)
-                completed = item.get("completed", True)
-                client_timestamp_ms = item.get("client_timestamp")
-
-                try:
-                    lesson = Lesson.objects.get(slug=lesson_slug)
-                except Lesson.DoesNotExist:
-                    lesson = Lesson.objects.create(
-                        slug=lesson_slug,
-                        title=lesson_slug.replace("-", " ").title(),
-                        summary="Dynamic learning module",
-                        content="Dynamic content loaded from local file storage.",
-                        difficulty="beginner",
-                    )
-
-                # Serialize concurrent writes to the same user/lesson progress
-                # row before reading or mutating its state.
-                progress, created = (
-                    LessonProgress.objects.select_for_update().get_or_create(
-                        user=request.user,
-                        lesson=lesson,
-                        defaults={
-                            "completed": completed,
-                            "base_score": base_score,
-                            "multiplier_applied": multiplier,
-                            "score": int(base_score * multiplier),
-                            "organization": request.user.organization,
-                        },
-                    )
-                )
-
-                if not created:
-                    skip_update = False
-
-                    if client_timestamp_ms:
-                        client_dt = datetime.fromtimestamp(
-                            client_timestamp_ms / 1000.0,
-                            tz=dt_timezone.utc,
-                        )
-
-                        if progress.updated_at > client_dt:
-                            skip_update = True
-
-                    if not skip_update and (
-                        progress.base_score != base_score
-                        or progress.completed != completed
-                    ):
-                        old_score = progress.score
-
-                        progress.completed = completed
-                        progress.base_score = base_score
-                        progress.multiplier_applied = multiplier
-                        progress.score = int(base_score * multiplier)
-                        progress.organization = request.user.organization
-                        progress.save(
-                            update_fields=[
-                                "completed",
-                                "base_score",
-                                "multiplier_applied",
-                                "score",
-                                "organization",
-                                "updated_at",
-                            ]
-                        )
-
-                        xp_delta = progress.score - old_score
-
-                        if xp_delta != 0:
-                            XPEvent.objects.create(
-                                user=request.user,
-                                source_type="lesson",
-                                source_id=lesson.id,
-                                base_points=base_score,
-                                multiplier=multiplier,
-                                xp_delta=xp_delta,
-                            )
-
-                synced.append(progress.id)
-
-            transaction.on_commit(
-                lambda: async_task(
-                    "apps.progress.tasks.evaluate_user_badges_task",
-                    request.user.id,
-                )
-            )
+        synced_ids = ProgressTrackingService.bulk_sync_progress(
+            user=request.user, lessons_data=serializer.validated_data["lessons"]
+        )
 
         return Response(
-            {"synced_count": len(synced), "progress_ids": synced},
+            {"synced_count": len(synced_ids), "progress_ids": synced_ids},
             status=status.HTTP_200_OK,
         )
 
@@ -366,9 +389,9 @@ class BulkProgressUpdateView(APIView):
         validated_data = serializer.validated_data["lessons"]
 
         from apps.progress.services.progress_batch_service import (
-            process_bulk_progress_updates,
             DuplicateEntryException,
             InvalidLessonException,
+            process_bulk_progress_updates,
         )
 
         try:
@@ -547,30 +570,60 @@ class CommunityFeedView(APIView):
     )
 )
 class CommunityStatsView(APIView):
+    permission_classes = [permissions.AllowAny]
+
     def get(self, request):
-        from django.contrib.auth.models import User
+        from django.contrib.auth import get_user_model
 
-        user_count = User.objects.count()
-        completed_lessons = LessonProgress.objects.filter(
-            organization=request.user.organization,
-            completed=True,
-        ).count()
+        User = get_user_model()
 
-        open_help_requests = HelpRequest.objects.filter(
-            organization=request.user.organization,
-            status=HelpRequest.Status.OPEN,
-        ).count()
-        active_contributors = 100 + user_count
-        merged_prs = 300 + completed_lessons
+        user = getattr(request, "user", None)
+        org = (
+            getattr(user, "organization", None)
+            if user and user.is_authenticated
+            else None
+        )
 
-        return Response(
-            {
+        cache_key = f"community:stats:{org.id}" if org else "community:stats"
+
+        def compute_stats():
+            user_count = User.objects.count()
+
+            if org:
+                completed_lessons = LessonProgress.objects.filter(
+                    organization=org,
+                    completed=True,
+                ).count()
+
+                open_help_requests = HelpRequest.objects.filter(
+                    organization=org,
+                    status=HelpRequest.Status.OPEN,
+                ).count()
+            else:
+                completed_lessons = LessonProgress.objects.filter(
+                    completed=True,
+                ).count()
+
+                open_help_requests = HelpRequest.objects.filter(
+                    status=HelpRequest.Status.OPEN,
+                ).count()
+
+            active_contributors = 100 + user_count
+            merged_prs = 300 + completed_lessons
+            return {
                 "active_contributors": active_contributors,
                 "merged_prs": merged_prs,
                 "response_sla": "3.5h",
                 "open_requests": open_help_requests,
             }
-        )
+
+        from apps.core.cache.coalescing import CoalescingCache
+
+        org_id = org.id if org else "none"
+        cache_key = f"community_stats_org_{org_id}"
+        stats = CoalescingCache().get_or_set_coalesced(cache_key, 300, compute_stats)
+
+        return Response(stats)
 
 
 class UserAchievementsView(APIView):
@@ -679,14 +732,6 @@ class HelpRequestListCreateView(APIView):
 
 
 class IsMentor(BasePermission):
-    """
-    Grants access only to users who have a MentorProfile.
-
-    This permission is intentionally separate from `is_staff` so that
-    regular staff administrators are not automatically treated as mentors,
-    and mentors do not need elevated Django permissions.
-    """
-
     message = "You must be a designated mentor to access this resource."
 
     def has_permission(self, request, view) -> bool:
@@ -694,17 +739,6 @@ class IsMentor(BasePermission):
 
 
 class MentorHelpRequestListView(ListAPIView):
-    """
-    Read-only list of HelpRequest tickets scoped to the requesting mentor's
-    assigned lessons.
-
-    Only users with a MentorProfile may access this endpoint. The queryset
-    is automatically filtered so a mentor can never see tickets outside their
-    assigned module scope.
-
-    GET /api/progress/mentor/help-requests/
-    """
-
     serializer_class = HelpRequestSerializer
     permission_classes = [permissions.IsAuthenticated, IsMentor]
 
@@ -745,6 +779,25 @@ class ContributorTimelineView(APIView):
         )
 
 
+# NEW: View to generate the one-time Nonce for Quizzes
+class QuizNonceView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        question_id = request.query_params.get("question_id")
+        if not question_id:
+            return Response(
+                {"error": "question_id required"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        nonce = str(uuid.uuid4())
+        # Store in Redis bounded to user AND specific question. TTL = 900s (15 minutes)
+        cache_key = f"quiz_nonce_{request.user.id}_{question_id}_{nonce}"
+        cache.set(cache_key, True, timeout=900)
+
+        return Response({"nonce": nonce})
+
+
 @extend_schema_view(
     post=extend_schema(
         description="Create a quiz attempt. Expected JSON fields: question_id, question_text (optional), selected_answer, correct_answer, is_correct, time_taken_seconds.",
@@ -762,7 +815,31 @@ class ContributorTimelineView(APIView):
 class QuizAttemptView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @idempotent
     def post(self, request):
+        # NEW: Validate the cryptographic nonce
+        nonce = request.data.get("nonce")
+        question_id = request.data.get("question_id")
+
+        if not nonce or not question_id:
+            return Response(
+                {"error": "Security Error: Nonce and question_id are required."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        cache_key = f"quiz_nonce_{request.user.id}_{question_id}_{nonce}"
+
+        # Check if the nonce exists in Redis
+        if not cache.get(cache_key):
+            return Response(
+                {"error": "Invalid or expired session. Replay attack blocked."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # CRITICAL: Invalidate the nonce immediately to prevent double submission
+        cache.delete(cache_key)
+
+        # Existing processing logic
         serializer = QuizAttemptSerializer(data=request.data)
         if serializer.is_valid():
             attempt = serializer.save(user=request.user)
@@ -775,8 +852,6 @@ class QuizAttemptView(APIView):
                 },
                 status=status.HTTP_201_CREATED,
             )
-        # If there are field errors, extract the first one generically to match typical client expectations
-        # Or return all errors. DRF will return a dict like {"selected_answer": ["This field is required."]}
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request):
@@ -803,8 +878,34 @@ class QuizAttemptView(APIView):
         )
 
 
-class CertificateVerificationThrottle(AnonRateThrottle):
+class CertificateVerificationThrottle(SlidingWindowAnonThrottle):
     rate = "10/minute"
+
+
+class CertificateVerifyView(APIView):
+    """Public API to verify certificate by hash."""
+
+    permission_classes = []  # Public endpoint
+
+    def get(self, request, hash):
+        try:
+            certificate = Certificate.objects.get(
+                verification_hash=hash, is_active=True
+            )
+            return Response(
+                {
+                    "valid": True,
+                    "issued_to": certificate.user.username,
+                    "issued_at": certificate.created_at,
+                    "course": certificate.lesson.title,
+                    "certificate_id": certificate.id,
+                }
+            )
+        except Certificate.DoesNotExist:
+            return Response(
+                {"valid": False, "message": "Certificate not found or invalid"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
 
 @extend_schema(responses=CertificateVerificationSerializer)
@@ -934,6 +1035,8 @@ from .serializers import CodeSubmissionSerializer, PeerReviewSerializer
 
 class CodeSubmissionView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [SlidingWindowScopedThrottle]
+    throttle_scope = "sandbox_user"
 
     def get(self, request):
         submissions = (
@@ -964,11 +1067,6 @@ class CodeSubmissionView(APIView):
 
 
 class UserProgressPDFExportView(APIView):
-    """
-    Generates and returns a PDF report of the authenticated user's
-    progress, achievements, certificates, and coding activity.
-    """
-
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
@@ -1078,19 +1176,20 @@ class LessonBookmarkView(APIView):
             LessonBookmark, user=request.user, lesson__slug=slug
         )
         bookmark.delete()
+
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+
 class ReadingProgressView(APIView):
-    """
-    Saves and retrieves the user's reading position in a lesson using the Redis cache.
-    """
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         lesson_slug = request.query_params.get("lesson")
         if not lesson_slug:
-            return Response({"error": "Lesson slug required"}, status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response(
+                {"error": "Lesson slug required"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
         cache_key = f"reading_progress_{request.user.id}_{lesson_slug}"
         progress = cache.get(cache_key, 0)
         return Response({"progress": progress})
@@ -1098,11 +1197,747 @@ class ReadingProgressView(APIView):
     def post(self, request):
         lesson_slug = request.data.get("lesson")
         progress = request.data.get("progress")
-        
+
         if not lesson_slug or progress is None:
-            return Response({"error": "Lesson slug and progress required"}, status=status.HTTP_400_BAD_REQUEST)
-            
+            return Response(
+                {"error": "Lesson slug and progress required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         cache_key = f"reading_progress_{request.user.id}_{lesson_slug}"
-        # Store for 30 days
         cache.set(cache_key, progress, timeout=60 * 60 * 24 * 30)
+
+        # Record reading minutes for streak recovery if active
+        from apps.progress.services.streak_recovery_service import StreakRecoveryService
+
+        StreakRecoveryService.record_reading_minute(request.user)
+
         return Response({"status": "success", "progress": progress})
+
+
+class DailyLessonStatsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        progress_records = (
+            LessonProgress.objects.filter(user=request.user, completed=True)
+            .select_related("lesson")
+            .order_by("updated_at")
+        )
+
+        # Group by date locally in Python
+        stats = {}
+        for record in progress_records:
+            date_str = record.updated_at.date().isoformat()
+            if date_str not in stats:
+                stats[date_str] = {
+                    "date": record.updated_at.date(),
+                    "count": 0,
+                    "lessons": [],
+                }
+            stats[date_str]["count"] += 1
+            stats[date_str]["lessons"].append(record.lesson.title)
+
+        data = sorted(stats.values(), key=lambda x: x["date"])
+        serializer = DailyProgressSerializer(data, many=True)
+        return Response(serializer.data)
+
+
+class LeaderboardView(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get(self, request):
+        time_period = request.query_params.get("time_period", "all_time")
+        search_username = request.query_params.get("username", None)
+        try:
+            page = int(request.query_params.get("page", 1))
+            limit = int(request.query_params.get("limit", 50))
+        except ValueError:
+            page = 1
+            limit = 50
+        page = max(page, 1)
+        limit = min(max(limit, 1), 200)
+
+        from datetime import datetime, timedelta
+
+        from django.contrib.auth import get_user_model
+        from django.db.models import (
+            Count,
+            F,
+            IntegerField,
+            OuterRef,
+            Q,
+            Subquery,
+            Sum,
+            Value,
+        )
+        from django.db.models.functions import Coalesce
+
+        from apps.challenges.models import ChallengeCompletion
+        from apps.core.cache.coalescing import CoalescingCache
+        from apps.dashboard.models import Issue, PullRequest
+        from apps.progress.models import LessonProgress, Season, StreakProfile
+
+        User = get_user_model()
+
+        # Period start boundary (None means all-time).
+        now = timezone.now()
+        start_date = None
+        if time_period == "weekly":
+            start_date = (now - timedelta(days=now.weekday())).replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+        elif time_period == "monthly":
+            start_date = now.replace(
+                day=1, hour=0, minute=0, second=0, microsecond=0
+            )
+        elif time_period.startswith("seasonal"):
+            season = Season.objects.filter(is_active=True).first()
+            if season is not None and season.start_date:
+                start_date = timezone.make_aware(
+                    datetime.combine(season.start_date, datetime.min.time())
+                )
+
+        # Compute XP the same way as the contributor dashboard so leaderboard
+        # ranks always match a user's dashboard rank. XPEvent is a gamification
+        # ledger that most contribution paths never write, so using it as the
+        # source yields an empty leaderboard even with real contributions.
+        def ranked_users():
+            date_filter = {}
+            if start_date is not None:
+                date_filter["updated_at__gte"] = start_date
+
+            lesson_progress = (
+                LessonProgress.objects.filter(
+                    user=OuterRef("pk"), completed=True, **date_filter
+                )
+                .values("user")
+                .annotate(total=Sum("score"))
+                .values("total")
+            )
+            issues_xp = (
+                Issue.objects.filter(
+                    assigned_to=OuterRef("pk"),
+                    status=Issue.Status.SOLVED,
+                    **date_filter,
+                )
+                .values("assigned_to")
+                .annotate(total=Sum("points") + Sum("bonus_points"))
+                .values("total")
+            )
+            challenge_xp = (
+                ChallengeCompletion.objects.filter(user=OuterRef("pk"))
+                .values("user")
+                .annotate(total=Sum("bonus_earned"))
+                .values("total")
+            )
+            prs_merged = (
+                PullRequest.objects.filter(
+                    user=OuterRef("pk"),
+                    status=PullRequest.Status.MERGED,
+                    **date_filter,
+                )
+                .values("user")
+                .annotate(total=Count("id"))
+                .values("total")
+            )
+
+            users = (
+                User.objects.filter(is_staff=False)
+                .annotate(
+                    lesson_xp=Coalesce(
+                        Subquery(lesson_progress, output_field=IntegerField()),
+                        Value(0),
+                    ),
+                    issues_xp=Coalesce(
+                        Subquery(issues_xp, output_field=IntegerField()), Value(0)
+                    ),
+                    challenge_xp=Coalesce(
+                        Subquery(challenge_xp, output_field=IntegerField()),
+                        Value(0),
+                    ),
+                    prs_merged=Coalesce(
+                        Subquery(prs_merged, output_field=IntegerField()), Value(0)
+                    ),
+                )
+                .annotate(
+                    total_xp=F("lesson_xp") + F("issues_xp") + F("challenge_xp"),
+                )
+                .order_by("-total_xp", "username")
+            )
+            if search_username:
+                users = users.filter(username__icontains=search_username)
+            return users
+
+        def compute_leaderboard():
+            users = ranked_users()
+            total_users_count = users.count()
+            offset = (page - 1) * limit
+            page_rows = list(users[offset : offset + limit])
+
+            user_ids = [u.pk for u in page_rows]
+            streak_map = dict(
+                StreakProfile.objects.filter(user_id__in=user_ids).values_list(
+                    "user_id", "current_streak"
+                )
+            )
+
+            leaderboard = []
+            for i, user in enumerate(page_rows):
+                rank = offset + i + 1
+                leaderboard.append(
+                    {
+                        "user_id": user.pk,
+                        "username": user.username,
+                        "rank": rank,
+                        "total_xp": user.total_xp,
+                        "merged_prs": user.prs_merged,
+                        "streak_days": streak_map.get(user.pk, 0),
+                        "avatar_url": f"https://github.com/{user.username}.png",
+                        "html_url": f"https://github.com/{user.username}",
+                        "is_top_3": rank <= 3,
+                    }
+                )
+            return total_users_count, leaderboard
+
+        cache_key = (
+            f"leaderboard_hof_{time_period}_p{page}_l{limit}_u"
+            f"{search_username or 'none'}"
+        )
+        total_users, leaderboard = CoalescingCache().get_or_set_coalesced(
+            cache_key, 300, compute_leaderboard
+        )
+
+        # Personal rank from the same computation so it matches the dashboard.
+        personal_rank = None
+        if request.user.is_authenticated and not search_username:
+            me = ranked_users().filter(pk=request.user.id).first()
+            if me is not None:
+                better_count = ranked_users().filter(
+                    Q(total_xp__gt=me.total_xp)
+                    | Q(total_xp=me.total_xp, username__lt=me.username)
+                ).count()
+                personal_rank = {
+                    "rank": better_count + 1,
+                    "total_xp": me.total_xp,
+                }
+
+        total_pages = (total_users + limit - 1) // limit if total_users > 0 else 1
+
+        return Response(
+            {
+                "leaderboard": leaderboard,
+                "personal_rank": personal_rank,
+                "page": page,
+                "limit": limit,
+                "total_users": total_users,
+                "total_pages": total_pages,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class GitHubLeaderboardView(APIView):
+    """Read-only ranking of real contributions to the configured GitHub repo."""
+
+    permission_classes = [permissions.AllowAny]
+    cache_timeout = 15 * 60
+
+    def get(self, request):
+        repository = os.getenv(
+            "GITHUB_LEADERBOARD_REPOSITORY",
+            "goyaljiiiiii/Open-Source-Contribution-Atelier",
+        )
+        cache_key = f"github_leaderboard:{repository}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
+        try:
+            import requests
+
+            headers = {"Accept": "application/vnd.github+json"}
+            token = os.getenv("GITHUB_TOKEN")
+            if token:
+                headers["Authorization"] = f"Bearer {token}"
+            response = requests.get(
+                f"https://api.github.com/repos/{repository}/contributors",
+                params={"per_page": 100, "anon": "false"},
+                headers=headers,
+                timeout=10,
+            )
+            response.raise_for_status()
+            contributors = response.json()
+        except Exception as exc:
+            logger.warning("GitHub leaderboard request failed: %s", exc)
+            return Response(
+                {"detail": "GitHub contribution data is temporarily unavailable."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        leaderboard = [
+            {
+                "rank": index,
+                "username": contributor["login"],
+                "total_xp": contributor.get("contributions", 0),
+                "merged_prs": contributor.get("contributions", 0),
+                "streak_days": 0,
+                "avatar_url": contributor.get("avatar_url", ""),
+                "html_url": contributor.get("html_url", ""),
+            }
+            for index, contributor in enumerate(contributors, start=1)
+            if contributor.get("login")
+        ]
+        data = {
+            "source": "github",
+            "repository": repository,
+            "leaderboard": leaderboard,
+            "total_users": len(leaderboard),
+            "page": 1,
+            "total_pages": 1,
+        }
+        cache.set(cache_key, data, self.cache_timeout)
+        return Response(data)
+
+
+class BufferMetricsView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request):
+        from apps.progress.services.progress_buffer import ProgressBufferService
+
+        metrics = ProgressBufferService.get_queue_metrics()
+
+        # Calculate some derived metrics
+        total_queued = metrics.get("total_queued", 0)
+        total_processed = metrics.get("total_processed", 0)
+
+        success_rate = 100.0
+        if total_queued > 0:
+            success_rate = round((total_processed / total_queued) * 100, 2)
+
+        metrics["success_rate_percent"] = success_rate
+
+        return Response({"success": True, "metrics": metrics})
+
+
+class HeatmapView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        from django.contrib.auth import get_user_model
+
+        User = get_user_model()
+        import datetime
+        from collections import defaultdict
+
+        from django.shortcuts import get_object_or_404
+
+        from apps.progress.models import (
+            DailyActivity,
+            ExerciseAttempt,
+            LessonProgress,
+            QuizAttempt,
+        )
+
+        username = request.query_params.get("username")
+        if username:
+            user = get_object_or_404(User, username=username)
+        else:
+            if not request.user.is_authenticated:
+                return Response(
+                    {"detail": "Authentication credentials were not provided."},
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
+            user = request.user
+
+        try:
+            today = user.user_profile.local_today
+        except Exception:
+            today = datetime.date.today()
+
+        if start_param:
+            try:
+                start_date = datetime.datetime.strptime(start_param, "%Y-%m-%d").date()
+            except ValueError:
+                start_date = today - datetime.timedelta(days=365)
+        else:
+            start_date = today - datetime.timedelta(days=365)
+
+        if end_param:
+            try:
+                end_date = datetime.datetime.strptime(end_param, "%Y-%m-%d").date()
+            except ValueError:
+                end_date = today
+        else:
+            end_date = today
+
+        activity_type_filter = request.query_params.get("activity_type")
+
+        activity_breakdown = defaultdict(
+            lambda: {"reading": 0, "quizzes": 0, "code_submissions": 0}
+        )
+
+        # Fetch records
+        lessons = LessonProgress.objects.filter(
+            user=user,
+            completed=True,
+            updated_at__date__gte=start_date,
+            updated_at__date__lte=end_date,
+        )
+        for lp in lessons:
+            d = lp.updated_at.date().isoformat()
+            activity_breakdown[d]["reading"] += 1
+
+        quizzes = QuizAttempt.objects.filter(
+            user=user, created_at__date__gte=start_date, created_at__date__lte=end_date
+        )
+        for qa in quizzes:
+            d = qa.created_at.date().isoformat()
+            activity_breakdown[d]["quizzes"] += 1
+
+        exercises = ExerciseAttempt.objects.filter(
+            user=user, created_at__date__gte=start_date, created_at__date__lte=end_date
+        )
+        for ea in exercises:
+            d = ea.created_at.date().isoformat()
+            activity_breakdown[d]["code_submissions"] += 1
+
+        daily_dates = set(
+            DailyActivity.objects.filter(
+                user=user, date__gte=start_date, date__lte=end_date
+            ).values_list("date", flat=True)
+        )
+
+        all_dates = set(activity_breakdown.keys()) | {
+            d.isoformat() for d in daily_dates
+        }
+
+        data = []
+        for date_str in sorted(all_dates):
+            date_obj = datetime.date.fromisoformat(date_str)
+            breakdown = activity_breakdown[date_str]
+            reading_cnt = breakdown["reading"]
+            quizzes_cnt = breakdown["quizzes"]
+            code_sub_cnt = breakdown["code_submissions"]
+
+            if activity_type_filter == "reading":
+                count = reading_cnt
+            elif activity_type_filter == "quizzes":
+                count = quizzes_cnt
+            elif activity_type_filter == "code_submissions":
+                count = code_sub_cnt
+            else:
+                total_actions = reading_cnt + quizzes_cnt + code_sub_cnt
+                if total_actions > 0:
+                    count = total_actions
+                elif date_obj in daily_dates:
+                    count = 1
+                else:
+                    count = 0
+
+            if count > 0:
+                data.append(
+                    {
+                        "date": date_str,
+                        "count": count,
+                        "breakdown": {
+                            "reading": reading_cnt,
+                            "quizzes": quizzes_cnt,
+                            "code_submissions": code_sub_cnt,
+                        },
+                    }
+                )
+
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class StreakStatusView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from apps.progress.streak_engine import StreakEngine
+
+        data = StreakEngine.get_streak_data(request.user)
+
+        formatted_data = {
+            "current_streak": data["current_streak"],
+            "highest_streak": data["longest_streak"],
+            "multiplier": data["current_multiplier"],
+            "next_milestone": (
+                data["next_milestone"]["days"] if data["next_milestone"] else None
+            ),
+        }
+        return Response(formatted_data, status=status.HTTP_200_OK)
+
+
+class StreakRecoveryView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from apps.progress.services.streak_recovery_service import StreakRecoveryService
+
+        plan = StreakRecoveryService.get_or_create_recovery_plan(request.user)
+        if not plan:
+            return Response({"has_recovery_plan": False}, status=status.HTTP_200_OK)
+
+        return Response(
+            {
+                "has_recovery_plan": True,
+                "recovery_plan": {
+                    "target_date": plan.target_date.isoformat(),
+                    "previous_streak": plan.previous_streak,
+                    "quiz_target": plan.quiz_target,
+                    "quiz_progress": plan.quiz_progress,
+                    "reading_target": plan.reading_target,
+                    "reading_progress": plan.reading_progress,
+                    "code_target": plan.code_target,
+                    "code_progress": plan.code_progress,
+                    "is_completed": plan.is_completed,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class HeatmapCSVExportView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        import csv
+        import datetime
+        from collections import defaultdict
+
+        from django.http import HttpResponse
+
+        from apps.progress.models import (
+            DailyActivity,
+            ExerciseAttempt,
+            LessonProgress,
+            QuizAttempt,
+        )
+
+        user = request.user
+
+        start_param = request.query_params.get("start_date")
+        end_param = request.query_params.get("end_date")
+        activity_type_filter = request.query_params.get("activity_type")
+
+        try:
+            today = user.user_profile.local_today
+        except Exception:
+            today = datetime.date.today()
+
+        if start_param:
+            try:
+                start_date = datetime.datetime.strptime(start_param, "%Y-%m-%d").date()
+            except ValueError:
+                start_date = today - datetime.timedelta(days=365)
+        else:
+            start_date = today - datetime.timedelta(days=365)
+
+        if end_param:
+            try:
+                end_date = datetime.datetime.strptime(end_param, "%Y-%m-%d").date()
+            except ValueError:
+                end_date = today
+        else:
+            end_date = today
+
+        activity_breakdown = defaultdict(
+            lambda: {"reading": 0, "quizzes": 0, "code_submissions": 0}
+        )
+
+        lessons = LessonProgress.objects.filter(
+            user=user,
+            completed=True,
+            updated_at__date__gte=start_date,
+            updated_at__date__lte=end_date,
+        )
+        for lp in lessons:
+            d = lp.updated_at.date().isoformat()
+            activity_breakdown[d]["reading"] += 1
+
+        quizzes = QuizAttempt.objects.filter(
+            user=user, created_at__date__gte=start_date, created_at__date__lte=end_date
+        )
+        for qa in quizzes:
+            d = qa.created_at.date().isoformat()
+            activity_breakdown[d]["quizzes"] += 1
+
+        exercises = ExerciseAttempt.objects.filter(
+            user=user, created_at__date__gte=start_date, created_at__date__lte=end_date
+        )
+        for ea in exercises:
+            d = ea.created_at.date().isoformat()
+            activity_breakdown[d]["code_submissions"] += 1
+
+        daily_dates = set(
+            DailyActivity.objects.filter(
+                user=user, date__gte=start_date, date__lte=end_date
+            ).values_list("date", flat=True)
+        )
+
+        all_dates = set(activity_breakdown.keys()) | {
+            d.isoformat() for d in daily_dates
+        }
+
+        response = HttpResponse(content_type="text/csv")
+        filename = f"activity_export_{start_date}_to_{end_date}.csv"
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+        writer = csv.writer(response)
+        writer.writerow(
+            [
+                "Date",
+                "Activity Type",
+                "Reading Count",
+                "Quizzes Count",
+                "Code Submissions Count",
+                "Total Count",
+            ]
+        )
+
+        for date_str in sorted(all_dates):
+            date_obj = datetime.date.fromisoformat(date_str)
+            breakdown = activity_breakdown[date_str]
+            reading_cnt = breakdown["reading"]
+            quizzes_cnt = breakdown["quizzes"]
+            code_sub_cnt = breakdown["code_submissions"]
+
+            if activity_type_filter == "reading":
+                count = reading_cnt
+                activity_type_label = "Reading"
+            elif activity_type_filter == "quizzes":
+                count = quizzes_cnt
+                activity_type_label = "Quizzes"
+            elif activity_type_filter == "code_submissions":
+                count = code_sub_cnt
+                activity_type_label = "Code Submissions"
+            else:
+                total_actions = reading_cnt + quizzes_cnt + code_sub_cnt
+                if total_actions > 0:
+                    count = total_actions
+                elif date_obj in daily_dates:
+                    count = 1
+                else:
+                    count = 0
+                activity_type_label = "All Activities"
+
+            if count > 0:
+                writer.writerow(
+                    [
+                        date_str,
+                        activity_type_label,
+                        reading_cnt,
+                        quizzes_cnt,
+                        code_sub_cnt,
+                        count,
+                    ]
+                )
+
+        return response
+
+
+class WeeklyGoalView(APIView):
+    """
+    GET /api/progress/weekly-goal/
+    PUT /api/progress/weekly-goal/
+
+    View and update current weekly learning goal targets and progress metrics.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        goal = WeeklyGoal.get_or_create_current(user)
+
+        today = timezone.now().date()
+        week_start = goal.week_start_date
+        week_end = week_start + timezone.timedelta(days=6)
+
+        # Completed lessons this week
+        completed_lessons = LessonProgress.objects.filter(
+            user=user,
+            completed=True,
+            updated_at__date__gte=week_start,
+            updated_at__date__lte=week_end,
+        ).count()
+
+        # XP earned this week
+        earned_xp = (
+            XPEvent.objects.filter(
+                user=user,
+                created_at__date__gte=week_start,
+                created_at__date__lte=week_end,
+            ).aggregate(total=Sum("xp_delta"))["total"]
+            or 0
+        )
+
+        # Active learning days and estimated learning time (30 mins per active day)
+        activity_dates = set(
+            DailyActivity.objects.filter(
+                user=user,
+                date__gte=week_start,
+                date__lte=week_end,
+            ).values_list("date", flat=True)
+        )
+        minutes_spent = max(len(activity_dates) * 30, completed_lessons * 15)
+
+        # Calculate percentages
+        lessons_pct = (
+            min(100, int((completed_lessons / goal.target_lessons) * 100))
+            if goal.target_lessons > 0
+            else 0
+        )
+        xp_pct = (
+            min(100, int((earned_xp / goal.target_xp) * 100))
+            if goal.target_xp > 0
+            else 0
+        )
+        minutes_pct = (
+            min(100, int((minutes_spent / goal.target_minutes) * 100))
+            if goal.target_minutes > 0
+            else 0
+        )
+        overall_pct = min(100, int((lessons_pct + xp_pct + minutes_pct) / 3))
+
+        days_of_week = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        daily_breakdown = []
+        for i in range(7):
+            d = week_start + timezone.timedelta(days=i)
+            daily_breakdown.append(
+                {
+                    "day_name": days_of_week[i],
+                    "date": d.isoformat(),
+                    "is_active": d in activity_dates,
+                    "is_today": d == today,
+                    "is_future": d > today,
+                }
+            )
+
+        serializer = WeeklyGoalSerializer(goal)
+        data = serializer.data
+        data.update(
+            {
+                "week_end_date": week_end.isoformat(),
+                "completed_lessons": completed_lessons,
+                "earned_xp": earned_xp,
+                "minutes_spent": minutes_spent,
+                "lessons_progress_pct": lessons_pct,
+                "xp_progress_pct": xp_pct,
+                "minutes_progress_pct": minutes_pct,
+                "overall_progress_pct": overall_pct,
+                "daily_breakdown": daily_breakdown,
+            }
+        )
+        return Response(data)
+
+    def put(self, request):
+        user = request.user
+        goal = WeeklyGoal.get_or_create_current(user)
+        serializer = WeeklyGoalSerializer(goal, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return self.get(request)

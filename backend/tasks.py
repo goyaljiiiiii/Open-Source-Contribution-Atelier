@@ -1,7 +1,9 @@
-from celery import Task
-from celery import shared_task
 import time
+
+from celery import Task, shared_task
+
 from monitoring.celery_monitor import monitor  # type: ignore
+from config.tasks import report_db_connections
 
 
 class MonitoredTask(Task):

@@ -1,6 +1,15 @@
 from rest_framework import serializers
 
-from .models import Exercise, Lesson, LessonFeedback, Organization
+from .models import (
+    Exercise,
+    Lesson,
+    LessonDraft,
+    LessonFeedback,
+    LearningPath,
+    ModuleDraft,
+    Organization,
+    QuizDraft,
+)
 
 
 def to_camel_case(snake_str):
@@ -28,6 +37,14 @@ class ExerciseSerializer(CamelCaseModelSerializer):
     class Meta:
         model = Exercise
         fields = "__all__"
+
+
+class LessonVersionSerializer(CamelCaseModelSerializer):
+    class Meta:
+        from .models import LessonVersion
+
+        model = LessonVersion
+        fields = ["id", "content", "summary", "created_at"]
 
 
 class LessonSerializer(CamelCaseModelSerializer):
@@ -74,11 +91,18 @@ class LessonFeedbackSerializer(CamelCaseModelSerializer):
     class Meta:
         model = LessonFeedback
         fields = ["id", "lesson", "rating", "comment", "created_at", "updated_at"]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "lesson",
+            "created_at",
+            "updated_at",
+        ]
 
 
 class LessonFeedbackCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating/updating lesson feedback."""
+    """Serializer for creating lesson feedback."""
+
+    lesson = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = LessonFeedback
@@ -91,11 +115,20 @@ class LessonFeedbackCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         user = self.context["request"].user
-        lesson = attrs.get("lesson")
-        if LessonFeedback.objects.filter(user=user, lesson=lesson, is_deleted=False).exists():
+        lesson_slug = self.context.get("lesson_slug")
+
+        if not lesson_slug:
+            raise serializers.ValidationError({"lesson": "Lesson context is required."})
+
+        if LessonFeedback.objects.filter(
+            user=user,
+            lesson__slug=lesson_slug,
+            is_deleted=False,
+        ).exists():
             raise serializers.ValidationError(
                 "You have already submitted feedback for this lesson."
             )
+
         return attrs
 
 
@@ -105,6 +138,64 @@ class LessonFeedbackMetricsSerializer(serializers.Serializer):
     lesson_slug = serializers.CharField()
     average_rating = serializers.FloatField()
     total_count = serializers.IntegerField()
-    rating_distribution = serializers.DictField(
-        child=serializers.IntegerField()
+    rating_distribution = serializers.DictField(child=serializers.IntegerField())
+
+    def to_representation(self, instance):
+        return camelize(super().to_representation(instance))
+
+
+class QuizDraftSerializer(CamelCaseModelSerializer):
+    class Meta:
+        model = QuizDraft
+        fields = "__all__"
+
+
+class LessonDraftSerializer(CamelCaseModelSerializer):
+    quizzes = QuizDraftSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = LessonDraft
+        fields = "__all__"
+
+
+class ModuleDraftSerializer(CamelCaseModelSerializer):
+    lessons = LessonDraftSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ModuleDraft
+        fields = "__all__"
+
+
+class RoleSerializer(serializers.ModelSerializer):
+    class Meta:
+        from apps.rbac.models import Role
+
+        model = Role
+        fields = ["id", "name", "description"]
+
+
+class LearningPathSerializer(CamelCaseModelSerializer):
+    required_roles_details = RoleSerializer(
+        source="required_roles", many=True, read_only=True
     )
+    has_access = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LearningPath
+        fields = [
+            "id",
+            "title",
+            "slug",
+            "description",
+            "is_published",
+            "required_roles",
+            "required_roles_details",
+            "has_access",
+            "created_at",
+            "updated_at",
+        ]
+
+    def get_has_access(self, obj) -> bool:
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        return obj.has_access(user)

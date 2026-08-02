@@ -1,21 +1,51 @@
+/// <reference types="vite/client" />
 import { enqueueOfflineAction } from "./offlineQueue";
-import toast from "react-hot-toast"; // <-- YEH HUMNE ADD KIYA HAI
+import { clearAccessToken, getAccessToken, setAccessToken } from "./authToken";
+import { broadcastAuthEvent } from "./authSync";
+import { getTraceHeaders } from "./otelProvider";
+import toast from "react-hot-toast";
+import {
+  createApiError,
+  isAuthExpiredApiError,
+  isRetryableApiError,
+} from "./apiErrors";
 
+<<<<<<< HEAD
 // 1. Defend the environment variable retrieval against server-side execution crashes
+=======
+let refreshPromise: Promise<string | null> | null = null;
+
+>>>>>>> 72da557b8aeadeaf2f74018ae28e94605c3a8941
 const getSafeEnvVar = (key: string): string => {
   if (typeof process !== "undefined" && process.env && process.env[key]) {
     return process.env[key] as string;
   }
+<<<<<<< HEAD
   if (typeof import.meta !== "undefined" && import.meta.env && import.meta.env[key]) {
+=======
+  if (
+    typeof import.meta !== "undefined" &&
+    import.meta.env &&
+    import.meta.env[key]
+  ) {
+>>>>>>> 72da557b8aeadeaf2f74018ae28e94605c3a8941
     return import.meta.env[key] as string;
   }
   return "";
 };
 
+<<<<<<< HEAD
 // 2. Safely resolve the base URL
 const API_BASE =
   getSafeEnvVar("VITE_API_BASE_URL").trim() ||
   (typeof window !== "undefined" ? `${window.location.origin}/api` : "http://127.0.0.1:8000/api");
+=======
+export const API_BASE =
+  getSafeEnvVar("VITE_API_BASE_URL").trim() ||
+  (typeof window !== "undefined"
+    ? `${window.location.origin}/api`
+    : "http://127.0.0.1:8000/api");
+>>>>>>> 72da557b8aeadeaf2f74018ae28e94605c3a8941
 
   type RequestOptions = RequestInit & {
   requireAuth?: boolean;
@@ -24,6 +54,7 @@ const API_BASE =
   timeoutMs?: number;
   /** Max retries on network/5xx errors. Default: 1 */
   maxRetries?: number;
+  _isRetry?: boolean;
 };
 
 /**
@@ -61,15 +92,23 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
   } = options;
 
   const headers = new Headers(customHeaders);
-  headers.set("Content-Type", "application/json");
+
+  // Attach X-Request-ID and W3C trace context for distributed tracing
+  const requestId = crypto.randomUUID();
+  headers.set("X-Request-ID", requestId);
+  const traceHeaders = getTraceHeaders();
+  if (traceHeaders.traceparent) {
+    headers.set("traceparent", traceHeaders.traceparent);
+  }
+  if (traceHeaders.tracestate) {
+    headers.set("tracestate", traceHeaders.tracestate);
+  }
+  if (!(config.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
 
   if (requireAuth) {
-    let token: string | null = null;
-    try {
-      token = localStorage.getItem("accessToken");
-    } catch {
-      // localStorage unavailable (e.g. Safari private mode, SSR)
-    }
+    const token = getAccessToken();
     if (token) {
       headers.set("Authorization", `Bearer ${token}`);
     }
@@ -90,45 +129,91 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
         timeoutMs,
       );
 
-      // Retry on 503 (Service Unavailable) — common during HF cold starts
-      if (response.status === 503 && attempt < maxRetries) {
-        lastError = new Error("Service unavailable (503)");
+      const isRetryableStatus =
+        response.status === 429 ||
+        (response.status >= 500 && response.status < 600);
+
+      // Retry temporary HTTP failures before surfacing an error.
+      if (isRetryableStatus && attempt < maxRetries) {
+        lastError = new Error(`HTTP ${response.status}`);
         continue;
       }
 
       if (!response.ok) {
-        const errorBody = await response.json().catch(() => ({}));
-        const errorMessage =
-          errorBody.detail ||
-          errorBody.error ||
-          errorBody.message ||
-          "An error occurred";
+        const hasAuthHeader = Boolean(headers.get("Authorization"));
 
-        if (!suppressErrorToast) {
-          switch (response.status) {
-            case 400:
-              toast.error(
-                errorMessage || "Invalid request. Please check your inputs.",
-              );
-              break;
-            case 401:
-              toast.error("Session expired. Please log in again.");
-              break;
-            case 403:
-              toast.error("You do not have permission to perform this action.");
-              break;
-            case 429:
-              toast.error(errorMessage || "Too many requests. Please slow down!");
-              break;
-            case 500:
-              toast.error("Server error. Our team has been notified.");
-              break;
-            default:
-              toast.error(errorMessage);
+        if (response.status === 401 && requireAuth && !options._isRetry) {
+          try {
+            const refreshToken = localStorage.getItem("refreshToken");
+            if (refreshToken) {
+              if (!refreshPromise) {
+                refreshPromise = fetch(`${API_BASE}/auth/refresh/`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ refresh: refreshToken }),
+                }).then(async (res) => {
+                  if (res.ok) {
+                    const data = await res.json();
+                    if (data.access) {
+                      setAccessToken(data.access);
+                      if (data.refresh) {
+                        localStorage.setItem("refreshToken", data.refresh);
+                      }
+                      return data.access;
+                    }
+                  }
+                  throw new Error("Refresh failed");
+                }).finally(() => {
+                  refreshPromise = null;
+                });
+              }
+              const newAccessToken = await refreshPromise;
+              if (newAccessToken) {
+                return await fetchApi(endpoint, {
+                  ...options,
+                  _isRetry: true,
+                });
+              }
+            }
+          } catch (e) {
+            console.error("[fetchApi] Token refresh failed", e);
           }
         }
 
-        throw new Error(errorMessage);
+        const errorBody = await response.json().catch(() => ({}));
+        const apiError = createApiError({
+          status: response.status,
+          endpoint,
+          requestId,
+          body: errorBody,
+          retryable: isRetryableStatus,
+          authExpired: response.status === 401 && requireAuth,
+        });
+
+        console.error(`[API Error] ReqID=${requestId}`, errorBody);
+
+        if (response.status === 401 && requireAuth && !options._isRetry) {
+          clearAccessToken();
+          try {
+            localStorage.removeItem("refreshToken");
+          } catch {
+            /* storage unavailable */
+          }
+          broadcastAuthEvent("LOGOUT");
+        }
+
+        if (!suppressErrorToast && !apiError.authExpired && hasAuthHeader) {
+          if (response.status === 403) {
+            toast.error("You do not have permission to perform this action.");
+          } else if (response.status === 404) {
+            toast.error("We couldn't find the requested resource.");
+          } else if (response.status >= 500) {
+            toast.error("The server is having trouble right now. Please try again.");
+          }
+        }
+
+        lastError = apiError;
+        throw apiError;
       }
 
       return await response.json().catch(() => ({}));
@@ -138,7 +223,8 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
       // If it's a timeout / network error and we have retries left, try again
       const isRetryable =
         error instanceof DOMException || // AbortError from timeout
-        error instanceof TypeError; // Network error
+        error instanceof TypeError || // Network error
+        isRetryableApiError(error);
       if (isRetryable && attempt < maxRetries) {
         continue;
       }
@@ -229,6 +315,16 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
           }
         }
       }
+      if (isAuthExpiredApiError(error)) {
+        clearAccessToken();
+        try {
+          localStorage.removeItem("refreshToken");
+        } catch {
+          /* storage unavailable */
+        }
+        broadcastAuthEvent("LOGOUT");
+      }
+
       throw error;
     }
   }
@@ -260,7 +356,6 @@ export async function saveSandboxSnapshot(
     body: JSON.stringify({ code, label, is_auto }),
   });
 }
-
 
 export interface ProjectFile {
   id: string;
@@ -535,13 +630,16 @@ export async function executeTerminalCommand(
 }
 
 export async function exportWorkspaceZip(projectId: string): Promise<void> {
-  const token = localStorage.getItem("accessToken");
-  const response = await fetch(`${API_BASE}/sandbox/projects/${projectId}/export_zip/`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
+  const token = getAccessToken();
+  const response = await fetch(
+    `${API_BASE}/sandbox/projects/${projectId}/export_zip/`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     },
-  });
+  );
 
   if (!response.ok) {
     throw new Error("Failed to export workspace");
@@ -562,4 +660,136 @@ export async function exportWorkspaceZip(projectId: string): Promise<void> {
   a.click();
   window.URL.revokeObjectURL(url);
   document.body.removeChild(a);
+}
+
+export function getMediaUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  return url;
+}
+
+// ---------------------- BOUNTIES API ----------------------
+
+export interface Bounty {
+  id: number;
+  title: string;
+  description: string;
+  xp_reward: number;
+  status: "Open" | "Claimed" | "Completed";
+  claimed_by: number | null;
+  claimed_by_username?: string;
+  created_at: string;
+}
+
+export async function fetchBounties(): Promise<Bounty[]> {
+  return fetchApi("/issues/bounties/", { method: "GET" });
+}
+
+export async function claimBounty(id: number): Promise<{ status: string }> {
+  return fetchApi(`/issues/bounties/${id}/claim/`, { method: "POST" });
+}
+
+export async function submitBounty(
+  id: number,
+  codePatch: string,
+): Promise<{ status: string; xp_earned: number }> {
+  return fetchApi(`/issues/bounties/${id}/submit/`, {
+    method: "POST",
+    body: JSON.stringify({ code_patch: codePatch }),
+  });
+}
+
+export async function exportHeatmapCSV(activityType?: string): Promise<void> {
+  const token = getAccessToken();
+  let url = `${API_BASE}/progress/heatmap/export/`;
+  if (activityType && activityType !== "all") {
+    url += `?activity_type=${activityType}`;
+  }
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to export heatmap CSV");
+  }
+
+  const contentDisposition = response.headers.get("Content-Disposition") || "";
+  const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+  const filename = filenameMatch ? filenameMatch[1] : "activity_export.csv";
+
+  const blob = await response.blob();
+  const downloadUrl = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = downloadUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(downloadUrl);
+  document.body.removeChild(a);
+}
+
+// ---------------------- COLLAB SESSION API ----------------------
+
+export interface CollabSession {
+  id: string;
+  project: string | null;
+  allowed_users: number[];
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface CodeReviewComment {
+  id: string;
+  thread: string;
+  user: {
+    id: number;
+    username: string;
+  };
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CodeReviewThread {
+  id: string;
+  session: string;
+  line_number: number;
+  is_resolved: boolean;
+  comments: CodeReviewComment[];
+  created_at: string;
+  updated_at: string;
+}
+
+export async function createCollabSession(
+  projectId: string,
+): Promise<CollabSession> {
+  return fetchApi("/sandbox/collab-sessions/", {
+    method: "POST",
+    body: JSON.stringify({ project: projectId }),
+  });
+}
+
+export async function joinCollabSession(
+  sessionId: string,
+): Promise<CollabSession> {
+  return fetchApi(`/sandbox/collab-sessions/${sessionId}/join/`, {
+    method: "POST",
+  });
+}
+
+export async function deleteCollabSession(sessionId: string): Promise<void> {
+  return fetchApi(`/sandbox/collab-sessions/${sessionId}/`, {
+    method: "DELETE",
+  });
+}
+
+export async function fetchReviewThreads(
+  sessionId: string,
+): Promise<CodeReviewThread[]> {
+  return fetchApi(`/sandbox/review-threads/?session=${sessionId}`, {
+    method: "GET",
+  });
 }

@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { vi } from "vitest";
+import { vi, afterEach } from "vitest";
 
 const localStorageMock = (function () {
   let store: Record<string, string> = {};
@@ -19,11 +19,16 @@ const localStorageMock = (function () {
   };
 })();
 
+// Restore real timers and clear mocks after every test to prevent leaks across files
+afterEach(() => {
+  vi.useRealTimers();
+});
+
 vi.stubGlobal("localStorage", localStorageMock);
 
-Object.defineProperty(window, 'matchMedia', {
+Object.defineProperty(window, "matchMedia", {
   writable: true,
-  value: vi.fn().mockImplementation(query => ({
+  value: vi.fn().mockImplementation((query) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -44,4 +49,3 @@ class ResizeObserver {
 window.ResizeObserver = ResizeObserver;
 
 window.HTMLElement.prototype.scrollIntoView = vi.fn();
-

@@ -2,8 +2,8 @@
 Apollo Federation-style directives and utilities.
 """
 
-from typing import Dict, Any, List, Optional
 import json
+from typing import Any, Dict, List, Optional
 
 # ============================================================
 # Federation Directives

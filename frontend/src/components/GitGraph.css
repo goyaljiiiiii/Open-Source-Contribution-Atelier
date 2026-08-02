@@ -1,0 +1,27 @@
+.git-graph-container {
+  background: #1a1a2e;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 12px 0;
+  position: relative;
+}
+
+.git-graph-canvas {
+  width: 100%;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.git-graph-legend {
+  display: flex;
+  gap: 20px;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+.git-graph-legend span {
+  font-size: 12px;
+  color: #9b8f80;
+}

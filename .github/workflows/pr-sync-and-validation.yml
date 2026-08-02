@@ -1,0 +1,142 @@
+name: PR Sync & Validation
+
+on:
+  pull_request_target:
+    types: [opened, edited, synchronize]
+  issues:
+    types: [labeled, unlabeled]
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  pr-validation-and-copy:
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate Issue Link & Copy Labels/Assignees
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const body = pr.body || '';
+            const author = pr.user.login;
+
+            // Extract issue numbers from PR body (#123, Fixes #123, etc.)
+            const issueMatches = [...body.matchAll(/#(\d+)/g)].map(m => parseInt(m[1], 10));
+            const issueNums = [...new Set(issueMatches)];
+
+            console.log(`PR #${pr.number} body issue references:`, issueNums);
+
+            // Requirement 6: Check if PR body mentions an issue
+            if (issueNums.length === 0) {
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                owner,
+                repo,
+                issue_number: pr.number
+              });
+              const botNoticeExists = comments.some(c => 
+                (c.user.type === 'Bot' || c.user.login.endsWith('[bot]')) &&
+                c.body.includes('please reference the issue')
+              );
+
+              if (!botNoticeExists) {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: pr.number,
+                  body: `⚠️ @${author}, please reference the issue this Pull Request addresses by adding \`Fixes #issue_number\` or \`#issue_number\` in your PR description!`
+                });
+              }
+            } else {
+              // Requirement 5: Copy labels & assignees from referenced issue(s) to PR
+              const labelsToCopy = new Set();
+              const assigneesToCopy = new Set();
+
+              for (const issueNum of issueNums) {
+                try {
+                  const { data: issue } = await github.rest.issues.get({
+                    owner,
+                    repo,
+                    issue_number: issueNum
+                  });
+
+                  (issue.labels || []).forEach(l => labelsToCopy.add(l.name));
+                  (issue.assignees || []).forEach(a => assigneesToCopy.add(a.login));
+                } catch (e) {
+                  console.warn(`Could not fetch issue #${issueNum}:`, e);
+                }
+              }
+
+              // Copy labels to PR
+              if (labelsToCopy.size > 0) {
+                await github.rest.issues.addLabels({
+                  owner,
+                  repo,
+                  issue_number: pr.number,
+                  labels: Array.from(labelsToCopy)
+                });
+                console.log(`Copied labels to PR #${pr.number}:`, Array.from(labelsToCopy));
+              }
+
+              // Copy assignees to PR
+              if (assigneesToCopy.size > 0) {
+                try {
+                  await github.rest.issues.addAssignees({
+                    owner,
+                    repo,
+                    issue_number: pr.number,
+                    assignees: Array.from(assigneesToCopy)
+                  });
+                  console.log(`Copied assignees to PR #${pr.number}:`, Array.from(assigneesToCopy));
+                } catch (e) {
+                  console.warn(`Could not add assignees to PR #${pr.number}:`, e);
+                }
+              }
+            }
+
+  live-label-sync:
+    if: github.event_name == 'issues' && (github.event.action == 'labeled' || github.event.action == 'unlabeled')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Live Sync Issue Labels to Open PRs
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issue = context.payload.issue;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const currentIssueLabels = (issue.labels || []).map(l => l.name);
+
+            // Search open PRs referencing this issue number
+            const query = `repo:${owner}/${repo} is:pr is:open ${issue.number}`;
+            const searchRes = await github.rest.search.issuesAndPullRequests({ q: query });
+            const openPrs = searchRes.data.items || [];
+
+            for (const pr of openPrs) {
+              try {
+                // Ensure PR body contains actual #issue.number link
+                const prDetail = await github.rest.pulls.get({ owner, repo, pull_number: pr.number });
+                const prBody = prDetail.data.body || '';
+                const refs = [...prBody.matchAll(/#(\d+)/g)].map(m => parseInt(m[1], 10));
+
+                if (refs.includes(issue.number)) {
+                  // Set PR labels to match issue labels
+                  await github.rest.issues.setLabels({
+                    owner,
+                    repo,
+                    issue_number: pr.number,
+                    labels: currentIssueLabels
+                  });
+                  console.log(`Live synced labels for PR #${pr.number} to match Issue #${issue.number}:`, currentIssueLabels);
+                }
+              } catch (e) {
+                console.warn(`Could not live sync PR #${pr.number}:`, e);
+              }
+            }

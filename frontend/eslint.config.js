@@ -31,6 +31,26 @@ export default tseslint.config(
         "warn",
         { allowConstantExport: true },
       ],
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": "warn",
+      "no-empty": "warn",
+      "prefer-const": "warn",
+      "@typescript-eslint/ban-ts-comment": "off",
+      "no-restricted-syntax": [
+        "warn",
+        {
+          selector:
+            "CallExpression[callee.object.name='vi'][callee.property.name=/^(useFakeTimers|useRealTimers)$/]",
+          message:
+            "Do not call vi.useFakeTimers or vi.useRealTimers directly in test files. Timer management is handled centrally in setup.ts.",
+        },
+      ],
+    },
+  },
+  {
+    files: ["**/setup.ts", "**/setup.unit.ts"],
+    rules: {
+      "no-restricted-syntax": "off",
     },
   },
   storybook.configs["flat/recommended"],

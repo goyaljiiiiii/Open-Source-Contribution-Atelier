@@ -37,3 +37,42 @@ class DismissRecommendationView(APIView):
             return Response({"status": "dismissed"}, status=status.HTTP_200_OK)
         except Recommendation.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+class NextLessonRecommendationView(APIView):
+    """Return a single personalized "next lesson" recommendation plus explanation."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from apps.content.serializers import LessonSerializer
+        from apps.recommendations.next_lesson_service import (
+            NextLessonRecommendationService,
+        )
+
+        service = NextLessonRecommendationService(request.user)
+        result = service.get_next_lesson()
+        if result is None:
+            return Response({"recommended": None, "why": {}}, status=200)
+
+        lesson, why = result
+        return Response(
+            {
+                "recommended": LessonSerializer(lesson).data,
+                "why": why,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class OSSIssueListView(generics.ListAPIView):
+    from .models import OSSIssue
+    from .serializers import OSSIssueSerializer
+
+    serializer_class = OSSIssueSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        from .models import OSSIssue
+
+        return OSSIssue.objects.filter(is_open=True)

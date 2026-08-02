@@ -3,14 +3,15 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
+from apps.core.models import AuditableModel
+from apps.search.mixins import SearchIndexMixin
+
 User = get_user_model()
 
 
-class Lesson(models.Model):
+class Lesson(AuditableModel, SearchIndexMixin):
     class DoesNotExist(ObjectDoesNotExist):
         pass
-
-    objects = models.Manager()
 
     organization = models.ForeignKey(
         "Organization", on_delete=models.CASCADE, null=True, blank=True
@@ -37,6 +38,7 @@ class Lesson(models.Model):
     prerequisites = models.ManyToManyField(
         "self", symmetrical=False, related_name="dependents", blank=True
     )
+    js_exercise = models.JSONField(null=True, blank=True, default=None)
 
     @property
     def reading_time(self) -> int:
@@ -46,6 +48,18 @@ class Lesson(models.Model):
 
     class Meta:
         ordering = ["order", "id"]
+
+
+class LessonVersion(models.Model):
+    lesson = models.ForeignKey(
+        Lesson, related_name="versions", on_delete=models.CASCADE
+    )
+    content = models.TextField()
+    summary = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
 
 
 class Exercise(models.Model):
@@ -227,12 +241,9 @@ class LessonFeedback(models.Model):
             MinValueValidator(1),
             MaxValueValidator(5),
         ],
-        help_text="Star rating from 1 to 5"
+        help_text="Star rating from 1 to 5",
     )
-    comment = models.TextField(
-        blank=True,
-        help_text="Optional written feedback"
-    )
+    comment = models.TextField(blank=True, help_text="Optional written feedback")
     is_deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -259,6 +270,7 @@ class LessonFeedback(models.Model):
     def __str__(self):
         status = "[DELETED] " if self.is_deleted else ""
         return f"{status}Feedback by {self.user.username} for {self.lesson.title}: {self.rating} stars"
+<<<<<<< HEAD
 class Profile(models.Model):
     user = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name="profile"
@@ -288,3 +300,123 @@ class Profile(models.Model):
 
     def __str__(self):
         return f"Profile for {self.user.username}"
+=======
+
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    bio = models.TextField(
+        max_length=160,
+        blank=True,
+        default="",
+        help_text="A short biography or description.",
+    )
+    github_link = models.URLField(
+        blank=True, default="", help_text="GitHub profile URL"
+    )
+    linkedin_link = models.URLField(
+        blank=True, default="", help_text="LinkedIn profile URL"
+    )
+    portfolio_link = models.URLField(
+        blank=True, default="", help_text="Personal portfolio URL"
+    )
+
+    def __str__(self):
+        return f"Profile for {self.user.username}"
+
+
+class ModuleDraft(models.Model):
+    title = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True)
+    description = models.TextField(blank=True)
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return self.title
+
+
+class LessonDraft(models.Model):
+    module = models.ForeignKey(
+        ModuleDraft,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="lessons",
+    )
+    title = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True)
+    description = models.TextField(blank=True)
+    content = models.TextField(blank=True)
+    difficulty = models.CharField(max_length=32, default="beginner")
+    tags = models.JSONField(default=list, blank=True)
+    estimated_minutes = models.PositiveIntegerField(default=15)
+    order = models.PositiveIntegerField(default=0)
+    is_published = models.BooleanField(default=False)
+    learning_objectives = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return self.title
+
+
+class QuizDraft(models.Model):
+    lesson = models.ForeignKey(
+        LessonDraft,
+        on_delete=models.CASCADE,
+        related_name="quizzes",
+    )
+    question = models.TextField()
+    options = models.JSONField(default=list)
+    answer = models.IntegerField(default=0)
+    explanation = models.TextField(blank=True)
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return f"Quiz question for {self.lesson.title}"
+
+
+class LearningPath(models.Model):
+    title = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True)
+    description = models.TextField(blank=True)
+    is_published = models.BooleanField(default=True)
+    required_roles = models.ManyToManyField(
+        "rbac.Role",
+        related_name="learning_paths",
+        blank=True,
+        help_text="Roles required to access this learning path. If empty, public to all authenticated users.",
+    )
+    lessons = models.ManyToManyField(Lesson, related_name="learning_paths", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["title"]
+
+    def __str__(self):
+        return self.title
+
+    def has_access(self, user) -> bool:
+        if not self.required_roles.exists():
+            return True
+        if not user or not user.is_authenticated:
+            return False
+        if getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
+            return True
+        user_role_ids = user.user_roles.values_list("role_id", flat=True)
+        return self.required_roles.filter(id__in=user_role_ids).exists()
+>>>>>>> 72da557b8aeadeaf2f74018ae28e94605c3a8941

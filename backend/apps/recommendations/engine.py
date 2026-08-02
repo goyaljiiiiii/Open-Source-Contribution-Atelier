@@ -1,20 +1,47 @@
+import logging
+
+logger = logging.getLogger(__name__)
 from datetime import timedelta
 
+from django.db.models import Q
 from django.utils import timezone
 
+from apps.cache.services.cache_manager import CacheManager
 from apps.challenges.models import Challenge
 from apps.content.models import Lesson
 from apps.progress.models import ExerciseAttempt, LessonProgress, QuizAttempt
 
-from apps.cache.services.cache_manager import CacheManager
-
 from .models import Recommendation
 
 
+# Multi-tenant organization isolation (contributed by @Pratyush-Panda-2006)
 class RecommendationEngine:
     def __init__(self, user):
         self.user = user
         self.cache_manager = CacheManager()
+
+    def _get_user_organization(self):
+        if not self.user or not getattr(self.user, "is_authenticated", True):
+            return None
+        try:
+            from apps.accounts.models import UserProfile
+
+            profile = (
+                UserProfile.objects.filter(user=self.user)
+                .select_related("organization")
+                .first()
+            )
+            if profile and profile.organization_id:
+                return profile.organization
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)
+        try:
+            org = getattr(self.user, "organization", None)
+            if org is not None:
+                return org
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)
+        return None
 
     def generate_recommendations(self):
         # Throttle generation using cache
@@ -25,6 +52,7 @@ class RecommendationEngine:
         self._generate_remedial_recommendations()
         self._generate_advanced_recommendations()
         self._generate_streak_recommendations()
+        self._generate_oss_issue_recommendations()
 
         # Cache for 1 hour
         self.cache_manager.set(cache_key, True, ttl=3600)
@@ -68,10 +96,22 @@ class RecommendationEngine:
         ).order_by("-score", "-updated_at")[:5]
 
         if completed_lessons.exists():
-            # Recommend challenges
-            challenges = Challenge.objects.all().order_by("?")[
-                :3
-            ]  # Random for now, can be improved
+            # Recommend challenges scoped to user organization or public
+            org = self._get_user_organization()
+            challenges = Challenge.objects.all()
+            if org is not None:
+                org_id = getattr(org, "id", None)
+                challenges = challenges.filter(
+                    Q(organization_id=org_id)
+                    | Q(is_public=True)
+                    | Q(organization__isnull=True)
+                )
+            else:
+                challenges = challenges.filter(
+                    Q(is_public=True) | Q(organization__isnull=True)
+                )
+
+            challenges = challenges.order_by("?")[:3]
             for challenge in challenges:
                 self._create_or_update_recommendation(
                     content_type=Recommendation.ContentType.CHALLENGE,
@@ -89,10 +129,23 @@ class RecommendationEngine:
         ).exists()
 
         if not recent_activity:
-            # Find an uncompleted lesson
-            uncompleted = Lesson.objects.exclude(
+            # Find an uncompleted lesson scoped to user organization or public
+            org = self._get_user_organization()
+            lessons = Lesson.objects.exclude(
                 lessonprogress__user=self.user, lessonprogress__completed=True
-            ).first()
+            )
+            if org is not None:
+                org_id = getattr(org, "id", None)
+                org_name = getattr(org, "name", None)
+                lessons = lessons.filter(
+                    Q(organization_id=org_id)
+                    | Q(organization__name=org_name)
+                    | Q(organization__isnull=True)
+                )
+            else:
+                lessons = lessons.filter(organization__isnull=True)
+
+            uncompleted = lessons.first()
 
             if uncompleted:
                 self._create_or_update_recommendation(
@@ -101,6 +154,26 @@ class RecommendationEngine:
                     title=uncompleted.title,
                     reason="Keep your streak alive! Complete this quick lesson today.",
                     priority_score=90,
+                )
+
+    def _generate_oss_issue_recommendations(self):
+        from .models import OSSIssue
+
+        # If user has completed a lot of lessons/challenges, recommend OSS issues
+        completed_lessons_count = LessonProgress.objects.filter(
+            user=self.user, completed=True
+        ).count()
+
+        if completed_lessons_count >= 3:
+            # Get some open OSS issues
+            issues = OSSIssue.objects.filter(is_open=True).order_by("?")[:3]
+            for issue in issues:
+                self._create_or_update_recommendation(
+                    content_type=Recommendation.ContentType.OSS_ISSUE,
+                    content_id=str(issue.id),
+                    title=f"{issue.repo_name} #{issue.issue_number}",
+                    reason=f"You're ready to contribute! Check out this good first issue: {issue.title}",
+                    priority_score=95,
                 )
 
     def _create_or_update_recommendation(

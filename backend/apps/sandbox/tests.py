@@ -20,12 +20,10 @@ async def test_sandbox_websocket_consumer():
     connected2, _ = await communicator2.connect()
     assert connected2
 
-    # Send message from communicator1
     await communicator1.send_json_to(
         {"action": "code_update", "code": "print('hello from 1')"}
     )
 
-    # communicator2 should receive it
     response2 = await communicator2.receive_json_from()
     assert response2["action"] == "code_update"
     assert response2["code"] == "print('hello from 1')"
@@ -66,3 +64,120 @@ async def test_sandbox_websocket_consumer():
 
     await communicator1.disconnect()
     await communicator2.disconnect()
+
+
+@pytest.mark.django_db
+@pytest.mark.asyncio
+async def test_sandbox_websocket_abnormal_disconnect():
+    headers = [(b"origin", b"http://localhost"), (b"host", b"localhost")]
+    communicator = WebsocketCommunicator(application, "/ws/sandbox/", headers=headers)
+    connected, _ = await communicator.connect()
+    assert connected
+
+    from apps.sandbox.services.execution_tracker import ExecutionTracker
+
+    # Session ID is the channel name
+    session_id = communicator.instance.channel_name
+    assert ExecutionTracker.get_session_state(session_id) == {}
+    assert session_id in ExecutionTracker.get_all_active_sessions()
+
+    # Simulate an abnormal disconnect (close code 1006)
+    await communicator.disconnect(code=1006)
+
+    # Verify tracker entry is removed
+    assert ExecutionTracker.get_session_state(session_id) is None
+    assert session_id not in ExecutionTracker.get_all_active_sessions()
+
+
+def test_sandbox_security_ast_violations():
+    from apps.sandbox.resource_manager import (
+        ResourceManagementEngine,
+        SecurityViolation,
+    )
+
+    # Test dynamic lookup / builtin function assignment
+    with pytest.raises(SecurityViolation):
+        ResourceManagementEngine.analyze_ast("my_getattr = getattr")
+
+    # Test magic double underscore attribute access
+    with pytest.raises(SecurityViolation):
+        ResourceManagementEngine.analyze_ast("().__class__.__base__")
+
+    # Test double underscore string literal
+    with pytest.raises(SecurityViolation):
+        ResourceManagementEngine.analyze_ast("x = '__class__'")
+
+    # Test normal code works
+    ResourceManagementEngine.analyze_ast("x = 10\nprint(x)")
+
+
+@pytest.mark.django_db
+@pytest.mark.asyncio
+async def test_collab_websocket_consumer():
+    import uuid
+
+    room_id = str(uuid.uuid4())
+    headers = [(b"origin", b"http://localhost"), (b"host", b"localhost")]
+
+    communicator1 = WebsocketCommunicator(
+        application, f"/ws/collab/{room_id}/", headers=headers
+    )
+    connected1, _ = await communicator1.connect()
+    assert connected1
+
+    # Send binary update from communicator1
+    test_update = b"yjs-test-update-bytes"
+    await communicator1.send_to(bytes_data=test_update)
+
+    # Disconnect to trigger save
+    await communicator1.disconnect()
+
+    # Reconnect and connect a second client
+    communicator1 = WebsocketCommunicator(
+        application, f"/ws/collab/{room_id}/", headers=headers
+    )
+    connected1, _ = await communicator1.connect()
+    assert connected1
+
+    # Handshake: communicator1 should receive the stored state
+    response_handshake = await communicator1.receive_from()
+    assert response_handshake == test_update
+
+    communicator2 = WebsocketCommunicator(
+        application, f"/ws/collab/{room_id}/", headers=headers
+    )
+    connected2, _ = await communicator2.connect()
+    assert connected2
+
+    # Late joiner handshake: communicator2 should also receive the stored state
+    response_handshake2 = await communicator2.receive_from()
+    assert response_handshake2 == test_update
+
+    # communicator2 sends additional update
+    test_update2 = b"more-yjs-bytes"
+    await communicator2.send_to(bytes_data=test_update2)
+
+    # communicator1 should receive the broadcasted update
+    response_broadcast = await communicator1.receive_from()
+    assert response_broadcast == test_update2
+
+    # Disconnect both to finalize persistence
+    await communicator1.disconnect()
+    await communicator2.disconnect()
+
+    # Verify document_state in the database
+    from channels.db import database_sync_to_async
+
+    from apps.sandbox.models import CollabSession
+
+    @database_sync_to_async
+    def check_db():
+        session = CollabSession.objects.filter(id=room_id).first()
+        return (
+            bytes(session.document_state)
+            if session and session.document_state
+            else None
+        )
+
+    db_state = await check_db()
+    assert db_state == test_update + test_update2

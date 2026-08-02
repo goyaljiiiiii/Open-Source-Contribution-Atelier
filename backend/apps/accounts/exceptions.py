@@ -131,6 +131,8 @@ def throttle_exception_handler(exc, context):
 
     # Rate limiting
     if isinstance(exc, Throttled):
+        import time
+
         view = context.get("view")
         scope = None
 
@@ -142,18 +144,24 @@ def throttle_exception_handler(exc, context):
 
         message = _THROTTLE_MESSAGES.get(scope, _DEFAULT_MESSAGE)
         retry_after = getattr(exc, "wait", None)
+        wait_secs = int(retry_after) + 1 if retry_after is not None else 60
 
         response_data = {
             "error": "rate_limited",
             "code": "rate_limited",
             "message": message,
+            "retry_after": wait_secs,
         }
-        if retry_after is not None:
-            response_data["retry_after"] = int(retry_after) + 1
 
-        return Response(
+        response = Response(
             response_data,
             status=status.HTTP_429_TOO_MANY_REQUESTS,
         )
+        response["Retry-After"] = str(wait_secs)
+        response["X-RateLimit-Limit"] = str(getattr(exc, "limit", 100))
+        response["X-RateLimit-Remaining"] = "0"
+        response["X-RateLimit-Reset"] = str(int(time.time() + wait_secs))
+
+        return response
 
     return response

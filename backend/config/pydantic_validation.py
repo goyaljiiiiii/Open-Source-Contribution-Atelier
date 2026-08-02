@@ -1,6 +1,7 @@
-from functools import wraps
-from django.http import JsonResponse
 import json
+from functools import wraps
+
+from django.http import JsonResponse
 from pydantic import ValidationError
 
 

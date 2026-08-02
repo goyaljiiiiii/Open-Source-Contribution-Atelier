@@ -1,4 +1,6 @@
 import logging
+
+logger = logging.getLogger(__name__)
 import re
 import traceback
 
@@ -49,8 +51,8 @@ class SensitiveDataFilter(logging.Filter):
             try:
                 record.msg = record.msg % record.args
                 record.args = ()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Caught exception: %s", e)
 
         if isinstance(record.msg, str):
             record.msg = self.mask_text(record.msg)
@@ -61,8 +63,8 @@ class SensitiveDataFilter(logging.Filter):
                 exc_list = traceback.format_exception(*record.exc_info)
                 exc_text = "".join(exc_list)
                 record.exc_text = self.mask_text(exc_text)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Caught exception: %s", e)
         elif getattr(record, "exc_text", None) and isinstance(record.exc_text, str):
             record.exc_text = self.mask_text(record.exc_text)
 

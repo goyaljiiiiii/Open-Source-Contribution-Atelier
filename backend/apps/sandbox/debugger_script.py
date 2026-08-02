@@ -1,3 +1,6 @@
+import logging
+
+logger = logging.getLogger(__name__)
 import bdb
 import json
 import sys
@@ -51,7 +54,8 @@ class JSONDebugger(bdb.Bdb):
             ]:
                 try:
                     local_vars[k] = repr(v)
-                except Exception:
+                except Exception as e:
+                    logger.warning("Caught exception: %s", e)
                     local_vars[k] = "<Error getting repr>"
 
         state = {

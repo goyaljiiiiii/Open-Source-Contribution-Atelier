@@ -1,0 +1,18 @@
+# Example docker-compose.override.yml for macOS performance optimization.
+# Copy this file to docker-compose.override.yml to enable :delegated volume mounts.
+# Note: docker-compose.override.yml is gitignored.
+
+version: '3.8'
+
+services:
+  backend:
+    volumes:
+      - ./backend:/app:delegated
+
+  worker:
+    volumes:
+      - ./backend:/app:delegated
+
+  frontend:
+    volumes:
+      - ./frontend:/app:delegated

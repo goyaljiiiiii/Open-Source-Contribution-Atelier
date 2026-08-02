@@ -3,11 +3,13 @@ Event registry for automatic handler registration.
 """
 
 import inspect
-from typing import Dict, List, Callable, Type
-from django.utils.module_loading import import_string
-from apps.events.services.event_bus import EventBus, EventRegistry
-from apps.events.models import EventSubscription
 import logging
+from typing import Callable, Dict, List, Type
+
+from django.utils.module_loading import import_string
+
+from apps.events.models import EventSubscription
+from apps.events.services.event_bus import EventBus, EventRegistry
 
 logger = logging.getLogger(__name__)
 

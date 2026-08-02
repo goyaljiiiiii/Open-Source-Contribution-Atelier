@@ -1,0 +1,74 @@
+name: Automated Test & Diff Guard
+
+on:
+  pull_request_target:
+    types: [opened, synchronize]
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  check-tests-and-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify Unit Tests for Source Code Changes
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            // Fetch list of modified files in the PR
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner,
+              repo,
+              pull_number: pr.number,
+              per_page: 100
+            });
+
+            const filenames = files.map(f => f.filename);
+            const hasSourceCodeChanges = filenames.some(f => 
+              (f.startsWith('backend/apps/') || f.startsWith('frontend/src/')) &&
+              !f.includes('test') && !f.includes('spec')
+            );
+            const hasTestChanges = filenames.some(f => 
+              f.includes('tests/') || f.includes('.test.') || f.includes('.spec.') || f.includes('test_')
+            );
+
+            if (hasSourceCodeChanges && !hasTestChanges) {
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                owner,
+                repo,
+                issue_number: pr.number
+              });
+
+              const botNoticeExists = comments.some(c => 
+                (c.user.type === 'Bot' || c.user.login.endsWith('[bot]')) &&
+                c.body.includes('Automated Quality & Test Guard')
+              );
+
+              if (!botNoticeExists) {
+                const commentBody = [
+                  `### 🧪 Automated Quality & Test Guard`,
+                  ``,
+                  `⚠️ @${pr.user.login}, you modified core application files, but no corresponding test files were added or updated in this Pull Request.`,
+                  ``,
+                  `**Checklist before maintainer review:**`,
+                  `- [ ] Add or update unit tests in \`backend/apps/*/tests/\` or \`frontend/src/**/*.test.tsx\``,
+                  `- [ ] Run local test suite (\`pytest\` for backend, \`npm test\` for frontend)`,
+                  `- [ ] Verify production build succeeds (\`npm run build\`)`
+                ].join('\n');
+
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: pr.number,
+                  body: commentBody
+                });
+                console.log(`Posted Test Guard warning on PR #${pr.number}`);
+              }
+            }
