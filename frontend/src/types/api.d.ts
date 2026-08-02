@@ -4746,6 +4746,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/progress/leaderboard/github/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Read-only ranking of real contributions to the configured GitHub repo. */
+        get: operations["api_progress_leaderboard_github_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/progress/me/": {
         parameters: {
             query?: never;
@@ -22300,6 +22317,24 @@ export interface operations {
         };
     };
     api_progress_leaderboard_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_progress_leaderboard_github_retrieve: {
         parameters: {
             query?: never;
             header?: never;
