@@ -11,21 +11,41 @@ permissions:
   contents: read
 
 jobs:
-  auto-label-ecsoc:
+  auto-label-and-triage:
     if: github.event_name == 'issues' && github.event.action == 'opened'
     runs-on: ubuntu-latest
     steps:
-      - name: Check ECSoC Checkbox & Label Issue
+      - name: Check Quality & Label Issue
         uses: actions/github-script@v8
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.MAINTAINER_TOKEN || secrets.PAT || secrets.GITHUB_TOKEN }}
           script: |
             const issue = context.payload.issue;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const body = issue.body || '';
+            const title = (issue.title || '').trim();
+            const body = (issue.body || '').trim();
 
-            // Check if ECSoC 2026 checkbox is checked
+            // 1. Low-Quality Issue Auto-Triage Check
+            if (title.length < 10 || body.length < 30) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: 'needs-more-info' });
+              } catch (e) {
+                await github.rest.issues.createLabel({
+                  owner, repo, name: 'needs-more-info', color: 'fef2c0', description: 'Requires additional details'
+                });
+              }
+              await github.rest.issues.addLabels({ owner, repo, issue_number: issue.number, labels: ['needs-more-info'] });
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issue.number,
+                body: `⚠️ @${issue.user.login}, thank you for creating this issue! Please provide additional details (e.g. reproduction steps, environment details, or problem description) so maintainers can review and assign it.`
+              });
+              console.log(`Labeled issue #${issue.number} as needs-more-info due to brevity.`);
+            }
+
+            // 2. Check if ECSoC 2026 checkbox is checked
             const isEcsocChecked = /-\s*\[x\]\s*ecsoc\s*2026/i.test(body) || /-\s*\[x\]\s*ecsoc/i.test(body);
 
             if (isEcsocChecked) {
@@ -57,7 +77,7 @@ jobs:
       - name: Process Claim / Unclaim Commands
         uses: actions/github-script@v8
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.MAINTAINER_TOKEN || secrets.PAT || secrets.GITHUB_TOKEN }}
           script: |
             const comment = context.payload.comment;
             const issue = context.payload.issue;
@@ -87,7 +107,7 @@ jobs:
                   owner,
                   repo,
                   issue_number: issue.number,
-                  body: `🛠️ @${commenter} has **unclaimed** this issue. It is now open for other contributors.`
+                  body: `🛠️ @${commenter} has **unclaimed** this issue. It is now open for other contributors. ..`
                 });
               }
               return;
@@ -146,13 +166,13 @@ jobs:
                 repo,
                 issue_number: issue.number,
                 body: [
-                  `### 🚀 Assigned to @${commenter}${ecsocNotice}!`,
+                  `### 🚀 Assigned to @${commenter}${ecsocNotice}! ..`,
                   ``,
-                  `Thank you for taking on this issue!`,
+                  `Issue successfully assigned to @${commenter}!`,
                   `1. Please link this issue in your Pull Request description using \`Fixes #${issue.number}\`.`,
                   `2. Run local tests before requesting review.`,
                   ``,
-                  `Happy coding! 🎉`
+                  `Happy coding! 🎉 — @${owner}`
                 ].join('\n')
               });
             } catch (err) {

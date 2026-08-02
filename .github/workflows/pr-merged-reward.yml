@@ -7,22 +7,68 @@ on:
 permissions:
   issues: write
   pull-requests: write
-  contents: read
+  contents: write
 
 jobs:
   celebrate-merged-pr:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - name: Post Contributor Certificate & Reward Badge
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Post Contributor Certificate & Update Leaderboard
         uses: actions/github-script@v8
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.MAINTAINER_TOKEN || secrets.PAT || secrets.GITHUB_TOKEN }}
           script: |
+            const fs = require('fs');
             const pr = context.payload.pull_request;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const author = pr.user.login;
+
+            // Search total merged PRs authored by this user
+            const searchRes = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${owner}/${repo} is:pr is:merged author:${author}`
+            });
+
+            const mergedPRs = searchRes.data.items || [];
+            const mergedCount = searchRes.data.total_count || 1;
+
+            // Calculate 7-Day Hot Streak
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+            const recentMergedCount = mergedPRs.filter(p => {
+              const closedAt = new Date(p.closed_at || p.updated_at);
+              return closedAt >= sevenDaysAgo;
+            }).length;
+
+            const isHotStreak = recentMergedCount >= 2;
+
+            // Determine Contributor Tier
+            let tierName = '🥉 Bronze Contributor';
+            let tierBadge = 'https://img.shields.io/badge/Contributor_Tier-Bronze_🥉-cd7f32?style=for-the-badge&logo=github&logoColor=white';
+
+            if (mergedCount >= 10) {
+              tierName = '💎 Diamond Contributor';
+              tierBadge = 'https://img.shields.io/badge/Contributor_Tier-Diamond_💎-b9f2ff?style=for-the-badge&logo=github&logoColor=white';
+            } else if (mergedCount >= 5) {
+              tierName = '🥇 Gold Contributor';
+              tierBadge = 'https://img.shields.io/badge/Contributor_Tier-Gold_🥇-ffd700?style=for-the-badge&logo=github&logoColor=white';
+            } else if (mergedCount >= 3) {
+              tierName = '🥈 Silver Contributor';
+              tierBadge = 'https://img.shields.io/badge/Contributor_Tier-Silver_🥈-c0c0c0?style=for-the-badge&logo=github&logoColor=white';
+            }
+
+            const streakBadge = isHotStreak
+              ? ' [![Streak Badge](https://img.shields.io/badge/Streak-⚡_Hot_Contributor-ff4500?style=for-the-badge&logo=github&logoColor=white)](https://github.com/' + owner + '/' + repo + '/blob/main/LEADERBOARD.md)'
+              : '';
+
+            const streakNotice = isHotStreak
+              ? `\n🔥 **7-Day Hot Streak Active!** You've merged **${recentMergedCount} PRs** in the past 7 days! Keep up the momentum!`
+              : '';
 
             const tweetText = encodeURIComponent(`🎉 Excited to share that my Pull Request #${pr.number} ("${pr.title}") has been merged into Open-Source Contribution Atelier under #ECSoC26! 🚀\n\nCheck out the project: https://github.com/${owner}/${repo}`);
             const linkedinText = encodeURIComponent(`https://github.com/${owner}/${repo}/pull/${pr.number}`);
@@ -34,13 +80,16 @@ jobs:
               ``,
               `### 📜 Contributor Badge & Certificate`,
               ``,
-              `[![Open Source Contributor](https://img.shields.io/badge/Open_Source-Contributor-4ECDC4?style=for-the-badge&logo=github&logoColor=white)](https://github.com/${owner}/${repo}/pull/${pr.number})`,
+              `[![Open Source Contributor](https://img.shields.io/badge/Open_Source-Contributor-4ECDC4?style=for-the-badge&logo=github&logoColor=white)](https://github.com/${owner}/${repo}/pull/${pr.number})  [![${tierName}](${tierBadge})](https://github.com/${owner}/${repo}/blob/main/LEADERBOARD.md)${streakBadge}`,
+              ``,
+              `**Current Tier**: **${tierName}** (${mergedCount} merged PRs)${streakNotice}`,
               ``,
               `<details>`,
               `<summary>📋 Copy Markdown snippet for your README / Portfolio</summary>`,
               ``,
               `\`\`\`markdown`,
               `[![Open Source Contributor](https://img.shields.io/badge/Open_Source-Contributor-4ECDC4?style=for-the-badge&logo=github&logoColor=white)](https://github.com/${owner}/${repo}/pull/${pr.number})`,
+              `[![${tierName}](${tierBadge})](https://github.com/${owner}/${repo}/blob/main/LEADERBOARD.md)`,
               `\`\`\``,
               ``,
               `</details>`,
@@ -61,4 +110,33 @@ jobs:
               issue_number: pr.number,
               body: certBody
             });
-            console.log(`Posted merged PR certificate for @${author} on PR #${pr.number}`);
+            console.log(`Posted merged PR certificate for @${author} with Tier ${tierName} and Streak=${isHotStreak}`);
+
+            // Update LEADERBOARD.md
+            try {
+              let content = fs.readFileSync('LEADERBOARD.md', 'utf8');
+              const today = new Date().toISOString().split('T')[0];
+              const points = mergedCount * 25; // Default 25 pts per PR
+              const streakText = isHotStreak ? '⚡ Hot Streak' : 'Active';
+
+              if (content.includes(`@${author}`)) {
+                const rowRegex = new RegExp(`\\| \\d+ \\| @${author} \\| .* \\| \\d+ \\| \\d+ \\| .* \\|`);
+                const newRow = `| 1 | @${author} | ${tierName} ${isHotStreak ? '⚡' : ''} | ${mergedCount} | ${points} | ${today} |`;
+                content = content.replace(rowRegex, newRow);
+              } else {
+                const newRow = `| 1 | @${author} | ${tierName} ${isHotStreak ? '⚡' : ''} | ${mergedCount} | ${points} | ${today} |\n`;
+                content = content.replace('---', `${newRow}\n---`);
+              }
+
+              fs.writeFileSync('LEADERBOARD.md', content, 'utf8');
+              console.log(`Updated LEADERBOARD.md for @${author}`);
+            } catch (e) {
+              console.warn(`Could not update LEADERBOARD.md:`, e);
+            }
+
+      - name: Commit & Push Leaderboard Updates
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add LEADERBOARD.md
+          git diff --quiet && git diff --staged --quiet || (git commit -m "docs: update ECSoC 26 leaderboard [skip ci]" && git push)
