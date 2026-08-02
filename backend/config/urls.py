@@ -105,11 +105,8 @@ api_v1_patterns = [
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
         "api/docs/",
-<<<<<<< HEAD
         SpectacularSwaggerView.as_view(url_name="schema"),  # Fixed here
-=======
-        SpectacularSwaggerView.as_view(url_name="schema"),
->>>>>>> 72da557b8aeadeaf2f74018ae28e94605c3a8941
+
         name="swagger-ui",
     ),
 ]
@@ -125,15 +122,16 @@ if settings.DEBUG:
     urlpatterns += [
         path("api/v1/feature-flags/", include("apps.feature_flags.urls")),
         path("api/feature-flags/", include("apps.feature_flags.urls")),
-<<<<<<< HEAD
         path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
         path(
             "api/docs/",
             SpectacularSwaggerView.as_view(url_name="schema"),  # Fixed here as well
             name="swagger-ui",
         ),
-=======
->>>>>>> 72da557b8aeadeaf2f74018ae28e94605c3a8941
         path("graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
     ]
     
+
+        path("graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
+    ]
+

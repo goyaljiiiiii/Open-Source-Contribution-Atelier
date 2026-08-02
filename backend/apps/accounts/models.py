@@ -145,11 +145,9 @@ class UserProfile(AuditableModel):
     """
 
     user = models.OneToOneField(
-<<<<<<< HEAD
         settings.AUTH_USER_MODEL, 
         on_delete=models.CASCADE, 
         related_name="user_profile"  # Changed from "profile" to "user_profile"
-=======
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="user_profile",
@@ -159,7 +157,7 @@ class UserProfile(AuditableModel):
         null=True,
         blank=True,
         max_length=255,
->>>>>>> 72da557b8aeadeaf2f74018ae28e94605c3a8941
+
     )
     cover_image = models.ImageField(upload_to="covers/", null=True, blank=True)
     last_password_change = models.DateTimeField(

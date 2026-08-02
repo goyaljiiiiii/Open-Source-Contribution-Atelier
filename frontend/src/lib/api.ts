@@ -10,44 +10,43 @@ import {
   isRetryableApiError,
 } from "./apiErrors";
 
-<<<<<<< HEAD
 // 1. Defend the environment variable retrieval against server-side execution crashes
-=======
+
 let refreshPromise: Promise<string | null> | null = null;
 
->>>>>>> 72da557b8aeadeaf2f74018ae28e94605c3a8941
+
 const getSafeEnvVar = (key: string): string => {
   if (typeof process !== "undefined" && process.env && process.env[key]) {
     return process.env[key] as string;
   }
-<<<<<<< HEAD
   if (typeof import.meta !== "undefined" && import.meta.env && import.meta.env[key]) {
-=======
   if (
     typeof import.meta !== "undefined" &&
     import.meta.env &&
     import.meta.env[key]
   ) {
->>>>>>> 72da557b8aeadeaf2f74018ae28e94605c3a8941
+
     return import.meta.env[key] as string;
   }
   return "";
 };
 
-<<<<<<< HEAD
 // 2. Safely resolve the base URL
 const API_BASE =
   getSafeEnvVar("VITE_API_BASE_URL").trim() ||
   (typeof window !== "undefined" ? `${window.location.origin}/api` : "http://127.0.0.1:8000/api");
-=======
 export const API_BASE =
   getSafeEnvVar("VITE_API_BASE_URL").trim() ||
   (typeof window !== "undefined"
     ? `${window.location.origin}/api`
     : "http://127.0.0.1:8000/api");
->>>>>>> 72da557b8aeadeaf2f74018ae28e94605c3a8941
+
 
   type RequestOptions = RequestInit & {
+
+
+
+
   requireAuth?: boolean;
   suppressErrorToast?: boolean;
   /** Request timeout in milliseconds. Default: 15000 (15s) */

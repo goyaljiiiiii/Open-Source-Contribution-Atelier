@@ -270,7 +270,6 @@ class LessonFeedback(models.Model):
     def __str__(self):
         status = "[DELETED] " if self.is_deleted else ""
         return f"{status}Feedback by {self.user.username} for {self.lesson.title}: {self.rating} stars"
-<<<<<<< HEAD
 class Profile(models.Model):
     user = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name="profile"
@@ -300,7 +299,6 @@ class Profile(models.Model):
 
     def __str__(self):
         return f"Profile for {self.user.username}"
-=======
 
 
 class Profile(models.Model):
@@ -419,4 +417,4 @@ class LearningPath(models.Model):
             return True
         user_role_ids = user.user_roles.values_list("role_id", flat=True)
         return self.required_roles.filter(id__in=user_role_ids).exists()
->>>>>>> 72da557b8aeadeaf2f74018ae28e94605c3a8941
+

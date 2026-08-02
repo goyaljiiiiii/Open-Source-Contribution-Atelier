@@ -4,7 +4,6 @@ import { useGoogleLogin } from "@react-oauth/google";
 import { Moon, Sun } from "lucide-react";
 import { fetchApi } from "../lib/api";
 import { useAuth } from "../features/auth/AuthContext";
-<<<<<<< HEAD
 import { useTheme } from "../context/ThemeContext";
 import OrganizationsGrid from "../components/OrganizationsGrid";
 import { useTranslation } from "react-i18next";
@@ -20,21 +19,20 @@ const getEnvVar = (key: string): string => {
   }
   return "";
 };
-=======
+
 import { useTheme } from "../hooks/useTheme";
 import { DraggableSticker } from "../components/ui/DraggableSticker";
 import { DemoLoginButton } from "../features/auth/DemoLoginButton";
 import { formatGoogleOAuthError } from "../lib/googleOAuth";
 import { TrendingReels } from "../components/ui/TrendingReels";
 import { PasswordInput } from "../components/PasswordInput";
->>>>>>> 72da557b8aeadeaf2f74018ae28e94605c3a8941
+
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
 export function LandingPage() {
-<<<<<<< HEAD
   const { t } = useTranslation();
   
   // Safely obtain login function; if AuthContext is not provided, default to a no-op.
@@ -45,12 +43,10 @@ export function LandingPage() {
   } catch {
     // No AuthProvider in the tree; proceed with fallback login.
   }
-=======
+
   const navigate = useNavigate();
   const auth = useAuth();
   const login = auth.login;
->>>>>>> 72da557b8aeadeaf2f74018ae28e94605c3a8941
-
   const { theme, toggleTheme } = useTheme();
   const [authRole, setAuthRole] = useState<"student" | "admin">("student");
   const [email, setEmail] = useState("");
@@ -62,28 +58,25 @@ export function LandingPage() {
   const [isEmailFocused, setIsEmailFocused] = useState(false);
 
   useEffect(() => {
-<<<<<<< HEAD
     // Ensure window environment lookups only run safely on the browser client thread
     if (typeof window !== "undefined") {
       const authError = new URLSearchParams(window.location.search).get("auth_error");
-=======
     if (typeof window !== "undefined") {
       const authError = new URLSearchParams(window.location.search).get(
         "auth_error"
       );
->>>>>>> 72da557b8aeadeaf2f74018ae28e94605c3a8941
+
+      
       if (authError) {
         setError(authError);
         window.history.replaceState({}, "", window.location.pathname);
       }
-<<<<<<< HEAD
 
       // Construct OAuth URLs dynamically on the client hook initialization layer
       const baseGithub = getEnvVar("VITE_GITHUB_OAUTH_URL") || 
         `${getEnvVar("VITE_API_BASE_URL") || "http://localhost:8000/api"}/auth/github/`;
       setGithubUrl(baseGithub);
-=======
->>>>>>> 72da557b8aeadeaf2f74018ae28e94605c3a8941
+
     }
   }, []);
 
@@ -97,27 +90,24 @@ export function LandingPage() {
         body: JSON.stringify({ username: email, password }),
       });
       login(tokens);
-<<<<<<< HEAD
       if (typeof window !== "undefined") {
         window.location.href = "/dashboard";
       }
-=======
+
       navigate("/dashboard");
->>>>>>> 72da557b8aeadeaf2f74018ae28e94605c3a8941
+
     } catch (err: unknown) {
       setError(getErrorMessage(err, "Login failed. Check your credentials."));
     }
   };
 
-<<<<<<< HEAD
   const handleGithubSignIn = () => {
     if (typeof window !== "undefined" && githubUrl) {
       window.location.href = githubUrl;
     }
   };
 
-=======
->>>>>>> 72da557b8aeadeaf2f74018ae28e94605c3a8941
+
   const googleLoginHandler = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
@@ -127,13 +117,12 @@ export function LandingPage() {
           body: JSON.stringify({ access_token: tokenResponse.access_token }),
         });
         login(tokens);
-<<<<<<< HEAD
         if (typeof window !== "undefined") {
           window.location.href = "/dashboard";
         }
-=======
+
         navigate("/dashboard");
->>>>>>> 72da557b8aeadeaf2f74018ae28e94605c3a8941
+
       } catch (err: unknown) {
         setError(formatGoogleOAuthError(err, "backend"));
       }
@@ -144,7 +133,6 @@ export function LandingPage() {
   });
 
   return (
-<<<<<<< HEAD
     <div className="min-h-[85vh] flex items-center justify-center p-4 relative">
       <button
         onClick={toggleTheme}
@@ -160,7 +148,6 @@ export function LandingPage() {
           <span className="font-black text-sm bg-accent text-black px-4 py-2 rounded-full border-2 border-black rotate-[-2deg] inline-block shadow-sm">
             {t("landing.authorized_access_only")}
           </span>
-=======
     <div className="min-h-screen bg-surface-lowest dark:bg-[#0a0a0f] text-text transition-colors duration-300 relative flex flex-col items-center overflow-x-hidden">
       <div className="min-h-screen w-full flex items-center justify-center p-3 sm:p-6 relative">
         <div className="hidden lg:block select-none pointer-events-auto">
@@ -176,7 +163,7 @@ export function LandingPage() {
           <DraggableSticker initialX={120} initialY={480} className="bg-[#FFD93D] text-black rotate-[-10deg]">
             Git expert 👑
           </DraggableSticker>
->>>>>>> 72da557b8aeadeaf2f74018ae28e94605c3a8941
+
         </div>
 
         <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-12 items-center">
@@ -203,7 +190,6 @@ export function LandingPage() {
             </p>
           </div>
 
-<<<<<<< HEAD
           <h2 className="text-3xl font-black mb-6 text-center text-text dark:text-[#f0ebe2]">
             {authRole === "student" ? t("landing.enter_sandbox") : t("landing.maintainer_login")}
           </h2>
@@ -243,7 +229,6 @@ export function LandingPage() {
               <div className="flex-1 h-1 bg-black dark:bg-[#4a4238]"></div>
               <span className="font-black text-muted dark:text-[#9b8f80] text-sm uppercase">{t("landing.or")}</span>
               <div className="flex-1 h-1 bg-black dark:bg-[#4a4238]"></div>
-=======
           <div className="w-full max-w-md mx-auto bg-white dark:bg-[#151411] rounded-[2.5rem] border-4 border-black dark:border-[#4a4238] shadow-card p-6 sm:p-8">
             <div className="flex p-1 bg-surface-low dark:bg-[#0f0e0c] rounded-2xl border-2 border-black dark:border-[#4a4238] mb-6">
               <button
@@ -297,7 +282,7 @@ export function LandingPage() {
                 label="🚀 Demo Mode (explicit local demo)"
                 className="w-full bg-green-200 border-4 border-black rounded-2xl py-3 px-4 flex items-center justify-center gap-3 font-black text-black hover:bg-green-300 transition-all shadow-card-sm active:translate-y-1 active:shadow-none text-sm"
               />
->>>>>>> 72da557b8aeadeaf2f74018ae28e94605c3a8941
+
             </div>
 
             <div className="flex items-center gap-4 my-5">
@@ -305,6 +290,16 @@ export function LandingPage() {
               <span className="font-black text-muted dark:text-[#9b8f80] text-xs uppercase tracking-wider">or</span>
               <div className="flex-1 h-[2px] bg-black dark:bg-[#4a4238]" />
             </div>
+
+
+            </div>
+
+            <div className="flex items-center gap-4 my-5">
+              <div className="flex-1 h-[2px] bg-black dark:bg-[#4a4238]" />
+              <span className="font-black text-muted dark:text-[#9b8f80] text-xs uppercase tracking-wider">or</span>
+              <div className="flex-1 h-[2px] bg-black dark:bg-[#4a4238]" />
+            </div>
+
 
             <form onSubmit={handleStandardLogin} className="space-y-3">
               <input
@@ -335,19 +330,17 @@ export function LandingPage() {
               </button>
             </form>
 
-<<<<<<< HEAD
             <div className="flex items-center gap-4 my-6">
               <div className="flex-1 h-1 bg-black dark:bg-[#4a4238]"></div>
               <span className="font-black text-muted dark:text-[#9b8f80] text-sm uppercase">{t("landing.new_contributors")}</span>
               <div className="flex-1 h-1 bg-black dark:bg-[#4a4238]"></div>
-=======
             <div className="flex items-center gap-4 my-5">
               <div className="flex-1 h-[2px] bg-black dark:bg-[#4a4238]" />
               <span className="font-black text-muted dark:text-[#9b8f80] text-[10px] uppercase tracking-wider">
                 New Contributors
               </span>
               <div className="flex-1 h-[2px] bg-black dark:bg-[#4a4238]" />
->>>>>>> 72da557b8aeadeaf2f74018ae28e94605c3a8941
+
             </div>
 
             <a
