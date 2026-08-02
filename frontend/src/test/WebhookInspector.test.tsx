@@ -53,6 +53,14 @@ describe("WebhookInspector", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("issues.json")).toBeInTheDocument();
+
+    // Select StarEvent
+    await user.selectOptions(select, "star");
+    expect(select).toHaveValue("star");
+    expect(
+      screen.getByText(/Triggered when a repository is starred or unstarred/),
+    ).toBeInTheDocument();
+    expect(screen.getByText("star.json")).toBeInTheDocument();
   });
 
   it("allows switching event type using quick-select buttons", async () => {
