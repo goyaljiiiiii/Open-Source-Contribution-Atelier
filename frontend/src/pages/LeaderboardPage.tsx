@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo, useEffect } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { fetchApi } from "../lib/api";
 import { useAuth } from "../features/auth/AuthContext";
 import { Link } from "react-router-dom";
@@ -7,15 +7,13 @@ import {
   Trophy,
   Search,
   Crown,
-  Star,
   Flame,
-  Sparkles,
   X,
   ArrowLeft,
   ExternalLink,
   Zap,
-  TrendingUp,
-  Award,
+  LoaderCircle,
+  Users,
 } from "lucide-react";
 import { CARD_FOCUS_RING } from "../lib/a11yFocus";
 
@@ -23,170 +21,106 @@ export interface ContributorRankData {
   rank: number;
   username: string;
   total_xp: number;
-  merged_prs?: number;
-  streak_days?: number;
-  tier?: string;
-  avatar_url?: string;
-  html_url?: string;
+  merged_prs: number;
+  streak_days: number;
+  tier: string;
+  avatar_url: string;
+  html_url: string;
   is_me?: boolean;
 }
 
-const DEFAULT_LEADERBOARD: ContributorRankData[] = [
-  {
-    rank: 1,
-    username: "nandinigoyaldev",
-    total_xp: 1250,
-    merged_prs: 12,
-    streak_days: 7,
-    tier: "💎 Diamond Contributor",
-    avatar_url: "https://github.com/nandinigoyaldev.png",
-    html_url: "https://github.com/nandinigoyaldev",
-    is_me: true,
-  },
-  {
-    rank: 2,
-    username: "Aditya8369",
-    total_xp: 980,
-    merged_prs: 9,
-    streak_days: 5,
-    tier: "🥇 Gold Contributor",
-    avatar_url: "https://github.com/Aditya8369.png",
-    html_url: "https://github.com/Aditya8369",
-    is_me: false,
-  },
-  {
-    rank: 3,
-    username: "suman20041",
-    total_xp: 840,
-    merged_prs: 7,
-    streak_days: 4,
-    tier: "🥇 Gold Contributor",
-    avatar_url: "https://github.com/suman20041.png",
-    html_url: "https://github.com/suman20041",
-    is_me: false,
-  },
-  {
-    rank: 4,
-    username: "MILAN-123865",
-    total_xp: 620,
-    merged_prs: 5,
-    streak_days: 3,
-    tier: "🥇 Gold Contributor",
-    avatar_url: "https://github.com/MILAN-123865.png",
-    html_url: "https://github.com/MILAN-123865",
-    is_me: false,
-  },
-  {
-    rank: 5,
-    username: "alex-developer",
-    total_xp: 450,
-    merged_prs: 4,
-    streak_days: 2,
-    tier: "🥈 Silver Contributor",
-    avatar_url: "https://github.com/github.png",
-    html_url: "https://github.com",
-    is_me: false,
-  },
-  {
-    rank: 6,
-    username: "sarah-code",
-    total_xp: 380,
-    merged_prs: 3,
-    streak_days: 2,
-    tier: "🥈 Silver Contributor",
-    avatar_url: "https://github.com/github.png",
-    html_url: "https://github.com",
-    is_me: false,
-  },
-  {
-    rank: 7,
-    username: "dev-sam",
-    total_xp: 260,
-    merged_prs: 2,
-    streak_days: 1,
-    tier: "🥉 Bronze Contributor",
-    avatar_url: "https://github.com/github.png",
-    html_url: "https://github.com",
-    is_me: false,
-  },
-  {
-    rank: 8,
-    username: "open-coder",
-    total_xp: 180,
-    merged_prs: 1,
-    streak_days: 1,
-    tier: "🥉 Bronze Contributor",
-    avatar_url: "https://github.com/github.png",
-    html_url: "https://github.com",
-    is_me: false,
-  },
-];
+const PAGE_SIZE = 50;
+
+function normalizeRows(
+  items: any[],
+  currentUser: { username?: string } | null | undefined,
+): ContributorRankData[] {
+  return items.map((item: any, index: number) => {
+    const username =
+      item.username || item.user?.username || `contributor-${index + 1}`;
+    const total_xp = Number(item.total_xp ?? item.xp ?? 0);
+    const merged_prs = Number(item.merged_prs ?? 0);
+    const streak_days = Number(item.streak_days ?? 0);
+
+    let tier = "🥉 Bronze Contributor";
+    if (merged_prs >= 10 || total_xp >= 1000) tier = "💎 Diamond Contributor";
+    else if (merged_prs >= 5 || total_xp >= 600) tier = "🥇 Gold Contributor";
+    else if (merged_prs >= 3 || total_xp >= 300)
+      tier = "🥈 Silver Contributor";
+
+    return {
+      rank: item.rank || index + 1,
+      username,
+      total_xp,
+      merged_prs,
+      streak_days,
+      tier,
+      avatar_url: item.avatar_url || `https://github.com/${username}.png`,
+      html_url: item.html_url || `https://github.com/${username}`,
+      is_me: currentUser?.username
+        ? username.toLowerCase() === currentUser.username.toLowerCase()
+        : username === "nandinigoyaldev",
+    };
+  });
+}
 
 export function LeaderboardPage() {
   const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [timePeriod, setTimePeriod] = useState<string>("all_time");
+  const [page, setPage] = useState(1);
+  const [rawRows, setRawRows] = useState<any[]>([]);
 
-  // Fetch API Leaderboard with fallback
-  const { data: apiData, isLoading } = useQuery({
-    queryKey: ["leaderboardData", timePeriod],
+  // Reset pagination and accumulated rows whenever the period changes.
+  useEffect(() => {
+    setPage(1);
+    setRawRows([]);
+  }, [timePeriod]);
+
+  // Fetch live leaderboard from the API, one page at a time.
+  const { data: apiData, isLoading, isFetching } = useQuery({
+    queryKey: ["leaderboardData", timePeriod, page],
     queryFn: async () => {
-      try {
-        const res = (await fetchApi(
-          `/progress/leaderboard/?time_period=${timePeriod}&limit=50`,
-          { suppressErrorToast: true },
-        )) as any;
-
-        if (
-          res &&
-          Array.isArray(res.leaderboard) &&
-          res.leaderboard.length > 0
-        ) {
-          return res.leaderboard;
-        }
-        return DEFAULT_LEADERBOARD;
-      } catch {
-        return DEFAULT_LEADERBOARD;
-      }
+      const res = (await fetchApi(
+        `/progress/leaderboard/?time_period=${timePeriod}&limit=${PAGE_SIZE}&page=${page}`,
+        { suppressErrorToast: true },
+      )) as any;
+      return {
+        rows: Array.isArray(res?.leaderboard) ? res.leaderboard : [],
+        totalUsers: Number(res?.total_users ?? 0),
+        totalPages: Number(res?.total_pages ?? 1),
+        page: Number(res?.page ?? page),
+      };
     },
+    placeholderData: keepPreviousData,
   });
 
-  const rawList = apiData || DEFAULT_LEADERBOARD;
-
-  const normalizedList = useMemo(() => {
-    return rawList.map((item: any, index: number) => {
-      const username =
-        item.username || item.user?.username || `contributor-${index + 1}`;
-      const total_xp = item.total_xp ?? item.xp ?? 1000 - index * 100;
-      const merged_prs = item.merged_prs ?? Math.max(1, 10 - index);
-      const streak_days = item.streak_days ?? Math.max(1, 7 - index);
-
-      let tier = "🥉 Bronze Contributor";
-      if (merged_prs >= 10 || total_xp >= 1000) tier = "💎 Diamond Contributor";
-      else if (merged_prs >= 5 || total_xp >= 600) tier = "🥇 Gold Contributor";
-      else if (merged_prs >= 3 || total_xp >= 300)
-        tier = "🥈 Silver Contributor";
-
-      return {
-        rank: item.rank || index + 1,
-        username,
-        total_xp,
-        merged_prs,
-        streak_days,
-        tier,
-        avatar_url: item.avatar_url || `https://github.com/${username}.png`,
-        html_url: item.html_url || `https://github.com/${username}`,
-        is_me: user?.username
-          ? username.toLowerCase() === user.username.toLowerCase()
-          : username === "nandinigoyaldev",
-      };
+  // Accumulate rows across pages (dedupe by username).
+  useEffect(() => {
+    if (!apiData) return;
+    setRawRows((prev) => {
+      if (apiData.page === 1 || prev.length === 0) return apiData.rows;
+      const seen = new Set(
+        prev.map((r: any) => r.username || r.user?.username),
+      );
+      return [
+        ...prev,
+        ...apiData.rows.filter(
+          (r: any) => !seen.has(r.username || r.user?.username),
+        ),
+      ];
     });
-  }, [rawList, user]);
+  }, [apiData]);
+
+  const normalizedList = useMemo(
+    () => normalizeRows(rawRows, user),
+    [rawRows, user],
+  );
 
   const filteredList = useMemo(() => {
     if (!search.trim()) return normalizedList;
     return normalizedList.filter((item: ContributorRankData) =>
-      item.username.toLowerCase().includes(search.txoLowerCase().trim()),
+      item.username.toLowerCase().includes(search.toLowerCase().trim()),
     );
   }, [normalizedList, search]);
 
@@ -194,9 +128,14 @@ export function LeaderboardPage() {
   const currentPersonalRank = useMemo(() => {
     return (
       normalizedList.find((i: ContributorRankData) => i.is_me) ||
-      normalizedList[0]
+      normalizedList[0] ||
+      null
     );
   }, [normalizedList]);
+
+  const totalUsers = apiData?.totalUsers ?? 0;
+  const hasMore = apiData ? page < apiData.totalPages : false;
+  const showInitialLoader = isLoading && rawRows.length === 0;
 
   return (
     <div className="max-w-5xl mx-auto px-4 pt-28 pb-16 space-y-10 font-sans">
@@ -440,7 +379,12 @@ export function LeaderboardPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-black dark:text-[#f0ebe2] flex items-center gap-2">
             <Trophy className="w-5 h-5 text-amber-500" />
-            Full Contributor Standings ({filteredList.length})
+            Full Contributor Standings
+            {totalUsers > 0 && (
+              <span className="text-sm font-black text-amber-600 dark:text-amber-400">
+                ({totalUsers} contributors)
+              </span>
+            )}
           </h2>
           <span className="text-xs font-black bg-emerald-400 text-black px-3 py-1 rounded-full border-2 border-black shadow-card-sm">
             Live Sync Active
@@ -461,6 +405,29 @@ export function LeaderboardPage() {
                   <th className="py-4 px-4 text-center">Profile</th>
                 </tr>
               </thead>
+              {showInitialLoader ? (
+                <tbody>
+                  <tr>
+                    <td colSpan={7} className="py-12 text-center">
+                      <LoaderCircle className="w-8 h-8 mx-auto animate-spin text-amber-500" />
+                      <p className="mt-3 text-sm font-black text-gray-500 dark:text-[#c4bbae]">
+                        Loading live leaderboard...
+                      </p>
+                    </td>
+                  </tr>
+                </tbody>
+              ) : filteredList.length === 0 ? (
+                <tbody>
+                  <tr>
+                    <td colSpan={7} className="py-12 text-center">
+                      <Users className="w-8 h-8 mx-auto text-gray-400" />
+                      <p className="mt-3 text-sm font-black text-gray-500 dark:text-[#c4bbae]">
+                        No contributors found for this period yet.
+                      </p>
+                    </td>
+                  </tr>
+                </tbody>
+              ) : (
               <tbody className="divide-y-2 divide-black dark:divide-[#2e2924]">
                 {filteredList.map((row: ContributorRankData) => (
                   <tr
@@ -545,9 +512,28 @@ export function LeaderboardPage() {
                   </tr>
                 ))}
               </tbody>
+              )}
             </table>
           </div>
         </div>
+
+        {/* Load More */}
+        {hasMore && (
+          <div className="flex justify-center pt-2">
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={isFetching}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-black text-white dark:bg-white dark:text-black text-xs font-black uppercase tracking-wider border-2 border-black shadow-card-sm hover:opacity-90 transition-opacity disabled:opacity-50 ${CARD_FOCUS_RING}"
+            >
+              {isFetching ? (
+                <LoaderCircle className="w-4 h-4 animate-spin" />
+              ) : (
+                <Zap className="w-4 h-4" />
+              )}
+              {isFetching ? "Loading more..." : "Load More Contributors"}
+            </button>
+          </div>
+        )}
       </section>
     </div>
   );

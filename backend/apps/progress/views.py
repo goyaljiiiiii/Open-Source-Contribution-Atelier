@@ -1251,95 +1251,116 @@ class LeaderboardView(APIView):
         except ValueError:
             page = 1
             limit = 50
+        page = max(page, 1)
+        limit = min(max(limit, 1), 200)
 
-        import logging
+        from datetime import timedelta
 
-        from apps.progress.models import LeaderboardRank
-        from apps.progress.services.leaderboard_service import LeaderboardService
+        from django.db.models import Count, Sum
+        from django.db.models.functions import Coalesce
 
-        logger = logging.getLogger(__name__)
+        from apps.core.cache.coalescing import CoalescingCache
+        from apps.dashboard.models import PullRequest
+        from apps.progress.models import Season, StreakProfile, XPEvent
 
-        if time_period == "all_time":
-            try:
-                query = LeaderboardRank.objects.select_related("user")
-                if search_username:
-                    query = query.filter(user__username__icontains=search_username)
-
-                def compute_leaderboard():
-                    total_users_count = query.count()
-                    if total_users_count == 0:
-                        return 0, []
-                    offset = (page - 1) * limit
-                    ranks = query[offset : offset + limit]
-                    leaderboard_data = [
-                        {
-                            "user_id": r.user_id,
-                            "username": r.user.username,
-                            "rank": r.rank,
-                            "total_xp": r.total_xp,
-                        }
-                        for r in ranks
-                    ]
-                    return total_users_count, leaderboard_data
-
-                from apps.core.cache.coalescing import CoalescingCache
-
-                cache_key = f"leaderboard_all_time_p{page}_l{limit}_u{search_username or 'none'}"
-                total_users, leaderboard = CoalescingCache().get_or_set_coalesced(
-                    cache_key, 300, compute_leaderboard
+        # Compute the leaderboard live from the XP event log so it always
+        # reflects real contributions (no stale materialized view / Redis needed).
+        now = timezone.now()
+        events = XPEvent.objects.all()
+        if time_period == "weekly":
+            week_start = now - timedelta(days=now.weekday())
+            week_start = week_start.replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+            events = XPEvent.objects.filter(created_at__gte=week_start)
+        elif time_period == "monthly":
+            month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            events = XPEvent.objects.filter(created_at__gte=month_start)
+        elif time_period.startswith("seasonal"):
+            season = Season.objects.filter(is_active=True).first()
+            if season is not None and season.start_date:
+                events = XPEvent.objects.filter(
+                    created_at__date__gte=season.start_date
                 )
 
-                if total_users > 0:
-                    personal_rank = None
-                    if request.user.is_authenticated and not search_username:
-                        try:
-                            pr = LeaderboardRank.objects.get(user=request.user)
-                            personal_rank = {
-                                "rank": pr.rank,
-                                "total_xp": pr.total_xp,
-                            }
-                        except LeaderboardRank.DoesNotExist:
-                            pass
+        if search_username:
+            events = events.filter(user__username__icontains=search_username)
 
-                    total_pages = (
-                        (total_users + limit - 1) // limit if total_users > 0 else 1
-                    )
-                    return Response(
-                        {
-                            "leaderboard": leaderboard,
-                            "personal_rank": personal_rank,
-                            "page": page,
-                            "limit": limit,
-                            "total_users": total_users,
-                            "total_pages": total_pages,
-                        },
-                        status=status.HTTP_200_OK,
-                    )
-            except Exception as e:
-                logger.warning(
-                    f"Materialized view query failed or empty, falling back: {e}"
+        def compute_leaderboard():
+            rows = (
+                events.values("user_id", "user__username")
+                .annotate(total_xp=Coalesce(Sum("xp_delta"), 0))
+                .order_by("-total_xp", "user__username")
+            )
+            total_users_count = rows.count()
+            offset = (page - 1) * limit
+            page_rows = list(rows[offset : offset + limit])
+
+            user_ids = [r["user_id"] for r in page_rows]
+            merged_counts = dict(
+                PullRequest.objects.filter(
+                    user_id__in=user_ids, status=PullRequest.Status.MERGED
                 )
+                .values("user_id")
+                .annotate(total=Count("id"))
+                .values_list("user_id", "total")
+            )
+            streak_days = dict(
+                StreakProfile.objects.filter(user_id__in=user_ids).values_list(
+                    "user_id", "current_streak"
+                )
+            )
 
-        result = LeaderboardService.get_leaderboard(
-            time_period=time_period,
-            page=page,
-            limit=limit,
-            search_username=search_username,
+            leaderboard = []
+            for i, row in enumerate(page_rows):
+                rank = offset + i + 1
+                username = row["user__username"]
+                leaderboard.append(
+                    {
+                        "user_id": row["user_id"],
+                        "username": username,
+                        "rank": rank,
+                        "total_xp": row["total_xp"],
+                        "merged_prs": merged_counts.get(row["user_id"], 0),
+                        "streak_days": streak_days.get(row["user_id"], 0),
+                        "avatar_url": f"https://github.com/{username}.png",
+                        "html_url": f"https://github.com/{username}",
+                        "is_top_3": rank <= 3,
+                    }
+                )
+            return total_users_count, leaderboard
+
+        cache_key = (
+            f"leaderboard_hof_{time_period}_p{page}_l{limit}_u"
+            f"{search_username or 'none'}"
+        )
+        total_users, leaderboard = CoalescingCache().get_or_set_coalesced(
+            cache_key, 300, compute_leaderboard
         )
 
         # Add user's personal rank if authenticated and not searching
         personal_rank = None
         if request.user.is_authenticated and not search_username:
-            personal_rank = LeaderboardService.get_user_rank(
-                request.user.username, time_period=time_period
+            ranked = events.values("user_id", "user__username").annotate(
+                total_xp=Coalesce(Sum("xp_delta"), 0)
             )
+            me = ranked.filter(user_id=request.user.id).first()
+            if me:
+                better_count = ranked.filter(total_xp__gt=me["total_xp"]).count()
+                tie_count = ranked.filter(
+                    total_xp=me["total_xp"],
+                    user__username__lt=request.user.username,
+                ).count()
+                personal_rank = {
+                    "rank": better_count + tie_count + 1,
+                    "total_xp": me["total_xp"],
+                }
 
-        total_users = result.get("total_users", 0)
         total_pages = (total_users + limit - 1) // limit if total_users > 0 else 1
 
         return Response(
             {
-                "leaderboard": result.get("leaderboard", []),
+                "leaderboard": leaderboard,
                 "personal_rank": personal_rank,
                 "page": page,
                 "limit": limit,
