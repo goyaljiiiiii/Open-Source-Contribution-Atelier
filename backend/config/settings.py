@@ -715,7 +715,23 @@ REQUEST_LOGGING_VERBOSITY = os.getenv("REQUEST_LOGGING_VERBOSITY", "minimal")
 
 # Audit file handler is active unless we are running the test suite,
 # where writing to disk is undesirable and would leave stale files.
-_audit_handlers: list = ["console_audit"] + (["file_audit"] if not TESTING else [])
+# In read-only environments (e.g. Hugging Face Spaces, serverless) the
+# app runs as a non-root user and cannot create BASE_DIR/audit.log, which
+# would crash Django at startup; in that case the file handler is skipped
+# and audit events fall back to the console handler only.
+def _audit_log_writable(path: Path) -> bool:
+    try:
+        with open(path, "a"):
+            return True
+    except OSError:
+        return False
+
+
+_audit_log_file = os.getenv("AUDIT_LOG_FILE", str(BASE_DIR / "audit.log"))
+_audit_file_enabled = bool(
+    _audit_log_file and not TESTING and _audit_log_writable(Path(_audit_log_file))
+)
+_audit_handlers: list = ["console_audit"] + (["file_audit"] if _audit_file_enabled else [])
 
 LOGGING = {
     "version": 1,
@@ -771,7 +787,7 @@ LOGGING = {
         # Disabled automatically in TESTING mode (see _audit_handlers above).
         "file_audit": {
             "class": "logging.FileHandler",
-            "filename": os.path.join(BASE_DIR, "audit.log"),
+            "filename": _audit_log_file,
             "filters": ["request_id", "mask_sensitive_data"],
             "formatter": "json_audit",
         },
