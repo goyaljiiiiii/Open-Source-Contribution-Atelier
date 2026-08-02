@@ -78,9 +78,9 @@ jobs:
               ``,
               `Please adhere strictly to our **Contribution Rules**:`,
               `1. ⏰ **48-Hour SLA**: Open a Draft PR within **48 hours**, or the issue will be automatically unassigned.`,
-              `2. 🔗 **Link Issue**: PR description MUST include \`Fixes #${issue.number}\` for points to sync on SSoC / ECSoC leaderboards.`,
+              `2. 🔗 **Link Issue**: PR description MUST include \`Fixes #${issue.number}\` for points to sync on ECSoC leaderboards.`,
               `3. 🧪 **Pre-Push Checks**: Run \`npm run build\` (frontend) & \`pytest\` (backend) locally before requesting review.`,
-              `4. 🏷️ **Labels**: Do NOT edit or remove program or difficulty labels (\`SSoC26\`, \`ECSoC26\`, \`easy\`, \`Medium\`, \`hard\`).`,
+              `4. 🏷️ **Labels**: Do NOT edit or remove program or difficulty labels (\`ECSoC26\`, \`easy\`, \`Medium\`, \`hard\`).`,
               `5. 📌 **5 Issue Cap**: Maximum **5 open assigned issues** per contributor at a time.${limitNotice}`,
               ``,
               `> 🛠️ **Tools**: Run \`python3 verify_readiness.py\` locally | [Contributor Sandbox](https://open-source-contribution-atelier.vercel.app/contributor-sandbox) | [CONTRIBUTING.md](https://github.com/${owner}/${repo}/blob/main/CONTRIBUTING.md)`

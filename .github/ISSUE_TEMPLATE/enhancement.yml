@@ -16,7 +16,6 @@ body:
   attributes:
     label: Contributor Program
     options:
-    - label: SSoC 2026
     - label: ECSoC 2026
 - type: textarea
   id: why

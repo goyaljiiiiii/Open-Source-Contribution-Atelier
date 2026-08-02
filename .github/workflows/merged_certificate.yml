@@ -28,7 +28,7 @@ jobs:
             const author = pr.user.login;
 
             // Generate custom celebratory certificate comment
-            const tweetText = encodeURIComponent(`🎉 Excited to share that my Pull Request #${pr.number} has been merged into Open-Source Contribution Atelier under #SSoC26 / #ECSoC26! 🚀\n\nCheck out the project: https://github.com/${owner}/${repo}`);
+            const tweetText = encodeURIComponent(`🎉 Excited to share that my Pull Request #${pr.number} has been merged into Open-Source Contribution Atelier under #ECSoC26! 🚀\n\nCheck out the project: https://github.com/${owner}/${repo}`);
             const linkedinText = encodeURIComponent(`https://github.com/${owner}/${repo}/pull/${pr.number}`);
 
             const certBody = [

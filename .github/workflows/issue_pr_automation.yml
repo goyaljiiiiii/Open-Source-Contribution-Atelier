@@ -78,30 +78,18 @@ jobs:
               await github.rest.issues.addLabels({owner, repo, issue_number: issue.number, labels: [labelName]});
             }
 
-            // Detect checkbox states for contributor program selection
-            const isSsocChecked = /-\s*\[x\]\s*ssoc\s*2026/i.test(body);
+            // Detect checkbox state for contributor program selection
             const isEcsocChecked = /-\s*\[x\]\s*ecsoc\s*2026/i.test(body);
 
-            // Detect if checkboxes exist at all (checked OR unchecked)
-            const hasSsocCheckbox = /-\s*\[[ x]\]\s*ssoc\s*2026/i.test(body);
+            // Detect if checkbox exists at all (checked OR unchecked)
             const hasEcsocCheckbox = /-\s*\[[ x]\]\s*ecsoc\s*2026/i.test(body);
-            const hasAnyCheckbox = hasSsocCheckbox || hasEcsocCheckbox;
 
-            // Determine labels: if checkboxes exist, use ONLY checkbox state.
-            // Regex fallback on body/title keywords only when NO checkboxes are present.
-            const shouldAddSsoc = hasAnyCheckbox
-              ? isSsocChecked
-              : (/\bssoc26?\b/i.test(body) || /\bssoc26?\b/i.test(title) || /\bssoc\s*2026\b/i.test(body) || /\bssoc\s*2026\b/i.test(title));
-
-            const shouldAddEcsoc = hasAnyCheckbox
+            // Determine label: if checkbox exists, use ONLY checkbox state.
+            // Regex fallback on body/title keywords only when NO checkbox is present.
+            const shouldAddEcsoc = hasEcsocCheckbox
               ? isEcsocChecked
               : (/\becsoc26?\b/i.test(body) || /\becsoc26?\b/i.test(title) || /\becsoc\s*2026\b/i.test(body) || /\becsoc\s*2026\b/i.test(title));
 
-            if (shouldAddSsoc) {
-              const ssocLabel = 'SSoC26';
-              await ensureLabel(ssocLabel, 'c5def5', 'SSOC participation');
-              await github.rest.issues.addLabels({owner, repo, issue_number: issue.number, labels: [ssocLabel]});
-            }
             if (shouldAddEcsoc) {
               const ecsocLabel = 'ECSoC26';
               await ensureLabel(ecsocLabel, 'd4c5f9', 'ECSoC participation');
@@ -161,9 +149,9 @@ jobs:
                   ``,
                   `Please adhere strictly to our **Contribution Rules**:`,
                   `1. ⏰ **48-Hour SLA**: Open a Draft PR within **48 hours** of assignment, or the issue will be automatically unassigned.`,
-                  `2. 🔗 **Link Issue**: PR description MUST include \`Fixes #${issue.number}\` for points to sync on SSoC / ECSoC leaderboards.`,
+                  `2. 🔗 **Link Issue**: PR description MUST include \`Fixes #${issue.number}\` for points to sync on ECSoC leaderboards.`,
                   `3. 🧪 **Pre-Push Checks**: Run \`npm run build\` (frontend) & \`pytest\` (backend) locally before requesting review.`,
-                  `4. 🏷️ **Labels**: Do NOT edit or remove program or difficulty labels (\`SSoC26\`, \`ECSoC26\`, \`easy\`, \`Medium\`, \`hard\`).`,
+                  `4. 🏷️ **Labels**: Do NOT edit or remove program or difficulty labels (\`ECSoC26\`, \`easy\`, \`Medium\`, \`hard\`).`,
                   `5. 📌 **5 Issue Cap**: Maximum **5 open assigned issues** per contributor at a time.`,
                   ``,
                   `> 🛠️ **Tools**: Run \`python3 verify_readiness.py\` locally | [Contributor Sandbox](https://open-source-contribution-atelier.vercel.app/contributor-sandbox) | [CONTRIBUTING.md](https://github.com/${owner}/${repo}/blob/main/CONTRIBUTING.md)`
@@ -245,22 +233,11 @@ jobs:
 
             // Extract issue labels to check what program it belongs to
             const labels = issue.labels.map(l => l.name.toLowerCase());
-            const isSsoc = labels.some(l => l.includes('ssoc26') || l.includes('ssoc-26'));
             const isEcsoc = labels.some(l => l.includes('ecsoc26') || l.includes('ecsoc-26'));
 
-            if (isSsoc || isEcsoc) {
-              const mentionsSsoc = /\b(ssoc|ssoc26|ssoc2026|ssoc-26|ssoc-2026|\/claim|!claim|\/assignme)\b/i.test(commentText);
+            if (isEcsoc) {
               const mentionsEcsoc = /\b(ecsoc|ecsoc26|ecsoc2026|ecsoc-26|ecsoc-2026|\/claim|!claim|\/assignme)\b/i.test(commentText);
 
-              if (isSsoc && !mentionsSsoc) {
-                await github.rest.issues.createComment({
-                  owner,
-                  repo,
-                  issue_number: issue.number,
-                  body: `⚠️ @${commenter}, this issue is reserved for **SSoC 2026** contributors. To be assigned, please post a comment mentioning \`ssoc26\` or \`/claim\`.`
-                });
-                return;
-              }
               if (isEcsoc && !mentionsEcsoc) {
                 await github.rest.issues.createComment({
                   owner,

@@ -13,7 +13,6 @@
 
 [![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://open-source-contribution-atelier.vercel.app)
 [![Backend API](https://img.shields.io/badge/🤗_API-Hugging_Face-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black)](https://nandinigoyaldev-atelier-backend.hf.space)
-[![SSoC 2026](https://img.shields.io/badge/SSoC_2026-Participating-4ECDC4?style=for-the-badge&logo=opensourceinitiative&logoColor=white)](#)
 
 [![GitHub Stars](https://img.shields.io/github/stars/nandinigoyaldev/Open-Source-Contribution-Atelier?style=flat-square&logo=github&label=Stars&color=FFD700)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier)
 [![GitHub Forks](https://img.shields.io/github/forks/nandinigoyaldev/Open-Source-Contribution-Atelier?style=flat-square&logo=github&label=Forks&color=45B7D1)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/fork)
@@ -231,7 +230,7 @@ This project is fully configured to be deployed on **Vercel** as a monorepo.
 
 ## 🧑‍💻 Contributing
 
-We welcome contributions of all levels suitable for **SSoC 2026** and long-term participation!
+We welcome contributions of all levels and long-term participation!
 
 > [!IMPORTANT]
 > **Before requesting an issue**, please read the pinned guide issues on the [Issues tab](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/issues) to understand the keyword assignment rules, CI checks, and the 3-day stale policy.

@@ -1,5 +1,5 @@
 name: "🚀 Open Source Program Feature / Issue Request"
-description: "Propose a new feature, bug fix, or documentation improvement for SSoC 2026 or ECSoC 2026"
+description: "Propose a new feature, bug fix, or documentation improvement for ECSoC 2026 or the project"
 title: "[FEATURE] "
 labels: ["enhancement"]
 body:
@@ -15,7 +15,6 @@ body:
       label: Open Source Program
       description: Which program are you participating under?
       options:
-        - "Social Summer of Code (SSoC 2026)"
         - "Elite Coder Summer of Code (ECSoC 2026)"
         - "General Contributor / Non-program"
     validations:

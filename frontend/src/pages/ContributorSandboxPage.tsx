@@ -152,7 +152,7 @@ export function ContributorSandboxPage() {
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-16">
       <SectionCard
-        eyebrow="SSoC 2026 Simulator"
+        eyebrow="Contributor Sandbox Simulator"
         title="Contributor Sandbox Playground"
       >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -556,7 +556,7 @@ export function ContributorSandboxPage() {
                 </span>
                 <div className="py-2">
                   <h4 className="font-black text-xl">
-                    SSoC 2026 Sandbox Contributor
+                    Open Source Sandbox Contributor
                   </h4>
                   <p className="text-xs font-bold text-black/60 mt-1">
                     Open-Source Contribution Atelier
@@ -564,7 +564,7 @@ export function ContributorSandboxPage() {
                 </div>
                 <div className="border-t border-black/10 pt-4 text-xs font-mono flex justify-between">
                   <span>VALIDATION: ACTIVE</span>
-                  <span>BADGE ID: CA-SSOC2026</span>
+                  <span>BADGE ID: CA-OSCA2026</span>
                 </div>
               </div>
 
