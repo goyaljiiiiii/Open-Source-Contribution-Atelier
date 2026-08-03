@@ -397,7 +397,7 @@ export function GitSubmoduleSimulator() {
 
   // Helper to extract .gitmodules text
   const generateGitModulesText = (node: SubmoduleNode): string => {
-    let lines: string[] = [];
+    const lines: string[] = [];
     const traverse = (n: SubmoduleNode) => {
       if (n.id !== "root") {
         lines.push(`[submodule "${n.path}"]`);
@@ -422,7 +422,7 @@ export function GitSubmoduleSimulator() {
               <FolderTree className="w-3.5 h-3.5" /> Interactive Sandbox
             </span>
             <span className="bg-accent/20 text-accent text-xs font-bold px-2.5 py-1 rounded-md border border-accent/40">
-              SSoC 2026
+              ECSoC 2026
             </span>
           </div>
           <h1 className="text-2xl md:text-3xl font-black text-text dark:text-[#f0ebe2] flex items-center gap-2">

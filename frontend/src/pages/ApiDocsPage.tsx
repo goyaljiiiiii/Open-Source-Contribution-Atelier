@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { Download, Search, Sliders } from "lucide-react";
 import { Download, Search, Sliders, Activity } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ApiEndpointCard } from "../components/docs/ApiEndpointCard";

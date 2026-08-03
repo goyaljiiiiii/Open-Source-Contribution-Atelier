@@ -1,5 +1,5 @@
 import React from "react";
-import { Users, Cursor, Sparkles } from "lucide-react";
+import { Users, MousePointer, Sparkles } from "lucide-react";
 
 export interface PeerUser {
   user_id: string;

@@ -10,6 +10,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ("content", "0005_alter_lesson_organization"),
         ("progress", "0006_lessonnote"),
+        ("progress", "0006_codesubmission_peerreview"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

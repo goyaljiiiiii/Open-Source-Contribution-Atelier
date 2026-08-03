@@ -228,7 +228,7 @@ test.describe("Accessibility Tests", () => {
 
     // ✅ Test keyboard navigation
     await page.keyboard.press("Tab");
-    let hasFocus = await page.evaluate(
+    const hasFocus = await page.evaluate(
       () => document.activeElement !== document.body,
     );
     expect(hasFocus).toBe(true);

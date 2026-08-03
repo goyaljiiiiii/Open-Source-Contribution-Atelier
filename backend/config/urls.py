@@ -17,7 +17,7 @@ from apps.content.views_notes import LessonNoteAPIView
 from .health_view import health_view
 from .version_view import api_versions_view, version_view
 
-urlpatterns = [
+api_v1_patterns = [
     # ── Django Admin & External Webhooks ──────────────────────────────────────
     path("admin/", admin.site.urls),
     path("api/admin/audit/", include("apps.audit.urls")),
@@ -92,6 +92,7 @@ urlpatterns = [
     path("api/experiments/", include("apps.experiments.urls")),
     path("api/feed/", include("apps.feed.urls")),
     path("api/dx-testing/", include("apps.dx_testing.urls")),
+    path("api/dx-analytics/", include("apps.dx_analytics.urls")),
     path("api/issue-quality/", include("apps.issue_quality.urls")),
     path("api/ml-triage/", include("apps.ml_triage.urls")),
     # ── AI Tutor ────────────────────────────────────────────────────────────────
@@ -110,6 +111,11 @@ urlpatterns = [
     ),
 ]
 
+urlpatterns = [
+    path("api/versions/", version_view, name="root-api-versions"),
+    path("", include(api_v1_patterns)),
+    path("api/health/", include("apps.health.urls")),
+]
 if settings.DEBUG:
     from apps.feature_flags.debug_view import feature_flags_debug_view
 

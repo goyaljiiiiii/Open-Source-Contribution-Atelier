@@ -5,6 +5,7 @@ import pytest
 from django.test import RequestFactory
 
 from config.health_view import health_view
+from apps.health.views import db_health_view
 
 
 @pytest.fixture
@@ -141,6 +142,26 @@ class TestPostgresCheck:
         assert result == {"status": "ok"}
         mock_conn.ensure_connection.assert_called_once()
         mock_cursor.execute.assert_called_once_with("SELECT 1")
+
+
+class TestDbHealthEndpoint:
+    def test_reports_pool_metrics(self, request_factory, monkeypatch):
+        monkeypatch.setattr(
+            "apps.core.middleware.db_pool_monitor.fetch_postgres_pool_stats",
+            lambda: (6, 2, 8, 0),
+        )
+        monkeypatch.setattr(
+            "apps.core.middleware.db_pool_monitor.get_conn_max_age",
+            lambda: 15,
+        )
+
+        response = db_health_view(request_factory.get("/api/health/db/"))
+
+        assert response.status_code == 200
+        payload = _payload(response)
+        assert payload["total"] == 8
+        assert payload["max_connections"] == 97
+        assert payload["conn_max_age"] == 15
 
 
 class TestRedisCheck:

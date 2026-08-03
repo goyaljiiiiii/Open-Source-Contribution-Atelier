@@ -415,7 +415,7 @@ export function ProfileSettingsForm({ onChange }: ProfileSettingsFormProps) {
             }`}
             disabled={loading}
           >
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            { }
             {(Intl as any).supportedValuesOf("timeZone").map((tz: string) => (
               <option key={tz} value={tz}>
                 {tz}

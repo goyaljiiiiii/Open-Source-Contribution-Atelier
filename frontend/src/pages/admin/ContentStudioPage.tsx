@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { MarkdownRenderer } from "../../components/ui/MarkdownRenderer";
+import { ContentSuggestionsPanel } from "../../components/admin/ContentSuggestionsPanel";
+
 
 export interface QuizItem {
   id: number;
@@ -140,7 +142,7 @@ export function ContentStudioPage() {
   });
 
   const [activeNoteId, setActiveNoteId] = useState<string>(() => notes[0]?.id || "");
-  const [viewMode, setViewMode] = useState<"split" | "editor" | "preview" | "meta" | "quizzes">("split");
+  const [viewMode, setViewMode] = useState<"split" | "editor" | "preview" | "meta" | "quizzes" | "ai_suggestions">("split");
   const [searchQuery, setSearchQuery] = useState("");
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving">("saved");
   const [collapsedFolders, setCollapsedFolders] = useState<Record<string, boolean>>({});
@@ -532,7 +534,6 @@ export function ContentStudioPage() {
                   >
                     <Tag className="w-3.5 h-3.5" /> Meta
                   </button>
-
                   <button
                     onClick={() => setViewMode("quizzes")}
                     className={`flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-xs font-black rounded-xl transition-all shrink-0 ${
@@ -543,10 +544,35 @@ export function ContentStudioPage() {
                   >
                     <HelpCircle className="w-3.5 h-3.5" /> Quiz ({activeNote.quizzes.length})
                   </button>
+
+                  <button
+                    onClick={() => setViewMode("ai_suggestions")}
+                    className={`flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-xs font-black rounded-xl transition-all shrink-0 ${
+                      viewMode === "ai_suggestions"
+                        ? "bg-indigo-600 text-white shadow-card-sm"
+                        : "text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
+                    }`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" /> AI Suggestions
+                  </button>
                 </div>
               </div>
 
               {/* View Viewports */}
+              {viewMode === "ai_suggestions" && (
+                <div className="py-2">
+                  <ContentSuggestionsPanel
+                    markdown={activeNote.content}
+                    onApplyFix={(fix) => {
+                      if (fix.suggestedFix) {
+                        const updated = activeNote.content + "\n\n" + fix.suggestedFix;
+                        updateActiveNote({ content: updated });
+                        toast.success("Applied suggestion to lesson!");
+                      }
+                    }}
+                  />
+                </div>
+              )}
               {viewMode === "split" && (
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 h-[550px] items-stretch">
                   {/* Editor Left */}
@@ -577,7 +603,7 @@ export function ContentStudioPage() {
                         I
                       </button>
                       <button
-                        onClick={() => handleInsertFormatting("\n\`\`\`typescript\n", "\n\`\`\`\n")}
+                        onClick={() => handleInsertFormatting("\n```typescript\n", "\n```\n")}
                         className="px-2 py-1 text-xs font-mono font-bold text-indigo-400 bg-indigo-500/10 rounded"
                       >
                         Code
@@ -626,7 +652,7 @@ export function ContentStudioPage() {
                       Italic
                     </button>
                     <button
-                      onClick={() => handleInsertFormatting("\n\`\`\`typescript\n", "\n\`\`\`\n")}
+                      onClick={() => handleInsertFormatting("\n```typescript\n", "\n```\n")}
                       className="px-3 py-1 text-xs font-mono font-bold text-indigo-400 bg-indigo-500/10 rounded-lg"
                     >
                       Code Block

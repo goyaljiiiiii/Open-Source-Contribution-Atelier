@@ -16,7 +16,7 @@ def create_leaderboard_view(apps, schema_editor):
         """)
     else:
         schema_editor.execute("""
-            CREATE MATERIALIZED VIEW progress_leaderboard_mv AS
+            CREATE MATERIALIZED VIEW IF NOT EXISTS progress_leaderboard_mv AS
             SELECT
                 user_id,
                 SUM(xp_delta) as total_xp,
@@ -24,7 +24,7 @@ def create_leaderboard_view(apps, schema_editor):
             FROM progress_xpevent
             GROUP BY user_id;
 
-            CREATE UNIQUE INDEX progress_leaderboard_mv_user_id_idx
+            CREATE UNIQUE INDEX IF NOT EXISTS progress_leaderboard_mv_user_id_idx
             ON progress_leaderboard_mv (user_id);
 
             CREATE OR REPLACE FUNCTION refresh_leaderboard_trigger_func()
@@ -35,6 +35,7 @@ def create_leaderboard_view(apps, schema_editor):
             END;
             $$ LANGUAGE plpgsql;
 
+            DROP TRIGGER IF EXISTS xp_event_leaderboard_trigger ON progress_xpevent;
             CREATE TRIGGER xp_event_leaderboard_trigger
             AFTER INSERT OR UPDATE OR DELETE ON progress_xpevent
             FOR EACH STATEMENT

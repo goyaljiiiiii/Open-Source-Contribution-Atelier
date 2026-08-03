@@ -2,6 +2,7 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from .views import (
+    LearningPathViewSet,
     LessonDraftViewSet,
     LessonFeedbackListCreateView,
     LessonFeedbackMetricsView,
@@ -24,6 +25,7 @@ router.register("modules", ModuleDraftViewSet, basename="module-draft")
 router.register("lessons", LessonDraftViewSet, basename="lesson-draft")
 router.register("quiz-questions", QuizDraftViewSet, basename="quiz-draft")
 router.register("published-lessons", LessonViewSet, basename="lesson")
+router.register("learning-paths", LearningPathViewSet, basename="learning-path")
 
 urlpatterns = router.urls + [
     path("search/", SearchView.as_view(), name="search"),

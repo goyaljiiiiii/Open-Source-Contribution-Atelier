@@ -27,9 +27,17 @@ from apps.progress.models import LessonProgress
 from apps.search.models import SearchDocument
 
 from . import semantic_search
-from .models import Lesson, LessonDraft, ModuleDraft, Organization, QuizDraft
+from .models import (
+    LearningPath,
+    Lesson,
+    LessonDraft,
+    ModuleDraft,
+    Organization,
+    QuizDraft,
+)
 from .permissions import IsLessonUnlocked
 from .serializers import (
+    LearningPathSerializer,
     LessonDraftSerializer,
     LessonSearchSerializer,
     LessonSerializer,
@@ -536,3 +544,36 @@ class QuizDraftViewSet(viewsets.ModelViewSet):
     queryset = QuizDraft.objects.all()
     serializer_class = QuizDraftSerializer
     permission_classes = [permissions.AllowAny]
+
+
+class LearningPathViewSet(viewsets.ModelViewSet):
+    serializer_class = LearningPathSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    lookup_field = "pk"
+
+    def get_queryset(self):
+        user = self.request.user
+        if (
+            user
+            and user.is_authenticated
+            and (
+                getattr(user, "is_superuser", False) or getattr(user, "is_staff", False)
+            )
+        ):
+            return LearningPath.objects.all().prefetch_related("required_roles")
+        return LearningPath.objects.filter(is_published=True).prefetch_related(
+            "required_roles"
+        )
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if not instance.has_access(request.user):
+            return Response(
+                {
+                    "detail": "Access restricted by role. Required role missing.",
+                    "required_roles": [r.name for r in instance.required_roles.all()],
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)

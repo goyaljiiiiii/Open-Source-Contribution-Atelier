@@ -1,32 +1,32 @@
 import { useState, useEffect } from "react";
-import { Menu } from "lucide-react";
 import {
+  Activity,
   BookOpen,
   BriefcaseBusiness,
+  Cpu,
+  Eye,
+  FileDiff,
+  FileEdit,
+  FileText,
+  GitBranch,
+  GitMerge,
+  Key,
   LayoutGrid,
+  Menu,
   MessageSquare,
+  MessageSquareHeart,
+  Radio,
   Search,
+  SearchCode,
+  Settings,
   Shield,
+  ShoppingBag,
+  SlidersHorizontal,
+  Target,
   TerminalSquare,
   TrendingUp,
   Trophy,
   X,
-  Settings,
-  Eye,
-  FileText,
-  Target,
-  FileDiff,
-  SearchCode,
-  MessageSquareHeart,
-  GitMerge,
-  FileEdit,
-  Key,
-  ShoppingBag,
-  Cpu,
-  SlidersHorizontal,
-  Activity,
-  GitBranch,
-  Radio,
 } from "lucide-react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/AuthContext";
@@ -37,6 +37,8 @@ import { SyncStatusIndicator } from "../ui/SyncStatusIndicator";
 import { NotificationMenu } from "../ui/NotificationMenu";
 import { ThemeToggle } from "../ui/ThemeToggle";
 import { useTranslate } from "../../i18n/useTranslate";
+import { LessonSearchModal } from "../Search/LessonSearchModal";
+
 
 const navGroups = [
   {
@@ -169,10 +171,18 @@ export function Navigation() {
   >([]);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [isFullSearchOpen, setIsFullSearchOpen] = useState(false);
+
+  useEffect(() => {
+    const handleOpen = () => setIsFullSearchOpen(true);
+    window.addEventListener("open-lesson-search", handleOpen);
+    return () => window.removeEventListener("open-lesson-search", handleOpen);
+  }, []);
 
   useEffect(() => {
     fetchLessonsApi().then((data) => setLessonsCatalog(data));
   }, []);
+
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -321,7 +331,10 @@ export function Navigation() {
 
           {/* Desktop Search bar input container */}
           <div className="hidden lg:flex min-w-0 items-center space-x-2 relative grow max-w-md">
-            <div className="flex items-center space-x-2 rounded-lg bg-surface-low px-3 py-2 text-muted w-full border-2 border-black dark:border-[#2e2924] shadow-card-sm focus-within:bg-white transition-all dark:bg-[#151411] dark:text-slate-200 dark:focus-within:bg-[#0f0e0c]">
+            <div
+              onClick={() => setIsFullSearchOpen(true)}
+              className="flex items-center space-x-2 rounded-lg bg-surface-low px-3 py-2 text-muted w-full border-2 border-black dark:border-[#2e2924] shadow-card-sm focus-within:bg-white transition-all dark:bg-[#151411] dark:text-slate-200 cursor-pointer"
+            >
               <label htmlFor="nav-search-input" className="sr-only">
                 Search features, tools, lessons, pages
               </label>
@@ -329,20 +342,14 @@ export function Navigation() {
               <input
                 id="nav-search-input"
                 type="text"
-                placeholder="Search features, tools, lessons, pages..."
-                className="bg-transparent border-none outline-none text-sm w-full text-text placeholder:text-muted/75 dark:text-[#f0ebe2] dark:placeholder:text-slate-400"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                readOnly
+                placeholder="Search lessons & tools... (Cmd+K)"
+                className="bg-transparent border-none outline-none text-sm w-full text-text placeholder:text-muted/75 dark:text-[#f0ebe2] cursor-pointer"
+                onClick={() => setIsFullSearchOpen(true)}
               />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  aria-label="Clear search"
-                  className="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-[#2e2924] hover:text-text"
-                >
-                  <X size={14} />
-                </button>
-              )}
+              <span className="hidden sm:inline-flex items-center gap-0.5 text-[10px] font-mono font-bold bg-white dark:bg-[#2e2924] border border-black/20 dark:border-white/20 px-1.5 py-0.5 rounded text-muted dark:text-slate-300">
+                ⌘K
+              </span>
             </div>
 
             {/* Desktop Search Results Dropdown */}
@@ -599,6 +606,10 @@ export function Navigation() {
           </div>
         </div>
       )}
+      <LessonSearchModal
+        isOpen={isFullSearchOpen}
+        onClose={() => setIsFullSearchOpen(false)}
+      />
     </>
   );
 }

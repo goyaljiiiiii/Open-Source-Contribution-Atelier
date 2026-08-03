@@ -1,6 +1,9 @@
+import json
+
 from django.utils import timezone
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from .models import WebhookDelivery, WebhookEndpoint
@@ -13,7 +16,9 @@ class WebhookEndpointViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return WebhookEndpoint.objects.filter(user=self.request.user).order_by("-created_at")
+        return WebhookEndpoint.objects.filter(user=self.request.user).order_by(
+            "-created_at"
+        )
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -77,10 +82,28 @@ class WebhookEndpointViewSet(viewsets.ModelViewSet):
             # Trigger immediate delivery attempt
             deliver_webhook(delivery.id, attempt=1)
             delivery.refresh_from_db()
+        except (json.JSONDecodeError, KeyError, ValidationError) as e:
+            delivery.status = "failed"
+            delivery.response_body = str(e)
+            delivery.save()
+            return Response(
+                {
+                    "error": "Invalid webhook payload or processing error",
+                    "details": str(e),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         except Exception as e:
             delivery.status = "failed"
             delivery.response_body = str(e)
             delivery.save()
+            return Response(
+                {
+                    "error": "Internal server error during webhook delivery",
+                    "details": str(e),
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
         serializer = WebhookDeliverySerializer(delivery)
         return Response(
@@ -97,7 +120,9 @@ class WebhookDeliveryViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return WebhookDelivery.objects.filter(endpoint__user=self.request.user).order_by("-created_at")
+        return WebhookDelivery.objects.filter(
+            endpoint__user=self.request.user
+        ).order_by("-created_at")
 
     @action(detail=True, methods=["post"], url_path="replay")
     def replay(self, request, pk=None):
@@ -114,10 +139,28 @@ class WebhookDeliveryViewSet(viewsets.ReadOnlyModelViewSet):
         try:
             deliver_webhook(delivery.id, attempt=1)
             delivery.refresh_from_db()
+        except (json.JSONDecodeError, KeyError, ValidationError) as e:
+            delivery.status = "failed"
+            delivery.response_body = str(e)
+            delivery.save()
+            return Response(
+                {
+                    "error": "Invalid webhook payload or processing error",
+                    "details": str(e),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         except Exception as e:
             delivery.status = "failed"
             delivery.response_body = str(e)
             delivery.save()
+            return Response(
+                {
+                    "error": "Internal server error during webhook delivery",
+                    "details": str(e),
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
         serializer = self.get_serializer(delivery)
         return Response(
@@ -134,13 +177,17 @@ class WebhookDeliveryViewSet(viewsets.ReadOnlyModelViewSet):
         Returns the failed delivery ratio over the last 24 hours.
         """
         twenty_four_hours_ago = timezone.now() - timezone.timedelta(hours=24)
-        recent_deliveries = self.get_queryset().filter(created_at__gte=twenty_four_hours_ago)
+        recent_deliveries = self.get_queryset().filter(
+            created_at__gte=twenty_four_hours_ago
+        )
         total = recent_deliveries.count()
 
         if total == 0:
             return Response({"failed_ratio": 0.0, "total": 0, "failed": 0})
 
-        failed = recent_deliveries.filter(status__in=["failed", "dead", "retrying"]).count()
+        failed = recent_deliveries.filter(
+            status__in=["failed", "dead", "retrying"]
+        ).count()
         ratio = round((failed / total) * 100, 2)
 
         return Response({"failed_ratio": ratio, "total": total, "failed": failed})

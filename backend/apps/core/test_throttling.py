@@ -8,12 +8,12 @@ from rest_framework.views import APIView
 from apps.core.throttling import SlidingWindowAnonThrottle, get_redis_connection
 
 
-class TestAnonThrottle(SlidingWindowAnonThrottle):
+class DummyAnonThrottle(SlidingWindowAnonThrottle):
     rate = "100/minute"
 
 
 class DummyView(APIView):
-    throttle_classes = [TestAnonThrottle]
+    throttle_classes = [DummyAnonThrottle]
 
     def get(self, request):
         return Response("OK")

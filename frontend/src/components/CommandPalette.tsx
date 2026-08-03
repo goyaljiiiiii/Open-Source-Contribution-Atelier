@@ -10,23 +10,23 @@ import {
   type RecentCommand,
 } from "../hooks/useRecentCommands";
 import {
-  LayoutGrid,
+  AlignLeft,
   BookOpen,
-  Trophy,
   BriefcaseBusiness,
-  MessageSquare,
-  Settings,
-  Search,
-  X,
   ChevronRight,
+  Clock,
+  Contrast,
   FileText,
   Heading as HeadingIcon,
-  AlignLeft,
-  Sun,
+  LayoutGrid,
+  MessageSquare,
   Moon,
-  Contrast,
-  Clock,
   Palette,
+  Search,
+  Settings,
+  Sun,
+  Trophy,
+  X,
 } from "lucide-react";
 
 interface SearchIndexEntry {
