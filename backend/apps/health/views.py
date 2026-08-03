@@ -141,11 +141,10 @@ class HealthChecker:
             "details": {},
         }
         try:
-            from celery.task.control import inspect
             from config.celery import app
 
             start = time.time()
-            i = inspect(app)
+            i = app.control.inspect()
             if i:
                 stats = i.stats()
                 if stats:
