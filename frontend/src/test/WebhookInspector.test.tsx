@@ -4,7 +4,6 @@ import { WebhookInspector } from "../components/docs/WebhookInspector";
 
 describe("WebhookInspector", () => {
   beforeEach(() => {
-    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
