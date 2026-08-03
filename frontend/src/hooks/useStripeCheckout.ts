@@ -14,8 +14,9 @@ export function useStripeCheckout() {
         method: "POST",
         body: JSON.stringify({ plan_id: planId }),
       });
-      if (data.checkout_url) {
-        window.location.href = data.checkout_url;
+      const redirectUrl = data.checkout_url || data.url;
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
       } else {
         throw new Error("No redirect URL returned from checkout endpoint");
       }
