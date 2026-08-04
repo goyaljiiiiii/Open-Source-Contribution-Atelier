@@ -32,15 +32,69 @@ export const API_BASE =
     ? `${window.location.origin}/api`
     : "http://127.0.0.1:8000/api");
 
-type RequestOptions = RequestInit & {
+export type RequestOptions = RequestInit & {
   requireAuth?: boolean;
   suppressErrorToast?: boolean;
-  /** Request timeout in milliseconds. Default: 15000 (15s) */
+  /** Request timeout in milliseconds per single attempt. Default: 15000 (15s) */
   timeoutMs?: number;
-  /** Max retries on network/5xx errors. Default: 1 */
+  /** Max retries on transient errors. Default: 3 for GET/HEAD/OPTIONS, 0 for mutations unless retryMutations is true */
   maxRetries?: number;
+  /** Opt-in flag to enable automatic retries for mutating requests (POST, PUT, PATCH, DELETE) */
+  retryMutations?: boolean;
+  /** Base delay in milliseconds for exponential backoff. Default: 500ms */
+  baseDelayMs?: number;
+  /** Maximum delay cap in milliseconds for backoff. Default: 10000ms */
+  maxDelayMs?: number;
+  /** Overall total timeout in milliseconds across all retry attempts combined. Default: 30000ms */
+  totalTimeoutMs?: number;
   _isRetry?: boolean;
 };
+
+export function parseRetryAfterHeader(
+  headerValue: string | null,
+): number | null {
+  if (!headerValue) return null;
+  const trimmed = headerValue.trim();
+
+  // Seconds integer format
+  if (/^\d+$/.test(trimmed)) {
+    const seconds = parseInt(trimmed, 10);
+    return isNaN(seconds) ? null : seconds * 1000;
+  }
+
+  // HTTP Date format (e.g. Wed, 21 Oct 2025 07:28:00 GMT)
+  const dateMs = Date.parse(trimmed);
+  if (!isNaN(dateMs)) {
+    const diff = dateMs - Date.now();
+    return diff > 0 ? diff : 0;
+  }
+
+  return null;
+}
+
+export function calculateBackoffDelay(
+  attempt: number,
+  baseDelayMs = 500,
+  maxDelayMs = 10000,
+  retryAfterMs: number | null = null,
+): number {
+  if (retryAfterMs !== null && retryAfterMs >= 0) {
+    return Math.min(retryAfterMs, maxDelayMs);
+  }
+
+  const exponential = Math.min(
+    maxDelayMs,
+    baseDelayMs * Math.pow(2, Math.max(0, attempt - 1)),
+  );
+  // Full jitter: uniformly random between 0 and exponential cap
+  const jittered = Math.random() * exponential;
+  return Math.floor(jittered);
+}
+
+export function isIdempotentMethod(method?: string): boolean {
+  const m = (method || "GET").toUpperCase();
+  return m === "GET" || m === "HEAD" || m === "OPTIONS";
+}
 
 /**
  * Internal fetch wrapper with timeout support.
@@ -86,11 +140,18 @@ export const safeGenerateUUID = (): string => {
 };
 
 export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
+  const method = (options.method || "GET").toUpperCase();
+  const isIdempotent = isIdempotentMethod(method);
+
   const {
     requireAuth = true,
     suppressErrorToast = false,
     timeoutMs = 15_000,
-    maxRetries = 1,
+    retryMutations = false,
+    baseDelayMs = 500,
+    maxDelayMs = 10_000,
+    totalTimeoutMs = 30_000,
+    maxRetries = options.maxRetries ?? (isIdempotent || retryMutations ? 3 : 0),
     headers: customHeaders,
     ...config
   } = options;
@@ -119,28 +180,45 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
   }
 
   let lastError: unknown;
+  const startTime = Date.now();
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    // Exponential backoff on retries (0ms, 2000ms, 4000ms, ...)
-    if (attempt > 0) {
-      await new Promise((r) => setTimeout(r, 2000 * attempt));
+    const elapsed = Date.now() - startTime;
+    if (elapsed >= totalTimeoutMs && attempt > 0) {
+      throw lastError || new Error(`Overall request timeout of ${totalTimeoutMs}ms exceeded`);
     }
 
     try {
+      const remainingTime = Math.max(100, totalTimeoutMs - (Date.now() - startTime));
+      const currentTimeoutMs = Math.min(timeoutMs, remainingTime);
+
       const response = await fetchWithTimeout(
         `${API_BASE}${endpoint}`,
-        { ...config, headers },
-        timeoutMs,
+        { ...config, method, headers },
+        currentTimeoutMs,
       );
 
       const isRetryableStatus =
         response.status === 429 ||
         (response.status >= 500 && response.status < 600);
 
-      // Retry temporary HTTP failures before surfacing an error.
+      // Retry temporary HTTP failures (429 & 5xx) before surfacing an error.
       if (isRetryableStatus && attempt < maxRetries) {
         lastError = new Error(`HTTP ${response.status}`);
-        continue;
+        const retryAfterMs = parseRetryAfterHeader(
+          response.headers.get("Retry-After"),
+        );
+        const delay = calculateBackoffDelay(
+          attempt + 1,
+          baseDelayMs,
+          maxDelayMs,
+          retryAfterMs,
+        );
+
+        if (Date.now() + delay - startTime < totalTimeoutMs) {
+          await new Promise((r) => setTimeout(r, delay));
+          continue;
+        }
       }
 
       if (!response.ok) {
@@ -224,13 +302,28 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
     } catch (error) {
       lastError = error;
 
-      // If it's a timeout / network error and we have retries left, try again
+      // Non-retryable ApiErrors (400, 401, 403, 404, 409, 422, etc) should fail fast without retrying
+      if (error instanceof ApiError && !error.retryable) {
+        throw error;
+      }
+
+      // If it's a timeout / network error / 5xx error and we have retries left, try again
       const isRetryable =
         error instanceof DOMException || // AbortError from timeout
         error instanceof TypeError || // Network error
         isRetryableApiError(error);
+
       if (isRetryable && attempt < maxRetries) {
-        continue;
+        const delay = calculateBackoffDelay(
+          attempt + 1,
+          baseDelayMs,
+          maxDelayMs,
+          null,
+        );
+        if (Date.now() + delay - startTime < totalTimeoutMs) {
+          await new Promise((r) => setTimeout(r, delay));
+          continue;
+        }
       }
 
       // Prevent toast spam if it's specifically the offline background sync firing a network error
