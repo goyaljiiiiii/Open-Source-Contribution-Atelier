@@ -8,6 +8,7 @@ import { GitBranch } from "lucide-react";
 import PasswordStrengthMeter from "../components/PasswordStrengthMeter";
 import { DemoLoginButton } from "../features/auth/DemoLoginButton";
 import { formatGoogleOAuthError } from "../lib/googleOAuth";
+import { PasswordInput } from "../components/PasswordInput";
 
 const githubAuthUrl =
   import.meta.env?.VITE_GITHUB_OAUTH_URL ||
@@ -49,8 +50,6 @@ export function SignupPage() {
       setError(formatGoogleOAuthError(undefined, "popup"));
     },
   });
-
-  // ── END HELPER BLOCK ───────────────────────────────────────────────────────
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,12 +178,15 @@ export function SignupPage() {
 
         {/* ── PASSWORD ── */}
         <div className="space-y-2">
-          <label className="font-bold text-black ml-2 uppercase tracking-wide text-sm">
+          <label
+            htmlFor="signup-password"
+            className="font-bold text-black ml-2 uppercase tracking-wide text-sm"
+          >
             Password
           </label>
-          <input
+          <PasswordInput
+            id="signup-password"
             className="w-full rounded-2xl border-4 border-black bg-white px-5 py-3 text-black font-bold outline-none placeholder:text-muted/60 focus:bg-tertiary shadow-card-sm transition-all focus:-translate-y-1 focus:shadow-card"
-            type="password"
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}

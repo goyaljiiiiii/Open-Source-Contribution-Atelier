@@ -1,3 +1,5 @@
+import logging
+import os
 import uuid  # NEW: Added for cryptographic nonce generation
 from datetime import datetime
 from datetime import timezone as dt_timezone
@@ -53,6 +55,8 @@ from .serializers import (
 )
 from .throttles import HelpRequestRateThrottle
 
+logger = logging.getLogger(__name__)
+
 
 # ============================================================
 # ✅ ADD: Notes Export View
@@ -79,7 +83,7 @@ class ExportNotesView(APIView):
             .select_related("lesson", "lesson__module")
             .order_by("lesson__module__order", "lesson__order")
         )
-
+        
         if not notes.exists():
             return Response(
                 {"error": "No notes found to export"}, status=status.HTTP_404_NOT_FOUND
@@ -579,7 +583,7 @@ class CommunityStatsView(APIView):
             if user and user.is_authenticated
             else None
         )
-        
+
         cache_key = f"community:stats:{org.id}" if org else "community:stats"
 
         def compute_stats():
@@ -1251,95 +1255,178 @@ class LeaderboardView(APIView):
         except ValueError:
             page = 1
             limit = 50
+        page = max(page, 1)
+        limit = min(max(limit, 1), 200)
 
-        import logging
+        from datetime import datetime, timedelta
 
-        from apps.progress.models import LeaderboardRank
-        from apps.progress.services.leaderboard_service import LeaderboardService
-
-        logger = logging.getLogger(__name__)
-
-        if time_period == "all_time":
-            try:
-                query = LeaderboardRank.objects.select_related("user")
-                if search_username:
-                    query = query.filter(user__username__icontains=search_username)
-
-                def compute_leaderboard():
-                    total_users_count = query.count()
-                    if total_users_count == 0:
-                        return 0, []
-                    offset = (page - 1) * limit
-                    ranks = query[offset : offset + limit]
-                    leaderboard_data = [
-                        {
-                            "user_id": r.user_id,
-                            "username": r.user.username,
-                            "rank": r.rank,
-                            "total_xp": r.total_xp,
-                        }
-                        for r in ranks
-                    ]
-                    return total_users_count, leaderboard_data
-
-                from apps.core.cache.coalescing import CoalescingCache
-
-                cache_key = f"leaderboard_all_time_p{page}_l{limit}_u{search_username or 'none'}"
-                total_users, leaderboard = CoalescingCache().get_or_set_coalesced(
-                    cache_key, 300, compute_leaderboard
-                )
-
-                if total_users > 0:
-                    personal_rank = None
-                    if request.user.is_authenticated and not search_username:
-                        try:
-                            pr = LeaderboardRank.objects.get(user=request.user)
-                            personal_rank = {
-                                "rank": pr.rank,
-                                "total_xp": pr.total_xp,
-                            }
-                        except LeaderboardRank.DoesNotExist:
-                            pass
-
-                    total_pages = (
-                        (total_users + limit - 1) // limit if total_users > 0 else 1
-                    )
-                    return Response(
-                        {
-                            "leaderboard": leaderboard,
-                            "personal_rank": personal_rank,
-                            "page": page,
-                            "limit": limit,
-                            "total_users": total_users,
-                            "total_pages": total_pages,
-                        },
-                        status=status.HTTP_200_OK,
-                    )
-            except Exception as e:
-                logger.warning(
-                    f"Materialized view query failed or empty, falling back: {e}"
-                )
-
-        result = LeaderboardService.get_leaderboard(
-            time_period=time_period,
-            page=page,
-            limit=limit,
-            search_username=search_username,
+        from django.contrib.auth import get_user_model
+        from django.db.models import (
+            Count,
+            F,
+            IntegerField,
+            OuterRef,
+            Q,
+            Subquery,
+            Sum,
+            Value,
         )
+        from django.db.models.functions import Coalesce
 
-        # Add user's personal rank if authenticated and not searching
-        personal_rank = None
-        if request.user.is_authenticated and not search_username:
-            personal_rank = LeaderboardService.get_user_rank(
-                request.user.username, time_period=time_period
+        from apps.challenges.models import ChallengeCompletion
+        from apps.core.cache.coalescing import CoalescingCache
+        from apps.dashboard.models import Issue, PullRequest
+        from apps.progress.models import LessonProgress, Season, StreakProfile
+
+        User = get_user_model()
+
+        # Period start boundary (None means all-time).
+        now = timezone.now()
+        start_date = None
+        if time_period == "weekly":
+            start_date = (now - timedelta(days=now.weekday())).replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+        elif time_period == "monthly":
+            start_date = now.replace(
+                day=1, hour=0, minute=0, second=0, microsecond=0
+            )
+        elif time_period.startswith("seasonal"):
+            season = Season.objects.filter(is_active=True).first()
+            if season is not None and season.start_date:
+                start_date = timezone.make_aware(
+                    datetime.combine(season.start_date, datetime.min.time())
+                )
+
+        # Compute XP the same way as the contributor dashboard so leaderboard
+        # ranks always match a user's dashboard rank. XPEvent is a gamification
+        # ledger that most contribution paths never write, so using it as the
+        # source yields an empty leaderboard even with real contributions.
+        def ranked_users():
+            date_filter = {}
+            if start_date is not None:
+                date_filter["updated_at__gte"] = start_date
+
+            lesson_progress = (
+                LessonProgress.objects.filter(
+                    user=OuterRef("pk"), completed=True, **date_filter
+                )
+                .values("user")
+                .annotate(total=Sum("score"))
+                .values("total")
+            )
+            issues_xp = (
+                Issue.objects.filter(
+                    assigned_to=OuterRef("pk"),
+                    status=Issue.Status.SOLVED,
+                    **date_filter,
+                )
+                .values("assigned_to")
+                .annotate(total=Sum("points") + Sum("bonus_points"))
+                .values("total")
+            )
+            challenge_xp = (
+                ChallengeCompletion.objects.filter(user=OuterRef("pk"))
+                .values("user")
+                .annotate(total=Sum("bonus_earned"))
+                .values("total")
+            )
+            prs_merged = (
+                PullRequest.objects.filter(
+                    user=OuterRef("pk"),
+                    status=PullRequest.Status.MERGED,
+                    **date_filter,
+                )
+                .values("user")
+                .annotate(total=Count("id"))
+                .values("total")
             )
 
-        total_users = result.get("total_users", 0)
+            users = (
+                User.objects.filter(is_staff=False)
+                .annotate(
+                    lesson_xp=Coalesce(
+                        Subquery(lesson_progress, output_field=IntegerField()),
+                        Value(0),
+                    ),
+                    issues_xp=Coalesce(
+                        Subquery(issues_xp, output_field=IntegerField()), Value(0)
+                    ),
+                    challenge_xp=Coalesce(
+                        Subquery(challenge_xp, output_field=IntegerField()),
+                        Value(0),
+                    ),
+                    prs_merged=Coalesce(
+                        Subquery(prs_merged, output_field=IntegerField()), Value(0)
+                    ),
+                )
+                .annotate(
+                    total_xp=F("lesson_xp") + F("issues_xp") + F("challenge_xp"),
+                )
+                .order_by("-total_xp", "username")
+            )
+            if search_username:
+                users = users.filter(username__icontains=search_username)
+            return users
+
+        def compute_leaderboard():
+            users = ranked_users()
+            total_users_count = users.count()
+            offset = (page - 1) * limit
+            page_rows = list(users[offset : offset + limit])
+
+            user_ids = [u.pk for u in page_rows]
+            streak_map = dict(
+                StreakProfile.objects.filter(user_id__in=user_ids).values_list(
+                    "user_id", "current_streak"
+                )
+            )
+
+            leaderboard = []
+            for i, user in enumerate(page_rows):
+                rank = offset + i + 1
+                leaderboard.append(
+                    {
+                        "user_id": user.pk,
+                        "username": user.username,
+                        "rank": rank,
+                        "total_xp": user.total_xp,
+                        "merged_prs": user.prs_merged,
+                        "streak_days": streak_map.get(user.pk, 0),
+                        "avatar_url": f"https://github.com/{user.username}.png",
+                        "html_url": f"https://github.com/{user.username}",
+                        "is_top_3": rank <= 3,
+                    }
+                )
+            return total_users_count, leaderboard
+
+        cache_key = (
+            f"leaderboard_hof_{time_period}_p{page}_l{limit}_u"
+            f"{search_username or 'none'}"
+        )
+        total_users, leaderboard = CoalescingCache().get_or_set_coalesced(
+            cache_key, 300, compute_leaderboard
+        )
+
+        # Personal rank from the same computation so it matches the dashboard.
+        personal_rank = None
+        if request.user.is_authenticated and not search_username:
+            me = ranked_users().filter(pk=request.user.id).first()
+            if me is not None:
+                better_count = ranked_users().filter(
+                    Q(total_xp__gt=me.total_xp)
+                    | Q(total_xp=me.total_xp, username__lt=me.username)
+                ).count()
+                personal_rank = {
+                    "rank": better_count + 1,
+                    "total_xp": me.total_xp,
+                }
+
         total_pages = (total_users + limit - 1) // limit if total_users > 0 else 1
 
         return Response(
             {
-                "leaderboard": result.get("leaderboard", []),
+                "leaderboard": leaderboard,
                 "personal_rank": personal_rank,
                 "page": page,
                 "limit": limit,
@@ -1348,6 +1435,69 @@ class LeaderboardView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class GitHubLeaderboardView(APIView):
+    """Read-only ranking of real contributions to the configured GitHub repo."""
+
+    permission_classes = [permissions.AllowAny]
+    cache_timeout = 15 * 60
+
+    def get(self, request):
+        repository = os.getenv(
+            "GITHUB_LEADERBOARD_REPOSITORY",
+            "goyaljiiiiii/Open-Source-Contribution-Atelier",
+        )
+        cache_key = f"github_leaderboard:{repository}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
+        try:
+            import requests
+
+            headers = {"Accept": "application/vnd.github+json"}
+            token = os.getenv("GITHUB_TOKEN")
+            if token:
+                headers["Authorization"] = f"Bearer {token}"
+            response = requests.get(
+                f"https://api.github.com/repos/{repository}/contributors",
+                params={"per_page": 100, "anon": "false"},
+                headers=headers,
+                timeout=10,
+            )
+            response.raise_for_status()
+            contributors = response.json()
+        except Exception as exc:
+            logger.warning("GitHub leaderboard request failed: %s", exc)
+            return Response(
+                {"detail": "GitHub contribution data is temporarily unavailable."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        leaderboard = [
+            {
+                "rank": index,
+                "username": contributor["login"],
+                "total_xp": contributor.get("contributions", 0),
+                "merged_prs": contributor.get("contributions", 0),
+                "streak_days": 0,
+                "avatar_url": contributor.get("avatar_url", ""),
+                "html_url": contributor.get("html_url", ""),
+            }
+            for index, contributor in enumerate(contributors, start=1)
+            if contributor.get("login")
+        ]
+        data = {
+            "source": "github",
+            "repository": repository,
+            "leaderboard": leaderboard,
+            "total_users": len(leaderboard),
+            "page": 1,
+            "total_pages": 1,
+        }
+        cache.set(cache_key, data, self.cache_timeout)
+        return Response(data)
 
 
 class BufferMetricsView(APIView):
@@ -1791,4 +1941,3 @@ class WeeklyGoalView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return self.get(request)
-

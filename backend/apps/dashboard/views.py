@@ -1,6 +1,8 @@
+import csv
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
+from django.http import StreamingHttpResponse
 
 User = get_user_model()
 from django.db import models
@@ -460,6 +462,28 @@ class ContributorDashboardView(APIView):
                 "next_milestone": MilestoneTrackService.get_user_next_milestone(user),
             }
 
+        elif field == "continue_learning":
+            incomplete_qs = (
+                LessonProgress.objects.filter(user=user, completed=False)
+                .select_related("lesson")
+                .order_by("-updated_at")[:3]
+            )
+            continue_learning_list = []
+            for lp in incomplete_qs:
+                progress_pct = min(100, int(lp.score)) if lp.score else 0
+                continue_learning_list.append(
+                    {
+                        "id": lp.lesson.id,
+                        "lesson_slug": lp.lesson.slug,
+                        "lesson_title": lp.lesson.title,
+                        "summary": lp.lesson.summary,
+                        "progress_percentage": progress_pct,
+                        "score": lp.score,
+                        "updated_at": lp.updated_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    }
+                )
+            return continue_learning_list
+
         elif field == "weekly_goal":
             from apps.progress.models import WeeklyGoal
             goal = WeeklyGoal.get_or_create_current(user)
@@ -470,14 +494,6 @@ class ContributorDashboardView(APIView):
             }
 
     def get(self, request):
-         users = User.objects.filter(
-            is_active=True
-        ).annotate(
-            total_xp=F('progress__xp')
-        ).order_by(
-            '-total_xp',  
-            'username'   
-        )
         user = request.user
 
         fields_param = request.query_params.get("fields")
@@ -490,21 +506,24 @@ class ContributorDashboardView(APIView):
                 "recent_prs",
                 "progress_tracker",
                 "active_track",
+                "continue_learning",
                 "weekly_goal",
             ]
 
         data = {}
         from apps.core.cache.coalescing import CoalescingCache
 
+        valid_fields = [
+            "personal_stats",
+            "assigned_issues",
+            "recent_prs",
+            "progress_tracker",
+            "active_track",
+            "continue_learning",
+            "weekly_goal",
+        ]
         for field in requested_fields:
-            if field not in [
-                "personal_stats",
-                "assigned_issues",
-                "recent_prs",
-                "progress_tracker",
-                "active_track",
-                "weekly_goal",
-            ]:
+            if field not in valid_fields:
                 continue
 
             cache_key = f"dashboard_contributor_{field}_{user.id}"
@@ -691,3 +710,97 @@ class UsageAnalyticsView(APIView):
                 ],
             }
         )
+
+
+class Echo:
+    """An object that implements just the write method of the file-like interface."""
+
+    def write(self, value):
+        return value
+
+
+class AnalyticsExportCSVView(APIView):
+    """
+    Server-side streamed CSV export for analytics dashboard metrics.
+    Supports filtering by date range (days) and dataset type.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            days = int(request.query_params.get("days", 30))
+        except (ValueError, TypeError):
+            days = 30
+
+        dataset = request.query_params.get("dataset", "all").lower()
+
+        now = timezone.now()
+        start_date = now - timedelta(days=days)
+
+        pseudo_buffer = Echo()
+        writer = csv.writer(pseudo_buffer)
+
+        def csv_stream():
+            if dataset in ("all", "registrations"):
+                yield writer.writerow(["--- REGISTRATIONS ---"])
+                yield writer.writerow(["Date", "Count"])
+                registrations = (
+                    User.objects.filter(date_joined__gte=start_date)
+                    .annotate(date=TruncDate("date_joined"))
+                    .values("date")
+                    .annotate(count=Count("id"))
+                    .order_by("date")
+                )
+                for item in registrations:
+                    yield writer.writerow([str(item["date"]), item["count"]])
+                yield writer.writerow([])
+
+            if dataset in ("all", "progress_stats"):
+                yield writer.writerow(["--- COURSE ENGAGEMENT / PROGRESS STATS ---"])
+                yield writer.writerow(["Date", "Enrolled", "Completed"])
+                progress_stats = (
+                    LessonProgress.objects.filter(updated_at__gte=start_date)
+                    .annotate(date=TruncDate("updated_at"))
+                    .values("date")
+                    .annotate(
+                        completed=Count("id", filter=models.Q(completed=True)),
+                        enrolled=Count("id"),
+                    )
+                    .order_by("date")
+                )
+                for item in progress_stats:
+                    yield writer.writerow(
+                        [str(item["date"]), item["enrolled"], item["completed"]]
+                    )
+                yield writer.writerow([])
+
+            if dataset in ("all", "quiz_stats"):
+                yield writer.writerow(["--- QUIZ ACCURACY STATS ---"])
+                yield writer.writerow(["Outcome", "Count"])
+                quiz_stats = (
+                    QuizAttempt.objects.filter(created_at__gte=start_date)
+                    .values("is_correct")
+                    .annotate(count=Count("id"))
+                )
+                for item in quiz_stats:
+                    outcome = "Correct" if item["is_correct"] else "Incorrect"
+                    yield writer.writerow([outcome, item["count"]])
+                yield writer.writerow([])
+
+            if dataset in ("all", "challenge_stats"):
+                yield writer.writerow(["--- CHALLENGE SUBMISSIONS STATS ---"])
+                yield writer.writerow(["Status", "Count"])
+                challenge_stats = (
+                    CodeSubmission.objects.filter(created_at__gte=start_date)
+                    .values("status")
+                    .annotate(count=Count("id"))
+                )
+                for item in challenge_stats:
+                    yield writer.writerow([item["status"], item["count"]])
+
+        filename = f"analytics_export_{dataset}_{days}d.csv"
+        response = StreamingHttpResponse(csv_stream(), content_type="text/csv")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+

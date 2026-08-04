@@ -2,6 +2,7 @@ import React from "react";
 import { ErrorStateCard } from "./ErrorStateCard";
 import { EmptyStateCard } from "./EmptyStateCard";
 import { LucideIcon, Loader2 } from "lucide-react";
+import { getApiErrorDetails, getApiErrorMessage } from "../../lib/apiErrors";
 
 export interface DataStateWrapperProps {
   loading: boolean;
@@ -55,16 +56,8 @@ export const DataStateWrapper: React.FC<DataStateWrapperProps> = ({
 
   // 2. Error State
   if (error) {
-    const errorDetailsStr =
-      error instanceof Error
-        ? error.stack || error.message
-        : typeof error === "string"
-        ? error
-        : null;
-
-    const errorMsgStr =
-      errorMessage ||
-      (error instanceof Error ? error.message : typeof error === "string" ? error : undefined);
+    const errorDetailsStr = getApiErrorDetails(error);
+    const errorMsgStr = errorMessage || getApiErrorMessage(error);
 
     return (
       <ErrorStateCard

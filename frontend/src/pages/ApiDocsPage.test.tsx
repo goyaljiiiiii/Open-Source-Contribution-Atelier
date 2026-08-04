@@ -34,7 +34,7 @@ describe("ApiDocsPage", () => {
       data: schema,
       isLoading: false,
       isError: false,
-    } as ReturnType<typeof useOpenApiSchema>);
+    } as any);
 
     const user = userEvent.setup();
     render(<ApiDocsPage />);

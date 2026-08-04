@@ -5,7 +5,6 @@
 Fixes #<!-- issue number -->
 
 ## 🏆 Program Participation
-- [ ] **Social Summer of Code (SSoC 2026)**
 - [ ] **Elite Coder Summer of Code (ECSoC 2026)**
 
 ## Type of Change

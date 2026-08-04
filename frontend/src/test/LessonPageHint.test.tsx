@@ -109,7 +109,7 @@ describe("LessonPage Gamified Hint Module", () => {
       syncProgress: mockSyncProgress,
       isLessonCompleted: () => false,
       isLoading: false,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
     } as any);
 
     vi.spyOn(lessonsModule, "fetchLessonsApiResult").mockResolvedValue({

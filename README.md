@@ -13,7 +13,6 @@
 
 [![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://open-source-contribution-atelier.vercel.app)
 [![Backend API](https://img.shields.io/badge/🤗_API-Hugging_Face-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black)](https://nandinigoyaldev-atelier-backend.hf.space)
-[![SSoC 2026](https://img.shields.io/badge/SSoC_2026-Participating-4ECDC4?style=for-the-badge&logo=opensourceinitiative&logoColor=white)](#)
 
 [![GitHub Stars](https://img.shields.io/github/stars/nandinigoyaldev/Open-Source-Contribution-Atelier?style=flat-square&logo=github&label=Stars&color=FFD700)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier)
 [![GitHub Forks](https://img.shields.io/github/forks/nandinigoyaldev/Open-Source-Contribution-Atelier?style=flat-square&logo=github&label=Forks&color=45B7D1)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/fork)
@@ -29,6 +28,23 @@
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)](#)
 
 </div>
+
+---
+
+## 🏆 ECSoC 2026 Program & Quick Links
+
+<div align="center">
+
+[![ECSoC 2026 Active](https://img.shields.io/badge/Program-ECSoC_2026_Active-8A2BE2?style=for-the-badge&logo=github)](LEADERBOARD.md)
+[![Leaderboard](https://img.shields.io/badge/ECSoC-Leaderboard_🏆-4ECDC4?style=for-the-badge&logo=github)](LEADERBOARD.md)
+
+</div>
+
+Welcome to **ECSoC 2026** at Open-Source Contribution Atelier! Please review our program guides before contributing:
+- 📊 **[Official ECSoC '26 Leaderboard](LEADERBOARD.md)**
+- 📌 **[Participation & Claiming Guide (Issue #2498)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/issues/2498)**
+- 📌 **[PR Rules & Security Policy (Issue #2499)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/issues/2499)**
+- 📌 **[Rewards & Tiers (Issue #2500)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/issues/2500)**
 
 ---
 
@@ -231,7 +247,7 @@ This project is fully configured to be deployed on **Vercel** as a monorepo.
 
 ## 🧑‍💻 Contributing
 
-We welcome contributions of all levels suitable for **SSoC 2026** and long-term participation!
+We welcome contributions of all levels and long-term participation!
 
 > [!IMPORTANT]
 > **Before requesting an issue**, please read the pinned guide issues on the [Issues tab](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/issues) to understand the keyword assignment rules, CI checks, and the 3-day stale policy.

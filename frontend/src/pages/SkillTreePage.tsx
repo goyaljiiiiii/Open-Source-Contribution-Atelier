@@ -319,7 +319,7 @@ export const SkillTreePage: React.FC = () => {
                 <span className="px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-bold rounded-full uppercase tracking-wider flex items-center gap-1.5">
                   <Compass className="w-3.5 h-3.5 text-indigo-400" /> RPG Contributor Pathway
                 </span>
-                <span className="text-xs text-slate-400">SSoC & ECSoC 2026 Edition</span>
+                <span className="text-xs text-slate-400">ECSoC 2026 Edition</span>
               </div>
               <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
                 Interactive Skill Tree & Mastery Graph

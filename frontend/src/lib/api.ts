@@ -4,6 +4,11 @@ import { clearAccessToken, getAccessToken, setAccessToken } from "./authToken";
 import { broadcastAuthEvent } from "./authSync";
 import { getTraceHeaders } from "./otelProvider";
 import toast from "react-hot-toast";
+import {
+  createApiError,
+  isAuthExpiredApiError,
+  isRetryableApiError,
+} from "./apiErrors";
 
 let refreshPromise: Promise<string | null> | null = null;
 
@@ -61,6 +66,25 @@ async function fetchWithTimeout(
   }
 }
 
+export const safeGenerateUUID = (): string => {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+    return ("" + 1e7 + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) =>
+      (
+        Number(c) ^
+        (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (Number(c) / 4)))
+      ).toString(16)
+    );
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
+
 export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
   const {
     requireAuth = true,
@@ -74,7 +98,7 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
   const headers = new Headers(customHeaders);
 
   // Attach X-Request-ID and W3C trace context for distributed tracing
-  const requestId = crypto.randomUUID();
+  const requestId = safeGenerateUUID();
   headers.set("X-Request-ID", requestId);
   const traceHeaders = getTraceHeaders();
   if (traceHeaders.traceparent) {
@@ -109,14 +133,20 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
         timeoutMs,
       );
 
-      // Retry on 503 (Service Unavailable) — common during HF cold starts
-      if (response.status === 503 && attempt < maxRetries) {
-        lastError = new Error("Service unavailable (503)");
+      const isRetryableStatus =
+        response.status === 429 ||
+        (response.status >= 500 && response.status < 600);
+
+      // Retry temporary HTTP failures before surfacing an error.
+      if (isRetryableStatus && attempt < maxRetries) {
+        lastError = new Error(`HTTP ${response.status}`);
         continue;
       }
 
       if (!response.ok) {
-        if (response.status === 401 && !options._isRetry) {
+        const hasAuthHeader = Boolean(headers.get("Authorization"));
+
+        if (response.status === 401 && requireAuth && !options._isRetry) {
           try {
             const refreshToken = localStorage.getItem("refreshToken");
             if (refreshToken) {
@@ -155,50 +185,39 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
         }
 
         const errorBody = await response.json().catch(() => ({}));
-        let errorMessage =
-          errorBody.error ||
-          errorBody.message ||
-          errorBody.non_field_errors?.[0];
-
-        if (
-          !errorMessage &&
-          typeof errorBody === "object" &&
-          errorBody !== null
-        ) {
-          const fieldErrors = Object.values(errorBody)
-            .map((msgs) => {
-              if (Array.isArray(msgs)) return msgs[0];
-              if (typeof msgs === "string") return msgs;
-              return null;
-            })
-            .filter(Boolean);
-
-          if (fieldErrors.length > 0) {
-            errorMessage = fieldErrors.join(" ");
-          }
-        }
-
-        errorMessage =
-          errorMessage ||
-          `HTTP error ${response.status} (Req ID: ${requestId})`;
+        const apiError = createApiError({
+          status: response.status,
+          endpoint,
+          requestId,
+          body: errorBody,
+          retryable: isRetryableStatus,
+          authExpired: response.status === 401 && requireAuth,
+        });
 
         console.error(`[API Error] ReqID=${requestId}`, errorBody);
 
-        lastError = new Error(errorMessage);
+        if (response.status === 401 && requireAuth && !options._isRetry) {
+          clearAccessToken();
+          try {
+            localStorage.removeItem("refreshToken");
+          } catch {
+            /* storage unavailable */
+          }
+          broadcastAuthEvent("LOGOUT");
+        }
 
-        if (!suppressErrorToast) {
-          if (response.status === 401) {
-            clearAccessToken();
-            try {
-              localStorage.removeItem("refreshToken");
-            } catch {
-              /* storage unavailable */
-            }
-            broadcastAuthEvent("LOGOUT");
+        if (!suppressErrorToast && !apiError.authExpired && hasAuthHeader) {
+          if (response.status === 403) {
+            toast.error("You do not have permission to perform this action.");
+          } else if (response.status === 404) {
+            toast.error("We couldn't find the requested resource.");
+          } else if (response.status >= 500) {
+            toast.error("The server is having trouble right now. Please try again.");
           }
         }
 
-        throw new Error(errorMessage);
+        lastError = apiError;
+        throw apiError;
       }
 
       return await response.json().catch(() => ({}));
@@ -208,7 +227,8 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
       // If it's a timeout / network error and we have retries left, try again
       const isRetryable =
         error instanceof DOMException || // AbortError from timeout
-        error instanceof TypeError; // Network error
+        error instanceof TypeError || // Network error
+        isRetryableApiError(error);
       if (isRetryable && attempt < maxRetries) {
         continue;
       }
@@ -299,6 +319,16 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
           }
         }
       }
+      if (isAuthExpiredApiError(error)) {
+        clearAccessToken();
+        try {
+          localStorage.removeItem("refreshToken");
+        } catch {
+          /* storage unavailable */
+        }
+        broadcastAuthEvent("LOGOUT");
+      }
+
       throw error;
     }
   }

@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
-import { Download, Search, Sliders } from "lucide-react";
 import { Download, Search, Sliders, Activity } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ApiEndpointCard } from "../components/docs/ApiEndpointCard";
 import { WebhookInspector } from "../components/docs/WebhookInspector";
+import { ThemePicker } from "../components/docs/ThemePicker";
 import { SectionCard } from "../components/ui/SectionCard";
 import { API_BASE } from "../lib/api";
 import { useOpenApiSchema } from "../hooks/useOpenApiSchema";
@@ -67,6 +67,9 @@ export function ApiDocsPage() {
           {schema?.info?.version ? ` (v${schema.info.version})` : ""}.
         </p>
       </SectionCard>
+
+      {/* Documentation Theme & Accent Picker */}
+      <ThemePicker />
 
       {/* Webhook Event Payload Inspector */}
       <WebhookInspector />

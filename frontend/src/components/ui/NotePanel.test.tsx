@@ -28,7 +28,7 @@ describe("NotePanel", () => {
       isSaving: false,
       isError: false,
       isSuccess: true,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
     } as any);
   });
 
@@ -77,7 +77,7 @@ describe("NotePanel", () => {
       isSaving: false,
       isError: false,
       isSuccess: false,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
     } as any);
 
     render(<NotePanel lessonSlug="test-lesson" onClose={mockOnClose} />);
@@ -95,7 +95,7 @@ describe("NotePanel", () => {
       isSaving: true,
       isError: false,
       isSuccess: false,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
     } as any);
 
     render(<NotePanel lessonSlug="test-lesson" onClose={mockOnClose} />);

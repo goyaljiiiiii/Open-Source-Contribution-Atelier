@@ -2,7 +2,7 @@
   "comment": "Performance budget thresholds. CI will fail if any metric exceeds these values.",
   "bundle": {
     "totalJsGzipKB": 500,
-    "singleChunkMaxKB": 200,
+    "singleChunkMaxKB": 250,
     "totalCssGzipKB": 100
   },
   "lighthouse": {

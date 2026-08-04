@@ -4,6 +4,7 @@ import time
 import redis
 from django.conf import settings
 from django.core.cache import cache
+from django.core.cache.backends.base import CacheKeyWarning
 from django.http import JsonResponse
 from django.utils.deprecation import MiddlewareMixin
 
@@ -46,7 +47,7 @@ def get_redis_client():
                 socket_timeout=0.2,
                 decode_responses=True,
             )
-    except Exception as e:
+    except (redis.exceptions.RedisError, ValueError) as e:
         logger.warning("Caught exception: %s", e)
     return None
 
@@ -58,7 +59,7 @@ def _parse_rate_to_int(rate_setting, default_val: int) -> int:
     if isinstance(rate_setting, str):
         try:
             return int(rate_setting.split("/")[0])
-        except Exception:
+        except (ValueError, TypeError, AttributeError):
             pass
     return default_val
 
@@ -74,9 +75,15 @@ class RateLimitMiddleware(MiddlewareMixin):
 
     def __init__(self, get_response):
         super().__init__(get_response)
-        self.anon_limit = _parse_rate_to_int(getattr(settings, "API_RATE_LIMIT_ANON", 100), 100)
-        self.auth_limit = _parse_rate_to_int(getattr(settings, "API_RATE_LIMIT_AUTH", 1000), 1000)
-        self.premium_limit = _parse_rate_to_int(getattr(settings, "API_RATE_LIMIT_PREMIUM", 10000), 10000)
+        self.anon_limit = _parse_rate_to_int(
+            getattr(settings, "API_RATE_LIMIT_ANON", 100), 100
+        )
+        self.auth_limit = _parse_rate_to_int(
+            getattr(settings, "API_RATE_LIMIT_AUTH", 1000), 1000
+        )
+        self.premium_limit = _parse_rate_to_int(
+            getattr(settings, "API_RATE_LIMIT_PREMIUM", 10000), 10000
+        )
         self.window = getattr(settings, "API_RATE_LIMIT_WINDOW", 3600)
         self.redis_client = get_redis_client()
 
@@ -161,7 +168,7 @@ class RateLimitMiddleware(MiddlewareMixin):
 
                 try:
                     res = self.redis_client.evalsha(_LUA_SHA, 1, key, window, limit)
-                except Exception:
+                except redis.exceptions.NoScriptError:
                     _LUA_SHA = self.redis_client.script_load(LUA_RATE_LIMIT_SCRIPT)
                     res = self.redis_client.evalsha(_LUA_SHA, 1, key, window, limit)
 
@@ -171,7 +178,7 @@ class RateLimitMiddleware(MiddlewareMixin):
                 remaining = max(0, limit - current_count) if allowed else 0
 
                 return allowed, remaining, ttl
-            except Exception as e:
+            except redis.exceptions.RedisError as e:
                 logger.warning(
                     f"Rate limit redis lua error, falling back to local/cache: {e}"
                 )
@@ -192,6 +199,10 @@ class RateLimitMiddleware(MiddlewareMixin):
                     current = current + 1
                     cache.set(key, current, window)
                 return True, max(0, limit - current), window
-        except Exception as e:
+        except (
+            redis.exceptions.ConnectionError,
+            redis.exceptions.TimeoutError,
+            CacheKeyWarning,
+        ) as e:
             logger.error(f"Rate limiter failed open: {e}")
             return True, limit, window

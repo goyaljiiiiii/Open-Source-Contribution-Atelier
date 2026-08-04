@@ -48,7 +48,7 @@ export const CollabNotesPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [roomId, setRoomId] = useState<string>(urlRoomId || "general-jam");
-  const [title, setTitle] = useState<string>("SSoC 2026 Collaboration Workspace");
+  const [title, setTitle] = useState<string>("Open Source Collaboration Workspace");
   const [content, setContent] = useState<string>(
     "# Real-time Collaborative Vibe Workspace 🚀\n\nWelcome to pair-programming & live collaboration notes!\n\n```typescript\nfunction solveChallenge(input: string) {\n  console.log('Live collaborative editing enabled!');\n}\n```"
   );

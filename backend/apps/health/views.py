@@ -18,6 +18,31 @@ import json
 logger = logging.getLogger(__name__)
 
 
+def _check_db_pool() -> dict[str, Any]:
+    from apps.core.middleware.db_pool_monitor import fetch_postgres_pool_stats, get_conn_max_age
+
+    max_connections = getattr(settings, "DB_MAX_CONNECTIONS", 97)
+    active, idle, total, waiting = fetch_postgres_pool_stats()
+    utilization = round((total / max_connections) * 100, 2) if max_connections else 0.0
+
+    status = "healthy"
+    if utilization >= 90.0:
+        status = "degraded"
+    if total >= max_connections:
+        status = "unhealthy"
+
+    return {
+        "status": status,
+        "active": active,
+        "idle": idle,
+        "total": total,
+        "waiting": waiting,
+        "max_connections": max_connections,
+        "utilization_percent": utilization,
+        "conn_max_age": get_conn_max_age(),
+    }
+
+
 def _has_internal_access(request) -> bool:
     """
     Check whether the requester is allowed to see verbose infrastructure
@@ -116,11 +141,10 @@ class HealthChecker:
             "details": {},
         }
         try:
-            from celery.task.control import inspect
             from config.celery import app
 
             start = time.time()
-            i = inspect(app)
+            i = app.control.inspect()
             if i:
                 stats = i.stats()
                 if stats:
@@ -270,6 +294,19 @@ def health_view(request):
 
     response_body = result if _has_internal_access(request) else _minimal_response(result)
     return JsonResponse(response_body, status=status_code)
+
+
+@csrf_exempt
+@require_http_methods(["GET", "HEAD"])
+def db_health_view(request):
+    """
+    DB-focused health endpoint used by Render.
+
+    GET /api/health/db/
+    """
+    result = _check_db_pool()
+    status_code = 503 if result["status"] == "unhealthy" else 200
+    return JsonResponse(result, status=status_code)
 
 
 @csrf_exempt

@@ -7,8 +7,6 @@ import re
 from typing import Any, Dict, List, Optional, Tuple
 
 from langdetect import DetectorFactory, detect
-from textblob import TextBlob
-
 try:
     from googletrans import Translator
 except (ImportError, ModuleNotFoundError):
@@ -127,6 +125,11 @@ class QualityScorer:
         Calculate clarity score using NLP.
         """
         try:
+            # TextBlob pulls in NLTK and optional NLP dependencies.  Import it
+            # only for this calculation so an unavailable NLP stack cannot
+            # prevent Django from resolving unrelated API routes.
+            from textblob import TextBlob
+
             blob = TextBlob(text)
 
             # Check sentence count and average length

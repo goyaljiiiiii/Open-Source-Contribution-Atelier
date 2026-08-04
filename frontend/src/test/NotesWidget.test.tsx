@@ -34,7 +34,7 @@ describe("NotesWidget", () => {
   });
 
   it("renders the widget toggle button initially", () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     (fetchApi as any).mockResolvedValueOnce([]);
     renderWithProviders(<NotesWidget />);
     expect(
@@ -43,7 +43,7 @@ describe("NotesWidget", () => {
   });
 
   it("opens the widget and shows empty state", async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     (fetchApi as any).mockResolvedValueOnce([]);
     renderWithProviders(<NotesWidget />);
 
@@ -64,7 +64,7 @@ describe("NotesWidget", () => {
         updated_at: "",
       },
     ];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     (fetchApi as any).mockResolvedValueOnce(mockNotes);
 
     renderWithProviders(<NotesWidget />);
@@ -76,9 +76,9 @@ describe("NotesWidget", () => {
   });
 
   it("saves a new encrypted note", async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     (fetchApi as any).mockResolvedValueOnce([]); // initial load
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     (fetchApi as any).mockResolvedValueOnce({ id: 2 }); // save response
 
     renderWithProviders(<NotesWidget />);

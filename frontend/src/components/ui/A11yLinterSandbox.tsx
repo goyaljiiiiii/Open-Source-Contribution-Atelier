@@ -204,7 +204,7 @@ export function A11yLinterSandbox() {
         }
       }
 
-      for (let child of Array.from(node.childNodes)) {
+      for (const child of Array.from(node.childNodes)) {
         walk(child);
       }
     };

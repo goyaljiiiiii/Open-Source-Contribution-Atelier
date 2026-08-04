@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Play, Send } from "lucide-react";
 import { API_BASE } from "../../lib/api";
+import { createApiError } from "../../lib/apiErrors";
 import { getAccessToken } from "../../lib/authToken";
 import type {
   OpenApiOperation,
@@ -106,9 +107,22 @@ export function ApiEndpointCard({
 
       const response = await fetch(`${API_BASE}${requestPath}`, options);
       const body = await response.text();
+      if (!response.ok) {
+        const friendlyMessage = createApiError({
+          status: response.status,
+          endpoint: requestPath,
+        }).message;
+        setResult(`${response.status} ${response.statusText}\n${friendlyMessage}`);
+        return;
+      }
+
       setResult(`${response.status} ${response.statusText}\n${body}`);
     } catch (error) {
-      setResult(error instanceof Error ? error.message : "Request failed.");
+      setResult(
+        error instanceof Error
+          ? error.message
+          : "We couldn't complete the request. Please try again.",
+      );
     }
   }
 

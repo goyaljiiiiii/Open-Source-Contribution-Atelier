@@ -30,12 +30,12 @@ describe("ErrorBoundary", () => {
     // Mock window.location.reload
     // @ts-expect-error - Mock window.location for testing
     delete window.location;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     window.location = { ...originalLocation, reload: vi.fn() } as any;
   });
 
   afterEach(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     window.location = originalLocation as any;
   });
 
