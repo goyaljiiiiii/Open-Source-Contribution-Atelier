@@ -37,8 +37,15 @@ def get_user_local_date(user: User, dt: Optional[Union[datetime, date]] = None) 
         dt = timezone.make_aware(dt, zoneinfo.ZoneInfo("UTC"))
 
     tz_name = "UTC"
-    if hasattr(user, "user_profile") and user.user_profile and user.user_profile.timezone:
-        tz_name = user.user_profile.timezone
+    try:
+        if hasattr(user, "user_profile") and user.user_profile:
+            try:
+                user.user_profile.refresh_from_db(fields=["timezone"])
+            except Exception:
+                pass
+            tz_name = user.user_profile.timezone or "UTC"
+    except Exception:
+        tz_name = "UTC"
 
     try:
         user_tz = zoneinfo.ZoneInfo(tz_name)
