@@ -332,42 +332,42 @@ class GoogleLoginView(APIView):
 class GitHubOAuthStartView(APIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [OAuthThrottle]
+
+
 def get(self, request):
-        client_id = settings.GITHUB_CLIENT_ID
-        if not client_id:
-            return Response(
-                {"detail": "GitHub OAuth is not configured."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        state = secrets.token_urlsafe(32)
-        code_verifier = secrets.token_urlsafe(64)
-        code_challenge = (
-            base64.urlsafe_b64encode(
-                hashlib.sha256(code_verifier.encode("ascii")).digest()
-            )
-            .decode("ascii")
-            .rstrip("=")
+    client_id = settings.GITHUB_CLIENT_ID
+    if not client_id:
+        return Response(
+            {"detail": "GitHub OAuth is not configured."},
+            status=status.HTTP_400_BAD_REQUEST,
         )
 
-        request.session["github_oauth_state"] = {
-            "value": state,
-            "created_at": time.time(),
+    state = secrets.token_urlsafe(32)
+    code_verifier = secrets.token_urlsafe(64)
+    code_challenge = (
+        base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode("ascii")).digest())
+        .decode("ascii")
+        .rstrip("=")
+    )
+
+    request.session["github_oauth_state"] = {
+        "value": state,
+        "created_at": time.time(),
+    }
+    request.session["github_oauth_verifier"] = code_verifier
+
+    callback_url = request.build_absolute_uri("/api/auth/github/callback/")
+    params = urlencode(
+        {
+            "client_id": client_id,
+            "redirect_uri": callback_url,
+            "scope": "read:user user:email",
+            "state": state,
+            "code_challenge": code_challenge,
+            "code_challenge_method": "S256",
         }
-        request.session["github_oauth_verifier"] = code_verifier
-
-        callback_url = request.build_absolute_uri("/api/auth/github/callback/")
-        params = urlencode(
-            {
-                "client_id": client_id,
-                "redirect_uri": callback_url,
-                "scope": "read:user user:email",
-                "state": state,
-                "code_challenge": code_challenge,
-                "code_challenge_method": "S256",
-            }
-        )
-        return redirect(f"https://github.com/login/oauth/authorize?{params}")
+    )
+    return redirect(f"https://github.com/login/oauth/authorize?{params}")
 
 
 class GitHubOAuthCallbackView(APIView):
@@ -577,29 +577,6 @@ class PasswordResetRequestView(APIView):
         email = serializer.validated_data["email"].lower()  # type: ignore
         user = User.objects.filter(email__iexact=email).first()
 
-        try:
-            user = User.objects.get(email=email)
-            # Generate reset token
-            token = generate_reset_token(user)
-            
-            # Send email
-            send_mail(
-                'Password Reset',
-                f'Click here to reset: /reset-password/{token}',
-                'noreply@atelier.dev',
-                [email],
-                fail_silently=True,  
-            )
-        except User.DoesNotExist:
-            #  Log silently 
-            logger.info(f'Password reset requested for non-existent email: {email}')
-           
-        
-        
-        return Response({
-            'message': 'If an account with that email exists, we\'ve sent a reset link.'
-        }, status=status.HTTP_200_OK)
-
         if user:
             # Invalidate any existing unused tokens for this user
             PasswordResetToken.objects.filter(user=user, is_used=False).update(
@@ -682,8 +659,7 @@ class PasswordResetConfirmView(APIView):
             user.user_profile.save(update_fields=["last_password_change"])
         user.save()
 
-        reset_token.is_used = True
-        reset_token.save(update_fields=["is_used"])
+        PasswordResetToken.objects.filter(user=user, is_used=False).update(is_used=True)
 
         return Response(
             {
@@ -1193,9 +1169,9 @@ class LearningPathView(APIView):
         all_completed = all(m["status"] == "completed" for m in scored_modules)
         if all_completed and scored_modules:
             scored_modules[0]["score"] = 1
-            scored_modules[0][
-                "explanation"
-            ] = "You have completed the entire curriculum! Review this module to refresh your memory."
+            scored_modules[0]["explanation"] = (
+                "You have completed the entire curriculum! Review this module to refresh your memory."
+            )
 
         # Find the recommended next step (highest score)
         recommended = None
@@ -1231,6 +1207,7 @@ class ChangePasswordView(APIView):
 
         user.set_password(serializer.validated_data["new_password"])
         user.save()
+        PasswordResetToken.objects.filter(user=user, is_used=False).update(is_used=True)
         if hasattr(user, "user_profile"):
             user.user_profile.increment_jwt_version()
 
