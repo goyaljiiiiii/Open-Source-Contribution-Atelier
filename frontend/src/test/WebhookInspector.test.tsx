@@ -1,4 +1,4 @@
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen, cleanup, fireEvent, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { WebhookInspector } from "../components/docs/WebhookInspector";
@@ -25,8 +25,7 @@ describe("WebhookInspector", () => {
     ).toBeInTheDocument();
   });
 
-  it("changes event type using the event type dropdown selector", async () => {
-    const user = userEvent.setup();
+  it("changes event type using the event type dropdown selector", () => {
     render(<WebhookInspector />);
 
     const select = screen.getByRole("combobox", {
@@ -35,7 +34,7 @@ describe("WebhookInspector", () => {
     expect(select).toHaveValue("push");
 
     // Select PullRequestEvent
-    await user.selectOptions(select, "pull_request");
+    fireEvent.change(select, { target: { value: "pull_request" } });
     expect(select).toHaveValue("pull_request");
     expect(
       screen.getByText(
@@ -45,7 +44,7 @@ describe("WebhookInspector", () => {
     expect(screen.getByText("pull_request.json")).toBeInTheDocument();
 
     // Select IssuesEvent
-    await user.selectOptions(select, "issues");
+    fireEvent.change(select, { target: { value: "issues" } });
     expect(select).toHaveValue("issues");
     expect(
       screen.getByText(
@@ -53,28 +52,34 @@ describe("WebhookInspector", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("issues.json")).toBeInTheDocument();
+
+    // Select StarEvent
+    fireEvent.change(select, { target: { value: "star" } });
+    expect(select).toHaveValue("star");
+    expect(
+      screen.getByText(/Triggered when a repository is starred or unstarred/),
+    ).toBeInTheDocument();
+    expect(screen.getByText("star.json")).toBeInTheDocument();
   });
 
-  it("allows switching event type using quick-select buttons", async () => {
-    const user = userEvent.setup();
+  it("allows switching event type using quick-select buttons", () => {
     render(<WebhookInspector />);
 
     const issuesButton = screen.getByRole("button", { name: /IssuesEvent/i });
-    await user.click(issuesButton);
+    fireEvent.click(issuesButton);
 
     expect(screen.getByText("issues.json")).toBeInTheDocument();
     expect(screen.getByRole("combobox")).toHaveValue("issues");
   });
 
-  it("filters payload fields using search input", async () => {
-    const user = userEvent.setup();
+  it("filters payload fields using search input", () => {
     render(<WebhookInspector />);
 
     const searchInput = screen.getByRole("textbox", {
       name: "Search within payload fields",
     });
 
-    await user.type(searchInput, "pusher");
+    fireEvent.change(searchInput, { target: { value: "pusher" } });
 
     expect(searchInput).toHaveValue("pusher");
     expect(screen.getByText('"pusher"')).toBeInTheDocument();
@@ -101,8 +106,7 @@ describe("WebhookInspector", () => {
     expect(await screen.findByText("Copied!")).toBeInTheDocument();
   });
 
-  it("toggles header validation section when Headers button is clicked", async () => {
-    const user = userEvent.setup();
+  it("toggles header validation section when Headers button is clicked", () => {
     render(<WebhookInspector />);
 
     // Initially headers section is displayed
@@ -110,26 +114,25 @@ describe("WebhookInspector", () => {
     expect(screen.getByText("X-Hub-Signature-256")).toBeInTheDocument();
 
     const headersToggleButton = screen.getByRole("button", { name: "Headers" });
-    await user.click(headersToggleButton);
+    fireEvent.click(headersToggleButton);
 
     // Headers toggled
     const headersToggleButton2 = screen.getByRole("button", { name: "Headers" });
     expect(headersToggleButton2).toHaveAttribute("aria-pressed", "false");
   });
 
-  it("expands and collapses nodes when Expand All / Collapse All are clicked", async () => {
-    const user = userEvent.setup();
+  it("expands and collapses nodes when Expand All / Collapse All are clicked", () => {
     render(<WebhookInspector />);
 
     const collapseAllButton = screen.getByRole("button", {
       name: "Collapse all nodes",
     });
-    await user.click(collapseAllButton);
+    fireEvent.click(collapseAllButton);
 
     const expandAllButton = screen.getByRole("button", {
       name: "Expand all nodes",
     });
-    await user.click(expandAllButton);
+    fireEvent.click(expandAllButton);
 
     expect(screen.getByText('"repository"')).toBeInTheDocument();
   });
