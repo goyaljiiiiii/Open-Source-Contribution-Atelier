@@ -24,7 +24,6 @@ import {
   BookOpen,
   TrendingUp,
   Globe,
-  Clock,
 } from "lucide-react";
 
 interface UsageAnalyticsData {
@@ -89,10 +88,11 @@ export default function UsageAnalyticsPage() {
     },
   };
 
-  const regionData = data.geo_distribution.map((g) => ({
+  const regionData = (data.geo_distribution || []).map((g) => ({
     name: g.timezone.split("/").pop() || g.timezone,
     value: g.count,
   }));
+  const totalRegionValue = regionData.reduce((acc, curr) => acc + curr.value, 0);
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-12">
@@ -117,7 +117,7 @@ export default function UsageAnalyticsPage() {
             <Users className="text-blue-500" size={24} />
             <div>
               <p className="text-xs uppercase tracking-widest text-muted font-bold">Avg Session</p>
-              <p className="text-2xl font-black">{data.average_session_duration_minutes}m</p>
+              <p className="text-2xl font-black">{data.average_session_duration_minutes || 0}m</p>
             </div>
           </div>
         </div>
@@ -127,7 +127,7 @@ export default function UsageAnalyticsPage() {
             <div>
               <p className="text-xs uppercase tracking-widest text-muted font-bold">DAU (today)</p>
               <p className="text-2xl font-black">
-                {data.daily_active_users.length > 0
+                {data.daily_active_users && data.daily_active_users.length > 0
                   ? data.daily_active_users[data.daily_active_users.length - 1].count
                   : 0}
               </p>
@@ -140,7 +140,7 @@ export default function UsageAnalyticsPage() {
             <div>
               <p className="text-xs uppercase tracking-widest text-muted font-bold">Popular Lesson</p>
               <p className="text-2xl font-black truncate max-w-[120px]">
-                {data.popular_lessons.length > 0
+                {data.popular_lessons && data.popular_lessons.length > 0
                   ? data.popular_lessons[0].lesson__title
                   : "N/A"}
               </p>
@@ -152,7 +152,7 @@ export default function UsageAnalyticsPage() {
             <Globe className="text-orange-500" size={24} />
             <div>
               <p className="text-xs uppercase tracking-widest text-muted font-bold">Regions</p>
-              <p className="text-2xl font-black">{data.geo_distribution.length}</p>
+              <p className="text-2xl font-black">{(data.geo_distribution || []).length}</p>
             </div>
           </div>
         </div>
@@ -164,22 +164,26 @@ export default function UsageAnalyticsPage() {
           <h2 className="text-2xl font-black mb-6 flex items-center gap-2">
             <Activity className="text-blue-500" /> Daily Active Users
           </h2>
-          <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data.daily_active_users}>
-                <defs>
-                  <linearGradient id="colorDAU" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0088FE" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#0088FE" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"} />
-                <XAxis dataKey="date" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                <Tooltip {...chartProps} />
-                <Area type="monotone" dataKey="count" stroke="#0088FE" fillOpacity={1} fill="url(#colorDAU)" />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="h-80 w-full flex items-center justify-center">
+            {data.daily_active_users && data.daily_active_users.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={data.daily_active_users}>
+                  <defs>
+                    <linearGradient id="colorDAU" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#0088FE" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#0088FE" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"} />
+                  <XAxis dataKey="date" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                  <Tooltip {...chartProps} />
+                  <Area type="monotone" dataKey="count" stroke="#0088FE" fillOpacity={1} fill="url(#colorDAU)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="font-bold text-muted dark:text-[#c4bbae]">No data for the selected period</p>
+            )}
           </div>
         </div>
 
@@ -188,16 +192,20 @@ export default function UsageAnalyticsPage() {
           <h2 className="text-2xl font-black mb-6 flex items-center gap-2">
             <Users className="text-green-500" /> Monthly Active Users
           </h2>
-          <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.monthly_active_users}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"} />
-                <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                <Tooltip {...chartProps} />
-                <Bar dataKey="count" fill="#00C49F" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="h-80 w-full flex items-center justify-center">
+            {data.monthly_active_users && data.monthly_active_users.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data.monthly_active_users}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"} />
+                  <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                  <Tooltip {...chartProps} />
+                  <Bar dataKey="count" fill="#00C49F" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="font-bold text-muted dark:text-[#c4bbae]">No data for the selected period</p>
+            )}
           </div>
         </div>
 
@@ -206,24 +214,28 @@ export default function UsageAnalyticsPage() {
           <h2 className="text-2xl font-black mb-6 flex items-center gap-2">
             <BookOpen className="text-purple-500" /> Most Popular Lessons
           </h2>
-          <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.popular_lessons} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"} />
-                <XAxis type="number" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis
-                  type="category"
-                  dataKey="lesson__title"
-                  stroke="#888888"
-                  fontSize={10}
-                  tickLine={false}
-                  axisLine={false}
-                  width={150}
-                />
-                <Tooltip {...chartProps} />
-                <Bar dataKey="count" fill="#8884d8" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="h-80 w-full flex items-center justify-center">
+            {data.popular_lessons && data.popular_lessons.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data.popular_lessons} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"} />
+                  <XAxis type="number" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis
+                    type="category"
+                    dataKey="lesson__title"
+                    stroke="#888888"
+                    fontSize={10}
+                    tickLine={false}
+                    axisLine={false}
+                    width={150}
+                  />
+                  <Tooltip {...chartProps} />
+                  <Bar dataKey="count" fill="#8884d8" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="font-bold text-muted dark:text-[#c4bbae]">No data for the selected period</p>
+            )}
           </div>
         </div>
 
@@ -232,24 +244,28 @@ export default function UsageAnalyticsPage() {
           <h2 className="text-2xl font-black mb-6 flex items-center gap-2">
             <TrendingUp className="text-orange-500" /> Lesson Completion Rates
           </h2>
-          <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.lesson_completion_rates.slice(0, 10)} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"} />
-                <XAxis type="number" domain={[0, 100]} stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis
-                  type="category"
-                  dataKey="title"
-                  stroke="#888888"
-                  fontSize={10}
-                  tickLine={false}
-                  axisLine={false}
-                  width={150}
-                />
-                <Tooltip {...chartProps} formatter={(value: number) => `${value}%`} />
-                <Bar dataKey="completion_rate" fill="#FF8042" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="h-80 w-full flex items-center justify-center">
+            {data.lesson_completion_rates && data.lesson_completion_rates.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data.lesson_completion_rates.slice(0, 10)} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"} />
+                  <XAxis type="number" domain={[0, 100]} stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis
+                    type="category"
+                    dataKey="title"
+                    stroke="#888888"
+                    fontSize={10}
+                    tickLine={false}
+                    axisLine={false}
+                    width={150}
+                  />
+                  <Tooltip {...chartProps} formatter={(value: number) => `${value}%`} />
+                  <Bar dataKey="completion_rate" fill="#FF8042" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="font-bold text-muted dark:text-[#c4bbae]">No data for the selected period</p>
+            )}
           </div>
         </div>
 
@@ -258,16 +274,20 @@ export default function UsageAnalyticsPage() {
           <h2 className="text-2xl font-black mb-6 flex items-center gap-2">
             <TrendingUp className="text-indigo-500" /> User Signup Trend
           </h2>
-          <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data.signup_trend}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"} />
-                <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                <Tooltip {...chartProps} />
-                <Line type="monotone" dataKey="count" stroke="#8884d8" strokeWidth={3} dot={{ r: 4 }} />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="h-80 w-full flex items-center justify-center">
+            {data.signup_trend && data.signup_trend.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data.signup_trend}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"} />
+                  <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                  <Tooltip {...chartProps} />
+                  <Line type="monotone" dataKey="count" stroke="#8884d8" strokeWidth={3} dot={{ r: 4 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="font-bold text-muted dark:text-[#c4bbae]">No data for the selected period</p>
+            )}
           </div>
         </div>
 
@@ -277,7 +297,7 @@ export default function UsageAnalyticsPage() {
             <Globe className="text-teal-500" /> Geographic Distribution
           </h2>
           <div className="h-80 w-full flex items-center justify-center">
-            {regionData.length > 0 ? (
+            {regionData.length > 0 && totalRegionValue > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -288,9 +308,10 @@ export default function UsageAnalyticsPage() {
                     outerRadius={100}
                     paddingAngle={3}
                     dataKey="value"
-                    label={({ name, percent }) =>
-                      `${name} ${(percent * 100).toFixed(0)}%`
-                    }
+                    label={({ name, percent }: any) => {
+                      const pct = percent && !isNaN(percent) ? percent * 100 : 0;
+                      return `${name} ${pct.toFixed(0)}%`;
+                    }}
                     labelLine={false}
                   >
                     {regionData.map((_, index) => (
@@ -307,7 +328,7 @@ export default function UsageAnalyticsPage() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <p className="font-bold text-muted dark:text-[#c4bbae]">No geographic data available.</p>
+              <p className="font-bold text-muted dark:text-[#c4bbae]">No data for the selected period</p>
             )}
           </div>
         </div>
