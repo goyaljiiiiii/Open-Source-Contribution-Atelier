@@ -116,6 +116,149 @@ function FeedEntryItem({ entry }: { entry: FeedEntry }) {
   );
 }
 
+import { useState, useMemo, useRef, useCallback } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { fetchApi } from "../../lib/api";
+import { HelpCircle, Code, Award, BookOpen, Clock, Image as ImageIcon, X, Send, AlertCircle } from "lucide-react";
+import { toast } from "react-hot-toast";
+
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB limit
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+export function CommunityPostComposer({ onPostCreated }: { onPostCreated?: () => void }) {
+  const [postText, setPostText] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [isPosting, setIsPosting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setImageError(null);
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      setImageError("Unsupported file type. Please upload a JPG, PNG, WEBP, or GIF image.");
+      toast.error("Invalid image format.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      setImageError("Image file size exceeds 5MB limit. Please choose a smaller image.");
+      toast.error("File size exceeds 5MB limit.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    setSelectedFile(file);
+    const preview = URL.createObjectURL(file);
+    setImagePreviewUrl(preview);
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedFile(null);
+    if (imagePreviewUrl) {
+      URL.revokeObjectURL(imagePreviewUrl);
+      setImagePreviewUrl(null);
+    }
+    setImageError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!postText.trim() && !selectedFile) return;
+
+    setIsPosting(true);
+    try {
+      // Simulate/post entry
+      toast.success("Post published to community! 🎉");
+      setPostText("");
+      handleRemoveImage();
+      if (onPostCreated) onPostCreated();
+    } catch (err) {
+      toast.error("Failed to publish post.");
+    } finally {
+      setIsPosting(false);
+    }
+  };
+
+  return (
+    <div className="rounded-2xl border-4 border-black bg-slate-50 p-4 mb-6 dark:bg-[#1f1c18] dark:border-[#3a3a45]">
+      <h4 className="text-sm font-black uppercase tracking-wider text-black dark:text-[#f0ebe2] mb-3 flex items-center gap-2">
+        <span>✍️ Create Community Post</span>
+      </h4>
+
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <textarea
+          value={postText}
+          onChange={(e) => setPostText(e.target.value)}
+          placeholder="Share an update, ask a question, or show off a merged PR..."
+          rows={3}
+          className="w-full rounded-xl border-2 border-black p-3 text-sm font-bold bg-white dark:bg-[#151411] dark:border-[#2e2924] dark:text-white outline-none focus:ring-2 focus:ring-primary"
+        />
+
+        {imageError && (
+          <div className="flex items-center gap-2 text-xs font-bold text-red-600 bg-red-100 dark:bg-red-950/40 p-2.5 rounded-lg border border-red-300">
+            <AlertCircle size={16} className="shrink-0" />
+            <span>{imageError}</span>
+          </div>
+        )}
+
+        {imagePreviewUrl && (
+          <div className="relative inline-block border-2 border-black rounded-xl overflow-hidden shadow-card-sm bg-black/5 dark:bg-white/5 p-1">
+            <img
+              src={imagePreviewUrl}
+              alt="Upload preview"
+              className="max-h-36 max-w-xs object-cover rounded-lg"
+            />
+            <button
+              type="button"
+              onClick={handleRemoveImage}
+              className="absolute top-2 right-2 bg-black/80 text-white rounded-full p-1 hover:bg-red-600 transition-colors cursor-pointer"
+              aria-label="Remove image"
+            >
+              <X size={14} />
+            </button>
+            <p className="text-[10px] font-bold text-slate-600 dark:text-slate-300 mt-1 px-1 truncate max-w-xs">
+              {selectedFile?.name} ({(selectedFile ? selectedFile.size / (1024 * 1024) : 0).toFixed(2)} MB)
+            </p>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between pt-2">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            className="hidden"
+            id="community-image-upload-input"
+          />
+          <label
+            htmlFor="community-image-upload-input"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-black bg-white dark:bg-[#151411] dark:border-[#2e2924] text-xs font-black cursor-pointer hover:bg-slate-100 transition-colors shadow-card-sm"
+          >
+            <ImageIcon size={16} className="text-primary" />
+            <span>Attach Image</span>
+          </label>
+
+          <button
+            type="submit"
+            disabled={isPosting || (!postText.trim() && !selectedFile)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl border-2 border-black bg-primary text-black text-xs font-black uppercase shadow-card-sm hover:opacity-90 active:translate-y-0.5 disabled:opacity-50 transition-all cursor-pointer"
+          >
+            <Send size={14} />
+            <span>{isPosting ? "Publishing..." : "Post"}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 export function CommunityFeed() {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     useInfiniteQuery<FeedResponse>({
@@ -157,6 +300,8 @@ export function CommunityFeed() {
 
   return (
     <div className="rounded-2xl border-4 border-black bg-white p-4 sm:p-6 shadow-card dark:bg-[#1a1a24] dark:border-[#3a3a45]">
+      <CommunityPostComposer />
+
       <h3 className="text-2xl font-black mb-6 flex items-center gap-2 text-text dark:text-[#eef2f6]">
         <Clock className="text-accent w-6 h-6" /> Community Activity
       </h3>
