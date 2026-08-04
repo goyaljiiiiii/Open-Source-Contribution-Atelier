@@ -1098,13 +1098,20 @@ class PeerReviewView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        if PeerReview.objects.filter(
+        existing_review = PeerReview.objects.filter(
             submission=submission, reviewer=request.user
-        ).exists():
-            return Response(
-                {"error": "You have already reviewed this submission"},
-                status=status.HTTP_400_BAD_REQUEST,
+        ).first()
+
+        if existing_review:
+            serializer = PeerReviewSerializer(
+                existing_review, data=request.data, partial=True
             )
+            if serializer.is_valid():
+                with transaction.atomic():
+                    # Update review content cleanly without granting duplicate XP
+                    serializer.save(points_earned=0)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = PeerReviewSerializer(data=request.data)
         if serializer.is_valid():
@@ -1112,6 +1119,21 @@ class PeerReviewView(APIView):
                 review = serializer.save(
                     submission=submission, reviewer=request.user, points_earned=10
                 )
+
+                # Ensure XPEvent is only created once per reviewer review submission
+                if not XPEvent.objects.filter(
+                    user=request.user,
+                    source_type="peer_review",
+                    source_id=review.id,
+                ).exists():
+                    XPEvent.objects.create(
+                        user=request.user,
+                        source_type="peer_review",
+                        source_id=review.id,
+                        base_points=10,
+                        xp_delta=10,
+                    )
+
                 review_count = PeerReview.objects.filter(submission=submission).count()
                 if review_count >= 2:
                     reviews = list(
