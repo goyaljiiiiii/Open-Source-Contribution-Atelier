@@ -9,38 +9,49 @@ so they are trivially unit-testable without a database.
 from __future__ import annotations
 
 import logging
-from datetime import date, timedelta
-from typing import Optional
+import zoneinfo
+from datetime import date, datetime, timedelta
+from typing import Optional, Union
 
 from django.contrib.auth import get_user_model
-
-User = get_user_model()
 from django.db import transaction
+from django.utils import timezone
 
 from .models import STREAK_MILESTONES, StreakProfile
 
+User = get_user_model()
 logger = logging.getLogger(__name__)
+
+
+def get_user_local_date(user: User, dt: Optional[Union[datetime, date]] = None) -> date:
+    """
+    Returns calendar date for user's configured timezone (UserProfile.timezone).
+    Falls back to UTC if timezone is invalid, empty, or unconfigured.
+    """
+    if dt is None:
+        dt = timezone.now()
+    elif isinstance(dt, date) and not isinstance(dt, datetime):
+        return dt
+
+    if timezone.is_naive(dt):
+        dt = timezone.make_aware(dt, zoneinfo.ZoneInfo("UTC"))
+
+    tz_name = "UTC"
+    if hasattr(user, "user_profile") and user.user_profile and user.user_profile.timezone:
+        tz_name = user.user_profile.timezone
+
+    try:
+        user_tz = zoneinfo.ZoneInfo(tz_name)
+    except Exception:
+        user_tz = zoneinfo.ZoneInfo("UTC")
+
+    return dt.astimezone(user_tz).date()
 
 
 class StreakEngine:
     """
     Manages per-user learning streaks and their associated XP multipliers.
-
-    Usage
-    -----
-    # Call this whenever a user completes a learning activity:
-    result = StreakEngine.record_activity(user, date.today())
-
-    # Get current multiplier for XP calculation:
-    multiplier = StreakEngine.get_multiplier_for_user(user)
-
-    # Get full streak data for the API:
-    data = StreakEngine.get_streak_data(user)
     """
-
-    # -------------------------------------------------------------------
-    # Pure helpers — no DB access, fully unit-testable
-    # -------------------------------------------------------------------
 
     @staticmethod
     def get_multiplier_for_streak(streak_days: int) -> float:
@@ -57,20 +68,15 @@ class StreakEngine:
         for milestone in STREAK_MILESTONES:
             if streak_days < milestone["days"]:
                 return milestone
-        return None  # already past all milestones
+        return None
 
     @staticmethod
     def compute_milestone_progress(streak_days: int) -> float:
-        """
-        Return 0–100 float representing progress toward the next milestone.
-
-        If the user has hit all milestones, returns 100.0.
-        """
+        """Return 0–100 float representing progress toward the next milestone."""
         next_ms = StreakEngine.get_next_milestone(streak_days)
         if next_ms is None:
             return 100.0
 
-        # Find the previous milestone (or 0 if none)
         prev_days = 0
         for milestone in STREAK_MILESTONES:
             if milestone["days"] < next_ms["days"]:
@@ -80,10 +86,6 @@ class StreakEngine:
         progress = streak_days - prev_days
         return round(min(100.0, (progress / span) * 100), 1)
 
-    # -------------------------------------------------------------------
-    # DB-touching methods
-    # -------------------------------------------------------------------
-
     @classmethod
     def get_or_create_profile(cls, user: User) -> StreakProfile:
         """Fetch or create the StreakProfile for a user."""
@@ -92,7 +94,7 @@ class StreakEngine:
 
     @classmethod
     def get_multiplier_for_user(cls, user: User) -> float:
-        """Return the current streak multiplier for a user (fast path via profile)."""
+        """Return the current streak multiplier for a user."""
         try:
             profile = StreakProfile.objects.get(user=user)
             return profile.current_multiplier
@@ -100,21 +102,15 @@ class StreakEngine:
             return 1.0
 
     @classmethod
-    def record_activity(cls, user: User, activity_date: date) -> dict:
+    def record_activity(
+        cls, user: User, activity_date: Optional[Union[date, datetime]] = None
+    ) -> dict:
         """
-        Record a learning activity for *user* on *activity_date* and update
-        the StreakProfile accordingly.
-
-        Returns a dict with the new streak state and a flag indicating
-        whether a new multiplier tier was unlocked this call.
-
-        Streak rules
-        ~~~~~~~~~~~~
-        - Same day as last activity  → no change (idempotent).
-        - Next calendar day          → streak increments by 1.
-        - Any other gap              → streak resets to 1.
-        - longest_streak is updated whenever current_streak grows.
+        Record a learning activity for *user* on *activity_date* (evaluated in user timezone).
         """
+        if activity_date is None or isinstance(activity_date, datetime):
+            activity_date = get_user_local_date(user, activity_date)
+
         with transaction.atomic():
             profile = cls.get_or_create_profile(user)
 
@@ -122,19 +118,14 @@ class StreakEngine:
             last = profile.last_activity_date
 
             if last is None:
-                # First ever activity
                 profile.current_streak = 1
             elif activity_date < last:
-                # Out-of-order or past log — idempotent, return current state
                 return cls._build_result(profile, multiplier_unlocked=False)
             elif activity_date == last:
-                # Already logged today — idempotent, return current state
                 return cls._build_result(profile, multiplier_unlocked=False)
             elif activity_date == last + timedelta(days=1):
-                # Consecutive day — extend streak
                 profile.current_streak += 1
             else:
-                # Gap detected
                 missed_days = (activity_date - last).days - 1
                 if profile.streak_freezes >= missed_days:
                     profile.streak_freezes -= missed_days
@@ -164,24 +155,11 @@ class StreakEngine:
 
             multiplier_unlocked = new_multiplier > old_multiplier
 
-            if multiplier_unlocked:
-                logger.info(
-                    "Streak multiplier unlocked for user %s: %.1fx → %.1fx "
-                    "(streak=%d days)",
-                    user.username,
-                    old_multiplier,
-                    new_multiplier,
-                    profile.current_streak,
-                )
-
             return cls._build_result(profile, multiplier_unlocked=multiplier_unlocked)
 
     @classmethod
     def get_streak_data(cls, user: User) -> dict:
-        """
-        Return a serialisable summary of the user's streak state.
-        Used by StreakStatusView.
-        """
+        """Return a serialisable summary of the user's streak state."""
         profile = cls.get_or_create_profile(user)
         next_ms = cls.get_next_milestone(profile.current_streak)
         progress_pct = cls.compute_milestone_progress(profile.current_streak)
@@ -205,10 +183,6 @@ class StreakEngine:
             ),
             "milestone_progress_pct": progress_pct,
         }
-
-    # -------------------------------------------------------------------
-    # Internal helpers
-    # -------------------------------------------------------------------
 
     @staticmethod
     def _build_result(profile: StreakProfile, multiplier_unlocked: bool) -> dict:
