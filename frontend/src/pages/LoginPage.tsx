@@ -17,6 +17,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 export function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -73,7 +74,7 @@ export function LoginPage() {
       const tokens = await fetchApi("/auth/login/", {
         method: "POST",
         requireAuth: false,
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, remember: rememberMe }),
       });
 
       login(tokens);
@@ -204,6 +205,18 @@ export function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
+        </div>
+
+        <div className="flex items-center justify-between px-1">
+          <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-300">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="w-4 h-4 rounded border-2 border-black accent-primary cursor-pointer"
+            />
+            <span>Remember me for 30 days</span>
+          </label>
         </div>
 
         <DemoLoginButton label="🚀 Demo Mode (No Login Required)" />

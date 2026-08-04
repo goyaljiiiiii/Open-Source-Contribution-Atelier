@@ -241,7 +241,9 @@ class UserListSerializer(serializers.ModelSerializer):
 
 
 class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
-    """Allow login with either username or email in the username field."""
+    """Allow login with either username or email in the username field, plus optional remember me lifetime."""
+
+    remember = serializers.BooleanField(required=False, default=False)
 
     def validate(self, attrs):
         username_key = self.username_field
@@ -251,6 +253,8 @@ class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
             user = User.objects.filter(email__iexact=identifier.strip()).first()
             if user:
                 attrs = {**attrs, username_key: user.username}
+
+        remember_me = self.initial_data.get("remember", False) or attrs.get("remember", False)
 
         result = super().validate(attrs)
 
@@ -280,6 +284,10 @@ class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
         )
 
         refresh = self.get_token(self.user)
+        if remember_me:
+            refresh.set_exp(lifetime=timedelta(days=30))
+            refresh.access_token.set_exp(lifetime=timedelta(days=7))
+
         refresh["session_id"] = str(session.session_id)
 
         access = refresh.access_token
@@ -287,6 +295,7 @@ class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         result["refresh"] = str(refresh)
         result["access"] = str(access)
+        result["remember"] = bool(remember_me)
 
         return result
 
