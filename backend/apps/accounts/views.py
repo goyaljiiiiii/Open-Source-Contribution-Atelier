@@ -577,29 +577,6 @@ class PasswordResetRequestView(APIView):
         email = serializer.validated_data["email"].lower()  # type: ignore
         user = User.objects.filter(email__iexact=email).first()
 
-        try:
-            user = User.objects.get(email=email)
-            # Generate reset token
-            token = generate_reset_token(user)
-            
-            # Send email
-            send_mail(
-                'Password Reset',
-                f'Click here to reset: /reset-password/{token}',
-                'noreply@atelier.dev',
-                [email],
-                fail_silently=True,  
-            )
-        except User.DoesNotExist:
-            #  Log silently 
-            logger.info(f'Password reset requested for non-existent email: {email}')
-           
-        
-        
-        return Response({
-            'message': 'If an account with that email exists, we\'ve sent a reset link.'
-        }, status=status.HTTP_200_OK)
-
         if user:
             # Invalidate any existing unused tokens for this user
             PasswordResetToken.objects.filter(user=user, is_used=False).update(
@@ -1364,3 +1341,185 @@ class UserSessionDetailView(generics.DestroyAPIView):
 
     def get_queryset(self):
         return UserSession.objects.filter(user=self.request.user)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Two-Factor Authentication (TOTP 2FA) Views
+# ─────────────────────────────────────────────────────────────────────────────
+
+from .models import TOTPDevice
+from .serializers import TwoFactorDisableSerializer, TwoFactorVerifySerializer
+from .totp import (
+    generate_backup_codes,
+    generate_totp_secret,
+    get_provisioning_uri,
+    verify_totp_code,
+)
+
+
+class TwoFactorSetupView(APIView):
+    """
+    POST /api/auth/2fa/setup/
+    Initiate TOTP 2FA setup. Returns secret, provisioning URI, and single-use backup codes.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        device, created = TOTPDevice.objects.get_or_create(user=user)
+
+        if not device.is_enabled:
+            secret = generate_totp_secret()
+            plain_backup_codes, hashed_backup_codes = generate_backup_codes()
+            device.secret = secret
+            device.backup_codes = hashed_backup_codes
+            device.save()
+        else:
+            secret = device.secret
+            plain_backup_codes = []
+
+        otpauth_url = get_provisioning_uri(user.username, secret)
+
+        return Response(
+            {
+                "secret": secret,
+                "otpauth_url": otpauth_url,
+                "backup_codes": plain_backup_codes,
+                "is_enabled": device.is_enabled,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class TwoFactorVerifySetupView(APIView):
+    """
+    POST /api/auth/2fa/verify-setup/
+    Verify 6-digit TOTP code to complete 2FA activation.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = TwoFactorVerifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        code = serializer.validated_data["code"]
+        device = getattr(request.user, "totp_device", None)
+
+        if not device or not device.secret:
+            return Response(
+                {"error": "2FA setup has not been initiated."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not verify_totp_code(device.secret, code):
+            return Response(
+                {
+                    "error": "invalid_code",
+                    "message": "Invalid 2FA verification code. Please try again.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        device.is_enabled = True
+        device.save(update_fields=["is_enabled"])
+
+        return Response(
+            {"status": "2FA enabled successfully", "is_enabled": True},
+            status=status.HTTP_200_OK,
+        )
+
+
+class TwoFactorDisableView(APIView):
+    """
+    POST /api/auth/2fa/disable/
+    Disable 2FA after password confirmation.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = TwoFactorDisableSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = request.user
+        password = serializer.validated_data["password"]
+
+        if not user.check_password(password):
+            return Response(
+                {"error": "Incorrect password."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if hasattr(user, "totp_device"):
+            user.totp_device.delete()
+
+        return Response(
+            {"status": "2FA disabled successfully", "is_enabled": False},
+            status=status.HTTP_200_OK,
+        )
+
+
+class TwoFactorStatusView(APIView):
+    """
+    GET /api/auth/2fa/status/
+    Return 2FA status and remaining backup codes count.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        device = getattr(request.user, "totp_device", None)
+        is_enabled = bool(device and device.is_enabled)
+        remaining_backup_codes = (
+            len(device.backup_codes) if (device and device.backup_codes) else 0
+        )
+
+        return Response(
+            {
+                "is_enabled": is_enabled,
+                "backup_codes_remaining": remaining_backup_codes,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class TwoFactorGenerateBackupCodesView(APIView):
+    """
+    POST /api/auth/2fa/generate-backup-codes/
+    Regenerate recovery backup codes (requires user password).
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = TwoFactorDisableSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = request.user
+        password = serializer.validated_data["password"]
+
+        if not user.check_password(password):
+            return Response(
+                {"error": "Incorrect password."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        device = getattr(user, "totp_device", None)
+        if not device or not device.is_enabled:
+            return Response(
+                {"error": "2FA is not enabled on this account."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        plain_backup_codes, hashed_backup_codes = generate_backup_codes()
+        device.backup_codes = hashed_backup_codes
+        device.save(update_fields=["backup_codes"])
+
+        return Response(
+            {
+                "backup_codes": plain_backup_codes,
+                "status": "New backup codes generated successfully",
+            },
+            status=status.HTTP_200_OK,
+        )
+

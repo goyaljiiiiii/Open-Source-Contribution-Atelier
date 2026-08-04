@@ -241,7 +241,9 @@ class UserListSerializer(serializers.ModelSerializer):
 
 
 class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
-    """Allow login with either username or email in the username field."""
+    """Allow login with either username or email in the username field, with optional 2FA TOTP code validation."""
+
+    totp_code = serializers.CharField(required=False, allow_blank=True, write_only=True)
 
     def validate(self, attrs):
         username_key = self.username_field
@@ -253,6 +255,37 @@ class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
                 attrs = {**attrs, username_key: user.username}
 
         result = super().validate(attrs)
+
+        # Check optional 2FA TOTP enforcement
+        if hasattr(self.user, "totp_device") and self.user.totp_device.is_enabled:
+            totp_code = attrs.get("totp_code") or self.initial_data.get("totp_code")
+            if not totp_code:
+                raise AuthenticationFailed(
+                    {
+                        "requires_2fa": True,
+                        "message": "Two-factor authentication code required.",
+                    },
+                    code="2fa_required",
+                )
+
+            from .totp import verify_and_consume_backup_code, verify_totp_code
+
+            device = self.user.totp_device
+            is_valid_totp = verify_totp_code(device.secret, totp_code)
+            is_valid_backup = (
+                verify_and_consume_backup_code(device, totp_code)
+                if not is_valid_totp
+                else False
+            )
+
+            if not is_valid_totp and not is_valid_backup:
+                raise AuthenticationFailed(
+                    {"totp_code": "Invalid 2FA authentication code or recovery code."},
+                    code="invalid_2fa_code",
+                )
+
+            device.last_used_at = timezone.now()
+            device.save(update_fields=["last_used_at"])
 
         if (
             hasattr(self.user, "user_profile")
@@ -289,6 +322,19 @@ class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
         result["access"] = str(access)
 
         return result
+
+
+class TwoFactorVerifySerializer(serializers.Serializer):
+    """Accept 6-digit TOTP verification code to confirm 2FA setup."""
+
+    code = serializers.CharField(max_length=10, min_length=6)
+
+
+class TwoFactorDisableSerializer(serializers.Serializer):
+    """Accept user password to confirm disabling 2FA."""
+
+    password = serializers.CharField(write_only=True)
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
