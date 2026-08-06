@@ -4,7 +4,7 @@ import type { ShellState, FsNode } from "./useGitShell";
 export interface AutocompleteSuggestion {
   text: string;
   completionText: string;
-  type: "command" | "git-command" | "file" | "dir";
+  type: "command" | "git-command" | "file" | "dir" | "branch";
   description?: string;
 }
 
@@ -38,6 +38,23 @@ const GIT_COMMANDS: Record<string, string> = {
   merge: "merge branches",
   rebase: "reapply commits",
 };
+
+const GIT_FLAGS: Record<string, string[]> = {
+  add: ["--all", "-A", "--patch", "-p", "--update", "-u"],
+  branch: ["--list", "--delete", "-d"],
+  checkout: ["--create", "-b", "--detach"],
+  commit: ["--message", "-m", "--amend", "--no-edit", "--allow-empty"],
+  diff: ["--staged", "--cached"],
+  log: ["--oneline", "--graph", "--all", "--decorate"],
+  merge: ["--abort", "--continue", "--no-ff"],
+  push: ["--force", "--set-upstream"],
+  rebase: ["--abort", "--continue", "--skip"],
+  remote: ["add", "remove"],
+  status: ["--short", "--porcelain"],
+  switch: ["--create", "-c", "--detach"],
+};
+
+const BRANCH_COMMANDS = new Set(["checkout", "merge", "rebase", "switch"]);
 
 function resolvePath(cwd: string[], path: string): string[] {
   if (!path) return [...cwd];
@@ -80,6 +97,16 @@ export function useTerminalAutocomplete(
     const isSecondWordGit =
       (words.length === 1 && isTrailingSpace && words[0] === "git") ||
       (words.length === 2 && !isTrailingSpace && words[0] === "git");
+    const gitCommand = words[0] === "git" ? words[1] : undefined;
+    const isFlagContext =
+      gitCommand !== undefined &&
+      lastWord.startsWith("-") &&
+      !isTrailingSpace;
+    const isBranchContext =
+      gitCommand !== undefined &&
+      BRANCH_COMMANDS.has(gitCommand) &&
+      ((words.length === 2 && isTrailingSpace) ||
+        (words.length === 3 && !isTrailingSpace));
 
     const prefix = lastWord.toLowerCase();
     const results: AutocompleteSuggestion[] = [];
@@ -108,6 +135,35 @@ export function useTerminalAutocomplete(
           });
         }
       });
+    } else if (isFlagContext && gitCommand) {
+      (GIT_FLAGS[gitCommand] || []).forEach((flag) => {
+        if (flag.startsWith(lastWord)) {
+          results.push({
+            text: flag,
+            completionText:
+              inputVal.slice(0, inputVal.length - lastWord.length) +
+              flag +
+              " ",
+            type: "git-command",
+            description: `${gitCommand} flag`,
+          });
+        }
+      });
+    } else if (isBranchContext && gitCommand) {
+      Object.keys(shellState.git.branches)
+        .filter((name) => name.toLowerCase().startsWith(lastWord.toLowerCase()))
+        .sort()
+        .forEach((name) => {
+          results.push({
+            text: name,
+            completionText:
+              inputVal.slice(0, inputVal.length - lastWord.length) +
+              name +
+              " ",
+            type: "branch",
+            description: "Branch",
+          });
+        });
     } else {
       let searchDir = [...shellState.cwd];
       let searchPrefix = lastWord;
