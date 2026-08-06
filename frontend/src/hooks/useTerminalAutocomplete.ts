@@ -49,9 +49,12 @@ const GIT_FLAGS: Record<string, string[]> = {
   merge: ["--abort", "--continue", "--no-ff"],
   push: ["--force", "--set-upstream"],
   rebase: ["--abort", "--continue", "--skip"],
-  remote: ["add", "remove"],
   status: ["--short", "--porcelain"],
   switch: ["--create", "-c", "--detach"],
+};
+
+const GIT_SUBCOMMANDS: Record<string, string[]> = {
+  remote: ["add", "remove"],
 };
 
 const BRANCH_COMMANDS = new Set(["checkout", "merge", "rebase", "switch"]);
@@ -102,6 +105,11 @@ export function useTerminalAutocomplete(
       gitCommand !== undefined &&
       lastWord.startsWith("-") &&
       !isTrailingSpace;
+    const isSubcommandContext =
+      gitCommand !== undefined &&
+      Object.prototype.hasOwnProperty.call(GIT_SUBCOMMANDS, gitCommand) &&
+      ((words.length === 2 && isTrailingSpace) ||
+        (words.length === 3 && !isTrailingSpace));
     const isBranchContext =
       gitCommand !== undefined &&
       BRANCH_COMMANDS.has(gitCommand) &&
@@ -146,6 +154,20 @@ export function useTerminalAutocomplete(
               " ",
             type: "git-command",
             description: `${gitCommand} flag`,
+          });
+        }
+      });
+    } else if (isSubcommandContext && gitCommand) {
+      (GIT_SUBCOMMANDS[gitCommand] || []).forEach((subcommand) => {
+        if (subcommand.startsWith(lastWord.toLowerCase())) {
+          results.push({
+            text: subcommand,
+            completionText:
+              inputVal.slice(0, inputVal.length - lastWord.length) +
+              subcommand +
+              " ",
+            type: "git-command",
+            description: `${gitCommand} subcommand`,
           });
         }
       });

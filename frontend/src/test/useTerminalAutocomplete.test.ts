@@ -83,6 +83,15 @@ describe("useTerminalAutocomplete", () => {
     expect(texts).toContain("--amend");
   });
 
+  it("should suggest git remote subcommands", () => {
+    const { result } = renderHook(() =>
+      useTerminalAutocomplete("git remote ", mockShellState),
+    );
+    const texts = result.current.suggestions.map((s) => s.text);
+    expect(texts).toContain("add");
+    expect(texts).toContain("remove");
+  });
+
   it("should suggest existing branches for branch commands", () => {
     const state = {
       ...mockShellState,
