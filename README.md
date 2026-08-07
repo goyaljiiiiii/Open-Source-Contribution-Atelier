@@ -194,6 +194,11 @@ Spin up the entire stack (Postgres, Redis, Django backend, Celery worker, Vite f
 docker compose up --build
 ```
 
+> [!TIP]
+> **Developing inside Docker with live hot-reloading?**
+> Copy `docker-compose.override.yml.example` to `docker-compose.override.yml` to enable volume mounts, Vite HMR, and Django autoreloader inside containers.
+> See the complete **[Docker Compose Hot-Reload Guide](./docs/DOCKER_HOT_RELOAD.md)** for details.
+
 This boots:
 
 | Service           | URL                          | Description                                       |
