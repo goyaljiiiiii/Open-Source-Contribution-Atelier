@@ -553,6 +553,106 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/2fa/disable/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST /api/auth/2fa/disable/
+         *     Disable 2FA after password confirmation.
+         */
+        post: operations["api_auth_2fa_disable_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/2fa/generate-backup-codes/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST /api/auth/2fa/generate-backup-codes/
+         *     Regenerate recovery backup codes (requires user password).
+         */
+        post: operations["api_auth_2fa_generate_backup_codes_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/2fa/setup/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST /api/auth/2fa/setup/
+         *     Initiate TOTP 2FA setup. Returns secret, provisioning URI, and single-use backup codes.
+         */
+        post: operations["api_auth_2fa_setup_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/2fa/status/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description GET /api/auth/2fa/status/
+         *     Return 2FA status and remaining backup codes count.
+         */
+        get: operations["api_auth_2fa_status_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/2fa/verify-setup/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST /api/auth/2fa/verify-setup/
+         *     Verify 6-digit TOTP code to complete 2FA activation.
+         */
+        post: operations["api_auth_2fa_verify_setup_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/change-password/": {
         parameters: {
             query?: never;
@@ -1969,6 +2069,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/dashboard/analytics/export/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Server-side streamed CSV export for analytics dashboard metrics.
+         *     Supports filtering by date range (days) and dataset type.
+         */
+        get: operations["api_dashboard_analytics_export_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/dashboard/contributor/": {
         parameters: {
             query?: never;
@@ -2017,6 +2137,70 @@ export interface paths {
             cookie?: never;
         };
         get: operations["api_dashboard_usage_analytics_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dx-analytics/friction/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_dx_analytics_friction_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dx-analytics/history/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_dx_analytics_history_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dx-analytics/metrics/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_dx_analytics_metrics_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dx-analytics/overview/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_dx_analytics_overview_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2366,6 +2550,54 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["api_feed_feed_event_partial_update"];
+        trace?: never;
+    };
+    "/api/feed/posts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_feed_posts_list"];
+        put?: never;
+        post: operations["api_feed_posts_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/feed/posts/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_feed_posts_retrieve"];
+        put: operations["api_feed_posts_update"];
+        post?: never;
+        delete: operations["api_feed_posts_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["api_feed_posts_partial_update"];
+        trace?: never;
+    };
+    "/api/feed/posts/search/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_feed_posts_search_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/gamification/anti-cheat/check/": {
@@ -7715,8 +7947,11 @@ export interface components {
             /** @description Mock code diff showing the dependency being added. */
             diff_text: string;
         };
-        /** @description Allow login with either username or email in the username field. */
+        /** @description Allow login with either username or email in the username field, plus optional remember me lifetime and 2FA TOTP code validation. */
         EmailOrUsernameTokenObtainPair: {
+            /** @default false */
+            remember: boolean;
+            totp_code?: string;
             username: string;
             password: string;
         };
@@ -7874,6 +8109,18 @@ export interface components {
             /** Format: date-time */
             readonly created_at: string;
             actor: number;
+        };
+        FeedPost: {
+            readonly id: number;
+            title: string;
+            body: string;
+            post_type?: components["schemas"]["PostTypeEnum"];
+            readonly author: number;
+            readonly author_username: string;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
         };
         /**
          * @description * `pdf` - PDF
@@ -9305,6 +9552,18 @@ export interface components {
             readonly created_at?: string;
             actor?: number;
         };
+        PatchedFeedPost: {
+            readonly id?: number;
+            title?: string;
+            body?: string;
+            post_type?: components["schemas"]["PostTypeEnum"];
+            readonly author?: number;
+            readonly author_username?: string;
+            /** Format: date-time */
+            readonly created_at?: string;
+            /** Format: date-time */
+            readonly updated_at?: string;
+        };
         PatchedIntervention: {
             /** Format: uuid */
             readonly id?: string;
@@ -10293,6 +10552,13 @@ export interface components {
             description?: string;
             is_active?: boolean;
         };
+        /**
+         * @description * `question` - Question
+         *     * `discussion` - Discussion
+         *     * `share` - Share
+         * @enum {string}
+         */
+        PostTypeEnum: "question" | "discussion" | "share";
         /**
          * @description * `bug` - Bug
          *     * `feature` - Feature Request
@@ -11903,6 +12169,96 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AuditEvent"];
                 };
+            };
+        };
+    };
+    api_auth_2fa_disable_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_auth_2fa_generate_backup_codes_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_auth_2fa_setup_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_auth_2fa_status_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_auth_2fa_verify_setup_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -14999,6 +15355,24 @@ export interface operations {
             };
         };
     };
+    api_dashboard_analytics_export_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     api_dashboard_contributor_retrieve: {
         parameters: {
             query?: never;
@@ -15036,6 +15410,78 @@ export interface operations {
         };
     };
     api_dashboard_usage_analytics_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_dx_analytics_friction_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_dx_analytics_history_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_dx_analytics_metrics_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_dx_analytics_overview_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -16504,6 +16950,168 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FeedEvent"];
+                };
+            };
+        };
+    };
+    api_feed_posts_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedPost"][];
+                };
+            };
+        };
+    };
+    api_feed_posts_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedPost"];
+                "application/x-www-form-urlencoded": components["schemas"]["FeedPost"];
+                "multipart/form-data": components["schemas"]["FeedPost"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedPost"];
+                };
+            };
+        };
+    };
+    api_feed_posts_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this feed post. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedPost"];
+                };
+            };
+        };
+    };
+    api_feed_posts_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this feed post. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedPost"];
+                "application/x-www-form-urlencoded": components["schemas"]["FeedPost"];
+                "multipart/form-data": components["schemas"]["FeedPost"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedPost"];
+                };
+            };
+        };
+    };
+    api_feed_posts_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this feed post. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_feed_posts_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this feed post. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedFeedPost"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedFeedPost"];
+                "multipart/form-data": components["schemas"]["PatchedFeedPost"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedPost"];
+                };
+            };
+        };
+    };
+    api_feed_posts_search_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedPost"];
                 };
             };
         };
