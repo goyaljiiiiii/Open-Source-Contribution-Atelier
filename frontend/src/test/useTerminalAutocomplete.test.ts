@@ -74,6 +74,40 @@ describe("useTerminalAutocomplete", () => {
     expect(texts).not.toContain("commit");
   });
 
+  it("should suggest supported git flags", () => {
+    const { result } = renderHook(() =>
+      useTerminalAutocomplete("git commit --", mockShellState),
+    );
+    const texts = result.current.suggestions.map((s) => s.text);
+    expect(texts).toContain("--message");
+    expect(texts).toContain("--amend");
+  });
+
+  it("should suggest git remote subcommands", () => {
+    const { result } = renderHook(() =>
+      useTerminalAutocomplete("git remote ", mockShellState),
+    );
+    const texts = result.current.suggestions.map((s) => s.text);
+    expect(texts).toContain("add");
+    expect(texts).toContain("remove");
+  });
+
+  it("should suggest existing branches for branch commands", () => {
+    const state = {
+      ...mockShellState,
+      git: {
+        ...mockShellState.git,
+        branches: { main: "", "feat/one": "" },
+      },
+    };
+    const { result } = renderHook(() =>
+      useTerminalAutocomplete("git switch f", state),
+    );
+    const texts = result.current.suggestions.map((s) => s.text);
+    expect(texts).toContain("feat/one");
+    expect(result.current.suggestions[0].type).toBe("branch");
+  });
+
   it("should suggest files and directories for generic commands like 'cat '", () => {
     const { result } = renderHook(() =>
       useTerminalAutocomplete("cat ", mockShellState),
