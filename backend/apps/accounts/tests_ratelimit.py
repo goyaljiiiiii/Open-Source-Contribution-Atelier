@@ -293,3 +293,36 @@ class PasswordResetFlowTests(TestCase):
             format="json",
         )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(resp.data["error"], "invalid_token")
+
+    def test_multiple_tokens_revoked_on_password_reset(self):
+        """Resetting password revokes all active reset tokens for the user."""
+        from apps.accounts.models import PasswordResetToken
+
+        token1 = PasswordResetToken.objects.create(user=self.user)
+        token2 = PasswordResetToken.objects.create(user=self.user)
+
+        resp = self.client.post(
+            "/api/auth/password-reset/confirm/",
+            {"token": str(token2.token), "new_password": "BrandNewPass1!"},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+        token1.refresh_from_db()
+        token2.refresh_from_db()
+        self.assertTrue(token1.is_used)
+        self.assertTrue(token2.is_used)
+
+    def test_tokens_revoked_on_password_change(self):
+        """Changing user password invalidates any outstanding password reset tokens."""
+        from apps.accounts.models import PasswordResetToken
+
+        token = PasswordResetToken.objects.create(user=self.user)
+        self.assertFalse(token.is_used)
+
+        self.user.set_password("DirectChangePass1!")
+        self.user.save()
+
+        token.refresh_from_db()
+        self.assertTrue(token.is_used)
