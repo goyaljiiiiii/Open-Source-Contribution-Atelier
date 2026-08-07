@@ -309,7 +309,7 @@ export function AdminDashboard() {
               <span>🎯</span> Task Distribution
             </h2>
             <div className="h-[180px] sm:h-[220px] w-full flex justify-center items-center">
-              {system_stats.total_issues > 0 ? (
+              {issueStatusData.reduce((sum, i) => sum + i.value, 0) > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -347,7 +347,7 @@ export function AdminDashboard() {
                 </ResponsiveContainer>
               ) : (
                 <p className="font-bold text-muted dark:text-[#c4bbae]">
-                  No records.
+                  No data for the selected period
                 </p>
               )}
             </div>

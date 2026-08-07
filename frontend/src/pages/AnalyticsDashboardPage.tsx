@@ -63,10 +63,15 @@ export default function AnalyticsDashboardPage() {
   }
 
   // Format quiz data for Pie Chart
-  const quizData = data.quiz_stats.map((item) => ({
+  const quizData = (data.quiz_stats || []).map((item) => ({
     name: item.is_correct ? "Correct" : "Incorrect",
     value: item.count,
   }));
+  const totalQuizCount = quizData.reduce((acc, curr) => acc + curr.value, 0);
+  const totalChallengeCount = (data.challenge_stats || []).reduce(
+    (acc, curr) => acc + curr.count,
+    0,
+  );
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-12">
@@ -113,57 +118,63 @@ export default function AnalyticsDashboardPage() {
               <Download size={14} /> Export CSV
             </button>
           </div>
-          <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={data.registrations}
-                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis
-                  dataKey="date"
-                  stroke="#888888"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  stroke="#888888"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"}
-                />
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: "8px",
-                    border:
-                      theme === "dark"
-                        ? "2px solid #2e2924"
-                        : "2px solid black",
-                    fontWeight: "bold",
-                    backgroundColor: theme === "dark" ? "#1f1c18" : "#fff",
-                    color: theme === "dark" ? "#f0ebe2" : "#000",
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="count"
-                  stroke="#4f46e5"
-                  fillOpacity={1}
-                  fill="url(#colorUsers)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="h-80 w-full flex items-center justify-center">
+            {data.registrations && data.registrations.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={data.registrations}
+                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis
+                    dataKey="date"
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: "8px",
+                      border:
+                        theme === "dark"
+                          ? "2px solid #2e2924"
+                          : "2px solid black",
+                      fontWeight: "bold",
+                      backgroundColor: theme === "dark" ? "#1f1c18" : "#fff",
+                      color: theme === "dark" ? "#f0ebe2" : "#000",
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="count"
+                    stroke="#4f46e5"
+                    fillOpacity={1}
+                    fill="url(#colorUsers)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="font-bold text-muted dark:text-[#c4bbae]">
+                No data for the selected period
+              </p>
+            )}
           </div>
         </div>
 
@@ -182,60 +193,66 @@ export default function AnalyticsDashboardPage() {
               <Download size={14} /> Export CSV
             </button>
           </div>
-          <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={data.progress_stats}
-                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-              >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke="#e0e0e0"
-                />
-                <XAxis
-                  dataKey="date"
-                  stroke="#888888"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  stroke="#888888"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: "8px",
-                    border:
-                      theme === "dark"
-                        ? "2px solid #2e2924"
-                        : "2px solid black",
-                    fontWeight: "bold",
-                    backgroundColor: theme === "dark" ? "#1f1c18" : "#fff",
-                    color: theme === "dark" ? "#f0ebe2" : "#000",
-                  }}
-                />
-                <Legend
-                  iconType="circle"
-                  wrapperStyle={{ fontWeight: "bold" }}
-                />
-                <Bar
-                  dataKey="enrolled"
-                  name="Enrolled"
-                  fill="#FFBB28"
-                  radius={[4, 4, 0, 0]}
-                />
-                <Bar
-                  dataKey="completed"
-                  name="Completed"
-                  fill="#00C49F"
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="h-80 w-full flex items-center justify-center">
+            {data.progress_stats && data.progress_stats.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={data.progress_stats}
+                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="#e0e0e0"
+                  />
+                  <XAxis
+                    dataKey="date"
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: "8px",
+                      border:
+                        theme === "dark"
+                          ? "2px solid #2e2924"
+                          : "2px solid black",
+                      fontWeight: "bold",
+                      backgroundColor: theme === "dark" ? "#1f1c18" : "#fff",
+                      color: theme === "dark" ? "#f0ebe2" : "#000",
+                    }}
+                  />
+                  <Legend
+                    iconType="circle"
+                    wrapperStyle={{ fontWeight: "bold" }}
+                  />
+                  <Bar
+                    dataKey="enrolled"
+                    name="Enrolled"
+                    fill="#FFBB28"
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="completed"
+                    name="Completed"
+                    fill="#00C49F"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="font-bold text-muted dark:text-[#c4bbae]">
+                No data for the selected period
+              </p>
+            )}
           </div>
         </div>
 
@@ -255,7 +272,7 @@ export default function AnalyticsDashboardPage() {
             </button>
           </div>
           <div className="h-80 w-full flex items-center justify-center">
-            {quizData.length > 0 ? (
+            {quizData.length > 0 && totalQuizCount > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -266,9 +283,10 @@ export default function AnalyticsDashboardPage() {
                     outerRadius={120}
                     paddingAngle={5}
                     dataKey="value"
-                    label={({ name, percent }: any) =>
-                      `${name} ${((percent || 0) * 100).toFixed(0)}%`
-                    }
+                    label={({ name, percent }: any) => {
+                      const pct = percent && !isNaN(percent) ? percent * 100 : 0;
+                      return `${name} ${pct.toFixed(0)}%`;
+                    }}
                     labelLine={false}
                   >
                     {quizData.map((entry, index) => (
@@ -299,7 +317,9 @@ export default function AnalyticsDashboardPage() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <p className="font-bold text-muted">No quiz data available.</p>
+              <p className="font-bold text-muted dark:text-[#c4bbae]">
+                No data for the selected period
+              </p>
             )}
           </div>
         </div>
@@ -320,7 +340,9 @@ export default function AnalyticsDashboardPage() {
             </button>
           </div>
           <div className="h-80 w-full flex items-center justify-center">
-            {data.challenge_stats.length > 0 ? (
+            {data.challenge_stats &&
+            data.challenge_stats.length > 0 &&
+            totalChallengeCount > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -330,9 +352,10 @@ export default function AnalyticsDashboardPage() {
                     outerRadius={120}
                     dataKey="count"
                     nameKey="status"
-                    label={({ status, percent }: any) =>
-                      `${status} ${((percent || 0) * 100).toFixed(0)}%`
-                    }
+                    label={({ status, percent }: any) => {
+                      const pct = percent && !isNaN(percent) ? percent * 100 : 0;
+                      return `${status} ${pct.toFixed(0)}%`;
+                    }}
                   >
                     {data.challenge_stats.map((entry, index) => (
                       <Cell
@@ -365,8 +388,8 @@ export default function AnalyticsDashboardPage() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <p className="font-bold text-muted">
-                No challenge data available.
+              <p className="font-bold text-muted dark:text-[#c4bbae]">
+                No data for the selected period
               </p>
             )}
           </div>

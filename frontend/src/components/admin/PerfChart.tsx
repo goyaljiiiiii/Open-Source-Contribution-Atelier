@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 interface HourlyTrend {
@@ -16,6 +16,17 @@ interface PerfChartProps {
 }
 
 export const PerfChart: React.FC<PerfChartProps> = ({ data }) => {
+  if (!data || data.length === 0) {
+    return (
+      <div className="w-full h-96 bg-gray-900 rounded-lg p-4 shadow-lg border border-gray-800 flex flex-col justify-between">
+        <h3 className="text-xl font-semibold text-white mb-4">Latency Trends (ms)</h3>
+        <div className="flex-1 flex items-center justify-center text-gray-400 font-bold border-2 border-dashed border-gray-800 rounded-lg">
+          No data for the selected period
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-96 bg-gray-900 rounded-lg p-4 shadow-lg border border-gray-800">
       <h3 className="text-xl font-semibold text-white mb-4">Latency Trends (ms)</h3>
