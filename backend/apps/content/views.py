@@ -90,54 +90,70 @@ class LessonViewSet(viewsets.ModelViewSet):
 
 class SearchView(views.APIView):
     def get(self, request):
-        query = request.GET.get("q", "")
+        query = request.GET.get("q", "").strip()
         if not query:
             return response.Response({"lessons": [], "challenges": []})
-        search_query = SearchQuery(query)
+        
+        # Safe SearchQuery handling for special characters (% _ # + @ etc.)
+        try:
+            search_query = SearchQuery(query, search_type="websearch")
+        except Exception:
+            search_query = SearchQuery(query, search_type="raw")
+
         lesson_ct = ContentType.objects.get_for_model(Lesson)
         challenge_ct = ContentType.objects.get_for_model(Challenge)
 
         def get_fts_objects(model_class, content_type):
             from django.db import connection
 
-            org = getattr(request.user, "organization", None)
-            if not org:
-                return []
+            org = getattr(request.user, "organization", None) if request.user.is_authenticated else None
+            filter_kwargs = {"organization": org} if org else {}
+
             if connection.vendor != "postgresql":
                 return list(
                     model_class.objects.filter(
-                        title__icontains=query, organization=org
+                        Q(title__icontains=query) | Q(summary__icontains=query) if hasattr(model_class, "summary") else Q(title__icontains=query),
+                        **filter_kwargs
                     )[:50]
                 )
-            docs = (
-                SearchDocument.objects.filter(  # type: ignore
-                    content_type=content_type, search_vector=search_query
+            
+            try:
+                docs = (
+                    SearchDocument.objects.filter(
+                        content_type=content_type, search_vector=search_query
+                    )
+                    .annotate(rank=SearchRank("search_vector", search_query))
+                    .order_by("-rank")[:50]
                 )
-                .annotate(rank=SearchRank("search_vector", search_query))
-                .order_by("-rank")[:50]
-            )
+            except Exception:
+                docs = SearchDocument.objects.none()
 
             if not docs.exists():
-                docs = (
-                    SearchDocument.objects.filter(content_type=content_type)  # type: ignore
-                    .annotate(similarity=TrigramSimilarity("title", query))
-                    .filter(similarity__gt=0.3)
-                    .order_by("-similarity")[:50]
-                )
+                try:
+                    docs = (
+                        SearchDocument.objects.filter(content_type=content_type)
+                        .annotate(similarity=TrigramSimilarity("title", query))
+                        .filter(similarity__gt=0.2)
+                        .order_by("-similarity")[:50]
+                    )
+                except Exception:
+                    docs = SearchDocument.objects.none()
 
             object_ids = [doc.object_id for doc in docs]
-            if not object_ids:
-                return []
-
-            org = getattr(request.user, "organization", None)
-            if not org:
-                return []
-            objects = model_class.objects.filter(id__in=object_ids, organization=org)
+            if object_ids:
+                objects = model_class.objects.filter(id__in=object_ids, **filter_kwargs)
+                if model_class == Lesson:
+                    objects = objects.prefetch_related("exercises", "prerequisites")
+                return sorted(objects, key=lambda x: object_ids.index(x.id))
+            
+            # Fallback to direct icontains search if FTS / Trigram produced no matches
+            objects = model_class.objects.filter(
+                Q(title__icontains=query) | Q(summary__icontains=query) if hasattr(model_class, "summary") else Q(title__icontains=query),
+                **filter_kwargs
+            )[:50]
             if model_class == Lesson:
                 objects = objects.prefetch_related("exercises", "prerequisites")
-            # Sort them in the exact order returned by FTS
-            ordered_objects = sorted(objects, key=lambda x: object_ids.index(x.id))
-            return ordered_objects
+            return list(objects)
 
         lessons = get_fts_objects(Lesson, lesson_ct)
         challenges = get_fts_objects(Challenge, challenge_ct)
