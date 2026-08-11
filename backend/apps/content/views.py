@@ -87,6 +87,104 @@ class LessonViewSet(viewsets.ModelViewSet):
         serializer = LessonVersionSerializer(versions, many=True)
         return response.Response(serializer.data)
 
+    @action(detail=False, methods=["post"], url_path="bulk-import")
+    def bulk_import(self, request):
+        import csv
+        import io
+        from django.utils.text import slugify
+
+        file_obj = request.FILES.get("file")
+        if not file_obj:
+            return response.Response(
+                {"error": "No file uploaded. Please upload a CSV file under key 'file'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            raw_bytes = file_obj.read()
+            # Handle UTF-8 with BOM or standard UTF-8
+            decoded_file = raw_bytes.decode("utf-8-sig")
+        except UnicodeDecodeError as exc:
+            return response.Response(
+                {"error": f"Invalid file encoding. File must be UTF-8 encoded: {str(exc)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        csv_reader = csv.DictReader(io.StringIO(decoded_file))
+        if not csv_reader.fieldnames:
+            return response.Response(
+                {"error": "CSV file is empty or missing headers."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        imported_lessons = []
+        errors = []
+        rows = list(csv_reader)
+
+        org = getattr(request.user, "organization", None) if request.user.is_authenticated else None
+
+        for idx, row in enumerate(rows, start=2):  # Row 1 is header
+            title = (row.get("title") or row.get("Title") or "").strip()
+            summary = (row.get("summary") or row.get("Summary") or "").strip()
+            content = (row.get("content") or row.get("Content") or "").strip()
+            difficulty = (row.get("difficulty") or row.get("Difficulty") or "beginner").strip()
+            category = (row.get("category") or row.get("Category") or "general").strip()
+            estimated_minutes = row.get("estimated_minutes") or row.get("Estimated Minutes") or 15
+
+            if not title:
+                errors.append({"row": idx, "error": "Missing required field: 'title'"})
+                continue
+
+            slug = row.get("slug") or row.get("Slug")
+            if slug:
+                slug = slug.strip()
+            else:
+                slug = slugify(title, allow_unicode=True)
+
+            if not slug:
+                errors.append({"row": idx, "title": title, "error": "Could not generate valid slug from title"})
+                continue
+
+            try:
+                estimated_minutes = int(estimated_minutes)
+            except (ValueError, TypeError):
+                estimated_minutes = 15
+
+            # Handle existing slug collision
+            base_slug = slug
+            counter = 1
+            while Lesson.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+
+            try:
+                lesson = Lesson.objects.create(
+                    title=title,
+                    slug=slug,
+                    summary=summary or title,
+                    content=content or title,
+                    difficulty=difficulty,
+                    category=category,
+                    estimated_minutes=estimated_minutes,
+                    organization=org,
+                )
+                imported_lessons.append(LessonSerializer(lesson).data)
+            except Exception as e:
+                errors.append({"row": idx, "title": title, "error": str(e)})
+
+        status_code = status.HTTP_201_CREATED if imported_lessons else status.HTTP_400_BAD_REQUEST
+        return response.Response(
+            {
+                "message": f"{len(imported_lessons)} lessons imported",
+                "imported_count": len(imported_lessons),
+                "failed_count": len(errors),
+                "total_rows": len(rows),
+                "errors": errors,
+                "lessons": imported_lessons,
+            },
+            status=status_code,
+        )
+
 
 class SearchView(views.APIView):
     def get(self, request):
