@@ -869,6 +869,25 @@ def test_draft_content_studio_crud_and_reorder():
 
 
 @pytest.mark.django_db
+def test_search_special_characters_no_crash():
+    from apps.content.models import Lesson
+
+    Lesson.objects.create(
+        title="C# and React+ Advanced Guide",
+        slug="csharp-react-guide",
+        summary="Mastering C# with React+ hooks and 100% test coverage",
+        content="Guide to C# programming",
+        difficulty="advanced",
+    )
+
+    client = APIClient()
+
+    for special_query in ["C#", "100%", "react+hooks", "%", "_", "#", "+", "@"]:
+        response = client.get(f"/api/content/search/?q={special_query}")
+        assert response.status_code == 200
+        assert "lessons" in response.data or "results" in response.data
+
+
 def test_bulk_import_csv_special_characters():
     from io import BytesIO
     from apps.content.models import Lesson
