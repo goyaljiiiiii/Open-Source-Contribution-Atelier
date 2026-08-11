@@ -1,0 +1,12 @@
+{
+  "lighthouse": {
+    "performance": 90.0,
+    "accessibility": 95.0,
+    "best_practices": 92.0,
+    "seo": 92.0
+  },
+  "k6": {
+    "p95_ms": 150.0,
+    "error_rate": 0.0
+  }
+}

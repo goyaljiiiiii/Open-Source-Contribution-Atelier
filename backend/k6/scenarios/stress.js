@@ -1,4 +1,4 @@
-import { hitEndpoints } from "./endpoints.js";
+import { hitEndpoints } from "../endpoints.js";
 
 export const options = {
   stages: [
@@ -15,3 +15,10 @@ export const options = {
 export default function () {
   hitEndpoints();
 }
+
+export function handleSummary(data) {
+  return {
+    "k6-stress-results.json": JSON.stringify(data),
+  };
+}
+

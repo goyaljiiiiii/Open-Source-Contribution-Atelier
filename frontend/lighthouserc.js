@@ -9,7 +9,9 @@ module.exports = {
         "http://localhost:5173/dashboard",
       ],
       numberOfRuns: 3,
-      startServerCommand: "npm run dev",
+      settings: {
+        chromeFlags: "--no-sandbox --headless --disable-gpu",
+      },
     },
     assert: {
       assertions: {
@@ -20,7 +22,8 @@ module.exports = {
       },
     },
     upload: {
-      target: "temporary-public-storage",
+      target: "filesystem",
+      outputDir: "./.lighthouseci",
     },
   },
 };
