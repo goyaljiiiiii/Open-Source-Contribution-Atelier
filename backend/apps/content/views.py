@@ -87,57 +87,171 @@ class LessonViewSet(viewsets.ModelViewSet):
         serializer = LessonVersionSerializer(versions, many=True)
         return response.Response(serializer.data)
 
+    @action(detail=False, methods=["post"], url_path="bulk-import")
+    def bulk_import(self, request):
+        import csv
+        import io
+        from django.utils.text import slugify
+
+        file_obj = request.FILES.get("file")
+        if not file_obj:
+            return response.Response(
+                {"error": "No file uploaded. Please upload a CSV file under key 'file'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            raw_bytes = file_obj.read()
+            # Handle UTF-8 with BOM or standard UTF-8
+            decoded_file = raw_bytes.decode("utf-8-sig")
+        except UnicodeDecodeError as exc:
+            return response.Response(
+                {"error": f"Invalid file encoding. File must be UTF-8 encoded: {str(exc)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        csv_reader = csv.DictReader(io.StringIO(decoded_file))
+        if not csv_reader.fieldnames:
+            return response.Response(
+                {"error": "CSV file is empty or missing headers."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        imported_lessons = []
+        errors = []
+        rows = list(csv_reader)
+
+        org = getattr(request.user, "organization", None) if request.user.is_authenticated else None
+
+        for idx, row in enumerate(rows, start=2):  # Row 1 is header
+            title = (row.get("title") or row.get("Title") or "").strip()
+            summary = (row.get("summary") or row.get("Summary") or "").strip()
+            content = (row.get("content") or row.get("Content") or "").strip()
+            difficulty = (row.get("difficulty") or row.get("Difficulty") or "beginner").strip()
+            category = (row.get("category") or row.get("Category") or "general").strip()
+            estimated_minutes = row.get("estimated_minutes") or row.get("Estimated Minutes") or 15
+
+            if not title:
+                errors.append({"row": idx, "error": "Missing required field: 'title'"})
+                continue
+
+            slug = row.get("slug") or row.get("Slug")
+            if slug:
+                slug = slug.strip()
+            else:
+                slug = slugify(title, allow_unicode=True)
+
+            if not slug:
+                errors.append({"row": idx, "title": title, "error": "Could not generate valid slug from title"})
+                continue
+
+            try:
+                estimated_minutes = int(estimated_minutes)
+            except (ValueError, TypeError):
+                estimated_minutes = 15
+
+            # Handle existing slug collision
+            base_slug = slug
+            counter = 1
+            while Lesson.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+
+            try:
+                lesson = Lesson.objects.create(
+                    title=title,
+                    slug=slug,
+                    summary=summary or title,
+                    content=content or title,
+                    difficulty=difficulty,
+                    category=category,
+                    estimated_minutes=estimated_minutes,
+                    organization=org,
+                )
+                imported_lessons.append(LessonSerializer(lesson).data)
+            except Exception as e:
+                errors.append({"row": idx, "title": title, "error": str(e)})
+
+        status_code = status.HTTP_201_CREATED if imported_lessons else status.HTTP_400_BAD_REQUEST
+        return response.Response(
+            {
+                "message": f"{len(imported_lessons)} lessons imported",
+                "imported_count": len(imported_lessons),
+                "failed_count": len(errors),
+                "total_rows": len(rows),
+                "errors": errors,
+                "lessons": imported_lessons,
+            },
+            status=status_code,
+        )
+
 
 class SearchView(views.APIView):
     def get(self, request):
-        query = request.GET.get("q", "")
+        query = request.GET.get("q", "").strip()
         if not query:
             return response.Response({"lessons": [], "challenges": []})
-        search_query = SearchQuery(query)
+        
+        # Safe SearchQuery handling for special characters (% _ # + @ etc.)
+        try:
+            search_query = SearchQuery(query, search_type="websearch")
+        except Exception:
+            search_query = SearchQuery(query, search_type="raw")
+
         lesson_ct = ContentType.objects.get_for_model(Lesson)
         challenge_ct = ContentType.objects.get_for_model(Challenge)
 
         def get_fts_objects(model_class, content_type):
             from django.db import connection
 
-            org = getattr(request.user, "organization", None)
-            if not org:
-                return []
+            org = getattr(request.user, "organization", None) if request.user.is_authenticated else None
+            filter_kwargs = {"organization": org} if org else {}
+
             if connection.vendor != "postgresql":
                 return list(
                     model_class.objects.filter(
-                        title__icontains=query, organization=org
+                        Q(title__icontains=query) | Q(summary__icontains=query) if hasattr(model_class, "summary") else Q(title__icontains=query),
+                        **filter_kwargs
                     )[:50]
                 )
-            docs = (
-                SearchDocument.objects.filter(  # type: ignore
-                    content_type=content_type, search_vector=search_query
+            
+            try:
+                docs = (
+                    SearchDocument.objects.filter(
+                        content_type=content_type, search_vector=search_query
+                    )
+                    .annotate(rank=SearchRank("search_vector", search_query))
+                    .order_by("-rank")[:50]
                 )
-                .annotate(rank=SearchRank("search_vector", search_query))
-                .order_by("-rank")[:50]
-            )
+            except Exception:
+                docs = SearchDocument.objects.none()
 
             if not docs.exists():
-                docs = (
-                    SearchDocument.objects.filter(content_type=content_type)  # type: ignore
-                    .annotate(similarity=TrigramSimilarity("title", query))
-                    .filter(similarity__gt=0.3)
-                    .order_by("-similarity")[:50]
-                )
+                try:
+                    docs = (
+                        SearchDocument.objects.filter(content_type=content_type)
+                        .annotate(similarity=TrigramSimilarity("title", query))
+                        .filter(similarity__gt=0.2)
+                        .order_by("-similarity")[:50]
+                    )
+                except Exception:
+                    docs = SearchDocument.objects.none()
 
             object_ids = [doc.object_id for doc in docs]
-            if not object_ids:
-                return []
-
-            org = getattr(request.user, "organization", None)
-            if not org:
-                return []
-            objects = model_class.objects.filter(id__in=object_ids, organization=org)
+            if object_ids:
+                objects = model_class.objects.filter(id__in=object_ids, **filter_kwargs)
+                if model_class == Lesson:
+                    objects = objects.prefetch_related("exercises", "prerequisites")
+                return sorted(objects, key=lambda x: object_ids.index(x.id))
+            
+            # Fallback to direct icontains search if FTS / Trigram produced no matches
+            objects = model_class.objects.filter(
+                Q(title__icontains=query) | Q(summary__icontains=query) if hasattr(model_class, "summary") else Q(title__icontains=query),
+                **filter_kwargs
+            )[:50]
             if model_class == Lesson:
                 objects = objects.prefetch_related("exercises", "prerequisites")
-            # Sort them in the exact order returned by FTS
-            ordered_objects = sorted(objects, key=lambda x: object_ids.index(x.id))
-            return ordered_objects
+            return list(objects)
 
         lessons = get_fts_objects(Lesson, lesson_ct)
         challenges = get_fts_objects(Challenge, challenge_ct)
