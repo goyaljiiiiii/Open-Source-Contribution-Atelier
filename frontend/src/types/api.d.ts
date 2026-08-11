@@ -1936,6 +1936,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/content/published-lessons/bulk-import/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_content_published_lessons_bulk_import_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/content/quiz-questions/": {
         parameters: {
             query?: never;
@@ -11085,6 +11101,7 @@ export interface components {
             linkedin_url?: string;
             github_url?: string;
             bio?: string;
+            receive_weekly_digest?: boolean;
         };
         Vote: {
             readonly id: number;
@@ -15091,6 +15108,31 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Lesson"];
+                };
+            };
+        };
+    };
+    api_content_published_lessons_bulk_import_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Lesson"];
+                "application/x-www-form-urlencoded": components["schemas"]["Lesson"];
+                "multipart/form-data": components["schemas"]["Lesson"];
+            };
+        };
         responses: {
             200: {
                 headers: {
