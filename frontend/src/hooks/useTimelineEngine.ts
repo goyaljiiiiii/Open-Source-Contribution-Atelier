@@ -29,6 +29,7 @@ export function useTimelineEngine() {
   }, []);
 
   const stepForward = useCallback(() => {
+    if (traceEvents.length === 0) return;
     setCurrentStepIndex((prev) => Math.min(prev + 1, traceEvents.length - 1));
   }, [traceEvents.length]);
 
@@ -46,6 +47,7 @@ export function useTimelineEngine() {
   );
 
   const togglePlayback = useCallback(() => {
+    if (traceEvents.length === 0) return;
     if (currentStepIndex >= traceEvents.length - 1) {
       // If at end, restart
       setCurrentStepIndex(0);
