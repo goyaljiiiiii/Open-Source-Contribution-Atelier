@@ -42,12 +42,15 @@ export default function LogoutConfirmModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="logout-modal-title"
+        aria-describedby="logout-modal-desc"
         className="bg-white p-6 border-4 border-black max-w-sm w-full rounded-2xl shadow-[6px_6px_0px_0px_#000000]"
       >
         <h2 id="logout-modal-title" className="font-bold text-lg mb-2">
           {title}
         </h2>
-        <p className="mb-4 text-sm text-gray-600">{description}</p>
+        <p id="logout-modal-desc" className="mb-4 text-sm text-gray-600">
+          {description}
+        </p>
 
         <div className="flex gap-3 justify-end">
           <button

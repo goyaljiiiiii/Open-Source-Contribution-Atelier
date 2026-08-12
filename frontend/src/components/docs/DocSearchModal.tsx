@@ -1,10 +1,22 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import Fuse, { FuseResultMatch } from "fuse.js";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
-import { Search, ChevronRight, FileText, Heading as HeadingIcon, AlignLeft } from "lucide-react";
+import {
+  Search,
+  ChevronRight,
+  FileText,
+  Heading as HeadingIcon,
+  AlignLeft,
+} from "lucide-react";
 
 interface SearchIndexEntry {
   id: string;
@@ -92,12 +104,15 @@ export const DocSearchModal: React.FC = () => {
     return fuse.search(searchQuery).slice(0, 8);
   }, [searchQuery, fuse]);
 
-  const handleSelect = useCallback((entry: SearchIndexEntry) => {
-    const hash = entry.hash ? `#${entry.hash}` : "";
-    const to = `/lessons/${entry.slug}${hash}`;
-    navigate(to);
-    setIsOpen(false);
-  }, [navigate, setIsOpen]);
+  const handleSelect = useCallback(
+    (entry: SearchIndexEntry) => {
+      const hash = entry.hash ? `#${entry.hash}` : "";
+      const to = `/lessons/${entry.slug}${hash}`;
+      navigate(to);
+      setIsOpen(false);
+    },
+    [navigate, setIsOpen],
+  );
 
   // Keyboard navigation
   useEffect(() => {
@@ -109,7 +124,9 @@ export const DocSearchModal: React.FC = () => {
         setSelectedIndex((prev) => (prev + 1) % searchResults.length);
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        setSelectedIndex((prev) => (prev - 1 + searchResults.length) % searchResults.length);
+        setSelectedIndex(
+          (prev) => (prev - 1 + searchResults.length) % searchResults.length,
+        );
       } else if (e.key === "Enter") {
         e.preventDefault();
         const selected = searchResults[selectedIndex]?.item;
@@ -126,7 +143,9 @@ export const DocSearchModal: React.FC = () => {
   // Scroll active item into view
   useEffect(() => {
     if (resultsRef.current) {
-      const activeElement = resultsRef.current.children[selectedIndex] as HTMLElement;
+      const activeElement = resultsRef.current.children[
+        selectedIndex
+      ] as HTMLElement;
       if (activeElement) {
         activeElement.scrollIntoView({ block: "nearest" });
       }
@@ -141,34 +160,51 @@ export const DocSearchModal: React.FC = () => {
   };
 
   const getBadgeForType = (type: string) => {
-    const baseClass = "px-2 py-0.5 border border-black text-[10px] font-black rounded uppercase tracking-wider ml-2";
-    if (type === "lesson") return <span className={`${baseClass} bg-blue-600 text-white`}>Lesson</span>;
-    if (type === "heading") return <span className={`${baseClass} bg-purple-600 text-white`}>Section</span>;
-    return <span className={`${baseClass} bg-zinc-700 text-zinc-300`}>Text</span>;
+    const baseClass =
+      "px-2 py-0.5 border border-black text-[10px] font-black rounded uppercase tracking-wider ml-2";
+    if (type === "lesson")
+      return (
+        <span className={`${baseClass} bg-blue-600 text-white`}>Lesson</span>
+      );
+    if (type === "heading")
+      return (
+        <span className={`${baseClass} bg-purple-600 text-white`}>Section</span>
+      );
+    return (
+      <span className={`${baseClass} bg-zinc-700 text-zinc-300`}>Text</span>
+    );
   };
 
   // Safely highlight Fuse matches
-  const renderHighlightedText = (text: string, matches?: readonly FuseResultMatch[]) => {
+  const renderHighlightedText = (
+    text: string,
+    matches?: readonly FuseResultMatch[],
+  ) => {
     if (!matches || matches.length === 0) return text;
-    
+
     // We only care about the match for the current text
-    const match = matches.find(m => m.value === text);
+    const match = matches.find((m) => m.value === text);
     if (!match || !match.indices) return text;
 
     const result = [];
     let lastIndex = 0;
-    
+
     // Convert readonly tuples to standard arrays for sort
     const sortedIndices = [...match.indices].sort((a, b) => a[0] - b[0]);
 
     sortedIndices.forEach(([start, end], i) => {
       if (start > lastIndex) {
-        result.push(<span key={`text-${i}`}>{text.slice(lastIndex, start)}</span>);
+        result.push(
+          <span key={`text-${i}`}>{text.slice(lastIndex, start)}</span>,
+        );
       }
       result.push(
-        <span key={`highlight-${i}`} className="bg-[#FFCC00] text-black font-extrabold px-0.5 rounded">
+        <span
+          key={`highlight-${i}`}
+          className="bg-[#FFCC00] text-black font-extrabold px-0.5 rounded"
+        >
           {text.slice(start, end + 1)}
-        </span>
+        </span>,
       );
       lastIndex = end + 1;
     });
@@ -183,7 +219,7 @@ export const DocSearchModal: React.FC = () => {
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] sm:pt-[15vh] px-4" ref={modalRef}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] sm:pt-[15vh] px-4">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -193,6 +229,10 @@ export const DocSearchModal: React.FC = () => {
       />
 
       <motion.div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Documentation Search"
         initial={{ opacity: 0, scale: 0.95, y: -20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: -20 }}
@@ -221,10 +261,12 @@ export const DocSearchModal: React.FC = () => {
               Loading documentation index...
             </div>
           )}
-          
+
           {!isLoading && searchResults.length === 0 && searchQuery && (
             <div className="p-8 text-center">
-              <p className="text-zinc-500 font-medium">No results found for "{searchQuery}"</p>
+              <p className="text-zinc-500 font-medium">
+                No results found for "{searchQuery}"
+              </p>
             </div>
           )}
 
@@ -233,8 +275,8 @@ export const DocSearchModal: React.FC = () => {
               {searchResults.map((result, idx) => {
                 const { item, matches } = result;
                 const isSelected = idx === selectedIndex;
-                const titleMatch = matches?.find(m => m.key === "title");
-                const descMatch = matches?.find(m => m.key === "content");
+                const titleMatch = matches?.find((m) => m.key === "title");
+                const descMatch = matches?.find((m) => m.key === "content");
 
                 return (
                   <li
@@ -248,26 +290,40 @@ export const DocSearchModal: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center space-x-4 overflow-hidden w-full">
-                      <div className={`p-2 rounded-lg border-2 border-black flex-shrink-0 ${
-                        isSelected ? "bg-black text-[#FFCC00]" : "bg-[#0f0e0c] text-[#FFCC00]"
-                      }`}>
+                      <div
+                        className={`p-2 rounded-lg border-2 border-black flex-shrink-0 ${
+                          isSelected
+                            ? "bg-black text-[#FFCC00]"
+                            : "bg-[#0f0e0c] text-[#FFCC00]"
+                        }`}
+                      >
                         {getIconForType(item.type)}
                       </div>
                       <div className="overflow-hidden flex-1">
                         <div className="flex items-center">
                           <p className="font-extrabold text-lg tracking-tight truncate flex-1">
-                            {titleMatch ? renderHighlightedText(item.title, matches) : item.title}
+                            {titleMatch
+                              ? renderHighlightedText(item.title, matches)
+                              : item.title}
                           </p>
                           {getBadgeForType(item.type)}
                         </div>
-                        <p className={`text-sm truncate ${isSelected ? "text-zinc-800" : "text-[#6b5a49]"}`}>
-                          {descMatch ? renderHighlightedText(item.content, matches) : item.content}
+                        <p
+                          className={`text-sm truncate ${isSelected ? "text-zinc-800" : "text-[#6b5a49]"}`}
+                        >
+                          {descMatch
+                            ? renderHighlightedText(item.content, matches)
+                            : item.content}
                         </p>
                       </div>
                     </div>
-                    <ChevronRight className={`w-5 h-5 flex-shrink-0 transition-transform ml-4 ${
-                      isSelected ? "text-black translate-x-1" : "text-[#6b5a49]"
-                    }`} />
+                    <ChevronRight
+                      className={`w-5 h-5 flex-shrink-0 transition-transform ml-4 ${
+                        isSelected
+                          ? "text-black translate-x-1"
+                          : "text-[#6b5a49]"
+                      }`}
+                    />
                   </li>
                 );
               })}
@@ -276,6 +332,6 @@ export const DocSearchModal: React.FC = () => {
         </div>
       </motion.div>
     </div>,
-    document.body
+    document.body,
   );
 };
