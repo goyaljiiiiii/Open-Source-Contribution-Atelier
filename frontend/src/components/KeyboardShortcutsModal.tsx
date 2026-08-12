@@ -134,7 +134,10 @@ export const KeyboardShortcutsModal: React.FC = () => {
     window.addEventListener("toggle-keyboard-shortcuts", handleCustomToggle);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("toggle-keyboard-shortcuts", handleCustomToggle);
+      window.removeEventListener(
+        "toggle-keyboard-shortcuts",
+        handleCustomToggle,
+      );
     };
   }, [isOpen]);
 
@@ -162,6 +165,7 @@ export const KeyboardShortcutsModal: React.FC = () => {
             role="dialog"
             aria-modal="true"
             aria-labelledby="shortcuts-modal-title"
+            aria-describedby="shortcuts-modal-desc"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b-4 border-black bg-[#151411]">
@@ -185,7 +189,10 @@ export const KeyboardShortcutsModal: React.FC = () => {
 
             {/* Content Body */}
             <div className="flex-1 p-6 overflow-y-auto bg-[#0f0e0c] space-y-4 max-h-[65vh]">
-              <p className="text-sm font-bold text-[#c4bbae]">
+              <p
+                id="shortcuts-modal-desc"
+                className="text-sm font-bold text-[#c4bbae]"
+              >
                 Atelier workspace active keyboard shortcuts:
               </p>
 
