@@ -8,6 +8,7 @@ from urllib.parse import urlencode
 import requests as http_requests
 from PIL import Image
 from django.conf import settings
+from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
@@ -286,6 +287,47 @@ class GoogleLoginView(APIView):
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class LogoutView(APIView):
+    """
+    POST /api/auth/logout/
+    Log out a user by blacklisting their access and refresh tokens.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        import time
+        from rest_framework_simplejwt.tokens import RefreshToken
+        from rest_framework_simplejwt.exceptions import TokenError
+        
+        try:
+            # 1. Blacklist Refresh Token
+            refresh_token_str = request.data.get("refresh")
+            if not refresh_token_str:
+                return Response({"detail": "Refresh token is required"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            refresh_token = RefreshToken(refresh_token_str)
+            refresh_jti = refresh_token.get("jti")
+            refresh_exp = refresh_token.get("exp")
+            if refresh_jti and refresh_exp:
+                refresh_ttl = max(0, refresh_exp - int(time.time()))
+                cache.set(f"jwt_blocklist:{refresh_jti}", True, timeout=refresh_ttl)
+                
+            # 2. Blacklist Access Token
+            auth = request.auth
+            if auth:
+                access_jti = auth.get("jti")
+                access_exp = auth.get("exp")
+                if access_jti and access_exp:
+                    access_ttl = max(0, access_exp - int(time.time()))
+                    cache.set(f"jwt_blocklist:{access_jti}", True, timeout=access_ttl)
+
+            return Response(status=status.HTTP_205_RESET_CONTENT)
+        except TokenError:
+            return Response({"detail": "Invalid or expired refresh token"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 class GitHubOAuthStartView(APIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [OAuthThrottle]
@@ -473,7 +515,6 @@ class UserSuggestionsView(APIView):
         return Response(data, status=status.HTTP_200_OK)
 
 
->>>>>>> main
 # ─────────────────────────────────────────────────────────────────────────────
 # Password Reset Views (UPDATED with Custom Token Model & JWT Invalidation)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -654,7 +695,6 @@ class PasswordResetValidateTokenView(APIView):
                 'error': 'Token has expired'
             })
 
-<<<<<<< HEAD
         return Response({
             'valid': True,
             'message': 'Token is valid',
@@ -786,8 +826,6 @@ class ChangePasswordView(APIView):
             status=status.HTTP_200_OK
         )
 
-            status=status.HTTP_400_BAD_REQUEST,
-        )
 
 
 class AvatarUploadView(APIView):
@@ -1107,4 +1145,3 @@ class PublicProfileView(APIView):
                 "completed_lessons": completed_lessons,
             }
         )
->>>>>>> main

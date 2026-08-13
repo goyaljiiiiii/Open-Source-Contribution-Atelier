@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.utils.crypto import constant_time_compare
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from rest_framework_simplejwt.settings import api_settings
+from django.core.cache import cache
 import hashlib
 import hmac
 
@@ -50,6 +51,10 @@ class DynamicSaltAccessToken(AccessToken):
         # First perform standard verification
         super().verify()
         
+        jti = self.get("jti")
+        if jti and cache.get(f"jwt_blocklist:{jti}"):
+            raise ValueError("Token has been blacklisted")
+
         # Get user from token
         user_id = self.get("user_id")
         try:
@@ -94,6 +99,10 @@ class DynamicSaltRefreshToken(RefreshToken):
         # First perform standard verification
         super().verify()
         
+        jti = self.get("jti")
+        if jti and cache.get(f"jwt_blocklist:{jti}"):
+            raise ValueError("Token has been blacklisted")
+
         # Get user from token
         user_id = self.get("user_id")
         try:
