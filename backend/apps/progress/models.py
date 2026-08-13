@@ -1209,3 +1209,23 @@ class WeeklyGoal(models.Model):
         )
         return goal
 
+
+class WeeklyDigestLog(models.Model):
+    """Tracks which users have already received the weekly digest for a given week."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="weekly_digest_logs",
+    )
+    week_start = models.DateField(
+        help_text="Monday of the ISO week this digest covers."
+    )
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "week_start")
+        ordering = ["-sent_at"]
+
+    def __str__(self):
+        return f"Digest for {self.user.username} — week of {self.week_start}"

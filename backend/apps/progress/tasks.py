@@ -15,9 +15,17 @@ def send_weekly_progress_summary():
     """
     Django-Q scheduled task to calculate learning progress over the past 7 days
     for each active user, and dispatch an email summary.
+
+    Idempotent: uses WeeklyDigestLog to skip users who already received the
+    digest for the current ISO week.
     """
     from apps.notifications.tasks import send_bulk_email
+    from apps.progress.models import WeeklyDigestLog
     from apps.progress.services.digest_service import WeeklyDigestService
+
+    now = timezone.now()
+    # Monday of the current ISO week
+    week_start = (now - timedelta(days=now.weekday())).date()
 
     # Process active users in chunks who opted in for the digest
     users = User.objects.filter(
@@ -25,6 +33,15 @@ def send_weekly_progress_summary():
     ).iterator(chunk_size=100)
 
     for user in users:
+        # Skip if digest was already sent for this week
+        if WeeklyDigestLog.objects.filter(user=user, week_start=week_start).exists():
+            logger.info(
+                "Skipping digest for %s — already sent for week of %s",
+                user.username,
+                week_start,
+            )
+            continue
+
         # Generate context using the new service
         context = WeeklyDigestService.get_user_digest_context(user)
 
@@ -39,6 +56,11 @@ def send_weekly_progress_summary():
                 "data": context,
             }
             async_task("apps.notifications.tasks.send_bulk_email", payload)
+
+            # Record that we sent the digest so re-runs won't duplicate
+            WeeklyDigestLog.objects.get_or_create(
+                user=user, week_start=week_start
+            )
 
 
 def evaluate_achievements_task(user_id):
