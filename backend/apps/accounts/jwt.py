@@ -8,6 +8,7 @@ User = get_user_model()
 import hashlib
 import hmac
 
+from django.core.cache import cache
 from django.utils.crypto import constant_time_compare
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.settings import api_settings
@@ -64,6 +65,10 @@ class DynamicSaltAccessToken(AccessToken):
         """Verify token with dynamic salt."""
         # First perform standard verification
         super().verify()
+
+        jti = self.get("jti")
+        if jti and cache.get(f"jwt_blocklist:{jti}"):
+            raise DynamicSaltValidationError("Token has been blacklisted")
 
         # Get user from token
         user_id = self.get("user_id")
@@ -138,6 +143,10 @@ class DynamicSaltRefreshToken(RefreshToken):
         """Verify refresh token with dynamic salt."""
         # First perform standard verification
         super().verify()
+
+        jti = self.get("jti")
+        if jti and cache.get(f"jwt_blocklist:{jti}"):
+            raise DynamicSaltValidationError("Token has been blacklisted")
 
         # Get user from token
         user_id = self.get("user_id")
