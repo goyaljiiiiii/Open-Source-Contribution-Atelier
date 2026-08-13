@@ -197,8 +197,20 @@ class CompleteUploadView(views.APIView):
                     with chunk_path.open("rb") as chunk_file:
                         shutil.copyfileobj(chunk_file, final_file)
 
-            if quarantine_path.stat().st_size != session.total_size:
+            assembled_size = quarantine_path.stat().st_size
+            if assembled_size != session.total_size:
                 raise ValidationError("Uploaded size does not match declared size.")
+
+            # Re-validate assembled file size against upload type limit
+            upload_limit = max_size_for(session.upload_type)
+            if assembled_size > upload_limit:
+                quarantine_path.unlink(missing_ok=True)
+                session.status = UploadSession.Status.FAILED
+                session.save(update_fields=["status", "updated_at"])
+                raise ValidationError(
+                    f"Assembled file size ({assembled_size} bytes) exceeds the "
+                    f"{upload_limit // (1024 * 1024)}MB limit for {session.upload_type} uploads."
+                )
 
             detected_type, mime_type = validate_file(
                 quarantine_path, session.filename, session.upload_type
