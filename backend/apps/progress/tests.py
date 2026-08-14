@@ -724,6 +724,7 @@ class StreakEngineTests(APITestCase):
         self.assertEqual(profile.last_activity_date, datetime.date(2026, 7, 11))
 
 from django.db import IntegrityError, transaction
+from django.test import TestCase
 
 
 class LessonProgressAttemptCountTests(TestCase):
