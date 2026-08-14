@@ -92,6 +92,7 @@ api_v1_patterns = [
     path("api/experiments/", include("apps.experiments.urls")),
     path("api/feed/", include("apps.feed.urls")),
     path("api/dx-testing/", include("apps.dx_testing.urls")),
+    path("api/dx-analytics/", include("apps.dx_analytics.urls")),
     path("api/issue-quality/", include("apps.issue_quality.urls")),
     path("api/ml-triage/", include("apps.ml_triage.urls")),
     # ── AI Tutor ────────────────────────────────────────────────────────────────

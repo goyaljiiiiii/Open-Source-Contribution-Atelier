@@ -63,6 +63,22 @@ def send_weekly_progress_summary():
             )
 
 
+def _increment_badge_skip_metric(user_id=None, badge_id=None, reason=""):
+    """
+    Increments the skipped badge metrics counter in cache.
+    """
+    from apps.core.cache import multi_level_cache as cache
+
+    metric_key = "badge_issuance_skipped_total"
+    try:
+        if cache.get(metric_key) is None:
+            cache.set(metric_key, 1, timeout=86400 * 30)
+        else:
+            cache.incr(metric_key)
+    except Exception as exc:
+        logger.warning("Failed to update badge skip metric counter: %s", exc)
+
+
 def evaluate_achievements_task(user_id):
     from django.contrib.auth import get_user_model
 
@@ -73,6 +89,12 @@ def evaluate_achievements_task(user_id):
     try:
         user = User.objects.get(id=user_id)
     except User.DoesNotExist:
+        logger.warning(
+            "Skipping achievement evaluation: Recipient user id=%s not found",
+            user_id,
+            extra={"user_id": user_id, "reason": "user_not_found"},
+        )
+        _increment_badge_skip_metric(user_id=user_id, reason="user_not_found")
         return
 
     milestones = {
@@ -283,13 +305,36 @@ def process_buffered_progress_updates():
 def award_specific_badge(user_id, badge_id):
     """
     Background task to award a specific badge to a user.
+    Logs warnings and increments metric counter when user or badge is missing.
     """
     from apps.notifications.signals import create_and_push_notification
 
     try:
         user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        logger.warning(
+            "Skipping badge award: Recipient user id=%s not found (badge_id=%s)",
+            user_id,
+            badge_id,
+            extra={"user_id": user_id, "badge_id": badge_id, "reason": "user_not_found"},
+        )
+        _increment_badge_skip_metric(
+            user_id=user_id, badge_id=badge_id, reason="user_not_found"
+        )
+        return
+
+    try:
         badge = Badge.objects.get(id=badge_id)
-    except (User.DoesNotExist, Badge.DoesNotExist):
+    except Badge.DoesNotExist:
+        logger.warning(
+            "Skipping badge award: Badge id=%s not found for recipient user_id=%s",
+            badge_id,
+            user_id,
+            extra={"user_id": user_id, "badge_id": badge_id, "reason": "badge_not_found"},
+        )
+        _increment_badge_skip_metric(
+            user_id=user_id, badge_id=badge_id, reason="badge_not_found"
+        )
         return
 
     _, newly_earned = UserBadge.objects.get_or_create(user=user, badge=badge)
@@ -304,3 +349,59 @@ def award_specific_badge(user_id, badge_id):
                 "icon": badge.icon_asset_url,
             },
         )
+
+
+def award_badge_to_users(user_ids, badge_id):
+    """
+    Award a badge to multiple recipients by user ID list.
+    Logs warnings and increments skip metrics for any missing recipient user records or badge.
+    """
+    from apps.notifications.signals import create_and_push_notification
+
+    results = {"awarded": 0, "skipped": 0}
+
+    try:
+        badge = Badge.objects.get(id=badge_id)
+    except Badge.DoesNotExist:
+        logger.warning(
+            "Skipping bulk badge award: Badge id=%s not found for user_ids=%s",
+            badge_id,
+            user_ids,
+        )
+        for uid in user_ids:
+            _increment_badge_skip_metric(
+                user_id=uid, badge_id=badge_id, reason="badge_not_found"
+            )
+            results["skipped"] += 1
+        return results
+
+    for uid in user_ids:
+        try:
+            user = User.objects.get(id=uid)
+            _, newly_earned = UserBadge.objects.get_or_create(user=user, badge=badge)
+            if newly_earned:
+                create_and_push_notification(
+                    recipient=user,
+                    notif_type="badge",
+                    title="\U0001f3c6 Badge Unlocked!",
+                    message=f"You unlocked: {badge.name}",
+                    meta={
+                        "badge_slug": badge.slug,
+                        "icon": badge.icon_asset_url,
+                    },
+                )
+            results["awarded"] += 1
+        except User.DoesNotExist:
+            logger.warning(
+                "Skipping badge award for recipient user_id=%s (badge_id=%s): User record missing",
+                uid,
+                badge_id,
+                extra={"user_id": uid, "badge_id": badge_id, "reason": "user_not_found"},
+            )
+            _increment_badge_skip_metric(
+                user_id=uid, badge_id=badge_id, reason="user_not_found"
+            )
+            results["skipped"] += 1
+
+    return results
+

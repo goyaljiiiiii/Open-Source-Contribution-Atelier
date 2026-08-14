@@ -47,7 +47,7 @@ export function PlanCard({
         Includes:
       </p>
       <ul className="space-y-3 mb-8 flex-1">
-        {plan.features.map((feature, idx) => (
+        {(plan.features || []).map((feature, idx) => (
           <li
             key={idx}
             className="flex items-start gap-2 text-sm text-gray-600 dark:text-[#a8a095]"

@@ -149,7 +149,7 @@ export function LeaderboardPage() {
   const showInitialLoader = isLoading && rawRows.length === 0;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 pt-28 pb-16 space-y-10 font-sans">
+    <div className="max-w-5xl mx-auto px-4 pt-6 pb-12 space-y-6 font-sans">
       {/* Back Link */}
       <div>
         <Link

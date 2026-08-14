@@ -33,10 +33,18 @@ class PRImpactAnalysisViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        try:
+            pr_number = int(pr_number)
+        except (ValueError, TypeError):
+            return Response(
+                {"error": "Field 'pr_number' must be a valid integer."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         if async_run:
             # Trigger via Celery task
             analyze_pr_impact_task.delay(
-                pr_number=int(pr_number),
+                pr_number=pr_number,
                 repository=repository,
                 changed_files=changed_files,
                 added_lines=added_lines,
@@ -55,7 +63,7 @@ class PRImpactAnalysisViewSet(viewsets.ViewSet):
         # Synchronous execution
         analyzer = PRImpactAnalyzer()
         result = analyzer.analyze_pr_impact(
-            pr_number=int(pr_number),
+            pr_number=pr_number,
             repository=repository,
             changed_files=changed_files,
             added_lines=added_lines,

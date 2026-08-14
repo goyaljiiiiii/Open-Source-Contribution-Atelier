@@ -17,6 +17,10 @@ function getErrorMessage(error: unknown, fallback: string) {
 export function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+  const [totpCode, setTotpCode] = useState("");
+  const [requires2FA, setRequires2FA] = useState(false);
+  const [useBackupCode, setUseBackupCode] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -70,10 +74,15 @@ export function LoginPage() {
     setIsLoading(true);
 
     try {
+      const payload: Record<string, string> = { username, password };
+      if (requires2FA && totpCode) {
+        payload.totp_code = totpCode;
+      }
+
       const tokens = await fetchApi("/auth/login/", {
         method: "POST",
         requireAuth: false,
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ ...payload, remember: rememberMe }),
       });
 
       login(tokens);
@@ -87,9 +96,14 @@ export function LoginPage() {
       const redirect = sessionStorage.getItem("login_redirect") || "/dashboard";
       sessionStorage.removeItem("login_redirect");
       navigate(redirect);
-    } catch (err: unknown) {
-      setError(getErrorMessage(err, "Failed to login"));
-      toast.error("Login failed. Please try again.");
+    } catch (err: any) {
+      if (err?.requires_2fa || err?.code === "2fa_required" || (err?.message && err.message.includes("Two-factor"))) {
+        setRequires2FA(true);
+        toast.error("2FA code required. Enter code from authenticator app.");
+      } else {
+        setError(getErrorMessage(err, "Failed to login"));
+        toast.error(requires2FA ? "Invalid 2FA code or backup code." : "Login failed. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -176,34 +190,92 @@ export function LoginPage() {
           <div className="h-[2px] flex-1 bg-black/10 dark:bg-white/10"></div>
         </div>
 
-        <div className="space-y-2">
-          <label className="font-black text-slate-500 dark:text-slate-400 ml-1 text-[10px] uppercase tracking-wider">
-            Username or Email
-          </label>
-          <input
-            className="w-full rounded-xl border-2 border-black bg-white dark:bg-[#12121a] px-4 py-3 text-slate-900 dark:text-white font-bold outline-none placeholder:text-slate-400 focus:shadow-[2px_2px_0px_0px_#000000] transition-all text-sm"
-            placeholder="username or email"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-        </div>
+        {!requires2FA ? (
+          <>
+            <div className="space-y-2">
+              <label className="font-black text-slate-500 dark:text-slate-400 ml-1 text-[10px] uppercase tracking-wider">
+                Username or Email
+              </label>
+              <input
+                className="w-full rounded-xl border-2 border-black bg-white dark:bg-[#12121a] px-4 py-3 text-slate-900 dark:text-white font-bold outline-none placeholder:text-slate-400 focus:shadow-[2px_2px_0px_0px_#000000] transition-all text-sm"
+                placeholder="username or email"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+              />
+            </div>
 
-        <div className="space-y-2">
-          <label
-            htmlFor="login-password"
-            className="font-black text-slate-500 dark:text-slate-400 ml-1 text-[10px] uppercase tracking-wider"
-          >
-            Password
+            <div className="space-y-2">
+              <label
+                htmlFor="login-password"
+                className="font-black text-slate-500 dark:text-slate-400 ml-1 text-[10px] uppercase tracking-wider"
+              >
+                Password
+              </label>
+              <PasswordInput
+                id="login-password"
+                className="w-full rounded-xl border-2 border-black bg-white dark:bg-[#12121a] px-4 py-3 text-slate-900 dark:text-white font-bold outline-none placeholder:text-slate-400 focus:shadow-[2px_2px_0px_0px_#000000] transition-all text-sm"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+          </>
+        ) : (
+          <div className="space-y-4 p-4 rounded-2xl border-2 border-blue-500 bg-blue-50/50 dark:bg-blue-950/20">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black uppercase text-blue-700 dark:text-blue-400 flex items-center gap-1.5">
+                🛡️ Two-Factor Authentication Required
+              </span>
+              <button
+                type="button"
+                onClick={() => setRequires2FA(false)}
+                className="text-[10px] font-bold text-slate-500 hover:text-black dark:hover:text-white underline"
+              >
+                Back to credentials
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <label className="font-black text-slate-500 dark:text-slate-400 ml-1 text-[10px] uppercase tracking-wider">
+                {useBackupCode ? "Recovery Backup Code" : "6-Digit Authenticator Code"}
+              </label>
+              <input
+                type="text"
+                autoFocus
+                maxLength={useBackupCode ? 10 : 6}
+                placeholder={useBackupCode ? "a1b2-c3d4" : "123456"}
+                value={totpCode}
+                onChange={(e) => setTotpCode(e.target.value)}
+                className="w-full rounded-xl border-2 border-black bg-white dark:bg-[#12121a] px-4 py-3 text-center text-lg font-mono font-bold text-slate-900 dark:text-white outline-none placeholder:text-slate-400 tracking-widest focus:shadow-[2px_2px_0px_0px_#000000] transition-all"
+                required
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setUseBackupCode(!useBackupCode);
+                setTotpCode("");
+              }}
+              className="text-xs font-bold text-blue-600 hover:underline block text-center w-full"
+            >
+              {useBackupCode ? "Use Authenticator App 6-digit code" : "Lost authenticator app? Use a recovery backup code"}
+            </button>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between px-1">
+          <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-300">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="w-4 h-4 rounded border-2 border-black accent-primary cursor-pointer"
+            />
+            <span>Remember me for 30 days</span>
           </label>
-          <PasswordInput
-            id="login-password"
-            className="w-full rounded-xl border-2 border-black bg-white dark:bg-[#12121a] px-4 py-3 text-slate-900 dark:text-white font-bold outline-none placeholder:text-slate-400 focus:shadow-[2px_2px_0px_0px_#000000] transition-all text-sm"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
         </div>
 
         <DemoLoginButton label="🚀 Demo Mode (No Login Required)" />
@@ -221,7 +293,7 @@ export function LoginPage() {
           disabled={isLoading}
           className="w-full rounded-xl border-2 border-black bg-[#C3C0FF] px-4 py-4 font-black text-black text-sm shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all cursor-pointer uppercase disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isLoading ? "Logging in..." : "Let Me In!"}
+          {isLoading ? "Verifying..." : requires2FA ? "Verify & Log In 🛡️" : "Let Me In!"}
         </button>
 
         <p className="text-center text-xs font-bold mt-6 text-slate-500 dark:text-slate-400">

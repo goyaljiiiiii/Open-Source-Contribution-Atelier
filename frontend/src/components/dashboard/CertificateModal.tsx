@@ -27,10 +27,22 @@ export function CertificateModal({
     if (!certificateRef.current) return;
     setIsExporting(true);
     try {
-      const dataUrl = await toPng(certificateRef.current, {
+      const node = certificateRef.current;
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      const width = node.offsetWidth || 800;
+      const height = node.offsetHeight || 600;
+
+      const dataUrl = await toPng(node, {
         quality: 1.0,
-        pixelRatio: 3, // Multiplies resolution scale for crisp high-density asset exports
+        pixelRatio: isSafari ? 2 : 3,
+        width,
+        height,
         backgroundColor: "#FFF9F0",
+        cacheBust: true,
+        style: {
+          transform: "scale(1)",
+          transformOrigin: "top left",
+        },
       });
       const link = document.createElement("a");
       link.download = `Certificate-${username || "User"}.png`;

@@ -391,3 +391,27 @@ class GitCredential(models.Model):
 
     def __repr__(self):
         return f"<GitCredential: {self.user.username}, {self.provider}>"
+
+
+class TOTPDevice(models.Model):
+    """
+    Optional TOTP Two-Factor Authentication Device for user accounts.
+    """
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="totp_device",
+    )
+    secret = EncryptedCharField(max_length=255)
+    is_enabled = models.BooleanField(default=False)
+    backup_codes = models.JSONField(default=list)  # Hashed SHA-256 backup codes
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "accounts_totpdevice"
+
+    def __str__(self):
+        return f"TOTPDevice({self.user.username}, enabled={self.is_enabled})"
+
