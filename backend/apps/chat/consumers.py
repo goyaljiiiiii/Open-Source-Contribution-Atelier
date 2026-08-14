@@ -1,6 +1,8 @@
 import asyncio
 import json
 import logging
+import time
+from typing import Optional
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
@@ -13,6 +15,36 @@ from .models import Message
 
 logger = logging.getLogger(__name__)
 
+_IN_MEMORY_RATE_LIMITS: dict[str, list[float]] = {}
+_LAST_RATE_LIMIT_WARN_TIME: float = 0.0
+
+
+def _log_rate_limit_warning(msg: str, exc: Exception) -> None:
+    global _LAST_RATE_LIMIT_WARN_TIME
+    now = time.time()
+    warn_interval = getattr(settings, "CHAT_WS_RATE_LIMIT_LOG_WARN_INTERVAL", 60)
+    if now - _LAST_RATE_LIMIT_WARN_TIME >= warn_interval:
+        _LAST_RATE_LIMIT_WARN_TIME = now
+        logger.warning("%s: %s", msg, exc)
+
+
+def _in_memory_rate_limit_check(
+    key: str, max_requests: int, window_seconds: int
+) -> bool:
+    try:
+        now = time.time()
+        history = _IN_MEMORY_RATE_LIMITS.get(key, [])
+        history = [t for t in history if now - t < window_seconds]
+        if len(history) >= max_requests:
+            _IN_MEMORY_RATE_LIMITS[key] = history
+            return False
+        history.append(now)
+        _IN_MEMORY_RATE_LIMITS[key] = history
+        return True
+    except Exception as e:
+        _log_rate_limit_warning("In-memory rate limiter fallback error", e)
+        return False
+
 
 class ChatConsumer(AsyncWebsocketConsumer):
     """
@@ -22,8 +54,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
     """
 
     async def check_rate_limit(
-        self, key: str, max_requests: int = 30, window_seconds: int = 60
+        self,
+        key: str,
+        max_requests: Optional[int] = None,
+        window_seconds: Optional[int] = None,
     ) -> bool:
+        if max_requests is None:
+            max_requests = getattr(settings, "CHAT_WS_RATE_LIMIT_MAX_REQUESTS", 30)
+        if window_seconds is None:
+            window_seconds = getattr(settings, "CHAT_WS_RATE_LIMIT_WINDOW_SECONDS", 60)
+
         backend = getattr(settings, "RATE_LIMIT_BACKEND", "local").lower()
 
         if backend == "redis":
@@ -36,8 +76,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 allowed, _, _ = limiter.check()
                 return allowed
             except Exception as e:
-                logger.warning(
-                    f"Chat WS Redis Lua throttling failed ({e}), falling back to local cache."
+                _log_rate_limit_warning(
+                    "Chat WS Redis Lua throttling failed, falling back to local cache/in-memory",
+                    e,
                 )
 
         try:
@@ -53,8 +94,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     cache.set(key, current + 1, window_seconds)
             return True
         except Exception as e:
-            logger.error(f"Chat WS rate limiter failed open: {e}")
-            return True
+            _log_rate_limit_warning(
+                "Chat WS rate limiter cache failed, falling back to in-memory limiter",
+                e,
+            )
+            return _in_memory_rate_limit_check(key, max_requests, window_seconds)
 
     async def connect(self):
         user = self.scope.get("user")
@@ -351,7 +395,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             parent_id = data.get("parent_id")
             if content:
                 is_allowed = await self.check_rate_limit(
-                    f"throttle_chat_ws_{self.user.id}", 30, 60
+                    f"throttle_chat_ws_{self.user.id}"
                 )
                 if not is_allowed:
                     await self.send(
