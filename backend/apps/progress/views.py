@@ -503,59 +503,84 @@ class CommunityFeedView(APIView):
             .order_by("-updated_at")[:200]
         )
 
+        max_length_param = request.query_params.get("max_length")
+        max_length = None
+        if max_length_param is not None:
+            try:
+                max_length = int(max_length_param)
+                if max_length <= 0:
+                    max_length = None
+            except (ValueError, TypeError):
+                max_length = None
+
+        def format_desc(text: str) -> tuple[str, bool]:
+            if not text:
+                return "", False
+            if max_length is not None and len(text) > max_length:
+                return text[:max_length], True
+            return text, False
+
         entries = []
 
         for hr in help_requests:
-            entries.append(
-                {
-                    "id": f"hr_{hr.id}",
-                    "type": "help_request",
-                    "user_id": hr.user_id,
-                    "username": hr.user.username,
-                    "title": f"asked for help on {hr.lesson.title}",
-                    "description": hr.message[:200],
-                    "created_at": hr.created_at.isoformat(),
-                }
-            )
+            desc, is_trunc = format_desc(hr.message)
+            entry_data = {
+                "id": f"hr_{hr.id}",
+                "type": "help_request",
+                "user_id": hr.user_id,
+                "username": hr.user.username,
+                "title": f"asked for help on {hr.lesson.title}",
+                "description": desc,
+                "created_at": hr.created_at.isoformat(),
+            }
+            if max_length is not None:
+                entry_data["is_truncated"] = is_trunc
+            entries.append(entry_data)
 
         for cs in code_submissions:
-            entries.append(
-                {
-                    "id": f"cs_{cs.id}",
-                    "type": "code_submission",
-                    "user_id": cs.user_id,
-                    "username": cs.user.username,
-                    "title": f"submitted code — {cs.title}",
-                    "description": cs.description[:200] if cs.description else "",
-                    "created_at": cs.created_at.isoformat(),
-                }
-            )
+            desc, is_trunc = format_desc(cs.description if cs.description else "")
+            entry_data = {
+                "id": f"cs_{cs.id}",
+                "type": "code_submission",
+                "user_id": cs.user_id,
+                "username": cs.user.username,
+                "title": f"submitted code — {cs.title}",
+                "description": desc,
+                "created_at": cs.created_at.isoformat(),
+            }
+            if max_length is not None:
+                entry_data["is_truncated"] = is_trunc
+            entries.append(entry_data)
 
         for ub in badges:
-            entries.append(
-                {
-                    "id": f"bd_{ub.id}",
-                    "type": "badge_earned",
-                    "user_id": ub.user_id,
-                    "username": ub.user.username,
-                    "title": f"earned badge — {ub.badge.name}",
-                    "description": ub.badge.description,
-                    "created_at": ub.earned_at.isoformat(),
-                }
-            )
+            desc, is_trunc = format_desc(ub.badge.description if ub.badge.description else "")
+            entry_data = {
+                "id": f"bd_{ub.id}",
+                "type": "badge_earned",
+                "user_id": ub.user_id,
+                "username": ub.user.username,
+                "title": f"earned badge — {ub.badge.name}",
+                "description": desc,
+                "created_at": ub.earned_at.isoformat(),
+            }
+            if max_length is not None:
+                entry_data["is_truncated"] = is_trunc
+            entries.append(entry_data)
 
         for lp in lesson_progress:
-            entries.append(
-                {
-                    "id": f"lp_{lp.id}",
-                    "type": "lesson_completed",
-                    "user_id": lp.user_id,
-                    "username": lp.user.username,
-                    "title": f"completed lesson — {lp.lesson.title}",
-                    "description": f"Scored {lp.score} points",
-                    "created_at": lp.updated_at.isoformat(),
-                }
-            )
+            desc, is_trunc = format_desc(f"Scored {lp.score} points")
+            entry_data = {
+                "id": f"lp_{lp.id}",
+                "type": "lesson_completed",
+                "user_id": lp.user_id,
+                "username": lp.user.username,
+                "title": f"completed lesson — {lp.lesson.title}",
+                "description": desc,
+                "created_at": lp.updated_at.isoformat(),
+            }
+            if max_length is not None:
+                entry_data["is_truncated"] = is_trunc
+            entries.append(entry_data)
 
         entries.sort(key=lambda e: e["created_at"], reverse=True)
 
