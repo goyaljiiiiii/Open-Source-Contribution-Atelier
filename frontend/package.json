@@ -22,7 +22,8 @@
     "test:a11y:ci": "playwright test accessibility --reporter=html,json,junit",
     "test:a11y:report": "node tests/accessibility/generate-report.js",
     "test:visual": "playwright test e2e/visual/",
-    "test:visual:update": "playwright test e2e/visual/ --update-snapshots"
+    "test:visual:update": "playwright test e2e/visual/ --update-snapshots",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
