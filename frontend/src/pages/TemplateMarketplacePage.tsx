@@ -10,6 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import api from "../api";
+import { DataStateWrapper } from "../components/ui/DataStateWrapper";
 
 // Types based on backend serializers
 interface TemplateCategory {
@@ -47,22 +48,27 @@ const TemplateMarketplacePage: React.FC = () => {
     useState<ProjectTemplate | null>(null);
   const [isInstantiating, setIsInstantiating] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [templatesRes, categoriesRes] = await Promise.all([
+        api.get("/sandbox/templates/"),
+        api.get("/sandbox/template-categories/"),
+      ]);
+      setTemplates(templatesRes.data);
+      setCategories(categoriesRes.data);
+    } catch (err: any) {
+      console.error("Failed to fetch templates", err);
+      setError(err?.message || "Failed to load project templates.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [templatesRes, categoriesRes] = await Promise.all([
-          api.get("/sandbox/templates/"),
-          api.get("/sandbox/template-categories/"),
-        ]);
-        setTemplates(templatesRes.data);
-        setCategories(categoriesRes.data);
-      } catch (err) {
-        console.error("Failed to fetch templates", err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
   }, []);
 
@@ -158,59 +164,79 @@ const TemplateMarketplacePage: React.FC = () => {
         </div>
 
         {/* Templates Grid */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredTemplates.map((template) => (
-            <div
-              key={template.id}
-              onClick={() => setSelectedTemplate(template)}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-all cursor-pointer group flex flex-col"
-            >
-              <div className="p-5 flex-1">
-                <div className="flex justify-between items-start">
-                  <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
-                    <FolderGit2 className="h-6 w-6" />
+        <DataStateWrapper
+          loading={loading}
+          error={error}
+          empty={filteredTemplates.length === 0}
+          onRetry={fetchData}
+          emptyTitle="No Templates Found"
+          emptyDescription="No project templates matched your search query or selected category filter."
+          emptyIcon={FolderGit2}
+          skeleton={
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, idx) => (
+                <div
+                  key={idx}
+                  className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 animate-pulse flex flex-col gap-3 h-48"
+                >
+                  <div className="h-6 w-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  <div className="h-6 w-3/4 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  <div className="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  <div className="h-4 w-1/2 bg-gray-200 dark:bg-gray-700 rounded mt-auto"></div>
+                </div>
+              ))}
+            </div>
+          }
+        >
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredTemplates.map((template) => (
+              <div
+                key={template.id}
+                onClick={() => setSelectedTemplate(template)}
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-all cursor-pointer group flex flex-col"
+              >
+                <div className="p-5 flex-1">
+                  <div className="flex justify-between items-start">
+                    <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
+                      <FolderGit2 className="h-6 w-6" />
+                    </div>
+                    {template.is_official && (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                        Official
+                      </span>
+                    )}
                   </div>
-                  {template.is_official && (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                      Official
-                    </span>
-                  )}
+                  <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                    {template.name}
+                  </h3>
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+                    {template.description}
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {template.tags.slice(0, 3).map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-                <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                  {template.name}
-                </h3>
-                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
-                  {template.description}
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {template.tags.slice(0, 3).map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div className="px-5 py-3 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
-                  <Users className="h-3.5 w-3.5 mr-1" />
-                  {template.use_count} uses
-                </div>
-                <div className="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center">
-                  <Code2 className="h-3.5 w-3.5 mr-1" />
-                  {template.language}
+                <div className="px-5 py-3 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                  <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                    <Users className="h-3.5 w-3.5 mr-1" />
+                    {template.use_count} uses
+                  </div>
+                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center">
+                    <Code2 className="h-3.5 w-3.5 mr-1" />
+                    {template.language}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-          {filteredTemplates.length === 0 && (
-            <div className="col-span-full py-12 text-center text-gray-500 dark:text-gray-400">
-              No templates found matching your criteria.
-            </div>
-          )}
-        </div>
+            ))}
+          </div>
+        </DataStateWrapper>
       </div>
 
       {/* Preview Modal */}

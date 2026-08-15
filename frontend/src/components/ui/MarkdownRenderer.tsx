@@ -1,12 +1,29 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import CopyButton from "./CopyButton";
 import { pluginRegistry } from "../../lib/markdownPlugins";
+import { GlossaryTerm } from "./GlossaryTerm";
+import { GlossaryDrawer } from "./GlossaryDrawer";
+import { loadGlossary, splitTextWithGlossary, type GlossaryEntry } from "../../lib/glossary";
+import DOMPurify from "dompurify";
+import { ArchitectureViewer } from "../docs/ArchitectureViewer";
 
 interface MarkdownRendererProps {
   content: string;
+  /** For testing purposes, allows overriding the glossary loading function. */
+  loadGlossaryFn?: () => Promise<GlossaryEntry[]>;
 }
 
-// Helper to parse markdown table rows, ignoring pipes inside backticks or escaped pipes.
+// Helper to parse markdown table rows, parsing code spans first to treat pipes inside backticks as literal characters.
+function maskCodeSpanPipes(text: string): string {
+  return text.replace(/(`+)([\s\S]*?)\1/g, (match, p1, p2) => {
+    return p1 + p2.replace(/\|/g, "__ESCAPED_PIPE__") + p1;
+  });
+}
+
+function unmaskCodeSpanPipes(text: string): string {
+  return text.replace(/__ESCAPED_PIPE__/g, "|");
+}
+
 function splitTableRow(row: string): string[] {
   let trimmed = row.trim();
   if (trimmed.startsWith("|")) {
@@ -16,76 +33,180 @@ function splitTableRow(row: string): string[] {
     trimmed = trimmed.substring(0, trimmed.length - 1);
   }
 
+  // Parse code spans first to mask pipes inside backticks as literal characters
+  const maskedRow = maskCodeSpanPipes(trimmed);
+
   const cells: string[] = [];
   let currentCell = "";
-  let inCode = false;
 
-  for (let i = 0; i < trimmed.length; i++) {
-    const char = trimmed[i];
-    const prevChar = i > 0 ? trimmed[i - 1] : "";
+  for (let i = 0; i < maskedRow.length; i++) {
+    const char = maskedRow[i];
+    const prevChar = i > 0 ? maskedRow[i - 1] : "";
 
-    if (char === "`" && prevChar !== "\\") {
-      inCode = !inCode;
-      currentCell += char;
-    } else if (char === "|" && !inCode && prevChar !== "\\") {
-      cells.push(currentCell.trim());
+    if (char === "|" && prevChar !== "\\") {
+      cells.push(unmaskCodeSpanPipes(currentCell.trim()));
       currentCell = "";
     } else {
       currentCell += char;
     }
   }
-  cells.push(currentCell.trim());
+  cells.push(unmaskCodeSpanPipes(currentCell.trim()));
   return cells;
 }
 
-export function MarkdownRenderer({ content }: MarkdownRendererProps) {
+export function MarkdownRenderer({
+  content,
+  loadGlossaryFn = loadGlossary,
+}: MarkdownRendererProps) {
+  const sanitizedContent = DOMPurify.sanitize(content, {
+    ALLOWED_TAGS: [
+      "b",
+      "i",
+      "em",
+      "strong",
+      "a",
+      "img",
+      "p",
+      "div",
+      "span",
+      "code",
+      "pre",
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "h5",
+      "h6",
+      "ul",
+      "ol",
+      "li",
+      "blockquote",
+      "hr",
+      "br",
+      "table",
+      "thead",
+      "tbody",
+      "tr",
+      "th",
+      "td",
+    ],
+    KEEP_CONTENT: true,
+  });
+  const [glossary, setGlossary] = useState<GlossaryEntry[]>([]);
+  const [activeTerm, setActiveTerm] = useState<GlossaryEntry | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadGlossaryFn()
+      .then((terms) => {
+        if (!cancelled) setGlossary(terms);
+      })
+      .catch(() => {
+        if (!cancelled) setGlossary([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [loadGlossaryFn]);
+
+  const renderedTermIds = new Set<string>();
+
+  const renderGlossaryText = (
+    text: string,
+    keyPrefix: string,
+  ): React.ReactNode[] => {
+    if (!glossary.length) return [text];
+    return splitTextWithGlossary(text, glossary).map((seg, i) => {
+      if (seg.type === "text") {
+        return (
+          <React.Fragment key={`${keyPrefix}-t-${i}`}>
+            {seg.value}
+          </React.Fragment>
+        );
+      }
+
+      // If term already rendered, just show text
+      if (renderedTermIds.has(seg.entry.id)) {
+        return (
+          <span key={`${keyPrefix}-g-${i}-${seg.entry.id}`}>{seg.value}</span>
+        );
+      }
+
+      // Otherwise, render the term and mark it as seen
+      renderedTermIds.add(seg.entry.id);
+      return (
+        <GlossaryTerm
+          key={`${keyPrefix}-g-${i}-${seg.entry.id}`}
+          entry={seg.entry}
+          onOpen={setActiveTerm}
+        >
+          {seg.value}
+        </GlossaryTerm>
+      );
+    });
+  };
+
   // Helper to parse inline formats: bold, inline code, links
+  // Inline code is never glossarized (avoids false positives).
   const parseInline = (text: string): React.ReactNode[] => {
-    // Regular expressions for matching bold, code, and links
     const inlineRegex = /(\*\*.*?\*\*|`.*?`|\[.*?\]\(.*?\))/g;
     const matches = text.split(inlineRegex);
 
-    return matches.map((part, i) => {
+    // @ts-expect-error - matches.flatMap return types union is safe but strict for TS
+    return matches.flatMap((part, i) => {
+      if (!part) return [];
+
       if (part.startsWith("**") && part.endsWith("**")) {
-        return (
+        return [
           <strong key={i} className="font-extrabold text-black dark:text-white">
-            {part.slice(2, -2)}
-          </strong>
-        );
+            {renderGlossaryText(part.slice(2, -2), `b${i}`)}
+          </strong>,
+        ];
       }
       if (part.startsWith("`") && part.endsWith("`")) {
-        return (
+        return [
           <code
             key={i}
             className="font-mono text-sm bg-surface-low border border-black/20 rounded px-1.5 py-0.5 text-primary dark:bg-black/45 dark:border-[#2e2924]"
           >
             {part.slice(1, -1)}
-          </code>
-        );
+          </code>,
+        ];
       }
       if (part.startsWith("[") && part.includes("](")) {
         const linkMatch = part.match(/\[(.*?)\]\((.*?)\)/);
         if (linkMatch) {
           const [, label, href] = linkMatch;
-          return (
+          // Validate and sanitize URLs
+          let safeHref = href;
+          const lowerHref = href.toLowerCase().trim();
+          if (
+            lowerHref.startsWith("javascript:") ||
+            lowerHref.startsWith("vbscript:") ||
+            lowerHref.startsWith("data:")
+          ) {
+            safeHref = "#";
+          }
+
+          return [
             <a
               key={i}
-              href={href}
+              href={safeHref}
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary underline font-bold hover:text-accent transition-colors"
             >
-              {label}
-            </a>
-          );
+              {renderGlossaryText(label, `a${i}`)}
+            </a>,
+          ];
         }
       }
-      return part;
+      return renderGlossaryText(part, `p${i}`);
     });
   };
 
   // Split content into blocks (paragraphs, code blocks, headers, lists, blockquotes, tables)
-  const lines = content.split("\n");
+  const lines = sanitizedContent.split("\n");
   const blocks: React.ReactNode[] = [];
   let index = 0;
 
@@ -100,6 +221,9 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
 
     // 2. Code Blocks: ```lang
     if (line.trim().startsWith("```")) {
+      const langMatch = line.trim().match(/^```([a-zA-Z0-9_-]+)/);
+      const lang = langMatch ? langMatch[1].toLowerCase() : "";
+
       let codeContent = "";
       index++;
       while (index < lines.length && !lines[index].trim().startsWith("```")) {
@@ -107,19 +231,39 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
         index++;
       }
       index++; // skip closing ```
-      blocks.push(
-        <div key={index} className="relative my-4">
-          <div className="absolute top-2 right-2 z-10">
-            <CopyButton text={codeContent.trim()} />
-          </div>
 
-          <pre className="w-full overflow-x-auto p-4 bg-[#1a1510] text-[#ffebc2] border-4 border-black rounded-2xl font-mono text-sm shadow-card-sm dark:border-[#2e2924]">
-            <code className="block whitespace-pre">{codeContent.trim()}</code>
-          </pre>
-        </div>,
-      );
+      if (lang === "mermaid") {
+        blocks.push(
+          <ArchitectureViewer key={index} chart={codeContent.trim()} />
+        );
+      } else {
+        const displayLang = lang ? lang.toUpperCase() : "CODE";
+        blocks.push(
+          <div
+            key={index}
+            className="relative my-4 group rounded-2xl border-4 border-black dark:border-[#2e2924] bg-[#1a1510] overflow-hidden shadow-card-sm"
+          >
+            {/* Header bar with language badge and Copy code button */}
+            <div className="flex items-center justify-between px-4 py-2 bg-[#120f0b] border-b-2 border-black/40 dark:border-[#2e2924]">
+              <span className="font-mono text-[10px] font-black tracking-widest text-[#ffebc2]/80 bg-black/40 px-2.5 py-0.5 rounded border border-white/10">
+                {displayLang}
+              </span>
+              <CopyButton
+                text={codeContent.trim()}
+                label="Copy code"
+                copiedLabel="Copied code!"
+              />
+            </div>
+
+            <pre className="w-full overflow-x-auto p-4 text-[#ffebc2] font-mono text-sm">
+              <code className="block whitespace-pre">{codeContent.trim()}</code>
+            </pre>
+          </div>,
+        );
+      }
       continue;
     }
+
 
     // 3. Headings: #, ##, ###
     if (line.startsWith("# ")) {
@@ -154,6 +298,19 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
         >
           {parseInline(line.slice(4))}
         </h3>,
+      );
+      index++;
+      continue;
+    }
+
+    // Horizontal Rule: ---, ***, ___
+    if (/^(\s*[-*_]\s*){3,}$/.test(line.trim())) {
+      blocks.push(
+        <React.Fragment key={index}>
+          <br />
+          <hr className="my-0 border-b-4 border-black/10 dark:border-[#2e2924]" />
+          <br />
+        </React.Fragment>,
       );
       index++;
       continue;
@@ -263,7 +420,11 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
                 {headerCells.map((cell, i) => (
                   <th
                     key={i}
-                    className="px-4 py-3 text-xs uppercase tracking-wider border-r-2 border-black last:border-r-0 dark:border-[#2e2924] dark:text-[#f0ebe2]"
+                    className={`px-4 py-3 text-xs uppercase tracking-wider border-r-2 border-black last:border-r-0 dark:border-[#2e2924] dark:text-[#f0ebe2] ${
+                      i === 0
+                        ? "sticky left-0 bg-surface-low dark:bg-[#151411] z-10 shadow-[2px_0_0_0_rgba(0,0,0,1)] dark:shadow-[2px_0_0_0_rgba(46,41,36,1)]"
+                        : ""
+                    }`}
                   >
                     {cell}
                   </th>
@@ -279,7 +440,11 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
                   {row.map((cell, cellIndex) => (
                     <td
                       key={cellIndex}
-                      className="px-4 py-3 border-r-2 border-black last:border-r-0 dark:border-[#2e2924] dark:text-[#c4bbae]"
+                      className={`px-4 py-3 border-r-2 border-black last:border-r-0 dark:border-[#2e2924] dark:text-[#c4bbae] ${
+                        cellIndex === 0
+                          ? "sticky left-0 bg-white dark:bg-[#1f1c18] z-10 shadow-[2px_0_0_0_rgba(0,0,0,1)] dark:shadow-[2px_0_0_0_rgba(46,41,36,1)]"
+                          : ""
+                      }`}
                     >
                       {parseInline(cell)}
                     </td>
@@ -322,6 +487,9 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
     // 8. Numbered Lists: 1.
     if (/^\d+\.\s/.test(line.trim())) {
       const listItems: string[] = [];
+      const firstLineMatch = line.trim().match(/^(\d+)\.\s/);
+      const start = firstLineMatch ? parseInt(firstLineMatch[1], 10) : 1;
+
       while (index < lines.length && /^\d+\.\s/.test(lines[index].trim())) {
         const itemText = lines[index].trim().replace(/^\d+\.\s/, "");
         listItems.push(itemText);
@@ -330,6 +498,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
       blocks.push(
         <ol
           key={index}
+          start={start}
           className="list-decimal list-inside space-y-2 pl-4 my-3 text-text dark:text-[#c4bbae]"
         >
           {listItems.map((item, i) => (
@@ -377,6 +546,73 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
       continue;
     }
 
+    // 9b. HTML and Markdown Image Blocks
+    const imgHtmlMatch = line
+      .trim()
+      .match(/<img\s+[^>]*src="([^"]+)"[^>]*\/?/i);
+    if (imgHtmlMatch) {
+      const src = imgHtmlMatch[1];
+      const altMatch = line.match(/alt="([^"]*)"/i);
+      const widthMatch = line.match(/width="([^"]*)"/i);
+      const heightMatch = line.match(/height="([^"]*)"/i);
+
+      const alt = altMatch ? altMatch[1] : "image";
+      const width = widthMatch ? widthMatch[1] : undefined;
+      const height = heightMatch ? heightMatch[1] : undefined;
+
+      let safeSrc = src;
+      const lowerSrc = src.toLowerCase().trim();
+      if (
+        lowerSrc.startsWith("javascript:") ||
+        lowerSrc.startsWith("vbscript:") ||
+        lowerSrc.startsWith("data:text/html")
+      ) {
+        safeSrc = "";
+      }
+
+      blocks.push(
+        <div key={index} className="my-4 flex justify-center">
+          <img
+            src={safeSrc}
+            alt={alt}
+            width={width}
+            height={height}
+            className="rounded-2xl border-4 border-black dark:border-[#2e2924] shadow-card-sm max-w-full h-auto"
+          />
+        </div>,
+      );
+      index++;
+      continue;
+    }
+
+    const mdImgMatch = line.trim().match(/^!\[(.*?)\]\((.*?)\)$/);
+    if (mdImgMatch) {
+      const alt = mdImgMatch[1];
+      const src = mdImgMatch[2];
+
+      let safeSrc = src;
+      const lowerSrc = src.toLowerCase().trim();
+      if (
+        lowerSrc.startsWith("javascript:") ||
+        lowerSrc.startsWith("vbscript:") ||
+        lowerSrc.startsWith("data:text/html")
+      ) {
+        safeSrc = "";
+      }
+
+      blocks.push(
+        <div key={index} className="my-4 flex justify-center">
+          <img
+            src={safeSrc}
+            alt={alt}
+            className="rounded-2xl border-4 border-black dark:border-[#2e2924] shadow-card-sm max-w-full h-auto"
+          />
+        </div>,
+      );
+      index++;
+      continue;
+    }
+
     // 10. Standard Paragraph
     blocks.push(
       <p
@@ -389,5 +625,10 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
     index++;
   }
 
-  return <div className="space-y-2">{blocks}</div>;
+  return (
+    <div className="space-y-2">
+      {blocks}
+      <GlossaryDrawer entry={activeTerm} onClose={() => setActiveTerm(null)} />
+    </div>
+  );
 }

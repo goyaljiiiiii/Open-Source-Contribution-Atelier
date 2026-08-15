@@ -1,14 +1,18 @@
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 """
 Models for advanced search with relevance scoring and semantic understanding.
 """
 
-from django.db import models
-from django.contrib.auth.models import User
+import json
+import uuid
+
+from django.conf import settings
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
+from django.db import models
 from django.utils import timezone
-import uuid
-import json
 
 
 class SearchEmbedding(models.Model):
@@ -31,7 +35,7 @@ class SearchEmbedding(models.Model):
     class Meta:
         unique_together = [["content_type", "object_id"]]
         indexes = [
-            models.Index(fields=["content_type"]),
+            models.Index(fields=["content_type"], name="idx_content_type"),
         ]
 
     def __str__(self):
@@ -44,7 +48,9 @@ class UserSearchProfile(models.Model):
     """
 
     user = models.OneToOneField(
-        User, on_delete=models.CASCADE, related_name="search_profile"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="search_profile",
     )
 
     # Search history

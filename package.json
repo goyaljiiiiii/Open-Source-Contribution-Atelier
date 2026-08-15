@@ -1,8 +1,12 @@
 {
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "dependencies": {
     "@tanstack/react-virtual": "^3.14.3",
     "axios": "^1.18.1",
     "framer-motion": "^12.41.0",
+    "html-to-image": "^1.11.13",
     "react-i18next": "^17.0.8",
     "zxcvbn": "^4.4.2"
   },

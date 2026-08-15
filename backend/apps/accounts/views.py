@@ -1,16 +1,21 @@
+import logging
+
+logger = logging.getLogger(__name__)
+import base64
+import hashlib
 import os
 import secrets
-import io
+import time
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlencode
 
 import requests as http_requests
-from PIL import Image
 from django.conf import settings
-from django.core.cache import cache
-from django.core.files.base import ContentFile
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+from django.conf import settings
+
+User = get_user_model()
 from django.core.mail import send_mail
 from django.db.models import Sum
 from django.shortcuts import redirect
@@ -31,14 +36,25 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from apps.progress.models import LessonProgress, UserBadge
 from apps.progress.serializers import UserBadgeSerializer
+from schemas.user import (
+    LoginResponseSchema,
+    UserCreateSchema,
+    UserLoginSchema,
+    UserProfileSchema,
+    UserResponseSchema,
+)
 
-from .models import MagicLinkToken, OTPToken, PasswordResetToken, UserProfile
+
+class LoginResponseSchema(UserResponseSchema):
+    pass
+
+
+from .models import MagicLinkToken, OTPToken, PasswordResetToken
 from .serializers import (
     EmailOrUsernameTokenObtainPairSerializer,
     MagicLinkRequestSerializer,
@@ -51,18 +67,13 @@ from .serializers import (
     UserListSerializer,
     UserUpdateSerializer,
 )
-from schemas.user import (
-    UserCreateSchema,
-    UserLoginSchema,
-    UserResponseSchema,
-    UserProfileSchema,
-)
 from .tasks import (
     send_magic_link_email_task,
     send_otp_email_task,
     send_password_reset_email_task,
 )
 from .throttles import (
+    GitHubOAuthCallbackThrottle,
     LoginThrottle,
     MagicLinkRequestThrottle,
     MagicLinkVerifyThrottle,
@@ -78,15 +89,16 @@ from .throttles import (
 )
 
 
+def username_from_value(value: str) -> str:
+    """Return a normalized username candidate from a GitHub login or email."""
+    return slugify(value.split("@")[0]) or "user"
+
+
 def unique_username_from_value(value: str) -> str:
-    base = slugify(value.split("@")[0]) or "user"
-    candidate = base
-    suffix = 1
-
-    while User.objects.filter(username=candidate).exists():
-        candidate = f"{base}{suffix}"
-        suffix += 1
-
+    """Return a username candidate, raising when it is already in use."""
+    candidate = username_from_value(value)
+    if User.objects.filter(username__iexact=candidate).exists():
+        raise ValueError("Username is already taken.")
     return candidate
 
 
@@ -110,17 +122,60 @@ class SignupView(generics.CreateAPIView):
     throttle_classes = [SignupThrottle]
 
 
+@extend_schema(
+    summary="Register a new user",
+    description="Create a new user account with username, email, and password",
+    request=UserCreateSchema,
+    responses={
+        201: OpenApiResponse(description="User created successfully"),
+        400: OpenApiResponse(description="Validation error"),
+    },
+    examples=[
+        OpenApiExample(
+            name="Valid Registration",
+            value={
+                "username": "johndoe",
+                "email": "john@example.com",
+                "password": "SecurePass123",
+            },
+        )
+    ],
+)
+def register(request):
+    pass
+
+
+@extend_schema(
+    summary="Login user",
+    description="Authenticate user and return JWT token",
+    request=UserLoginSchema,
+    responses={
+        200: OpenApiResponse(
+            description="Login successful", response=LoginResponseSchema
+        ),
+        401: OpenApiResponse(description="Invalid credentials"),
+    },
+)
+def login(request):
+    pass
+
+
+@extend_schema(
+    summary="Get user profile",
+    description="Returns current user profile information",
+    responses={
+        200: UserProfileSchema,
+        401: OpenApiResponse(description="Unauthorized"),
+    },
+)
+def get_profile(request):
+    pass
+
+
 class MeView(APIView):
     permission_classes = [IsAuthenticated]  # check jwt authentication
 
-    @extend_schema(
-        summary="Get user profile",
-        description="Returns current user profile information",
-        responses={
-            200: UserResponseSchema,
-            401: OpenApiResponse(description="Unauthorized"),
-        },
-    )
+    @extend_schema(responses=UserListSerializer)
     def get(self, request):
         serializer = UserListSerializer(request.user, context={"request": request})
         return Response(serializer.data)
@@ -132,9 +187,9 @@ class MeView(APIView):
         )
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
-        instance.refresh_from_db()  # type: ignore
-        if hasattr(instance, "profile"):
-            instance.profile.refresh_from_db()  # type: ignore
+        instance.refresh_from_db()
+        if hasattr(instance, "user_profile"):
+            instance.user_profile.refresh_from_db()
         response_serializer = UserListSerializer(instance, context={"request": request})
         return Response(response_serializer.data)
 
@@ -199,19 +254,6 @@ class UserStatisticsView(APIView):
         )
 
 
-@extend_schema_view(
-    post=extend_schema(
-        summary="Login user",
-        description="Authenticate user and return JWT token",
-        request=UserLoginSchema,
-        responses={
-            200: OpenApiResponse(
-                description="Login successful", response=TokenObtainPairSerializer
-            ),
-            401: OpenApiResponse(description="Invalid credentials"),
-        },
-    )
-)
 class LoginView(TokenObtainPairView):
     permission_classes = [permissions.AllowAny]
     serializer_class = EmailOrUsernameTokenObtainPairSerializer
@@ -287,141 +329,151 @@ class GoogleLoginView(APIView):
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class LogoutView(APIView):
-    """
-    POST /api/auth/logout/
-    Log out a user by blacklisting their access and refresh tokens.
-    """
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        import time
-        from rest_framework_simplejwt.tokens import RefreshToken
-        from rest_framework_simplejwt.exceptions import TokenError
-        
-        try:
-            # 1. Blacklist Refresh Token
-            refresh_token_str = request.data.get("refresh")
-            if not refresh_token_str:
-                return Response({"detail": "Refresh token is required"}, status=status.HTTP_400_BAD_REQUEST)
-            
-            refresh_token = RefreshToken(refresh_token_str)
-            refresh_jti = refresh_token.get("jti")
-            refresh_exp = refresh_token.get("exp")
-            if refresh_jti and refresh_exp:
-                refresh_ttl = max(0, refresh_exp - int(time.time()))
-                cache.set(f"jwt_blocklist:{refresh_jti}", True, timeout=refresh_ttl)
-                
-            # 2. Blacklist Access Token
-            auth = request.auth
-            if auth:
-                access_jti = auth.get("jti")
-                access_exp = auth.get("exp")
-                if access_jti and access_exp:
-                    access_ttl = max(0, access_exp - int(time.time()))
-                    cache.set(f"jwt_blocklist:{access_jti}", True, timeout=access_ttl)
-
-            return Response(status=status.HTTP_205_RESET_CONTENT)
-        except TokenError:
-            return Response({"detail": "Invalid or expired refresh token"}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
 class GitHubOAuthStartView(APIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [OAuthThrottle]
 
-    def get(self, request):
-        client_id = os.getenv("GITHUB_CLIENT_ID", "")
-        if not client_id:
-            return Response(
-                {"detail": "GitHub OAuth is not configured."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
 
-        callback_url = request.build_absolute_uri("/api/auth/github/callback/")
-        params = urlencode(
-            {
-                "client_id": client_id,
-                "redirect_uri": callback_url,
-                "scope": "read:user user:email",
-            }
+def get(self, request):
+    client_id = settings.GITHUB_CLIENT_ID
+    if not client_id:
+        return Response(
+            {"detail": "GitHub OAuth is not configured."},
+            status=status.HTTP_400_BAD_REQUEST,
         )
-        return redirect(f"https://github.com/login/oauth/authorize?{params}")
+
+    state = secrets.token_urlsafe(32)
+    code_verifier = secrets.token_urlsafe(64)
+    code_challenge = (
+        base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode("ascii")).digest())
+        .decode("ascii")
+        .rstrip("=")
+    )
+
+    request.session["github_oauth_state"] = {
+        "value": state,
+        "created_at": time.time(),
+    }
+    request.session["github_oauth_verifier"] = code_verifier
+
+    callback_url = request.build_absolute_uri("/api/auth/github/callback/")
+    params = urlencode(
+        {
+            "client_id": client_id,
+            "redirect_uri": callback_url,
+            "scope": "read:user user:email",
+            "state": state,
+            "code_challenge": code_challenge,
+            "code_challenge_method": "S256",
+        }
+    )
+    return redirect(f"https://github.com/login/oauth/authorize?{params}")
 
 
 class GitHubOAuthCallbackView(APIView):
     permission_classes = [permissions.AllowAny]
-    throttle_classes = [OAuthThrottle]
+    throttle_classes = [GitHubOAuthCallbackThrottle]
 
     def get(self, request):
         code = request.query_params.get("code")
+        state = request.query_params.get("state")
+
         if not code:
             return redirect(
                 frontend_url("/", {"auth_error": "GitHub authorization was cancelled."})
             )
 
-        client_id = os.getenv("GITHUB_CLIENT_ID", "")
-        client_secret = os.getenv("GITHUB_CLIENT_SECRET", "")
+        client_id = settings.GITHUB_CLIENT_ID
+        client_secret = settings.GITHUB_CLIENT_SECRET
         if not client_id or not client_secret:
             return redirect(
                 frontend_url("/", {"auth_error": "GitHub OAuth is not configured."})
             )
 
+        if not state:
+            return Response(
+                {"detail": "Missing state parameter."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        session_state = request.session.pop("github_oauth_state", None)
+        code_verifier = request.session.pop("github_oauth_verifier", None)
+
+        if not session_state or not code_verifier:
+            return Response(
+                {"detail": "OAuth session expired or invalid."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        if state != session_state.get("value"):
+            return Response(
+                {"detail": "Invalid OAuth state."}, status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        if time.time() - session_state.get("created_at", 0) > 600:
+            return Response(
+                {"detail": "OAuth state expired."}, status=status.HTTP_401_UNAUTHORIZED
+            )
+
         callback_url = request.build_absolute_uri("/api/auth/github/callback/")
 
+        from apps.core.resilience import CircuitBreaker, CircuitOpenError
+
+        cb = CircuitBreaker("github_oauth", failure_threshold=5, recovery_timeout=30)
         try:
-            token_response = http_requests.post(
-                "https://github.com/login/oauth/access_token",
-                headers={"Accept": "application/json"},
-                data={
-                    "client_id": client_id,
-                    "client_secret": client_secret,
-                    "code": code,
-                    "redirect_uri": callback_url,
-                },
-                timeout=10,
-            )
-            token_response.raise_for_status()
-            access_token = token_response.json().get(
-                "access_token"
-            ) or token_response.json().get("access")
-            if not access_token:
-                return redirect(
-                    frontend_url(
-                        "/", {"auth_error": "GitHub did not return an access token."}
+            with cb:
+                token_response = http_requests.post(
+                    "https://github.com/login/oauth/access_token",
+                    headers={"Accept": "application/json"},
+                    data={
+                        "client_id": client_id,
+                        "client_secret": client_secret,
+                        "code": code,
+                        "redirect_uri": callback_url,
+                        "code_verifier": code_verifier,
+                    },
+                    timeout=5,
+                )
+                token_response.raise_for_status()
+                access_token = token_response.json().get(
+                    "access_token"
+                ) or token_response.json().get("access")
+                if not access_token:
+                    return redirect(
+                        frontend_url(
+                            "/",
+                            {"auth_error": "GitHub did not return an access token."},
+                        )
                     )
-                )
 
-            github_headers = {
-                "Authorization": f"Bearer {access_token}",
-                "Accept": "application/vnd.github+json",
-            }
-            user_response = http_requests.get(
-                "https://api.github.com/user", headers=github_headers, timeout=10
-            )
-            user_response.raise_for_status()
-            github_user = user_response.json()
+                github_headers = {
+                    "Authorization": f"Bearer {access_token}",
+                    "Accept": "application/vnd.github+json",
+                }
+                user_response = http_requests.get(
+                    "https://api.github.com/user", headers=github_headers, timeout=5
+                )
+                user_response.raise_for_status()
+                github_user = user_response.json()
 
-            email = github_user.get("email")
-            if not email:
-                email_response = http_requests.get(
-                    "https://api.github.com/user/emails",
-                    headers=github_headers,
-                    timeout=10,
-                )
-                email_response.raise_for_status()
-                emails = email_response.json()
-                primary_email = next(
-                    (
-                        item
-                        for item in emails
-                        if item.get("primary") and item.get("verified")
-                    ),
-                    None,
-                )
-                email = primary_email.get("email") if primary_email else None
+                email = github_user.get("email")
+                if not email:
+                    email_response = http_requests.get(
+                        "https://api.github.com/user/emails",
+                        headers=github_headers,
+                        timeout=5,
+                    )
+                    email_response.raise_for_status()
+                    emails = email_response.json()
+                    primary_email = next(
+                        (
+                            item
+                            for item in emails
+                            if item.get("primary") and item.get("verified")
+                        ),
+                        None,
+                    )
+                    email = primary_email.get("email") if primary_email else None
 
             if not email:
                 return redirect(
@@ -431,10 +483,22 @@ class GitHubOAuthCallbackView(APIView):
                 )
 
             user = User.objects.filter(email__iexact=email).first()
+            username_source = github_user.get("login") or email
+            github_username = username_from_value(username_source)
+
+            username_conflict = User.objects.filter(username__iexact=github_username)
+            if user is not None:
+                username_conflict = username_conflict.exclude(pk=user.pk)
+
+            if username_conflict.exists():
+                return Response(
+                    {"detail": "Username is already taken."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             if not user:
-                username_source = github_user.get("login") or email
                 user = User.objects.create_user(
-                    username=unique_username_from_value(username_source),
+                    username=github_username,
                     email=email,
                     password=secrets.token_urlsafe(24),
                 )
@@ -449,18 +513,29 @@ class GitHubOAuthCallbackView(APIView):
                     },
                 )
             )
-        except Exception:
+        except CircuitOpenError:
+            return redirect(
+                frontend_url(
+                    "/",
+                    {
+                        "auth_error": "GitHub authentication service is temporarily unavailable."
+                    },
+                )
+            )
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)
             return redirect(
                 frontend_url("/", {"auth_error": "GitHub authentication failed."})
             )
 
 
+from apps.core.mixins import OrganizationScopedQuerySetMixin
 from .permissions import IsAdminOrModeratorRole
 
 
 @extend_schema(responses=UserListSerializer(many=True))
-class UserListView(generics.ListAPIView):
-    queryset = User.objects.select_related("profile").order_by("id")
+class UserListView(OrganizationScopedQuerySetMixin, generics.ListAPIView):
+    queryset = User.objects.select_related("user_profile").order_by("id")
     permission_classes = [permissions.IsAuthenticated, IsAdminOrModeratorRole]
     serializer_class = UserListSerializer
     pagination_class = LimitOffsetPagination
@@ -474,49 +549,8 @@ class UserListView(generics.ListAPIView):
     ordering_fields = ["id", "username"]
 
 
-class UserSuggestionsView(APIView):
-    """
-    GET /api/accounts/users/suggestions/?q=...
-    Returns up to 10 matching usernames for autocomplete mentions.
-    """
-
-    permission_classes = [permissions.IsAuthenticated]
-
-    @extend_schema(
-        parameters=[
-            OpenApiParameter(
-                name="q",
-                type=str,
-                location=OpenApiParameter.QUERY,
-                description="Username prefix/search query",
-            )
-        ],
-        responses={200: OpenApiResponse(description="List of matching users")},
-    )
-    def get(self, request):
-        q = request.query_params.get("q", "").strip()
-        if not q:
-            return Response([])
-
-        # Basic case-insensitive matching
-        users = User.objects.filter(username__icontains=q).order_by("username")[:10]
-
-        data = []
-        for user in users:
-            # We can include a basic avatar url or other profile data if available
-            avatar_url = ""
-            if hasattr(user, "profile") and hasattr(user.profile, "avatar_url"):
-                avatar_url = user.profile.avatar_url
-
-            data.append(
-                {"id": user.id, "username": user.username, "avatar_url": avatar_url}
-            )
-
-        return Response(data, status=status.HTTP_200_OK)
-
-
 # ─────────────────────────────────────────────────────────────────────────────
-# Password Reset Views (UPDATED with Custom Token Model & JWT Invalidation)
+# Password Reset Views
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -540,7 +574,7 @@ class PasswordResetRequestView(APIView):
         serializer = PasswordResetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data["email"].lower()
+        email = serializer.validated_data["email"].lower()  # type: ignore
         user = User.objects.filter(email__iexact=email).first()
 
         if user:
@@ -550,13 +584,11 @@ class PasswordResetRequestView(APIView):
             )
             reset_token = PasswordResetToken.objects.create(user=user)
 
-            # Build reset link
             reset_url = frontend_url(
                 "/reset-password", {"token": str(reset_token.token)}
             )
             timeout = getattr(settings, "PASSWORD_RESET_TIMEOUT_MINUTES", 15)
 
-            # Send email asynchronously with HTML template
             async_task(
                 "apps.accounts.tasks.send_password_reset_email_task",
                 user_email=user.email,
@@ -584,6 +616,7 @@ class PasswordResetConfirmView(APIView):
 
     Accept a reset token and new password to complete the password reset.
     Tokens are single-use and expire after PASSWORD_RESET_TIMEOUT_MINUTES.
+    Rate-limited to 3 requests/hour per IP.
     """
 
     permission_classes = [permissions.AllowAny]
@@ -593,8 +626,8 @@ class PasswordResetConfirmView(APIView):
         serializer = PasswordResetConfirmSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        token_value = serializer.validated_data["token"]
-        new_password = serializer.validated_data["new_password"]
+        token_value = serializer.validated_data["token"]  # type: ignore
+        new_password = serializer.validated_data["new_password"]  # type: ignore
 
         try:
             reset_token = PasswordResetToken.objects.select_related("user").get(
@@ -620,88 +653,173 @@ class PasswordResetConfirmView(APIView):
             )
 
         user = reset_token.user
-        
-        # Set new password (this will trigger JWT invalidation via signal)
         user.set_password(new_password)
-        
-        # Update last_password_change in profile
-        if hasattr(user, "profile"):
-            user.profile.last_password_change = timezone.now()
-            # ✅ Increment JWT token version to invalidate all existing tokens
-            user.profile.jwt_token_version += 1
-            user.profile.save(update_fields=["last_password_change", "jwt_token_version"])
-        else:
-            # Create profile if it doesn't exist
-            from apps.accounts.models import UserProfile
-            UserProfile.objects.create(
-                user=user,
-                last_password_change=timezone.now(),
-                jwt_token_version=2
-            )
-        
+        if hasattr(user, "user_profile"):
+            user.user_profile.last_password_change = timezone.now()
+            user.user_profile.save(update_fields=["last_password_change"])
         user.save()
 
-        # Mark token as used
-        reset_token.is_used = True
-        reset_token.save(update_fields=["is_used"])
-
-        # ✅ Log the invalidation
-        logger.info(f"Password reset confirmed for user {user.username} - all JWT tokens invalidated")
+        PasswordResetToken.objects.filter(user=user, is_used=False).update(is_used=True)
 
         return Response(
             {
-                "message": "Your password has been successfully reset. All existing JWT tokens have been invalidated. You can now log in with your new password."
+                "message": "Your password has been successfully reset. You can now log in."
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OTP (Email Verification) Views
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@extend_schema(
+    request=OtpRequestSerializer,
+    responses=OpenApiResponse(description="OTP sent to email if account exists."),
+)
+class OtpRequestView(APIView):
+    """
+    POST /api/auth/otp/request/
+
+    Regenerate and send a new OTP verification code to the given email.
+    Rate-limited to 3 requests/minute per IP to prevent email spam.
+    """
+
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [OtpGenerateThrottle]
+
+    def post(self, request):
+        serializer = OtpRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data["email"].lower()  # type: ignore
+        user = User.objects.filter(email__iexact=email).first()
+
+        if user:
+            # Invalidate previous unused OTP tokens
+            OTPToken.objects.filter(user=user, is_used=False).update(is_used=True)
+            otp_obj = OTPToken.objects.create(user=user)
+
+            async_task(
+                "apps.accounts.tasks.send_otp_email_task",
+                user_email=user.email,
+                user_username=user.username,
+                otp_token=otp_obj.token,
+            )
+
+        return Response(
+            {"message": "If the email is registered, an OTP has been sent."},
+            status=status.HTTP_200_OK,
+        )
+
+
+@extend_schema(
+    request=OtpVerifySerializer,
+    responses=OpenApiResponse(description="Email verified successfully."),
+)
+class OtpVerifyView(APIView):
+    """
+    POST /api/auth/otp/verify/
+
+    Verify a user's email using the OTP token they received by email.
+    Rate-limited to 5 requests/minute per IP to prevent OTP guessing.
+    """
+
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [OtpVerifyThrottle]
+
+    def post(self, request):
+        serializer = OtpVerifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data["email"].lower()  # type: ignore
+        otp = serializer.validated_data["otp"]  # type: ignore
+
+        user = User.objects.filter(email__iexact=email).first()
+        if not user:
+            return Response(
+                {"error": "invalid_otp"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        token = OTPToken.objects.filter(user=user, token=otp, is_used=False).first()
+        if not token:
+            return Response(
+                {"error": "invalid_otp"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Mark token as used
+        token.is_used = True
+        token.save()
+
+        user.is_verified = True  # type: ignore[attr-defined]
+        user.save(update_fields=["is_verified"])
+
+        return Response(
+            {
+                "message": "Your email has been verified successfully. You can now log in."
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Magic Link Views
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@extend_schema(
+    request=MagicLinkRequestSerializer,
+    responses=OpenApiResponse(
+        description="Magic link sent to email if account exists."
+    ),
+)
+class MagicLinkRequestView(APIView):
+    """
+    POST /api/auth/magic-link/request/
+
+    Accept an email address and send a magic login link if the account exists.
+    Always returns the same response to prevent email enumeration attacks.
+    """
+
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [MagicLinkRequestThrottle, StrictIdentityMagicLinkThrottle]
+
+    def post(self, request):
+        serializer = MagicLinkRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data["email"].lower()  # type: ignore
+        user = User.objects.filter(email__iexact=email).first()
+
+        if user:
+            # Invalidate any existing unused tokens for this user
+            MagicLinkToken.objects.filter(user=user, is_used=False).update(is_used=True)
+            magic_token = MagicLinkToken.objects.create(user=user)
+
+            login_url = frontend_url("/magic-login", {"token": str(magic_token.token)})
+            timeout = getattr(settings, "MAGIC_LINK_TIMEOUT_MINUTES", 15)
+
+            async_task(
+                "apps.accounts.tasks.send_magic_link_email_task",
+                user_email=user.email,
+                user_username=user.username,
+                login_url=login_url,
+                timeout=timeout,
+            )
+
+        return Response(
+            {
+                "message": "If an account with that email exists, a magic login link has been sent."
             },
             status=status.HTTP_200_OK,
         )
 
 
 @extend_schema(
-    responses=OpenApiResponse(description="Check if reset token is valid."),
+    request=MagicLinkVerifySerializer,
+    responses=OpenApiResponse(description="Logged in successfully via magic link."),
 )
-class PasswordResetValidateTokenView(APIView):
-    """
-    GET /api/auth/password-reset/validate-token/?token=xxx
-
-    Check if a reset token is valid and not expired.
-    """
-
-    permission_classes = [permissions.AllowAny]
-
-    def get(self, request):
-        token_value = request.query_params.get('token')
-
-        if not token_value:
-            return Response(
-                {'valid': False, 'error': 'Token is required'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            reset_token = PasswordResetToken.objects.get(
-                token=token_value,
-                is_used=False,
-            )
-
-        except PasswordResetToken.DoesNotExist:
-            return Response({
-                'valid': False,
-                'error': 'Invalid or already used token'
-            })
-
-        if reset_token.is_expired():
-            return Response({
-                'valid': False,
-                'error': 'Token has expired'
-            })
-
-        return Response({
-            'valid': True,
-            'message': 'Token is valid',
-            'email': reset_token.user.email
-        })
-
-
 class MagicLinkVerifyView(APIView):
     """
     POST /api/auth/magic-link/verify/
@@ -717,7 +835,7 @@ class MagicLinkVerifyView(APIView):
         serializer = MagicLinkVerifySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        token_value = serializer.validated_data["token"]
+        token_value = serializer.validated_data["token"]  # type: ignore
 
         try:
             magic_token = MagicLinkToken.objects.select_related("user").get(
@@ -744,155 +862,116 @@ class MagicLinkVerifyView(APIView):
 
         user = magic_token.user
 
+        magic_token.is_used = True
+        magic_token.save(update_fields=["is_used"])
 
-# ─────────────────────────────────────────────────────────────────────────────
-# ✅ ADD: Change Password View with JWT Invalidation
-# ─────────────────────────────────────────────────────────────────────────────
-
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError
-import logging
-
-logger = logging.getLogger(__name__)
-
-
-class ChangePasswordView(APIView):
-    """
-    POST /api/auth/change-password/
-
-    Change user password and invalidate all existing JWT tokens.
-    Rate-limited to 5 requests/minute per user.
-    """
-
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        user = request.user
-        current_password = request.data.get('current_password')
-        new_password = request.data.get('new_password')
-
-        if not current_password or not new_password:
-            return Response(
-                {'error': 'Current password and new password are required'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Verify current password
-        if not user.check_password(current_password):
-            return Response(
-                {'error': 'Current password is incorrect'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Validate new password
-        try:
-            validate_password(new_password, user)
-        except ValidationError as e:
-            return Response(
-                {'error': e.messages[0]},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Set new password (this will trigger the signal)
-        user.set_password(new_password)
-        
-        # ✅ Increment JWT token version to invalidate all existing tokens
-        if hasattr(user, "profile") and user.profile:
-            user.profile.jwt_token_version += 1
-            user.profile.last_password_change = timezone.now()
-            user.profile.save(update_fields=["jwt_token_version", "last_password_change"])
-        else:
-            # Create profile if it doesn't exist
-            from apps.accounts.models import UserProfile
-            UserProfile.objects.create(
-                user=user,
-                last_password_change=timezone.now(),
-                jwt_token_version=2
-            )
-        
-        user.save()
-
-        logger.info(f"Password changed for user {user.username} - all JWT tokens invalidated")
+        refresh = RefreshToken.for_user(user)
 
         return Response(
             {
-                'message': 'Password changed successfully. All existing JWT tokens have been invalidated.'
-            },
-
-            status=status.HTTP_200_OK
-        )
-
-
-
-class AvatarUploadView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        serializer = AvatarUploadSerializer(data=request.data)
-
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        avatar = serializer.validated_data["avatar"]
-
-        # Optimize image
-        try:
-            img = Image.open(avatar)
-
-            # Convert to RGB if needed
-            if img.mode in ("RGBA", "LA", "P"):
-                img = img.convert("RGB")
-
-            # Resize to max 300x300
-            img.thumbnail((300, 300))
-
-            # Save to buffer
-            buffer = io.BytesIO()
-            img.save(buffer, format="JPEG", quality=85)
-
-            # Create new file
-            filename = f"{request.user.id}_avatar.jpg"
-            avatar_file = ContentFile(buffer.getvalue(), name=filename)
-
-        except Exception as e:
-            return Response(
-                {"error": "Invalid image file"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Update or create profile
-        profile, created = UserProfile.objects.get_or_create(user=request.user)
-
-        # Delete old avatar if exists
-        if profile.avatar:
-            try:
-                profile.avatar.delete(save=False)
-            except:
-                pass
-
-        profile.avatar = avatar_file
-        profile.save()
-
-        return Response(
-            {
-                "message": "Avatar uploaded successfully",
-                "avatar_url": profile.avatar.url if profile.avatar else None,
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+                "user": {
+                    "username": user.username,
+                    "email": user.email,
+                    "is_staff": user.is_staff,
+                },
+                "message": "You have been successfully logged in.",
             },
             status=status.HTTP_200_OK,
         )
 
-    def delete(self, request):
-        """Remove avatar"""
-        profile = UserProfile.objects.filter(user=request.user).first()
-        if profile and profile.avatar:
-            profile.avatar.delete()
-            profile.avatar = None
-            profile.save()
-            return Response({"message": "Avatar removed"})
-        return Response({"error": "No avatar found"}, status=status.HTTP_404_NOT_FOUND)
+
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
+
+
+class LogoutView(APIView):
+    """
+    Accepts a refresh token in the request body and adds it to the blacklist.
+    Requires user to be authenticated.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            refresh_token = request.data.get("refresh")
+            if not refresh_token:
+                return Response(
+                    {"error": "Refresh token is required"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # This automatically adds the token to the BlacklistedToken model
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+
+            return Response(
+                {"message": "Successfully logged out."},
+                status=status.HTTP_205_RESET_CONTENT,
+            )
+        except TokenError:
+            return Response(
+                {"error": "Invalid or expired refresh token."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+from django.http import HttpResponse, JsonResponse
+
+from .export import DataExportService
+
+
+class ExportDataView(APIView):
+    """
+    GET /api/users/me/export/?export_format=csv|json
+    Generates a GDPR-compliant export of all personal data.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        responses={
+            200: OpenApiResponse(
+                description="Data export file (JSON or ZIP containing CSVs)"
+            ),
+            400: OpenApiResponse(description="Unsupported format requested"),
+        }
+    )
+    def get(self, request):
+        export_format = request.query_params.get("export_format", "json").lower()
+        service = DataExportService(request.user)
+
+        if export_format == "json":
+            json_data = service.generate_json()
+            response = HttpResponse(json_data, content_type="application/json")
+            response["Content-Disposition"] = (
+                f'attachment; filename="data_export_{request.user.username}.json"'
+            )
+            return response
+
+        elif export_format == "csv":
+            zip_data = service.generate_csv_zip()
+            response = HttpResponse(zip_data, content_type="application/zip")
+            response["Content-Disposition"] = (
+                f'attachment; filename="data_export_{request.user.username}.zip"'
+            )
+            return response
+
+        return Response(
+            {
+                "error": "unsupported_format",
+                "message": "Only 'json' and 'csv' formats are supported.",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
 
 from apps.chat.models import Message
@@ -1090,9 +1169,9 @@ class LearningPathView(APIView):
         all_completed = all(m["status"] == "completed" for m in scored_modules)
         if all_completed and scored_modules:
             scored_modules[0]["score"] = 1
-            scored_modules[0][
-                "explanation"
-            ] = "You have completed the entire curriculum! Review this module to refresh your memory."
+            scored_modules[0]["explanation"] = (
+                "You have completed the entire curriculum! Review this module to refresh your memory."
+            )
 
         # Find the recommended next step (highest score)
         recommended = None
@@ -1102,46 +1181,345 @@ class LearningPathView(APIView):
         return Response({"modules": scored_modules, "next_step": recommended})
 
 
-class PublicProfileView(APIView):
-    permission_classes = [permissions.AllowAny]
+from .serializers import (
+    AvatarUploadSerializer,
+    ChangePasswordSerializer,
+    PasswordResetValidateTokenSerializer,
+)
 
-    def get(self, request, username):
-        from django.contrib.auth.models import User
-        from django.shortcuts import get_object_or_404
-        from django.db.models import Sum
-        from apps.progress.models import UserBadge, LessonProgress
-        from apps.progress.serializers import UserBadgeSerializer
-        from apps.accounts.serializers import UserListSerializer
 
-        user = get_object_or_404(User, username=username)
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
 
-        # User details
-        user_serializer = UserListSerializer(user, context={"request": request})
+    @extend_schema(
+        request=ChangePasswordSerializer,
+        responses={200: OpenApiResponse(description="Password changed successfully.")},
+    )
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        # Badges
-        earned_badges = (
-            UserBadge.objects.filter(user=user)
-            .select_related("badge")
-            .order_by("-earned_at")
+        user = request.user
+        if not user.check_password(serializer.validated_data["old_password"]):
+            return Response(
+                {"error": "Incorrect old password."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.set_password(serializer.validated_data["new_password"])
+        user.save()
+        PasswordResetToken.objects.filter(user=user, is_used=False).update(is_used=True)
+        if hasattr(user, "user_profile"):
+            user.user_profile.increment_jwt_version()
+
+        return Response(
+            {"status": "password changed successfully"}, status=status.HTTP_200_OK
         )
-        badge_serializer = UserBadgeSerializer(earned_badges, many=True)
 
-        # Progress stats
-        total_score = (
-            LessonProgress.objects.filter(user=user).aggregate(total=Sum("score"))[
-                "total"
-            ]
-            or 0
-        )
-        completed_lessons = LessonProgress.objects.filter(
-            user=user, completed=True
-        ).count()
+
+from rest_framework.parsers import MultiPartParser
+
+
+class AvatarUploadView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser]
+
+    @extend_schema(
+        request=AvatarUploadSerializer,
+        responses={200: OpenApiResponse(description="Avatar uploaded successfully.")},
+    )
+    def post(self, request):
+        serializer = AvatarUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user_profile = request.user.user_profile
+        user_profile.avatar = serializer.validated_data["avatar"]
+        user_profile.save()
 
         return Response(
             {
-                "user": user_serializer.data,
-                "badges": badge_serializer.data,
-                "total_score": total_score,
-                "completed_lessons": completed_lessons,
-            }
+                "status": "avatar uploaded successfully",
+                "avatar_url": request.build_absolute_uri(user_profile.avatar.url),
+            },
+            status=status.HTTP_200_OK,
         )
+
+
+class ShopStreakFreezeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        responses={200: OpenApiResponse(description="Streak freeze purchased.")}
+    )
+    def post(self, request):
+        from apps.progress.models import StreakProfile
+
+        streak_profile, _ = StreakProfile.objects.get_or_create(user=request.user)
+        streak_profile.streak_freezes += 1
+        streak_profile.save(update_fields=["streak_freezes"])
+        return Response(
+            {
+                "status": "streak freeze purchased successfully",
+                "streak_freezes": streak_profile.streak_freezes,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class PasswordResetValidateTokenView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    @extend_schema(
+        request=PasswordResetValidateTokenSerializer,
+        responses={200: OpenApiResponse(description="Token is valid.")},
+    )
+    def post(self, request):
+        serializer = PasswordResetValidateTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        token_value = serializer.validated_data["token"]
+        try:
+            reset_token = PasswordResetToken.objects.get(
+                token=token_value, is_used=False
+            )
+        except PasswordResetToken.DoesNotExist:
+            return Response(
+                {"error": "invalid_token"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if reset_token.is_expired():
+            return Response(
+                {"error": "expired_token"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return Response(
+            {"status": "password reset token is valid"}, status=status.HTTP_200_OK
+        )
+
+
+class UserSuggestionsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=UserListSerializer(many=True))
+    def get(self, request):
+        suggestions = User.objects.exclude(id=request.user.id).order_by("-date_joined")[
+            :5
+        ]
+        serializer = UserListSerializer(
+            suggestions, many=True, context={"request": request}
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class PublicProfileView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    @extend_schema(responses=UserListSerializer)
+    def get(self, request, username):
+        from django.shortcuts import get_object_or_404
+
+        user = get_object_or_404(User, username=username)
+        serializer = UserListSerializer(user, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+from .models import UserSession
+from .serializers import UserSessionSerializer
+
+
+class UserSessionListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserSessionSerializer
+
+    def get_queryset(self):
+        return UserSession.objects.filter(user=self.request.user)
+
+
+class UserSessionDetailView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserSessionSerializer
+    lookup_field = "session_id"
+
+    def get_queryset(self):
+        return UserSession.objects.filter(user=self.request.user)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Two-Factor Authentication (TOTP 2FA) Views
+# ─────────────────────────────────────────────────────────────────────────────
+
+from .models import TOTPDevice
+from .serializers import TwoFactorDisableSerializer, TwoFactorVerifySerializer
+from .totp import (
+    generate_backup_codes,
+    generate_totp_secret,
+    get_provisioning_uri,
+    verify_totp_code,
+)
+
+
+class TwoFactorSetupView(APIView):
+    """
+    POST /api/auth/2fa/setup/
+    Initiate TOTP 2FA setup. Returns secret, provisioning URI, and single-use backup codes.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        device, created = TOTPDevice.objects.get_or_create(user=user)
+
+        if not device.is_enabled:
+            secret = generate_totp_secret()
+            plain_backup_codes, hashed_backup_codes = generate_backup_codes()
+            device.secret = secret
+            device.backup_codes = hashed_backup_codes
+            device.save()
+        else:
+            secret = device.secret
+            plain_backup_codes = []
+
+        otpauth_url = get_provisioning_uri(user.username, secret)
+
+        return Response(
+            {
+                "secret": secret,
+                "otpauth_url": otpauth_url,
+                "backup_codes": plain_backup_codes,
+                "is_enabled": device.is_enabled,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class TwoFactorVerifySetupView(APIView):
+    """
+    POST /api/auth/2fa/verify-setup/
+    Verify 6-digit TOTP code to complete 2FA activation.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = TwoFactorVerifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        code = serializer.validated_data["code"]
+        device = getattr(request.user, "totp_device", None)
+
+        if not device or not device.secret:
+            return Response(
+                {"error": "2FA setup has not been initiated."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not verify_totp_code(device.secret, code):
+            return Response(
+                {
+                    "error": "invalid_code",
+                    "message": "Invalid 2FA verification code. Please try again.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        device.is_enabled = True
+        device.save(update_fields=["is_enabled"])
+
+        return Response(
+            {"status": "2FA enabled successfully", "is_enabled": True},
+            status=status.HTTP_200_OK,
+        )
+
+
+class TwoFactorDisableView(APIView):
+    """
+    POST /api/auth/2fa/disable/
+    Disable 2FA after password confirmation.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = TwoFactorDisableSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = request.user
+        password = serializer.validated_data["password"]
+
+        if not user.check_password(password):
+            return Response(
+                {"error": "Incorrect password."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if hasattr(user, "totp_device"):
+            user.totp_device.delete()
+
+        return Response(
+            {"status": "2FA disabled successfully", "is_enabled": False},
+            status=status.HTTP_200_OK,
+        )
+
+
+class TwoFactorStatusView(APIView):
+    """
+    GET /api/auth/2fa/status/
+    Return 2FA status and remaining backup codes count.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        device = getattr(request.user, "totp_device", None)
+        is_enabled = bool(device and device.is_enabled)
+        remaining_backup_codes = (
+            len(device.backup_codes) if (device and device.backup_codes) else 0
+        )
+
+        return Response(
+            {
+                "is_enabled": is_enabled,
+                "backup_codes_remaining": remaining_backup_codes,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class TwoFactorGenerateBackupCodesView(APIView):
+    """
+    POST /api/auth/2fa/generate-backup-codes/
+    Regenerate recovery backup codes (requires user password).
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = TwoFactorDisableSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = request.user
+        password = serializer.validated_data["password"]
+
+        if not user.check_password(password):
+            return Response(
+                {"error": "Incorrect password."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        device = getattr(user, "totp_device", None)
+        if not device or not device.is_enabled:
+            return Response(
+                {"error": "2FA is not enabled on this account."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        plain_backup_codes, hashed_backup_codes = generate_backup_codes()
+        device.backup_codes = hashed_backup_codes
+        device.save(update_fields=["backup_codes"])
+
+        return Response(
+            {
+                "backup_codes": plain_backup_codes,
+                "status": "New backup codes generated successfully",
+            },
+            status=status.HTTP_200_OK,
+        )
+

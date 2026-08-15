@@ -6,6 +6,7 @@ export default {
   theme: {
     extend: {
       colors: {
+        accent: "#6366f1",
         light: {
           bg: "#ffffff",
           text: "#111827",
@@ -13,16 +14,17 @@ export default {
           border: "#e5e7eb",
           primary: "#7c3aed",
           secondary: "#6b7280",
-          muted: "#9ca3af",
+          muted: "#6b7280",
         },
         dark: {
           bg: "#0f172a",
-          text: "#f3f4f6",
+          surface: "#1e293b",
           card: "#1e293b",
           border: "#334155",
+          text: "#f8fafc",
           primary: "#8b5cf6",
-          secondary: "#9ca3af",
-          muted: "#64748b",
+          secondary: "#cbd5e1",
+          muted: "#a1a1aa",
         },
       },
     },

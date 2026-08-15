@@ -6,8 +6,8 @@ class ContentConfig(AppConfig):
     name = "apps.content"
 
     def ready(self):
-        import apps.content.signals  # noqa: F401
-
         from django.utils.module_loading import autodiscover_modules
+
+        import apps.content.signals  # noqa: F401
 
         autodiscover_modules("lesson_plugins")

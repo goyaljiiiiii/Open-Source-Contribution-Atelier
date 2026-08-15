@@ -1,15 +1,13 @@
 import { useEffect } from "react";
-import { useLocation, useOutlet, useNavigate } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import { useLocation, Outlet, useNavigate } from "react-router-dom";
 import { Navigation } from "./Navigation";
+import { MobileBottomNav } from "./MobileBottomNav";
 import { BadgeToastNotifier } from "../ui/BadgeToastNotifier";
-import { ScrollToTop } from "../ui/ScrollToTop";
 import { SessionTracker } from "../ui/SessionTracker";
 import { useAuth } from "../../features/auth/AuthContext";
 
 export function AppLayout() {
   const location = useLocation();
-  const outlet = useOutlet();
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -50,28 +48,30 @@ export function AppLayout() {
         Skip to main content
       </a>
 
-      <div className="min-h-screen bg-surface text-text dark:bg-transparent dark:text-[#f0ebe2]">
-        <Navigation />
-        <main id="main-content" tabIndex={-1} className="lg:pl-[280px]">
-          <div className="px-4 pb-10 pt-24 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-7xl">
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={location.pathname}
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -15 }}
-                  transition={{ duration: 0.25, ease: "easeOut" }}
-                >
-                  {outlet}
-                </motion.div>
-              </AnimatePresence>
-            </div>
+      <div className="min-h-screen bg-surface text-text dark:bg-[#0a0a0f] dark:text-[#f0ebe2] overflow-x-hidden">
+        {!location.pathname.startsWith("/lessons/") && <Navigation />}
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className={
+            location.pathname.startsWith("/lessons/")
+              ? "w-full min-h-screen"
+              : "lg:pl-[240px] pt-[72px] min-h-screen max-w-full overflow-x-hidden"
+          }
+        >
+          <div
+            className={
+              location.pathname.startsWith("/lessons/")
+                ? "w-full h-screen overflow-hidden"
+                : "px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 max-w-7xl mx-auto w-full min-w-0 pb-20 sm:pb-24 lg:pb-10"
+            }
+          >
+            <Outlet />
           </div>
         </main>
+        {!location.pathname.startsWith("/lessons/") && <MobileBottomNav />}
         <BadgeToastNotifier />
-        <ScrollToTop />
-        <SessionTracker />
+        {!location.pathname.startsWith("/lessons/") && <SessionTracker />}
       </div>
     </>
   );

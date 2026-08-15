@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import PortfolioTemplate, GeneratedPortfolio
+
+from .models import GeneratedPortfolio, PortfolioTemplate
 
 
 class PortfolioTemplateSerializer(serializers.ModelSerializer):

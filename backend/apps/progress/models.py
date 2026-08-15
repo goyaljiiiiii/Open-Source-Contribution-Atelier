@@ -1,14 +1,14 @@
 from __future__ import annotations
+
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
-from django.core.validators import MinValueValidator, MaxValueValidator
-
 
 from apps.content.models import Exercise, Lesson
 from apps.organizations.models import Organization
-
 
 STREAK_MILESTONES = [
     {"days": 3, "multiplier": 1.1, "label": "3-Day Streak"},
@@ -16,301 +16,6 @@ STREAK_MILESTONES = [
     {"days": 14, "multiplier": 1.5, "label": "2-Week Streak"},
     {"days": 30, "multiplier": 2.0, "label": "1-Month Streak"},
 ]
-
-
-class XPMultiplierEvent(models.Model):
-    name = models.CharField(max_length=255)
-    multiplier = models.FloatField(default=1.5)
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ["-start_time"]
-
-    def __str__(self):
-        return f"{self.name} ({self.multiplier}x)"
-
-    @classmethod
-    def get_active_multiplier(cls) -> float:
-        now = timezone.now()
-        active_event = cls.objects.filter(
-            is_active=True, start_time__lte=now, end_time__gte=now
-        ).first()
-        return active_event.multiplier if active_event else 1.0
-
-
-class Badge(models.Model):
-    class DoesNotExist(ObjectDoesNotExist):
-        pass
-
-    objects = models.Manager()
-    name = models.CharField(max_length=120)
-    slug = models.SlugField(unique=True)
-    description = models.TextField()
-    category = models.CharField(max_length=100, default="general")
-    icon_asset_url = models.URLField(blank=True, default="")
-
-
-class UserBadge(models.Model):
-    class DoesNotExist(ObjectDoesNotExist):
-        pass
-
-    objects = models.Manager()
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="earned_badges"
-    )
-    badge = models.ForeignKey(Badge, on_delete=models.CASCADE, related_name="earned_by")
-    earned_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        # Upgraded to modern UniqueConstraint for stricter DB-level locking
-        constraints = [
-            models.UniqueConstraint(
-                fields=["user", "badge"], name="unique_user_badge_award"
-            )
-        ]
-
-
-class XPEvent(models.Model):
-    """Tracks XP changes for a user from various source actions."""
-
-    SOURCE_CHOICES = [
-        ("lesson", "Lesson"),
-        ("exercise", "Exercise"),
-        ("pr", "Pull Request"),
-        ("issue", "Issue"),
-        ("review", "Review"),
-        ("badge", "Badge"),
-    ]
-
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="xp_events")
-    source_type = models.CharField(max_length=20, choices=SOURCE_CHOICES)
-    source_id = models.PositiveIntegerField(null=True, blank=True)
-    base_points = models.PositiveIntegerField()
-    multiplier = models.FloatField(default=1.0)
-    xp_delta = models.IntegerField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ["-created_at"]
-        indexes = [
-            models.Index(fields=["user", "source_type"], name="idx_xp_user_source"),
-            models.Index(fields=["-created_at"], name="idx_xp_created_desc"),
-        ]
-        constraints = [
-            models.CheckConstraint(
-                check=models.Q(base_points__gte=0) & models.Q(base_points__lte=1000),
-                name="base_points_range_constraint",
-            )
-        ]
-
-    def __str__(self):
-        return f"XPEvent(user={self.user.username}, source={self.source_type}, delta={self.xp_delta})"
-
-
-class LessonProgressSync(models.Model):
-    """Idempotency ledger for lesson progress sync requests.
-
-    Stores the result snapshot for a single (user, lesson, idempotency_key)
-    so that client retries or out-of-order delivery do not re-apply the
-    multiplier / side-effects.
-    """
-
-    objects = models.Manager()
-
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="lesson_progress_syncs",
-    )
-    lesson = models.ForeignKey(
-        Lesson,
-        on_delete=models.CASCADE,
-        related_name="progress_syncs",
-    )
-
-    idempotency_key = models.CharField(max_length=255)
-
-    # Snapshot of applied state
-    completed = models.BooleanField(default=False)
-    base_score = models.PositiveIntegerField(default=0)
-    multiplier_applied = models.FloatField(default=1.0)
-    score = models.PositiveIntegerField(
-        default=0,
-        validators=[
-            MinValueValidator(0),
-            MaxValueValidator(1000),
-        ],
-    )
-
-    client_timestamp_ms = models.BigIntegerField(null=True, blank=True)
-
-    # When the server applied this sync item
-    server_updated_at = models.DateTimeField(null=True, blank=True)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["user", "lesson", "idempotency_key"],
-                name="unique_user_lesson_sync_key",
-            ),
-        ]
-        indexes = [
-            models.Index(fields=["user", "lesson"], name="idx_lp_sync_user_lesson"),
-            models.Index(fields=["idempotency_key"], name="idx_lp_sync_key"),
-        ]
-
-
-class LessonProgress(models.Model):
-    objects = models.Manager()
-    organization = models.ForeignKey(
-        Organization, on_delete=models.CASCADE, null=True, blank=True
-    )
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
-    completed = models.BooleanField(default=False)
-    score = models.PositiveIntegerField(default=0)
-    base_score = models.PositiveIntegerField(default=0)
-    multiplier_applied = models.FloatField(default=1.0)
-    attempt_count = models.PositiveIntegerField(default=0)
-    attempt_count = models.IntegerField(default=0)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["user", "lesson"],
-                name="unique_user_lesson_progress",
-            ),
-        ]
-        indexes = [
-            models.Index(
-                fields=["user", "completed"], name="idx_progress_user_completed"
-            ),
-            models.Index(fields=["user", "score"], name="idx_progress_user_score"),
-            models.Index(
-                fields=["user", "-updated_at"], name="idx_progress_user_updated"
-            ),
-        ]
-
-
-class ExerciseAttempt(models.Model):
-    objects = models.Manager()
-    organization = models.ForeignKey(
-        Organization, on_delete=models.CASCADE, null=True, blank=True
-    )
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
-    submitted_command = models.CharField(max_length=255, default="")
-    is_correct = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        indexes = [
-            models.Index(
-                fields=["user", "exercise", "is_correct"],
-                name="idx_ex_attempt_user_correct",
-            ),
-            models.Index(
-                fields=["user", "-created_at"], name="idx_ex_attempt_user_time"
-            ),
-        ]
-
-
-class HelpRequest(models.Model):
-    class DoesNotExist(ObjectDoesNotExist):
-        pass
-
-    objects = models.Manager()
-
-    class Status(models.TextChoices):
-        OPEN = "open", "Open"
-        RESOLVED = "resolved", "Resolved"
-
-    organization = models.ForeignKey(
-        Organization, on_delete=models.CASCADE, null=True, blank=True
-    )
-
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="help_requests"
-    )
-    lesson = models.ForeignKey(
-        Lesson, on_delete=models.CASCADE, related_name="help_requests"
-    )
-    message = models.TextField()
-    status = models.CharField(
-        max_length=20, choices=Status.choices, default=Status.OPEN, db_index=True
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=["user", "status"], name="idx_help_req_user_status"),
-            models.Index(
-                fields=["status", "-created_at"], name="idx_help_req_status_time"
-            ),
-        ]
-
-
-class QuizAttempt(models.Model):
-    class DoesNotExist(ObjectDoesNotExist):
-        pass
-
-    objects = models.Manager()
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="quiz_attempts"
-    )
-    question_id = models.CharField(max_length=255)
-    question_text = models.TextField()
-    selected_answer = models.CharField(max_length=255)
-    correct_answer = models.CharField(max_length=255)
-    is_correct = models.BooleanField(default=False)
-    time_taken_seconds = models.PositiveIntegerField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ["-created_at"]
-        indexes = [
-            models.Index(fields=["user", "is_correct"], name="idx_quiz_user_correct"),
-        ]
-
-    def __str__(self):
-        return f"{self.user.username} - {self.question_id} - {'✓' if self.is_correct else '✗'}"
-
-
-import uuid
-
-
-class Certificate(models.Model):
-    class DoesNotExist(ObjectDoesNotExist):
-        pass
-
-    objects = models.Manager()
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="certificates"
-    )
-    course_name = models.CharField(
-        max_length=255, default="Open Source Contribution Course"
-    )
-    verification_hash = models.CharField(
-        max_length=64,
-        unique=True,
-        default=uuid.uuid4,
-        db_index=True,
-    )
-    issued_at = models.DateTimeField(auto_now_add=True)
-    is_active = models.BooleanField(default=True)
-
-    class Meta:
-        ordering = ["-issued_at"]
-
-    def __str__(self):
-        return f"Certificate for {self.user.username} - {self.verification_hash}"
 
 
 class CodeSubmission(models.Model):
@@ -322,7 +27,9 @@ class CodeSubmission(models.Model):
         ESCALATED = "escalated", "Escalated"
 
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="code_submissions"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="code_submissions",
     )
     exercise = models.ForeignKey(
         Exercise,
@@ -332,7 +39,7 @@ class CodeSubmission(models.Model):
         blank=True,
     )
     assigned_reviewers = models.ManyToManyField(
-        User, blank=True, related_name="assigned_reviews"
+        settings.AUTH_USER_MODEL, blank=True, related_name="assigned_reviews"
     )
     title = models.CharField(max_length=255)
     code_snippet = models.TextField()
@@ -401,20 +108,323 @@ class PeerReview(models.Model):
         return f"Review by {self.reviewer.username} for {self.submission.title}"
 
 
+class XPMultiplierEvent(models.Model):
+    name = models.CharField(max_length=255)
+    multiplier = models.FloatField(default=1.5)
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-start_time"]
+
+    def __str__(self):
+        return f"{self.name} ({self.multiplier}x)"
+
+    @classmethod
+    def get_active_multiplier(cls) -> float:
+        now = timezone.now()
+        active_event = cls.objects.filter(
+            is_active=True, start_time__lte=now, end_time__gte=now
+        ).first()
+        return active_event.multiplier if active_event else 1.0
+
+
+class Badge(models.Model):
+    class DoesNotExist(ObjectDoesNotExist):
+        pass
+
+    objects = models.Manager()
+    name = models.CharField(max_length=120)
+    slug = models.SlugField(unique=True)
+    description = models.TextField()
+    category = models.CharField(max_length=100, default="general")
+    icon_asset_url = models.URLField(blank=True, default="")
+
+
+class UserBadge(models.Model):
+    class DoesNotExist(ObjectDoesNotExist):
+        pass
+
+    objects = models.Manager()
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="earned_badges"
+    )
+    badge = models.ForeignKey(Badge, on_delete=models.CASCADE, related_name="earned_by")
+    earned_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        # Upgraded to modern UniqueConstraint for stricter DB-level locking
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "badge"], name="unique_user_badge_award"
+            )
+        ]
+
+
+class XPEvent(models.Model):
+    """Tracks XP changes for a user from various source actions."""
+
+    SOURCE_CHOICES = [
+        ("lesson", "Lesson"),
+        ("exercise", "Exercise"),
+        ("pr", "Pull Request"),
+        ("issue", "Issue"),
+        ("review", "Review"),
+        ("badge", "Badge"),
+        ("shop", "Shop Purchase"),
+        ("milestone", "Milestone Track"),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="xp_events"
+    )
+    source_type = models.CharField(max_length=20, choices=SOURCE_CHOICES)
+    source_id = models.PositiveIntegerField(null=True, blank=True)
+    base_points = models.PositiveIntegerField()
+    multiplier = models.FloatField(default=1.0)
+    xp_delta = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["user", "source_type"], name="idx_xp_user_source"),
+            models.Index(fields=["-created_at"], name="idx_xp_created_desc"),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(base_points__gte=0) & models.Q(base_points__lte=1000),
+                name="base_points_range_constraint",
+            )
+        ]
+
+    def __str__(self):
+        return f"XPEvent(user={self.user.username}, source={self.source_type}, delta={self.xp_delta})"
+
+
+class LessonProgressSync(models.Model):
+    """Idempotency ledger for lesson progress sync requests.
+
+    Stores the result snapshot for a single (user, lesson, idempotency_key)
+    so that client retries or out-of-order delivery do not re-apply the
+    multiplier / side-effects.
+    """
+
+    objects = models.Manager()
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="lesson_progress_syncs",
+    )
+    lesson = models.ForeignKey(
+        Lesson,
+        on_delete=models.CASCADE,
+        related_name="progress_syncs",
+    )
+
+    idempotency_key = models.CharField(max_length=255)
+
+    # Snapshot of applied state
+    completed = models.BooleanField(default=False)
+    base_score = models.PositiveIntegerField(default=0)
+    multiplier_applied = models.FloatField(default=1.0)
+    score = models.PositiveIntegerField(
+        default=0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1000),
+        ],
+    )
+
+    client_timestamp_ms = models.BigIntegerField(null=True, blank=True)
+
+    # When the server applied this sync item
+    server_updated_at = models.DateTimeField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "lesson", "idempotency_key"],
+                name="unique_user_lesson_sync_key",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["user", "lesson"], name="idx_lp_sync_user_lesson"),
+            models.Index(fields=["idempotency_key"], name="idx_lp_sync_key"),
+        ]
+
+
+class LessonProgress(models.Model):
+    objects = models.Manager()
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, null=True, blank=True
+    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
+    completed = models.BooleanField(default=False)
+    score = models.PositiveIntegerField(default=0)
+    base_score = models.PositiveIntegerField(default=0)
+    multiplier_applied = models.FloatField(default=1.0)
+    attempt_count = models.PositiveIntegerField(default=0)
+    attempt_count = models.IntegerField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "lesson"],
+                name="unique_user_lesson_progress",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["user", "completed"], name="idx_progress_user_completed"
+            ),
+            models.Index(fields=["user", "score"], name="idx_progress_user_score"),
+            models.Index(
+                fields=["user", "-updated_at"], name="idx_progress_user_updated"
+            ),
+        ]
+
+
+class ExerciseAttempt(models.Model):
+    objects = models.Manager()
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, null=True, blank=True
+    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
+    submitted_command = models.CharField(max_length=255, default="")
+    is_correct = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=["user", "exercise", "is_correct"],
+                name="idx_ex_attempt_user_correct",
+            ),
+            models.Index(
+                fields=["user", "-created_at"], name="idx_ex_attempt_user_time"
+            ),
+        ]
+
+
+class HelpRequest(models.Model):
+    class DoesNotExist(ObjectDoesNotExist):
+        pass
+
+    objects = models.Manager()
+
+    class Status(models.TextChoices):
+        OPEN = "open", "Open"
+        RESOLVED = "resolved", "Resolved"
+
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, null=True, blank=True
+    )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="help_requests"
+    )
+    lesson = models.ForeignKey(
+        Lesson, on_delete=models.CASCADE, related_name="help_requests"
+    )
+    message = models.TextField()
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.OPEN, db_index=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["user", "status"], name="idx_help_req_user_status"),
+            models.Index(
+                fields=["status", "-created_at"], name="idx_help_req_status_time"
+            ),
+        ]
+
+
+class QuizAttempt(models.Model):
+    class DoesNotExist(ObjectDoesNotExist):
+        pass
+
+    objects = models.Manager()
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="quiz_attempts"
+    )
+    question_id = models.CharField(max_length=255)
+    question_text = models.TextField()
+    selected_answer = models.CharField(max_length=255)
+    correct_answer = models.CharField(max_length=255)
+    is_correct = models.BooleanField(default=False)
+    time_taken_seconds = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["user", "is_correct"], name="idx_quiz_user_correct"),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.question_id} - {'✓' if self.is_correct else '✗'}"
+
+
+import uuid
+
+
+class Certificate(models.Model):
+    class DoesNotExist(ObjectDoesNotExist):
+        pass
+
+    objects = models.Manager()
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="certificates"
+    )
+    course_name = models.CharField(
+        max_length=255, default="Open Source Contribution Course"
+    )
+    verification_hash = models.CharField(
+        max_length=64,
+        unique=True,
+        default=uuid.uuid4,
+        db_index=True,
+    )
+    issued_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["-issued_at"]
+
+    def __str__(self):
+        return f"Certificate for {self.user.username} - {self.verification_hash}"
+
+
 class StreakProfile(models.Model):
     """Tracks daily coding streaks for a user."""
 
     user = models.OneToOneField(
-        User, on_delete=models.CASCADE, related_name="streak_profile"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="streak_profile",
     )
     current_streak = models.PositiveIntegerField(default=0)
     longest_streak = models.PositiveIntegerField(default=0)
     last_activity_date = models.DateField(null=True, blank=True)
+    streak_freezes = models.PositiveIntegerField(default=0)
     updated_at = models.DateTimeField(auto_now=True)
 
     @property
     def current_multiplier(self) -> float:
         from apps.progress.streak_engine import StreakEngine
+
         return StreakEngine.get_multiplier_for_streak(self.current_streak)
 
     @current_multiplier.setter
@@ -432,6 +442,39 @@ class StreakProfile(models.Model):
         return f"{self.user.username} - {self.current_streak} day streak"
 
 
+class StreakRecoveryPlan(models.Model):
+    """Tracks a user's progress toward recovering a lost streak on a specific day."""
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="streak_recovery_plan",
+    )
+    target_date = models.DateField()
+    previous_streak = models.PositiveIntegerField(default=0)
+
+    quiz_target = models.PositiveIntegerField(default=1)
+    quiz_progress = models.PositiveIntegerField(default=0)
+
+    reading_target = models.PositiveIntegerField(default=15)
+    reading_progress = models.PositiveIntegerField(default=0)
+
+    code_target = models.PositiveIntegerField(default=1)
+    code_progress = models.PositiveIntegerField(default=0)
+
+    is_completed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["user", "target_date"], name="idx_recovery_user_date"),
+        ]
+
+    def __str__(self):
+        return f"StreakRecoveryPlan(user={self.user.username}, date={self.target_date}, completed={self.is_completed})"
+
+
 class DailyActivity(models.Model):
     """Deterministic ledger of meaningful user activity on a local date."""
 
@@ -439,7 +482,9 @@ class DailyActivity(models.Model):
         pass
 
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="daily_activities"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="daily_activities",
     )
     date = models.DateField()
     activity_type = models.CharField(max_length=64, null=True, blank=True)
@@ -467,7 +512,14 @@ class DailyActivity(models.Model):
 
         Returns (created: bool, streak_profile: StreakProfile).
         """
+        from datetime import datetime
+
         from django.db import transaction
+
+        from apps.progress.streak_engine import get_user_local_date
+
+        if isinstance(date, datetime):
+            date = get_user_local_date(user, date)
 
         # Ensure deterministic behavior under concurrency.
         with transaction.atomic():
@@ -486,9 +538,23 @@ class DailyActivity(models.Model):
                 ).exists()
 
                 if yesterday_exists:
-                    streak_profile.current_streak = streak_profile.current_streak + 1
+                    streak_profile.current_streak += 1
                 else:
-                    streak_profile.current_streak = 1
+                    last = streak_profile.last_activity_date
+                    if last and date > last:
+                        missed_days = (date - last).days - 1
+                        if missed_days == 0:
+                            streak_profile.current_streak += 1
+                        elif (
+                            missed_days > 0
+                            and streak_profile.streak_freezes >= missed_days
+                        ):
+                            streak_profile.streak_freezes -= missed_days
+                            streak_profile.current_streak += 1
+                        else:
+                            streak_profile.current_streak = 1
+                    else:
+                        streak_profile.current_streak = 1
 
                 streak_profile.last_activity_date = date
                 streak_profile.longest_streak = max(
@@ -499,6 +565,7 @@ class DailyActivity(models.Model):
                         "current_streak",
                         "longest_streak",
                         "last_activity_date",
+                        "streak_freezes",
                         "updated_at",
                     ]
                 )
@@ -507,7 +574,9 @@ class DailyActivity(models.Model):
 
 
 class LessonBookmark(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="bookmarks")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="bookmarks"
+    )
     lesson = models.ForeignKey(
         "content.Lesson", on_delete=models.CASCADE, related_name="bookmarks"
     )
@@ -519,3 +588,186 @@ class LessonBookmark(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.lesson.slug}"
+
+
+class UserNote(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="lesson_notes"
+    )
+    lesson = models.ForeignKey(
+        "content.Lesson", on_delete=models.CASCADE, related_name="lesson_notes"
+    )
+    content = models.TextField()
+    tags = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Note by {self.user.username} for {self.lesson.slug}"
+
+
+class Season(models.Model):
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True)
+    description = models.TextField(blank=True)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    is_active = models.BooleanField(default=True)
+    xp_boost_multiplier = models.FloatField(default=1.0)
+    boost_activity_type = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        choices=[
+            ("lesson", "Lesson"),
+            ("exercise", "Exercise"),
+            ("pr", "Pull Request"),
+            ("issue", "Issue"),
+            ("review", "Review"),
+        ],
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-start_date"]
+
+    def __str__(self):
+        return self.name
+
+
+class TrackMilestone(models.Model):
+    season = models.ForeignKey(
+        Season, on_delete=models.CASCADE, related_name="milestones"
+    )
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    activity_type = models.CharField(
+        max_length=50,
+        choices=[
+            ("lesson", "Lesson completions"),
+            ("exercise", "Exercise completions"),
+            ("xp", "Total XP earned"),
+        ],
+        default="xp",
+    )
+    target_value = models.PositiveIntegerField(default=100)
+    xp_boost = models.PositiveIntegerField(
+        default=0, help_text="One-time XP bonus awarded on completing this milestone."
+    )
+    badge = models.ForeignKey(
+        Badge,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="milestones",
+    )
+
+    class Meta:
+        ordering = ["target_value"]
+
+    def __str__(self):
+        return f"{self.season.name} - {self.name} (Target: {self.target_value} {self.activity_type})"
+
+
+class UserMilestoneCompletion(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="milestone_completions",
+    )
+    milestone = models.ForeignKey(
+        TrackMilestone, on_delete=models.CASCADE, related_name="completions"
+    )
+    completed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "milestone"], name="unique_user_milestone_completion"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} completed {self.milestone.name}"
+
+
+class LeaderboardRank(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.DO_NOTHING,
+        primary_key=True,
+    )
+    total_xp = models.IntegerField()
+    rank = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = "progress_leaderboard_mv"
+        ordering = ["rank"]
+
+
+class WeeklyGoal(models.Model):
+    """Tracks weekly learning goals (lessons, XP, minutes) per user per week."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="weekly_goals",
+    )
+    week_start_date = models.DateField(db_index=True)
+    target_lessons = models.PositiveIntegerField(default=5)
+    target_xp = models.PositiveIntegerField(default=500)
+    target_minutes = models.PositiveIntegerField(default=120)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-week_start_date"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "week_start_date"], name="unique_user_weekly_goal"
+            )
+        ]
+
+    def __str__(self):
+        return f"WeeklyGoal(user={self.user_id}, week={self.week_start_date})"
+
+    @classmethod
+    def get_or_create_current(cls, user) -> "WeeklyGoal":
+        today = timezone.now().date()
+        week_start = today - timezone.timedelta(days=today.weekday())
+        goal, _ = cls.objects.get_or_create(
+            user=user,
+            week_start_date=week_start,
+            defaults={
+                "target_lessons": 5,
+                "target_xp": 500,
+                "target_minutes": 120,
+            },
+        )
+        return goal
+
+
+class WeeklyDigestLog(models.Model):
+    """Tracks which users have already received the weekly digest for a given week."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="weekly_digest_logs",
+    )
+    week_start = models.DateField(
+        help_text="Monday of the ISO week this digest covers."
+    )
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "week_start")
+        ordering = ["-sent_at"]
+
+    def __str__(self):
+        return f"Digest for {self.user.username} — week of {self.week_start}"
+

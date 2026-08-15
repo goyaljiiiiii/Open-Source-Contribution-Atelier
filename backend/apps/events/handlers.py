@@ -3,8 +3,11 @@ Event handlers for processing domain events.
 """
 
 import logging
+
+from django.contrib.auth import get_user_model
 from django.utils import timezone
-from django.contrib.auth.models import User
+
+User = get_user_model()
 from apps.events.models import DomainEvent
 
 logger = logging.getLogger(__name__)
@@ -20,8 +23,8 @@ def handle_lesson_completed(event: DomainEvent):
     Handle LessonCompleted event.
     Updates progress, checks for module completion, and triggers streak.
     """
-    from apps.progress.models import UserProgress
     from apps.events.services.event_bus import EventFactory
+    from apps.progress.models import UserProgress
 
     data = event.data
     user_id = data["user_id"]
@@ -50,9 +53,9 @@ def handle_quiz_completed(event: DomainEvent):
     Handle QuizCompleted event.
     Updates quiz progress, checks for badge eligibility.
     """
-    from apps.progress.models import QuizProgress
     from apps.badges.models import Badge, UserBadge
     from apps.events.services.event_bus import EventFactory
+    from apps.progress.models import QuizProgress
 
     data = event.data
     user_id = data["user_id"]
@@ -97,8 +100,8 @@ def handle_badge_unlocked(event: DomainEvent):
     Handle BadgeUnlocked event.
     Triggers notifications and updates achievements.
     """
-    from apps.notifications.services import NotificationService
     from apps.achievements.services import AchievementService
+    from apps.notifications.services import NotificationService
 
     data = event.data
     user_id = data["user_id"]

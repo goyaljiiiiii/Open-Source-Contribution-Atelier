@@ -1,9 +1,9 @@
-from rest_framework import generics, permissions, status
+from django.db import IntegrityError
+from rest_framework import generics, permissions, serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.db import IntegrityError
-from rest_framework import serializers
-from apps.moderation.models import ContentReport
+
+from apps.moderation.models import ContentReport, ModerationAuditEvent
 from apps.moderation.serializers import (
     ContentReportSerializer,
     ModerationActionSerializer,
@@ -45,6 +45,7 @@ class ContentReportActionView(APIView):
     permission_classes = [IsModeratorOrAdmin]
 
     def post(self, request, pk):
+
         report = generics.get_object_or_404(ContentReport, pk=pk)
         serializer = ModerationActionSerializer(data=request.data)
 

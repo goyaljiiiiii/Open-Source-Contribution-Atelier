@@ -1,0 +1,135 @@
+name: Stale Issue SLA Check
+
+on:
+  schedule:
+    - cron: '0 */4 * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  stale-sla-management:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Process Stale Issue Warnings & Unassignment
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const twoDays = 48 * 60 * 60 * 1000;
+            const twentyFourHours = 24 * 60 * 60 * 1000;
+
+            const openIssues = await github.paginate(github.rest.issues.listForRepo, {
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100
+            });
+
+            for (const issue of openIssues) {
+              // Skip PRs
+              if (issue.pull_request) continue;
+              if (!issue.assignees || issue.assignees.length === 0) continue;
+
+              const assignee = issue.assignees[0].login;
+              const hasAwaitingLabel = (issue.labels || []).some(l => l.name === 'awaiting-response');
+
+              // Check if assignee has a linked open PR
+              const searchQuery = `repo:${owner}/${repo} is:pr ${issue.number}`;
+              const prsRes = await github.rest.search.issuesAndPullRequests({ q: searchQuery });
+              const prs = prsRes.data.items || [];
+              const hasAssigneePr = prs.some(pr => pr.user.login === assignee);
+
+              if (hasAssigneePr) {
+                if (hasAwaitingLabel) {
+                  await github.rest.issues.removeLabel({ owner, repo, issue_number: issue.number, name: 'awaiting-response' });
+                }
+                continue;
+              }
+
+              if (!hasAwaitingLabel) {
+                // Check time since assignment
+                const events = await github.paginate(github.rest.issues.listEvents, {
+                  owner,
+                  repo,
+                  issue_number: issue.number,
+                  per_page: 100
+                });
+                const assignEvent = events.filter(e => e.event === 'assigned')
+                                          .sort((a,b) => new Date(b.created_at) - new Date(a.created_at))[0];
+                const assignedAt = assignEvent ? new Date(assignEvent.created_at) : new Date(issue.created_at);
+                const now = new Date();
+
+                if (now - assignedAt >= twoDays) {
+                  // Ensure awaiting-response label exists
+                  try {
+                    await github.rest.issues.getLabel({ owner, repo, name: 'awaiting-response' });
+                  } catch (e) {
+                    await github.rest.issues.createLabel({
+                      owner, repo, name: 'awaiting-response', color: 'fef2c0', description: '24h SLA warning active'
+                    });
+                  }
+
+                  await github.rest.issues.createComment({
+                    owner,
+                    repo,
+                    issue_number: issue.number,
+                    body: `⚠️ @${assignee}, it has been **2 days** since this issue was assigned to you without a linked Pull Request. Please submit a PR or reply with your progress within **24 hours**, or you will be automatically unassigned.`
+                  });
+                  await github.rest.issues.addLabels({ owner, repo, issue_number: issue.number, labels: ['awaiting-response'] });
+                  console.log(`Issued 24h SLA warning to @${assignee} on issue #${issue.number}`);
+                }
+              } else {
+                // Process 24-hour warning expiration
+                const comments = await github.paginate(github.rest.issues.listComments, {
+                  owner,
+                  repo,
+                  issue_number: issue.number,
+                  per_page: 100
+                });
+
+                const warningComment = comments.reverse().find(c => 
+                  (c.user.type === 'Bot' || c.user.login.endsWith('[bot]')) &&
+                  c.body.includes('it has been') && c.body.includes('2 days')
+                );
+
+                if (!warningComment) continue;
+
+                const warningTime = new Date(warningComment.created_at);
+                const now = new Date();
+
+                if (now - warningTime >= twentyFourHours) {
+                  // Check if user commented on issue after warning
+                  const recentUserComment = comments.find(c => 
+                    c.user.login === assignee && new Date(c.created_at) > warningTime
+                  );
+
+                  if (recentUserComment) {
+                    await github.rest.issues.removeLabel({ owner, repo, issue_number: issue.number, name: 'awaiting-response' });
+                    console.log(`@${assignee} responded on issue #${issue.number}, SLA reset.`);
+                    continue;
+                  }
+
+                  // Unassign user due to inactivity
+                  await github.rest.issues.removeAssignees({
+                    owner,
+                    repo,
+                    issue_number: issue.number,
+                    assignees: [assignee]
+                  });
+                  await github.rest.issues.removeLabel({ owner, repo, issue_number: issue.number, name: 'awaiting-response' });
+                  await github.rest.issues.createComment({
+                    owner,
+                    repo,
+                    issue_number: issue.number,
+                    body: `⏰ Unassigned @${assignee} due to inactivity after 24-hour warning. Issue reopened for other contributors.`
+                  });
+                  console.log(`Unassigned @${assignee} from issue #${issue.number} due to 24h inactivity.`);
+                }
+              }
+            }

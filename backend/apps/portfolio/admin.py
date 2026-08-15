@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import PortfolioTemplate, GeneratedPortfolio
+
+from .models import GeneratedPortfolio, PortfolioTemplate
 
 
 @admin.register(PortfolioTemplate)

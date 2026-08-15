@@ -1,6 +1,7 @@
-from pydantic import BaseModel, EmailStr, Field, validator
-from typing import Optional
 from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel, EmailStr, Field, validator
 
 
 class UserCreateSchema(BaseModel):
@@ -59,3 +60,10 @@ class UserProfileSchema(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class LoginResponseSchema(BaseModel):
+    """Schema for successful login response"""
+
+    key: str = Field(..., description="Authentication Token")
+    user: UserResponseSchema

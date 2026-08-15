@@ -4,8 +4,10 @@ Write-through cache implementation for models.
 
 import logging
 from typing import Any, Dict, List, Optional, Type, Union
+
 from django.core.cache import cache
 from django.db import models, transaction
+
 from apps.cache.services.cache_manager import CacheManager
 
 logger = logging.getLogger(__name__)

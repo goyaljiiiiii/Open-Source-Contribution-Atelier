@@ -40,6 +40,11 @@ class SearchDocument(models.Model):
                 name="trigram_title_gin_idx",
                 opclasses=["gin_trgm_ops"],
             ),
+            GinIndex(
+                fields=["description"],
+                name="trigram_desc_gin_idx",
+                opclasses=["gin_trgm_ops"],
+            ),
         ]
         # Prevent duplicate index entries for the same object
         unique_together = ("content_type", "object_id")
@@ -64,7 +69,7 @@ class SearchAnalytics(models.Model):
         verbose_name_plural = "search analytics"
         ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["query", "created_at"]),
+            models.Index(fields=["query", "created_at"], name="idx_querycreated_at"),
         ]
 
     def __str__(self):

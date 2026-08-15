@@ -581,6 +581,7 @@ def test_seed_lessons_json_output_format():
     """Test that seed_lessons command outputs valid JSON with required fields."""
     import json
     from io import StringIO
+
     from django.core.management import call_command
 
     out = StringIO()
@@ -622,6 +623,7 @@ def test_seed_lessons_idempotent_with_skip_detection():
     """Test that running seed_lessons twice produces skipped on second run."""
     import json
     from io import StringIO
+
     from django.core.management import call_command
 
     # First run
@@ -646,6 +648,7 @@ def test_seed_lessons_idempotent_with_skip_detection():
 def test_seed_lessons_default_format_is_text():
     """Test that default format is human-readable text (backward compatibility)."""
     from io import StringIO
+
     from django.core.management import call_command
 
     out = StringIO()
@@ -659,3 +662,269 @@ def test_seed_lessons_default_format_is_text():
         json.loads(output)
     # Should contain text markers
     assert "✓" in output or "~" in output or "Seeding complete" in output
+
+
+def _make_lesson(**kwargs):
+    defaults = {
+        "title": "Test Lesson",
+        "summary": "Summary",
+        "content": "Content",
+        "difficulty": "beginner",
+        "estimated_minutes": 10,
+    }
+    defaults.update(kwargs)
+    return Lesson.objects.create(**defaults)
+
+
+@pytest.mark.django_db
+def test_check_curriculum_slugs_detects_drift(tmp_path):
+    import json
+    from io import StringIO
+
+    from django.core.management import call_command
+
+    _make_lesson(slug="shared-slug", title="Shared")
+    _make_lesson(slug="only-in-db", title="DB Only")
+
+    curriculum = {
+        "modules": [
+            {
+                "id": "module-1",
+                "lessons": [
+                    {"slug": "shared-slug", "title": "Shared"},
+                    {"slug": "only-in-curriculum", "title": "JSON Only"},
+                ],
+            }
+        ]
+    }
+    path = tmp_path / "curriculum.json"
+    path.write_text(json.dumps(curriculum), encoding="utf-8")
+
+    out = StringIO()
+    call_command(
+        "check_curriculum_slugs",
+        "--curriculum",
+        str(path),
+        "--format",
+        "json",
+        stdout=out,
+    )
+    result = json.loads(out.getvalue())
+
+    assert result["has_drift"] is True
+    assert "only-in-curriculum" in result["missing_in_api"]
+    assert "only-in-db" in result["missing_in_curriculum"]
+    assert "shared-slug" not in result["missing_in_api"]
+    assert "shared-slug" not in result["missing_in_curriculum"]
+
+
+@pytest.mark.django_db
+def test_check_curriculum_slugs_fail_on_drift(tmp_path):
+    import json
+    from io import StringIO
+
+    from django.core.management import CommandError, call_command
+
+    _make_lesson(slug="db-slug", title="DB")
+
+    path = tmp_path / "curriculum.json"
+    path.write_text(
+        json.dumps(
+            {"modules": [{"lessons": [{"slug": "json-slug", "title": "JSON"}]}]}
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(CommandError, match="Curriculum slug drift"):
+        call_command(
+            "check_curriculum_slugs",
+            "--curriculum",
+            str(path),
+            "--fail-on-drift",
+            stdout=StringIO(),
+        )
+
+
+@pytest.mark.django_db
+def test_check_curriculum_slugs_no_drift(tmp_path):
+    import json
+    from io import StringIO
+
+    from django.core.management import call_command
+
+    _make_lesson(slug="aligned", title="Aligned")
+
+    path = tmp_path / "curriculum.json"
+    path.write_text(
+        json.dumps(
+            {"modules": [{"lessons": [{"slug": "aligned", "title": "Aligned"}]}]}
+        ),
+        encoding="utf-8",
+    )
+
+    out = StringIO()
+    call_command(
+        "check_curriculum_slugs",
+        "--curriculum",
+        str(path),
+        "--format",
+        "json",
+        stdout=out,
+    )
+    result = json.loads(out.getvalue())
+    assert result["has_drift"] is False
+    assert result["missing_in_api"] == []
+    assert result["missing_in_curriculum"] == []
+
+
+def test_diff_curriculum_slugs_helpers():
+    from apps.content.management.commands.check_curriculum_slugs import (
+        diff_slugs,
+        extract_curriculum_slugs,
+    )
+
+    curriculum = {
+        "modules": [
+            {"lessons": [{"slug": "a"}, {"slug": "b"}, {"slug": "a"}]},
+            {"lessons": [{"slug": "  c  "}, {"slug": ""}]},
+        ]
+    }
+    slugs = extract_curriculum_slugs(curriculum)
+    assert slugs == ["a", "b", "c"]
+
+    diff = diff_slugs(["a", "b"], ["b", "d"])
+    assert diff["missing_in_api"] == ["a"]
+    assert diff["missing_in_curriculum"] == ["d"]
+
+
+@pytest.mark.django_db
+def test_draft_content_studio_crud_and_reorder():
+    client = APIClient()
+
+    # 1. Create ModuleDraft
+    res_mod = client.post(
+        "/api/content/modules/",
+        {"title": "Git Basics", "slug": "git-basics", "description": "Intro to Git"},
+        format="json",
+    )
+    assert res_mod.status_code == 201
+    mod_id = res_mod.json()["id"]
+
+    # 2. Create LessonDraft
+    res_les = client.post(
+        "/api/content/lessons/",
+        {
+            "module": mod_id,
+            "title": "Git Init",
+            "slug": "git-init",
+            "description": "Learn git init",
+            "content": "# Git Init\nInitialize a repo.",
+            "difficulty": "beginner",
+            "estimatedMinutes": 10,
+            "isPublished": False,
+        },
+        format="json",
+    )
+    assert res_les.status_code == 201
+    les_id = res_les.json()["id"]
+
+    # 3. Create QuizDraft
+    res_quiz = client.post(
+        "/api/content/quiz-questions/",
+        {
+            "lesson": les_id,
+            "question": "What command initializes git?",
+            "options": ["git init", "git start", "git new"],
+            "answer": 0,
+            "explanation": "git init creates a new git repo",
+        },
+        format="json",
+    )
+    assert res_quiz.status_code == 201
+
+    # 4. GET modules tree
+    res_tree = client.get("/api/content/modules/")
+    assert res_tree.status_code == 200
+    modules = res_tree.json()
+    assert len(modules) == 1
+    assert modules[0]["title"] == "Git Basics"
+    assert len(modules[0]["lessons"]) == 1
+    assert modules[0]["lessons"][0]["title"] == "Git Init"
+    assert len(modules[0]["lessons"][0]["quizzes"]) == 1
+
+    # 5. Reorder endpoint
+    reorder_payload = {
+        "modules": [
+            {
+                "id": mod_id,
+                "order": 1,
+                "lessons": [{"id": les_id, "order": 1, "moduleId": mod_id}],
+            }
+        ]
+    }
+    res_reorder = client.post(
+        "/api/content/modules/reorder/", reorder_payload, format="json"
+    )
+    assert res_reorder.status_code == 200
+
+
+@pytest.mark.django_db
+def test_search_special_characters_no_crash():
+    from apps.content.models import Lesson
+
+    Lesson.objects.create(
+        title="C# and React+ Advanced Guide",
+        slug="csharp-react-guide",
+        summary="Mastering C# with React+ hooks and 100% test coverage",
+        content="Guide to C# programming",
+        difficulty="advanced",
+    )
+
+    client = APIClient()
+
+    for special_query in ["C#", "100%", "react+hooks", "%", "_", "#", "+", "@"]:
+        response = client.get(f"/api/content/search/?q={special_query}")
+        assert response.status_code == 200
+        assert "lessons" in response.data or "results" in response.data
+
+
+def test_bulk_import_csv_special_characters():
+    from io import BytesIO
+    from apps.content.models import Lesson
+
+    client = APIClient()
+
+    csv_content = (
+        "title,summary,content,difficulty,category,estimated_minutes\n"
+        "Introduction to Git,Basic git commands,Git is a VCS,beginner,git,10\n"
+        "Lessons in Español: Introducción,\"Lección con caracteres especiales: é, ñ, ü, ¡Hola!\",Contenido en español,intermediate,git,15\n"
+        "Advanced C# & React+,Deep dive into \"C#\" and 'React+',Advanced guide,advanced,react,20\n"
+        ",Missing title row,Content without title,beginner,general,5\n"
+    )
+
+    # Encode with UTF-8 BOM to test full robustness
+    file_bytes = csv_content.encode("utf-8-sig")
+    file_obj = BytesIO(file_bytes)
+    file_obj.name = "lessons.csv"
+
+    response = client.post(
+        "/api/content/published-lessons/bulk-import/",
+        {"file": file_obj},
+        format="multipart",
+    )
+
+    assert response.status_code == 201
+    data = response.json()
+
+    assert data["imported_count"] == 3
+    assert data["failed_count"] == 1
+    assert data["total_rows"] == 4
+    assert len(data["errors"]) == 1
+    assert data["errors"][0]["row"] == 5
+
+    # Check imported lessons in DB
+    spanish_lesson = Lesson.objects.get(title="Lessons in Español: Introducción")
+    assert "é, ñ, ü" in spanish_lesson.summary
+
+    csharp_lesson = Lesson.objects.get(title="Advanced C# & React+")
+    assert '"C#"' in csharp_lesson.summary

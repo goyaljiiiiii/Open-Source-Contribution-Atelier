@@ -1,89 +1,445 @@
-import React from "react";
-import { ErrorBoundary } from "../components/ui/ErrorBoundary";
-import { Route, Routes, Navigate } from "react-router-dom";
+import React, { lazy } from "react";
+import { Navigate, Route, Routes } from "react-router-dom";
+
 import { AppLayout } from "../components/layout/AppLayout";
 import { PublicLayout } from "../components/layout/PublicLayout";
-import { ChallengePage } from "../pages/ChallengePage";
-import { ChatPage } from "../pages/ChatPage";
-import { CommunityPage } from "../pages/CommunityPage";
-import { DashboardPage } from "../pages/DashboardPage";
-import { GitHubAuthCallbackPage } from "../pages/GitHubAuthCallbackPage";
-import { LandingPage } from "../pages/LandingPage";
-import { LoginPage } from "../pages/LoginPage";
-import { SignupPage } from "../pages/SignupPage";
-import { LessonPage } from "../pages/LessonPage";
-import { NotFoundPage } from "../pages/NotFoundPage";
-import { ServerErrorPage } from "../pages/ServerErrorPage";
-import { ModerationDashboard } from "../pages/ModerationDashboard";
-import { SandboxPage } from "../pages/SandboxPage";
-import { ContributorSandboxPage } from "../pages/ContributorSandboxPage";
-import { PRReviewGamePage } from "../pages/PRReviewGamePage";
-import { ProfileSettingsPage } from "../pages/ProfileSettingsPage";
-import { UserProfilePage } from "../pages/UserProfilePage";
-import { LeaderboardPage } from "../pages/LeaderboardPage";
-import { VerifyCertificatePage } from "../pages/VerifyCertificatePage";
-import { PeerReviewPage } from "../pages/PeerReviewPage";
-import { useAuth } from "../features/auth/AuthContext";
-import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
-import { PathwayPage } from "../pages/PathwayPage";
-import { LearningPathPage } from "../pages/LearningPathPage";
-import AnalyticsDashboardPage from "../pages/AnalyticsDashboardPage";
-import TemplateMarketplacePage from "../pages/TemplateMarketplacePage";
 import { GitTerminal } from "../components/ui/GitTerminal";
+import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
 import { TerminalReplay } from "../components/ui/TerminalReplay";
-import { A11yLinterSandbox } from "../components/ui/A11yLinterSandbox";
-import PortfolioPage from "../pages/PortfolioPage";
+import { useAuth } from "../features/auth/AuthContext";
+import { RouteSuspenseWrapper } from "../components/ui/SkeletonRegistry";
+
+/*
+ * Route components are loaded only when their route is visited.
+ * Most pages in this project use named exports, so their imports
+ * are mapped to the default export shape required by React.lazy().
+ */
+
+const FullStackDocsPage = lazy(() =>
+  import("../pages/docs/FullStackDocsPage").then((module) => ({
+    default: module.FullStackDocsPage,
+  })),
+);
+
+const ChallengePage = lazy(() =>
+  import("../pages/ChallengePage").then((module) => ({
+    default: module.ChallengePage,
+  })),
+);
+
+const A11yLinterSandbox = lazy(() =>
+  import("../components/ui/A11yLinterSandbox").then((module) => ({
+    default: module.A11yLinterSandbox,
+  })),
+);
+
+const ChatPage = lazy(() =>
+  import("../pages/ChatPage").then((module) => ({
+    default: module.ChatPage,
+  })),
+);
+
+const CommunityPage = lazy(() =>
+  import("../pages/CommunityPage").then((module) => ({
+    default: module.CommunityPage,
+  })),
+);
+
+const DashboardPage = lazy(() =>
+  import("../pages/DashboardPage").then((module) => ({
+    default: module.DashboardPage,
+  })),
+);
+
+const GitHubAuthCallbackPage = lazy(() =>
+  import("../pages/GitHubAuthCallbackPage").then((module) => ({
+    default: module.GitHubAuthCallbackPage,
+  })),
+);
+
+const LandingPage = lazy(() =>
+  import("../pages/LandingPage").then((module) => ({
+    default: module.LandingPage,
+  })),
+);
+
+const LoginPage = lazy(() =>
+  import("../pages/LoginPage").then((module) => ({
+    default: module.LoginPage,
+  })),
+);
+
+const SignupPage = lazy(() =>
+  import("../pages/SignupPage").then((module) => ({
+    default: module.SignupPage,
+  })),
+);
+
+const LessonPage = lazy(() =>
+  import("../pages/LessonPage").then((module) => ({
+    default: module.LessonPage,
+  })),
+);
+
+const LessonCollaboratePage = lazy(() =>
+  import("../pages/LessonCollaboratePage").then((module) => ({
+    default: module.LessonCollaboratePage,
+  })),
+);
+
+const NotFoundPage = lazy(() =>
+  import("../pages/NotFoundPage").then((module) => ({
+    default: module.NotFoundPage,
+  })),
+);
+
+const ServerErrorPage = lazy(() =>
+  import("../pages/ServerErrorPage").then((module) => ({
+    default: module.ServerErrorPage,
+  })),
+);
+
+const ModerationDashboard = lazy(() =>
+  import("../pages/ModerationDashboard").then((module) => ({
+    default: module.ModerationDashboard,
+  })),
+);
+
+const BackupDashboardPage = lazy(() =>
+  import("../pages/admin/BackupDashboardPage").then((module) => ({
+    default: module.default,
+  })),
+);
+
+const AuditLogViewerPage = lazy(() =>
+  import("../pages/admin/AuditLogViewerPage").then((module) => ({
+    default: module.AuditLogViewerPage,
+  })),
+);
+
+const CeleryDashboardPage = lazy(() =>
+  import("../pages/admin/CeleryDashboardPage").then((module) => ({
+    default: module.default,
+  })),
+);
+
+const ApiPerformanceDashboardPage = lazy(() =>
+  import("../pages/admin/ApiPerformanceDashboardPage").then((module) => ({
+    default: module.default,
+  })),
+);
+
+const VulnerabilityDashboard = lazy(() =>
+  import("../pages/admin/VulnerabilityDashboard").then((module) => ({
+    default: module.VulnerabilityDashboard,
+  })),
+);
+
+const SecurityDashboardPage = lazy(() =>
+  import("../pages/SecurityDashboardPage").then((module) => ({
+    default: module.SecurityDashboardPage,
+  })),
+);
+
+const SandboxPage = lazy(() =>
+  import("../pages/SandboxPage").then((module) => ({
+    default: module.SandboxPage,
+  })),
+);
+
+const ContributorSandboxPage = lazy(() =>
+  import("../pages/ContributorSandboxPage").then((module) => ({
+    default: module.ContributorSandboxPage,
+  })),
+);
+
+const GitSubmoduleSimulatorPage = lazy(() =>
+  import("../pages/GitSubmoduleSimulatorPage").then((module) => ({
+    default: module.GitSubmoduleSimulatorPage,
+  })),
+);
+
+const GitStashManagerPage = lazy(() =>
+  import("../pages/GitStashManagerPage").then((module) => ({
+    default: module.GitStashManagerPage,
+  })),
+);
+
+const GitRebaseVisualizerPage = lazy(() =>
+  import("../pages/GitRebaseVisualizerPage").then((module) => ({
+    default: module.GitRebaseVisualizerPage,
+  })),
+);
+
+const MonorepoVisualizerPage = lazy(() =>
+  import("../pages/MonorepoVisualizerPage").then((module) => ({
+    default: module.MonorepoVisualizerPage,
+  })),
+);
+
+const DockerfileLinterPage = lazy(() =>
+  import("../pages/DockerfileLinterPage").then((module) => ({
+    default: module.DockerfileLinterPage,
+  })),
+);
+
+const GitBisectGamePage = lazy(() =>
+  import("../pages/GitBisectGamePage").then((module) => ({
+    default: module.GitBisectGamePage,
+  })),
+);
+
+const CollabSessionPage = lazy(() =>
+  import("../pages/CollabSessionPage").then((module) => ({
+    default: module.CollabSessionPage,
+  })),
+);
+
+const CollabNotesPage = lazy(() =>
+  import("../pages/CollabNotesPage").then((module) => ({
+    default: module.CollabNotesPage,
+  })),
+);
+
+const PrDiffSummarizerPage = lazy(() =>
+  import("../pages/PrDiffSummarizerPage").then((module) => ({
+    default: module.PrDiffSummarizerPage,
+  })),
+);
+
+const ProfileSettingsPage = lazy(() =>
+  import("../pages/ProfileSettingsPage").then((module) => ({
+    default: module.ProfileSettingsPage,
+  })),
+);
+
+const NotificationPreferencesPage = lazy(() =>
+  import("../pages/settings/NotificationPreferencesPage").then((module) => ({
+    default: module.NotificationPreferencesPage,
+  })),
+);
+
+const DigestPage = lazy(() =>
+  import("../pages/notifications/DigestPage").then((module) => ({
+    default: module.default,
+  })),
+);
+
+const PricingPage = lazy(() =>
+  import("../pages/PricingPage").then((module) => ({
+    default: module.PricingPage,
+  })),
+);
+
+const BillingPage = lazy(() =>
+  import("../pages/settings/BillingPage").then((module) => ({
+    default: module.BillingPage,
+  })),
+);
+
+const InvoiceHistoryPage = lazy(() =>
+  import("../pages/settings/InvoiceHistoryPage").then((module) => ({
+    default: module.InvoiceHistoryPage,
+  })),
+);
+
+const WebhookSettingsPage = lazy(() =>
+  import("../pages/WebhookSettingsPage").then((module) => ({
+    default: module.WebhookSettingsPage,
+  })),
+);
+
+const UserProfilePage = lazy(() =>
+  import("../pages/UserProfilePage").then((module) => ({
+    default: module.UserProfilePage,
+  })),
+);
+
+const LeaderboardPage = lazy(() =>
+  import("../pages/LeaderboardPage").then((module) => ({
+    default: module.LeaderboardPage,
+  })),
+);
+
+const ShopPage = lazy(() =>
+  import("../pages/ShopPage").then((module) => ({
+    default: module.ShopPage,
+  })),
+);
+
+const VerifyCertificatePage = lazy(() =>
+  import("../pages/VerifyCertificatePage").then((module) => ({
+    default: module.VerifyCertificatePage,
+  })),
+);
+
+const PeerReviewPage = lazy(() =>
+  import("../pages/PeerReviewPage").then((module) => ({
+    default: module.PeerReviewPage,
+  })),
+);
+
+const PathwayPage = lazy(() =>
+  import("../pages/PathwayPage").then((module) => ({
+    default: module.PathwayPage,
+  })),
+);
+
+const SkillTreePage = lazy(() =>
+  import("../pages/SkillTreePage").then((module) => ({
+    default: module.SkillTreePage,
+  })),
+);
+
+const LearningPathPage = lazy(() =>
+  import("../pages/LearningPathPage").then((module) => ({
+    default: module.LearningPathPage,
+  })),
+);
+
+const BountiesPage = lazy(() =>
+  import("../pages/BountiesPage").then((module) => ({
+    default: module.BountiesPage,
+  })),
+);
+
+const GoodFirstIssueFinderPage = lazy(() =>
+  import("../pages/GoodFirstIssueFinderPage").then((module) => ({
+    default: module.GoodFirstIssueFinderPage,
+  })),
+);
+
+const MaintainerReplyToneCoachPage = lazy(() =>
+  import("../pages/MaintainerReplyToneCoachPage").then((module) => ({
+    default: module.MaintainerReplyToneCoachPage,
+  })),
+);
+
+const MergeConflictScenarioBuilderPage = lazy(() =>
+  import("../pages/MergeConflictScenarioBuilderPage").then((module) => ({
+    default: module.MergeConflictScenarioBuilderPage,
+  })),
+);
+
+const PerformanceDashboardPage = lazy(() =>
+  import("../pages/admin/PerformanceDashboardPage").then((module) => ({
+    default: module.PerformanceDashboardPage,
+  })),
+);
+
+const ContentStudioPage = lazy(() =>
+  import("../pages/admin/ContentStudioPage").then((module) => ({
+    default: module.ContentStudioPage,
+  })),
+);
+
+
+
+const QuizBuilderPage = lazy(() =>
+  import("../pages/admin/QuizBuilderPage").then((module) => ({
+    default: module.QuizBuilderPage,
+  })),
+);
+
+const ModuleTreePage = lazy(() =>
+  import("../pages/admin/ModuleTreePage").then((module) => ({
+    default: module.ModuleTreePage,
+  })),
+);
+
+/*
+ * These pages use default exports, so they can be passed directly
+ * to React.lazy().
+ */
+const AnalyticsDashboardPage = lazy(
+  () => import("../pages/AnalyticsDashboardPage"),
+);
+
+const TemplateMarketplacePage = lazy(
+  () => import("../pages/TemplateMarketplacePage"),
+);
+
+const PortfolioPage = lazy(() => import("../pages/PortfolioPage"));
+
+const ApiDocsPage = lazy(() =>
+  import("../pages/ApiDocsPage").then((module) => ({
+    default: module.ApiDocsPage,
+  })),
+);
+
+const EnvConfigGeneratorPage = lazy(
+  () => import("../pages/EnvConfigGeneratorPage"),
+);
+
+const WebSocketSimulatorPage = lazy(
+  () => import("../pages/docs/WebSocketSimulatorPage"),
+);
+
+const OAuthClientsPage = lazy(() =>
+  import("../pages/admin/OAuthClients").then((module) => ({
+    default: module.OAuthClients,
+  })),
+);
+
+const UsageAnalyticsPage = lazy(() =>
+  import("../pages/admin/UsageAnalyticsPage"),
+);
+
+const ConnectedAppsPage = lazy(() =>
+  import("../pages/settings/ConnectedApps").then((module) => ({
+    default: module.ConnectedApps,
+  })),
+);
+function RouteLoadingFallback() {
+  return (
+    <div
+      className="flex min-h-screen w-full items-center justify-center"
+      aria-busy="true"
+      aria-label="Loading page"
+      role="status"
+    >
+      <div className="w-full max-w-3xl px-4">
+        <SkeletonLesson />
+      </div>
+    </div>
+  );
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div
-        className="h-screen w-full flex items-center justify-center"
-        aria-busy="true"
-        role="status"
-      >
-        <div className="w-full max-w-3xl">
-          <SkeletonLesson />
-        </div>
-      </div>
-    );
+    return <RouteLoadingFallback />;
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    const wasLoggedOut = sessionStorage.getItem("userLoggedOut") === "true";
+    sessionStorage.removeItem("userLoggedOut");
+    return (
+      <Navigate to={wasLoggedOut ? "/login" : "/login?expired=true"} replace />
+    );
   }
 
-  return <>{children}</>;
+  return <RouteSuspenseWrapper>{children}</RouteSuspenseWrapper>;
 }
 
 function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div
-        className="h-screen w-full flex items-center justify-center"
-        aria-busy="true"
-        role="status"
-      >
-        <div className="w-full max-w-3xl">
-          <SkeletonLesson />
-        </div>
-      </div>
-    );
+    return <RouteLoadingFallback />;
   }
 
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
-  return <>{children}</>;
+  return <RouteSuspenseWrapper>{children}</RouteSuspenseWrapper>;
 }
 
 export function AppRouter() {
   return (
-    <ErrorBoundary>
-      <Routes>
+    <Routes>
         {/* Public Routes with Animation Layout */}
         <Route element={<PublicLayout />}>
           {/* Standalone Route without AppLayout (No Navbar) */}
@@ -95,46 +451,21 @@ export function AppRouter() {
               </PublicOnlyRoute>
             }
           />
+
           <Route
             path="/auth/github/callback"
-            element={<GitHubAuthCallbackPage />}
+            element={<RouteSuspenseWrapper><GitHubAuthCallbackPage /></RouteSuspenseWrapper>}
           />
 
           {/* Public auth routes */}
-          <Route
-            path="/login"
-            element={
-              <PublicOnlyRoute>
-                <LoginPage />
-              </PublicOnlyRoute>
-            }
-          />
-          <Route
-            path="/signup"
-            element={
-              <PublicOnlyRoute>
-                <SignupPage />
-              </PublicOnlyRoute>
-            }
-          />
-          <Route
-            path="/verify"
-            element={
-              <PublicOnlyRoute>
-                <VerifyCertificatePage />
-              </PublicOnlyRoute>
-            }
-          />
-          <Route
-            path="/verify/:hash"
-            element={
-              <PublicOnlyRoute>
-                <VerifyCertificatePage />
-              </PublicOnlyRoute>
-            }
-          />
+          <Route path="/login" element={<RouteSuspenseWrapper><LoginPage /></RouteSuspenseWrapper>} />
+          <Route path="/signup" element={<RouteSuspenseWrapper><SignupPage /></RouteSuspenseWrapper>} />
+          <Route path="/verify" element={<RouteSuspenseWrapper><VerifyCertificatePage /></RouteSuspenseWrapper>} />
+          <Route path="/verify/:hash" element={<RouteSuspenseWrapper><VerifyCertificatePage /></RouteSuspenseWrapper>} />
 
-          <Route path="*" element={<NotFoundPage />} />
+          <Route path="/500" element={<RouteSuspenseWrapper><ServerErrorPage /></RouteSuspenseWrapper>} />
+
+          <Route path="*" element={<RouteSuspenseWrapper><NotFoundPage /></RouteSuspenseWrapper>} />
         </Route>
 
         {/* Authenticated Routes with Navbar Layout */}
@@ -147,6 +478,463 @@ export function AppRouter() {
               </ProtectedRoute>
             }
           />
+
+          <Route
+            path="/leaderboard"
+            element={
+              <ProtectedRoute>
+                <LeaderboardPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/analytics"
+            element={
+              <ProtectedRoute>
+                <AnalyticsDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/pathway"
+            element={
+              <ProtectedRoute>
+                <PathwayPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/docs/fullstack"
+            element={
+              <ProtectedRoute>
+                <FullStackDocsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/documentation"
+            element={
+              <ProtectedRoute>
+                <FullStackDocsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/learning-path"
+            element={
+              <ProtectedRoute>
+                <LearningPathPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/lessons/:slug"
+            element={
+              <ProtectedRoute>
+                <LessonPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/lessons/:slug/collaborate"
+            element={
+              <ProtectedRoute>
+                <LessonCollaboratePage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/chat/:roomId?"
+            element={
+              <ProtectedRoute>
+                <ChatPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/a11y-sandbox"
+            element={
+              <ProtectedRoute>
+                <A11yLinterSandbox />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/challenges"
+            element={
+              <ProtectedRoute>
+                <ChallengePage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/bounties"
+            element={
+              <ProtectedRoute>
+                <BountiesPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/good-first-issues"
+            element={
+              <ProtectedRoute>
+                <GoodFirstIssueFinderPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/tone-coach"
+            element={
+              <ProtectedRoute>
+                <MaintainerReplyToneCoachPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/conflict-scenario-builder"
+            element={
+              <ProtectedRoute>
+                <MergeConflictScenarioBuilderPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/community"
+            element={
+              <ProtectedRoute>
+                <CommunityPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/sandbox"
+            element={
+              <ProtectedRoute>
+                <SandboxPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/contributor-sandbox"
+            element={
+              <ProtectedRoute>
+                <ContributorSandboxPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/sandbox/submodules"
+            element={
+              <ProtectedRoute>
+                <GitSubmoduleSimulatorPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/git-tools/stash"
+            element={
+              <ProtectedRoute>
+                <GitStashManagerPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/git-rebase-simulator"
+            element={
+              <ProtectedRoute>
+                <GitRebaseVisualizerPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/monorepo-visualizer"
+            element={
+              <ProtectedRoute>
+                <MonorepoVisualizerPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/skill-tree"
+            element={
+              <ProtectedRoute>
+                <SkillTreePage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/skills"
+            element={
+              <ProtectedRoute>
+                <SkillTreePage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dockerfile-linter"
+            element={
+              <ProtectedRoute>
+                <DockerfileLinterPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/git-bisect-game"
+            element={
+              <ProtectedRoute>
+                <GitBisectGamePage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/collab/:sessionId"
+            element={
+              <ProtectedRoute>
+                <CollabSessionPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/collab-notes"
+            element={
+              <ProtectedRoute>
+                <CollabNotesPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/collab-notes/:roomId"
+            element={
+              <ProtectedRoute>
+                <CollabNotesPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/pr-diff-summarizer"
+            element={
+              <ProtectedRoute>
+                <PrDiffSummarizerPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/test-terminal"
+            element={
+              <div className="flex h-screen gap-8 bg-[#0a0a0a] p-10">
+                <div className="flex h-[600px] flex-1 flex-col">
+                  <h2 className="mb-4 text-xl font-bold text-white">
+                    Interactive Git Terminal
+                  </h2>
+
+                  <GitTerminal />
+                </div>
+
+                <div className="flex h-[600px] flex-1 flex-col">
+                  <h2 className="mb-4 text-xl font-bold text-white">
+                    Interactive Terminal Replay
+                  </h2>
+
+                  <TerminalReplay
+                    sessionName="Git Tutorial Replay"
+                    sharePathname="/sandbox"
+                    commands={[
+                      {
+                        command: "git init",
+                        output:
+                          "Initialized empty Git repository in /workspace/.git/",
+                        typingDelayMs: 60,
+                        executionDelayMs: 400,
+                      },
+                      {
+                        command: "git add .",
+                        output: "",
+                        typingDelayMs: 50,
+                        executionDelayMs: 300,
+                      },
+                      {
+                        command: "git commit -m 'Initial commit'",
+                        output:
+                          "[main (root-commit) 1a2b3c4] Initial commit\n" +
+                          " 3 files changed, 120 insertions(+)\n" +
+                          " create mode 100644 index.js\n" +
+                          " create mode 100644 package.json",
+                        typingDelayMs: 60,
+                        executionDelayMs: 800,
+                      },
+                      {
+                        command: "npm run test",
+                        output:
+                          "Running tests...\n" +
+                          "PASS  src/test/app.test.js\n" +
+                          "Test Suites: 1 passed, 1 total\n" +
+                          "Tests:       3 passed, 3 total\n" +
+                          "Snapshots:   0 total\n" +
+                          "Time:        1.2s",
+                        typingDelayMs: 50,
+                        executionDelayMs: 1200,
+                      },
+                      {
+                        command: "git status",
+                        output:
+                          "On branch main\n" +
+                          "nothing to commit, working tree clean",
+                        typingDelayMs: 60,
+                        executionDelayMs: 500,
+                      },
+                    ]}
+                  />
+                </div>
+              </div>
+            }
+          />
+
+          <Route
+            path="/templates"
+            element={
+              <ProtectedRoute>
+                <TemplateMarketplacePage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/settings/webhooks"
+            element={
+              <ProtectedRoute>
+                <WebhookSettingsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/peer-review"
+            element={
+              <ProtectedRoute>
+                <PeerReviewPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/moderation"
+            element={
+              <ProtectedRoute>
+                <ModerationDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/audit"
+            element={
+              <ProtectedRoute>
+                <AuditLogViewerPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/backups"
+            element={
+              <ProtectedRoute>
+                <BackupDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/celery"
+            element={
+              <ProtectedRoute>
+                <CeleryDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/bundle-performance"
+            element={
+              <ProtectedRoute>
+                <PerformanceDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/performance"
+            element={
+              <ProtectedRoute>
+                <ApiPerformanceDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/vulnerabilities"
+            element={
+              <ProtectedRoute>
+                <VulnerabilityDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/security"
+            element={
+              <ProtectedRoute>
+                <SecurityDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/portfolio"
+            element={
+              <ProtectedRoute>
+                <PortfolioPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/content-studio"
+            element={
+              <ProtectedRoute>
+                <ContentStudioPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/leaderboard"
             element={
@@ -156,183 +944,30 @@ export function AppRouter() {
             }
           />
           <Route
-            path="/analytics"
+            path="/shop"
             element={
               <ProtectedRoute>
-                <AnalyticsDashboardPage />
+                <ShopPage />
               </ProtectedRoute>
             }
           />
           <Route
-            path="/pathway"
+            path="/admin/content-studio/quizzes/:lessonId"
             element={
               <ProtectedRoute>
-                <PathwayPage />
+                <QuizBuilderPage />
               </ProtectedRoute>
             }
           />
           <Route
-            path="/learning-path"
+            path="/admin/content-studio/tree"
             element={
               <ProtectedRoute>
-                <LearningPathPage />
+                <ModuleTreePage />
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/lessons/:slug"
-            element={
-              <ProtectedRoute>
-                <LessonPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/chat"
-            element={
-              <ProtectedRoute>
-                <ChatPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/challenges"
-            element={
-              <ProtectedRoute>
-                <ChallengePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/community"
-            element={
-              <ProtectedRoute>
-                <CommunityPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sandbox"
-            element={
-              <ProtectedRoute>
-                <SandboxPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sandbox/pr-reviewer"
-            element={
-              <ProtectedRoute>
-                <PRReviewGamePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/a11y-sandbox"
-            element={
-              <ProtectedRoute>
-                <div className="p-6 max-w-7xl mx-auto space-y-6 flex flex-col h-[calc(100vh-64px)]">
-                  <h1 className="text-3xl font-black text-text dark:text-[#f0ebe2]">
-                    A11y Editor Sandbox
-                  </h1>
-                  <div className="flex-1 min-h-[500px]">
-                    <A11yLinterSandbox />
-                  </div>
-                </div>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/contributor-sandbox"
-            element={
-              <ProtectedRoute>
-                <ContributorSandboxPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/test-terminal"
-            element={
-              <ProtectedRoute>
-                <div className="p-10 h-screen bg-[#0a0a0a] flex gap-8">
-                  <div className="flex-1 flex flex-col h-[600px]">
-                    <h2 className="text-white mb-4 font-bold text-xl">
-                      Interactive Git Terminal
-                    </h2>
-                    <GitTerminal />
-                  </div>
-                  <div className="flex-1 flex flex-col h-[600px]">
-                    <h2 className="text-white mb-4 font-bold text-xl">
-                      Interactive Terminal Replay
-                    </h2>
-                    <TerminalReplay
-                      sessionName="Git Tutorial Replay"
-                      commands={[
-                        {
-                          command: "git init",
-                          output:
-                            "Initialized empty Git repository in /workspace/.git/",
-                          typingDelayMs: 60,
-                          executionDelayMs: 400,
-                        },
-                        {
-                          command: "git add .",
-                          output: "",
-                          typingDelayMs: 50,
-                          executionDelayMs: 300,
-                        },
-                        {
-                          command: "git commit -m 'Initial commit'",
-                          output:
-                            "[main (root-commit) 1a2b3c4] Initial commit\n 3 files changed, 120 insertions(+)\n create mode 100644 index.js\n create mode 100644 package.json",
-                          typingDelayMs: 60,
-                          executionDelayMs: 800,
-                        },
-                        {
-                          command: "npm run test",
-                          output:
-                            "Running tests...\nPASS  src/test/app.test.js\nTest Suites: 1 passed, 1 total\nTests:       3 passed, 3 total\nSnapshots:   0 total\nTime:        1.2s",
-                          typingDelayMs: 50,
-                          executionDelayMs: 1200,
-                        },
-                        {
-                          command: "git status",
-                          output:
-                            "On branch main\nnothing to commit, working tree clean",
-                          typingDelayMs: 60,
-                          executionDelayMs: 500,
-                        },
-                      ]}
-                    />
-                  </div>
-                </div>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/templates"
-            element={
-              <ProtectedRoute>
-                <TemplateMarketplacePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/peer-review"
-            element={
-              <ProtectedRoute>
-                <PeerReviewPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/moderation"
-            element={
-              <ProtectedRoute>
-                <ModerationDashboard />
-              </ProtectedRoute>
-            }
-          />
+
           <Route
             path="/profile"
             element={
@@ -341,20 +976,77 @@ export function AppRouter() {
               </ProtectedRoute>
             }
           />
+
           <Route
-            path="/portfolio"
+            path="/settings/notifications"
             element={
               <ProtectedRoute>
-                <PortfolioPage />
+                <NotificationPreferencesPage />
               </ProtectedRoute>
             }
           />
-        </Route>
 
-        <Route path="/u/:username" element={<UserProfilePage />} />
-        <Route path="/500" element={<ServerErrorPage />} />
-        <Route path="*" element={<NotFoundPage />} />
+          <Route path="/docs/api" element={<RouteSuspenseWrapper><ApiDocsPage /></RouteSuspenseWrapper>} />
+          <Route path="/docs/env-generator" element={<RouteSuspenseWrapper><EnvConfigGeneratorPage /></RouteSuspenseWrapper>} />
+          <Route path="/docs/websocket-simulator" element={<RouteSuspenseWrapper><WebSocketSimulatorPage /></RouteSuspenseWrapper>} />
+          <Route
+            path="/notifications/digest"
+            element={
+              <ProtectedRoute>
+                <DigestPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/settings/billing"
+            element={
+              <ProtectedRoute>
+                <BillingPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/settings/invoices"
+            element={
+              <ProtectedRoute>
+                <InvoiceHistoryPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/oauth-clients"
+            element={
+              <ProtectedRoute>
+                <OAuthClientsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/usage-analytics"
+            element={
+              <ProtectedRoute>
+                <UsageAnalyticsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/settings/connected-apps"
+            element={
+              <ProtectedRoute>
+                <ConnectedAppsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route path="/pricing" element={<RouteSuspenseWrapper><PricingPage /></RouteSuspenseWrapper>} />
+
+          <Route path="/u/:username" element={<RouteSuspenseWrapper><UserProfilePage /></RouteSuspenseWrapper>} />
+        </Route>
       </Routes>
-    </ErrorBoundary>
   );
 }

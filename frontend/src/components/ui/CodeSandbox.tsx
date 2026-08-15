@@ -5,9 +5,13 @@ import {
   Users,
   History,
   Bookmark,
-  Palette,
+  Copy,
+  X,
 } from "lucide-react";
-import Editor, { Monaco } from "@monaco-editor/react";
+import Editor from "@monaco-editor/react";
+import * as Y from "yjs";
+import { WebsocketProvider } from "y-websocket";
+import { MonacoBinding } from "y-monaco";
 import { useWebSocket } from "../../hooks/useWebSocket";
 import { CodeTimeline } from "./CodeTimeline";
 import {
@@ -15,17 +19,15 @@ import {
   saveSandboxSnapshot,
   CodeSnapshot,
 } from "../../lib/api";
-import { useTheme } from "../../context/ThemeContext";
 import toast from "react-hot-toast";
+import { getAccessToken } from "../../lib/authToken";
 
 export function CodeSandbox() {
   const [code, setCode] = useState('console.log("Hello, World!");');
   const [output, setOutput] = useState<string[]>([]);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const isRemoteUpdate = useRef(false);
-  const token = localStorage.getItem("accessToken");
-
-  const { playAudioCue } = useTheme();
+  const token = getAccessToken();
 
   const [snapshots, setSnapshots] = useState<CodeSnapshot[]>([]);
   const [isTimelineOpen, setIsTimelineOpen] = useState(false);
@@ -33,17 +35,129 @@ export function CodeSandbox() {
     null,
   );
 
-  // Load theme preference from localStorage, default to standard dark variant
-  const [theme, setTheme] = useState<string>(() => {
-    return localStorage.getItem("sandbox-editor-theme") || "vs-dark";
+  // Yjs and Collaboration state
+  const [collabRoomId, setCollabRoomId] = useState<string | null>(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const room = urlParams.get("collabRoom");
+    return room || localStorage.getItem("collab_room_id") || null;
   });
+  const [isCollabConnected, setIsCollabConnected] = useState(false);
+  const editorRef = useRef<any>(null);
+  const providerRef = useRef<any>(null);
+  const docRef = useRef<any>(null);
+  const bindingRef = useRef<any>(null);
+
+  const startCollaboration = () => {
+    const roomId = Math.random().toString(36).substring(2, 11);
+    localStorage.setItem("collab_room_id", roomId);
+
+    const url = new URL(window.location.href);
+    url.searchParams.set("collabRoom", roomId);
+    window.history.pushState({}, "", url.toString());
+
+    setCollabRoomId(roomId);
+    toast.success("Collaboration session started!");
+  };
+
+  const stopCollaboration = () => {
+    localStorage.removeItem("collab_room_id");
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete("collabRoom");
+    window.history.pushState({}, "", url.toString());
+
+    setCollabRoomId(null);
+    setIsCollabConnected(false);
+    toast.success("Collaboration session stopped.");
+  };
+
+  const copyCollabLink = () => {
+    if (!collabRoomId) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("collabRoom", collabRoomId);
+    navigator.clipboard.writeText(url.toString());
+    toast.success("Link copied to clipboard!");
+  };
+
+  useEffect(() => {
+    if (!collabRoomId || !editorRef.current) return;
+
+    // Initialize Yjs
+    const doc = new Y.Doc();
+    docRef.current = doc;
+
+    const ytext = doc.getText("monaco");
+
+    // Initialize Yjs Websocket Provider
+    const wsBaseUrl = import.meta.env.VITE_API_URL
+      ? import.meta.env.VITE_API_URL.replace("http", "ws")
+      : "ws://127.0.0.1:8000";
+    const wsUrl = `${wsBaseUrl}/ws/collab/${collabRoomId}/`;
+
+    const provider = new WebsocketProvider(wsUrl, collabRoomId, doc);
+    providerRef.current = provider;
+
+    provider.on("status", (event: any) => {
+      setIsCollabConnected(event.status === "connected");
+    });
+
+    // Bind Yjs text to Monaco
+    const binding = new MonacoBinding(
+      ytext,
+      editorRef.current.getModel(),
+      new Set([editorRef.current]),
+      provider.awareness,
+    );
+    bindingRef.current = binding;
+
+    // Configure user awareness
+    const randomColors = [
+      "#f87171",
+      "#fb923c",
+      "#fbbf24",
+      "#34d399",
+      "#60a5fa",
+      "#a78bfa",
+      "#f472b6",
+    ];
+    const randomColor =
+      randomColors[Math.floor(Math.random() * randomColors.length)];
+    const username = localStorage.getItem("username") || "Contributor";
+
+    provider.awareness.setLocalStateField("user", {
+      name: username,
+      color: randomColor,
+    });
+
+    // Synchronize Yjs text with state
+    ytext.observe(() => {
+      setCode(ytext.toString());
+    });
+
+    return () => {
+      if (bindingRef.current) {
+        bindingRef.current.destroy();
+        bindingRef.current = null;
+      }
+      if (providerRef.current) {
+        providerRef.current.disconnect();
+        providerRef.current.destroy();
+        providerRef.current = null;
+      }
+      if (docRef.current) {
+        docRef.current.destroy();
+        docRef.current = null;
+      }
+    };
+  }, [collabRoomId, editorRef.current]);
 
   useEffect(() => {
     fetchSandboxSnapshots().then(setSnapshots).catch(console.error);
   }, []);
-
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
+      // Only accept messages from our own sandbox iframe, never from
+      // other frames/windows, to avoid mixing in unrelated postMessage traffic.
       if (
         !iframeRef.current ||
         event.source !== iframeRef.current.contentWindow
@@ -57,19 +171,14 @@ export function CodeSandbox() {
       if (data?.type === "log" || data?.type === "error") {
         const prefix = data.type === "error" ? "⚠ " : "";
         setOutput((prev) => [...prev, `${prefix}${data.message ?? ""}`]);
-
-        // Trigger responsive audio feedbacks instantly based on logging streams
-        if (data.type === "error") {
-          playAudioCue("error");
-        }
       }
     };
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [playAudioCue]);
+  }, []);
 
-  const wsUrl = import.meta.env?.VITE_API_URL
+  const wsUrl = import.meta.env.VITE_API_URL
     ? import.meta.env.VITE_API_URL.replace("http", "ws") + "ws/sandbox/"
     : "ws://127.0.0.1:8000/ws/sandbox/";
 
@@ -77,6 +186,7 @@ export function CodeSandbox() {
     url: wsUrl,
     token: token || null,
     onMessage: (data: unknown) => {
+      if (collabRoomId) return; // Ignore single-user updates when collaborating
       const msg = data as Record<string, unknown>;
       if (msg.action === "code_update" && msg.code !== undefined) {
         isRemoteUpdate.current = true;
@@ -84,79 +194,6 @@ export function CodeSandbox() {
       }
     },
   });
-
-  // Inject Custom Syntax Themes into Monaco Editor instance
-  const handleEditorWillMount = (monaco: Monaco) => {
-    // 1. Monokai Definition
-    monaco.editor.defineTheme("monokai", {
-      base: "vs-dark",
-      inherit: true,
-      rules: [
-        { token: "comment", foreground: "75715E", fontStyle: "italic" },
-        { token: "keyword", foreground: "F92672" },
-        { token: "number", foreground: "AE81FF" },
-        { token: "string", foreground: "E6DB74" },
-      ],
-      colors: {
-        "editor.background": "#272822",
-        "editor.foreground": "#F8F8F2",
-      },
-    });
-
-    // 2. Nord Theme Definition
-    monaco.editor.defineTheme("nord", {
-      base: "vs-dark",
-      inherit: true,
-      rules: [
-        { token: "comment", foreground: "4C566A", fontStyle: "italic" },
-        { token: "keyword", foreground: "81A1C1" },
-        { token: "number", foreground: "B48EAD" },
-        { token: "string", foreground: "A3BE8C" },
-      ],
-      colors: {
-        "editor.background": "#2E3440",
-        "editor.foreground": "#D8DEE9",
-      },
-    });
-
-    // 3. Tomorrow Night Definition
-    monaco.editor.defineTheme("tomorrow-night", {
-      base: "vs-dark",
-      inherit: true,
-      rules: [
-        { token: "comment", foreground: "969896", fontStyle: "italic" },
-        { token: "keyword", foreground: "B294BB" },
-        { token: "number", foreground: "DE935F" },
-        { token: "string", foreground: "B5BD68" },
-      ],
-      colors: {
-        "editor.background": "#1D1F21",
-        "editor.foreground": "#C5C8C6",
-      },
-    });
-
-    // 4. GitHub Light Definition
-    monaco.editor.defineTheme("github-light", {
-      base: "vs",
-      inherit: true,
-      rules: [
-        { token: "comment", foreground: "6A737D", fontStyle: "italic" },
-        { token: "keyword", foreground: "D73A49" },
-        { token: "number", foreground: "005CC5" },
-        { token: "string", foreground: "032F62" },
-      ],
-      colors: {
-        "editor.background": "#FFFFFF",
-        "editor.foreground": "#24292E",
-      },
-    });
-  };
-
-  const handleThemeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const nextTheme = e.target.value;
-    setTheme(nextTheme);
-    localStorage.setItem("sandbox-editor-theme", nextTheme);
-  };
 
   const handleEditorChange = (value: string | undefined) => {
     const newCode = value || "";
@@ -175,8 +212,6 @@ export function CodeSandbox() {
 
   const runCode = async () => {
     setOutput([]);
-    const buildSucceeded = true;
-
     if (iframeRef.current) {
       const srcDoc = `
         <!DOCTYPE html>
@@ -202,7 +237,6 @@ export function CodeSandbox() {
 
               try {
                 eval(${JSON.stringify(code)});
-                window.parent.postMessage({ type: 'execution-success' }, '*');
               } catch (e) {
                 console.error(e.toString());
               }
@@ -210,18 +244,6 @@ export function CodeSandbox() {
           </body>
         </html>
       `;
-
-      // Temporary interception to capture inline script compilation states smoothly
-      const executionCheck = (e: MessageEvent) => {
-        if (e.data?.type === "execution-success") {
-          playAudioCue("success");
-          window.removeEventListener("message", executionCheck);
-        } else if (e.data?.type === "error") {
-          window.removeEventListener("message", executionCheck);
-        }
-      };
-      window.addEventListener("message", executionCheck);
-
       iframeRef.current.srcdoc = srcDoc;
     }
 
@@ -260,6 +282,27 @@ export function CodeSandbox() {
 
   return (
     <div className="flex h-full gap-4">
+      <style>{`
+        .yRemoteSelection {
+          background-color: rgba(250, 129, 0, 0.3) !important;
+        }
+        .yRemoteSelectionHead {
+          position: absolute;
+          box-sizing: border-box;
+          border-left: 2px solid orange !important;
+          border-top: 2px solid orange !important;
+          border-bottom: 2px solid orange !important;
+          height: 100%;
+        }
+        .yRemoteSelectionHead::after {
+          position: absolute;
+          content: ' ';
+          border: 3px solid transparent;
+          border-top-color: orange;
+          left: -4px;
+          top: -5px;
+        }
+      `}</style>
       <div className="flex flex-col flex-1 bg-surface-lowest border-4 border-black dark:border-[#2e2924] rounded-2xl overflow-hidden shadow-card">
         <div className="flex items-center justify-between border-b-4 border-black dark:border-[#2e2924] bg-surface-low px-4 py-2 dark:bg-[#151411]">
           <div className="flex items-center gap-4">
@@ -269,31 +312,56 @@ export function CodeSandbox() {
             <div className="flex items-center gap-1.5 px-2 py-1 bg-black/5 dark:bg-white/5 rounded-md">
               <Users
                 size={14}
-                className={isConnected ? "text-green-500" : "text-muted"}
+                className={
+                  collabRoomId
+                    ? isCollabConnected
+                      ? "text-green-500"
+                      : "text-yellow-500"
+                    : isConnected
+                      ? "text-green-500"
+                      : "text-muted"
+                }
               />
               <span className="text-[10px] font-black uppercase tracking-wider text-muted dark:text-[#c4bbae]">
-                {isConnected ? "Co-op Active" : "Offline"}
+                {collabRoomId
+                  ? isCollabConnected
+                    ? "Co-op Connected"
+                    : "Connecting..."
+                  : isConnected
+                    ? "Co-op Active"
+                    : "Offline"}
               </span>
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            {/* Neobrutalist Theme Dropdown Selector */}
-            <div className="flex items-center gap-1.5 border-2 border-black rounded-lg px-2 py-1 bg-[#ffb5e8] dark:bg-[#151411] dark:border-[#2e2924] shadow-card-sm text-black dark:text-[#f0ebe2]">
-              <Palette size={14} className="text-black dark:text-[#f0ebe2]" />
-              <select
-                value={theme}
-                onChange={handleThemeChange}
-                className="bg-transparent text-xs font-bold focus:outline-none cursor-pointer"
+          <div className="flex gap-2 items-center">
+            {collabRoomId ? (
+              <div className="flex items-center gap-2 mr-2">
+                <span className="text-xs font-mono font-bold px-2 py-1 bg-black/5 dark:bg-white/5 rounded-md text-text dark:text-[#f0ebe2]">
+                  Room: {collabRoomId}
+                </span>
+                <button
+                  onClick={copyCollabLink}
+                  title="Copy link to clipboard"
+                  className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-bold transition hover:bg-surface-low dark:hover:bg-surface-high border border-black/10 dark:border-white/10 text-text dark:text-[#f0ebe2]"
+                >
+                  <Copy size={12} /> Link
+                </button>
+                <button
+                  onClick={stopCollaboration}
+                  title="Stop collaboration session"
+                  className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-bold transition bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20"
+                >
+                  <X size={12} /> Leave
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={startCollaboration}
+                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition hover:bg-surface-low dark:hover:bg-surface-high border-2 border-transparent hover:border-black dark:hover:border-[#2e2924] text-text dark:text-[#f0ebe2]"
               >
-                <option value="vs-dark">Default Dark</option>
-                <option value="github-light">GitHub Light</option>
-                <option value="monokai">Monokai</option>
-                <option value="nord">Nord</option>
-                <option value="tomorrow-night">Tomorrow Night</option>
-              </select>
-            </div>
-
+                <Users size={14} /> Collab
+              </button>
+            )}
             <button
               onClick={handleManualBookmark}
               className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition hover:bg-surface-low dark:hover:bg-surface-high border-2 border-transparent hover:border-black dark:hover:border-[#2e2924] text-text dark:text-[#f0ebe2]"
@@ -324,7 +392,6 @@ export function CodeSandbox() {
             </button>
           </div>
         </div>
-
         <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
           <div className="flex-1 border-b-4 lg:border-b-0 lg:border-r-4 border-black dark:border-[#2e2924] relative">
             <Editor
@@ -332,8 +399,10 @@ export function CodeSandbox() {
               defaultLanguage="javascript"
               value={code}
               onChange={handleEditorChange}
-              theme={theme}
-              beforeMount={handleEditorWillMount}
+              onMount={(editor) => {
+                editorRef.current = editor;
+              }}
+              theme="vs-dark"
               options={{
                 minimap: { enabled: false },
                 fontSize: 14,

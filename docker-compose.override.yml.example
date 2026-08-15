@@ -1,0 +1,44 @@
+# ==============================================================================
+# Local Development Hot-Reload Override Template
+# ==============================================================================
+# Copy this file to docker-compose.override.yml for live code reloading inside Docker:
+#   cp docker-compose.override.yml.example docker-compose.override.yml
+#
+# Docker Compose automatically merges docker-compose.override.yml with docker-compose.yml!
+# Note: docker-compose.override.yml is gitignored.
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  backend:
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./backend:/app:delegated
+    environment:
+      - DEBUG=True
+      - PYTHONUNBUFFERED=1
+
+  worker:
+    volumes:
+      - ./backend:/app:delegated
+    environment:
+      - DEBUG=True
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: builder
+    command: npm run dev -- --host 0.0.0.0
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app:delegated
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:8000
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true

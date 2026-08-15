@@ -1,6 +1,6 @@
 # Repository Audit Report: Open Source Contribution Atelier
 
-This report evaluates the current codebase state, architectures, and quality metrics of the **Open Source Contribution Atelier** project as of June 2026. The findings herein inform the preparations for **SSOC 2026** and long-term community contributions.
+This report evaluates the current codebase state, architectures, and quality metrics of the **Open Source Contribution Atelier** project as of June 2026. The findings herein inform preparations for long-term community contributions.
 
 ---
 

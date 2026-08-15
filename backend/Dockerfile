@@ -1,27 +1,51 @@
 # ├─────────────────────────────────────────────────────┤
-# │  Stage 1 — builder                                  │
-# │  Install production dependencies into /install      │
+# │  Stage 1 — Base                                     │
 # ├─────────────────────────────────────────────────────┤
-FROM python:3.11-slim AS builder
+FROM python:3.11-slim AS base
 
-WORKDIR /build
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
 
-COPY requirements-prod.txt .
-RUN pip install --no-cache-dir --prefix=/install -r requirements-prod.txt \
-    && rm -rf /root/.cache/pip
+WORKDIR /app
 
 # ├─────────────────────────────────────────────────────┤
-# │  Stage 2 — production                               │
-# │  Minimal runtime image with non-root user           │
+# │  Stage 2 — Dependencies                             │
 # ├─────────────────────────────────────────────────────┤
-FROM python:3.11-slim AS production
+FROM base AS deps
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt requirements-prod.txt ./
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# ├─────────────────────────────────────────────────────┤
+# │  Stage 3 — Development                              │
+# ├─────────────────────────────────────────────────────┤
+FROM base AS dev
+
+COPY --from=deps /install /usr/local
+
+COPY manage.py ./
+COPY config/ ./config/
+COPY apps/ ./apps/
+
+EXPOSE 8000
+
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+
+# ├─────────────────────────────────────────────────────┤
+# │  Stage 4 — Production                               │
+# ├─────────────────────────────────────────────────────┤
+FROM base AS production
 
 RUN groupadd --gid 1001 appgroup \
     && useradd --uid 1001 --gid appgroup --shell /bin/bash --create-home appuser
 
-COPY --from=builder /install /usr/local
+COPY --from=deps /install /usr/local
 
-WORKDIR /app
 COPY --chown=appuser:appgroup manage.py ./
 COPY --chown=appuser:appgroup config/ ./config/
 COPY --chown=appuser:appgroup apps/ ./apps/

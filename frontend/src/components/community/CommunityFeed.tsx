@@ -1,7 +1,7 @@
-import { useMemo, useRef, useCallback } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useState, useMemo, useRef, useCallback } from "react";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { fetchApi } from "../../lib/api";
-import { HelpCircle, Code, Award, BookOpen, Clock } from "lucide-react";
+import { HelpCircle, Code, Award, BookOpen, Clock, Search, Filter } from "lucide-react";
 
 interface FeedEntry {
   id: string;
@@ -14,6 +14,15 @@ interface FeedEntry {
   username: string;
   title: string;
   description: string;
+  created_at: string;
+}
+
+interface FeedPost {
+  id: number;
+  title: string;
+  body: string;
+  post_type: "question" | "discussion" | "share";
+  author_username: string;
   created_at: string;
 }
 
@@ -49,7 +58,96 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString();
 }
 
+function HighlightText({ text, query }: { text: string; query: string }) {
+  if (!query.trim()) return <>{text}</>;
+  const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+  const parts = text.split(regex);
+  return (
+    <>
+      {parts.map((part, i) =>
+        regex.test(part) ? (
+          <mark key={i} className="bg-yellow-200 dark:bg-yellow-800 text-black dark:text-white px-0.5 rounded">
+            {part}
+          </mark>
+        ) : (
+          part
+        )
+      )}
+    </>
+  );
+}
+
+function FeedEntryItem({ entry }: { entry: FeedEntry }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const parsedData = useMemo(() => {
+    if (!entry.description) return null;
+    const desc = entry.description.trim();
+    if (desc.startsWith("{") || desc.startsWith("[")) {
+      try {
+        return JSON.parse(desc);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }, [entry.description]);
+
+  const formattedDescription = useMemo(() => {
+    if (parsedData) {
+      const parts: string[] = [];
+      if (parsedData.text) {
+        parts.push(`Message: ${parsedData.text}`);
+      }
+      if (parsedData.originalCode || parsedData.code) {
+        parts.push(`Code:\n${parsedData.originalCode || parsedData.code}`);
+      }
+      if (parts.length > 0) return parts.join("\n\n");
+      return JSON.stringify(parsedData, null, 2);
+    }
+    return entry.description;
+  }, [parsedData, entry.description]);
+
+  if (!formattedDescription) return null;
+
+  const shouldTruncate =
+    formattedDescription.length > 120 || formattedDescription.includes("\n");
+
+  return (
+    <div className="mt-1">
+      {shouldTruncate && !isExpanded ? (
+        <div className="text-xs text-muted dark:text-[#94a3b8]">
+          <p className="line-clamp-2 inline whitespace-pre-wrap">
+            {formattedDescription}
+          </p>
+          <button
+            onClick={() => setIsExpanded(true)}
+            className="text-xs text-primary font-bold ml-1 hover:underline focus:outline-none"
+          >
+            Show more
+          </button>
+        </div>
+      ) : (
+        <div className="text-xs text-muted dark:text-[#94a3b8] whitespace-pre-wrap bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-lg border border-black/5 dark:border-white/5">
+          <p className="inline">{formattedDescription}</p>
+          {shouldTruncate && (
+            <button
+              onClick={() => setIsExpanded(false)}
+              className="text-xs text-primary font-bold ml-2 hover:underline focus:outline-none block mt-2"
+            >
+              Show less
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function CommunityFeed() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedType, setSelectedType] = useState<string>("all");
+
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     useInfiniteQuery<FeedResponse>({
       queryKey: ["communityFeed"],
@@ -67,6 +165,21 @@ export function CommunityFeed() {
         return page ? Number(page) : undefined;
       },
     });
+
+  const { data: searchData, isLoading: isSearchLoading } = useQuery<{
+    results: FeedPost[];
+    count: number;
+  }>({
+    queryKey: ["feedPostSearch", searchQuery, selectedType],
+    queryFn: async () => {
+      let params = [];
+      if (searchQuery.trim()) params.push(`q=${encodeURIComponent(searchQuery.trim())}`);
+      if (selectedType !== "all") params.push(`post_type=${selectedType}`);
+      const queryString = params.length ? `?${params.join("&")}` : "";
+      return fetchApi(`/feed/posts/search/${queryString}`);
+    },
+    enabled: searchQuery.trim().length > 0 || selectedType !== "all",
+  });
 
   const entries = useMemo(() => {
     if (!data) return [];
@@ -88,13 +201,84 @@ export function CommunityFeed() {
     [isFetchingNextPage, hasNextPage, fetchNextPage],
   );
 
+  const isSearchActive = searchQuery.trim().length > 0 || selectedType !== "all";
+
   return (
     <div className="rounded-2xl border-4 border-black bg-white p-4 sm:p-6 shadow-card dark:bg-[#1a1a24] dark:border-[#3a3a45]">
-      <h3 className="text-2xl font-black mb-6 flex items-center gap-2 text-text dark:text-[#eef2f6]">
-        <Clock className="text-accent w-6 h-6" /> Community Activity
-      </h3>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <h3 className="text-2xl font-black flex items-center gap-2 text-text dark:text-[#eef2f6]">
+          <Clock className="text-accent w-6 h-6" /> Community Activity & Search
+        </h3>
 
-      {isLoading && entries.length === 0 ? (
+        {/* Full-Text Search Box & Filters (#2483) */}
+        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+          <div className="relative flex-grow">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted" />
+            <input
+              type="text"
+              placeholder="Search feed posts..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-1.5 text-xs font-bold bg-gray-50 dark:bg-slate-900 border-2 border-black dark:border-[#3a3a45] rounded-xl focus:outline-none focus:border-accent text-text dark:text-[#eef2f6]"
+            />
+          </div>
+
+          <div className="flex items-center gap-1">
+            <Filter className="h-4 w-4 text-muted hidden sm:block" />
+            <select
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+              className="py-1.5 px-2 text-xs font-bold bg-gray-50 dark:bg-slate-900 border-2 border-black dark:border-[#3a3a45] rounded-xl focus:outline-none text-text dark:text-[#eef2f6]"
+            >
+              <option value="all">All Types</option>
+              <option value="question">Questions</option>
+              <option value="discussion">Discussions</option>
+              <option value="share">Shares</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {isSearchActive ? (
+        <div>
+          {isSearchLoading ? (
+            <p className="text-sm text-muted animate-pulse font-bold py-4 text-center">
+              Searching community posts...
+            </p>
+          ) : !searchData?.results || searchData.results.length === 0 ? (
+            <p className="text-sm text-muted font-bold py-4 text-center">
+              No feed posts found for "{searchQuery}".
+            </p>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-xs font-bold text-muted mb-2">
+                Found {searchData.count} post{searchData.count === 1 ? "" : "s"}:
+              </p>
+              {searchData.results.map((post) => (
+                <div
+                  key={post.id}
+                  className="p-3.5 rounded-xl border-2 border-black/10 dark:border-[#3a3a45]/50 bg-slate-50/50 dark:bg-slate-900/30 space-y-1.5"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-primary">
+                      @{post.author_username}
+                    </span>
+                    <span className="text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20">
+                      {post.post_type}
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-black text-text dark:text-[#eef2f6]">
+                    <HighlightText text={post.title} query={searchQuery} />
+                  </h4>
+                  <p className="text-xs text-muted dark:text-[#94a3b8] whitespace-pre-wrap">
+                    <HighlightText text={post.body} query={searchQuery} />
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : isLoading && entries.length === 0 ? (
         <p className="text-sm text-muted animate-pulse font-bold">
           Loading feed...
         </p>
@@ -120,11 +304,7 @@ export function CommunityFeed() {
                     <span className="text-primary">@{entry.username}</span>{" "}
                     {entry.title}
                   </p>
-                  {entry.description && (
-                    <p className="text-xs text-muted dark:text-[#94a3b8] mt-0.5 line-clamp-2">
-                      {entry.description}
-                    </p>
-                  )}
+                  <FeedEntryItem entry={entry} />
                 </div>
                 <span className="text-[10px] font-bold text-muted dark:text-[#94a3b8] flex-shrink-0 whitespace-nowrap pt-0.5">
                   {timeAgo(entry.created_at)}

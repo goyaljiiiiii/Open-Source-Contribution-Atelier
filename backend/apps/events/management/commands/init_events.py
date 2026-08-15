@@ -3,8 +3,9 @@ Management command to initialize event system.
 """
 
 from django.core.management.base import BaseCommand
-from apps.events.registry import init_event_handlers
+
 from apps.events.models import EventSubscription
+from apps.events.registry import init_event_handlers
 
 
 class Command(BaseCommand):

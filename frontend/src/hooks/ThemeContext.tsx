@@ -78,6 +78,7 @@ function useThemeValue(): ThemeContextValue {
   const [theme, setThemeState] = useState<Theme>(getInitialTheme);
 
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
     const savedSound = localStorage.getItem("sound-effects-enabled");
     return savedSound !== null ? savedSound === "true" : true;
   });
@@ -88,6 +89,7 @@ function useThemeValue(): ThemeContextValue {
   }, [theme]);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
     const handleStorage = (e: StorageEvent) => {
       if (
         e.key === "theme" &&
@@ -113,7 +115,9 @@ function useThemeValue(): ThemeContextValue {
   const toggleSound = useCallback(() => {
     setSoundEnabled((prev) => {
       const nextState = !prev;
-      localStorage.setItem("sound-effects-enabled", String(nextState));
+      if (typeof window !== "undefined") {
+        localStorage.setItem("sound-effects-enabled", String(nextState));
+      }
       return nextState;
     });
   }, []);
@@ -127,7 +131,14 @@ function useThemeValue(): ThemeContextValue {
     [soundEnabled],
   );
 
-  return { theme, toggleTheme, setTheme, soundEnabled, toggleSound, playAudioCue };
+  return {
+    theme,
+    toggleTheme,
+    setTheme,
+    soundEnabled,
+    toggleSound,
+    playAudioCue,
+  };
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {

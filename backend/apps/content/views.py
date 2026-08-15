@@ -16,11 +16,10 @@ from rest_framework import (
     views,
     viewsets,
 )
+from apps.core.pagination import SecureCursorPagination
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
-from .permissions import IsLessonUnlocked
 
 from apps.challenges.models import Challenge
 from apps.challenges.serializers import ChallengeSerializer
@@ -28,30 +27,43 @@ from apps.progress.models import LessonProgress
 from apps.search.models import SearchDocument
 
 from . import semantic_search
-from .models import Lesson, Organization
+from .models import (
+    LearningPath,
+    Lesson,
+    LessonDraft,
+    ModuleDraft,
+    Organization,
+    QuizDraft,
+)
 from .permissions import IsLessonUnlocked
 from .serializers import (
+    LearningPathSerializer,
+    LessonDraftSerializer,
     LessonSearchSerializer,
     LessonSerializer,
+    ModuleDraftSerializer,
     OrganizationSerializer,
+    QuizDraftSerializer,
 )
 
 
 # --- Helper Functions ---
 def get_active_lessons():
-    lessons = cache.get("active_lessons_list")
-    if lessons is None:
-        lessons = list(
+    from apps.core.cache.stampede import stampede_protected_get_or_set
+    
+    def generate():
+        return list(
             Lesson.objects.prefetch_related("exercises", "prerequisites").all()
         )
-        cache.set("active_lessons_list", lessons, 60 * 60 * 24)
-    return lessons
+        
+    return stampede_protected_get_or_set("curriculum:full", generate, timeout=60 * 60 * 24)
 
 
 # --- Existing Views ---
 class LessonViewSet(viewsets.ModelViewSet):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
+    pagination_class = SecureCursorPagination
 
     def get_permissions(self):
         from apps.rbac.permissions import HasPermission
@@ -64,63 +76,182 @@ class LessonViewSet(viewsets.ModelViewSet):
             return [permissions.IsAuthenticated(), HasPermission("delete_content")]
         return [permissions.AllowAny()]
 
-    def list(self, request, *args, **kwargs):
-        lessons = get_active_lessons()
-        serializer = self.get_serializer(lessons, many=True)
+    from rest_framework.decorators import action
+
+    @action(detail=True, methods=["get"])
+    def versions(self, request, pk=None):
+        from .serializers import LessonVersionSerializer
+
+        lesson = self.get_object()
+        versions = lesson.versions.all()
+        serializer = LessonVersionSerializer(versions, many=True)
         return response.Response(serializer.data)
+
+    @action(detail=False, methods=["post"], url_path="bulk-import")
+    def bulk_import(self, request):
+        import csv
+        import io
+        from django.utils.text import slugify
+
+        file_obj = request.FILES.get("file")
+        if not file_obj:
+            return response.Response(
+                {"error": "No file uploaded. Please upload a CSV file under key 'file'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            raw_bytes = file_obj.read()
+            # Handle UTF-8 with BOM or standard UTF-8
+            decoded_file = raw_bytes.decode("utf-8-sig")
+        except UnicodeDecodeError as exc:
+            return response.Response(
+                {"error": f"Invalid file encoding. File must be UTF-8 encoded: {str(exc)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        csv_reader = csv.DictReader(io.StringIO(decoded_file))
+        if not csv_reader.fieldnames:
+            return response.Response(
+                {"error": "CSV file is empty or missing headers."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        imported_lessons = []
+        errors = []
+        rows = list(csv_reader)
+
+        org = getattr(request.user, "organization", None) if request.user.is_authenticated else None
+
+        for idx, row in enumerate(rows, start=2):  # Row 1 is header
+            title = (row.get("title") or row.get("Title") or "").strip()
+            summary = (row.get("summary") or row.get("Summary") or "").strip()
+            content = (row.get("content") or row.get("Content") or "").strip()
+            difficulty = (row.get("difficulty") or row.get("Difficulty") or "beginner").strip()
+            category = (row.get("category") or row.get("Category") or "general").strip()
+            estimated_minutes = row.get("estimated_minutes") or row.get("Estimated Minutes") or 15
+
+            if not title:
+                errors.append({"row": idx, "error": "Missing required field: 'title'"})
+                continue
+
+            slug = row.get("slug") or row.get("Slug")
+            if slug:
+                slug = slug.strip()
+            else:
+                slug = slugify(title, allow_unicode=True)
+
+            if not slug:
+                errors.append({"row": idx, "title": title, "error": "Could not generate valid slug from title"})
+                continue
+
+            try:
+                estimated_minutes = int(estimated_minutes)
+            except (ValueError, TypeError):
+                estimated_minutes = 15
+
+            # Handle existing slug collision
+            base_slug = slug
+            counter = 1
+            while Lesson.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+
+            try:
+                lesson = Lesson.objects.create(
+                    title=title,
+                    slug=slug,
+                    summary=summary or title,
+                    content=content or title,
+                    difficulty=difficulty,
+                    category=category,
+                    estimated_minutes=estimated_minutes,
+                    organization=org,
+                )
+                imported_lessons.append(LessonSerializer(lesson).data)
+            except Exception as e:
+                errors.append({"row": idx, "title": title, "error": str(e)})
+
+        status_code = status.HTTP_201_CREATED if imported_lessons else status.HTTP_400_BAD_REQUEST
+        return response.Response(
+            {
+                "message": f"{len(imported_lessons)} lessons imported",
+                "imported_count": len(imported_lessons),
+                "failed_count": len(errors),
+                "total_rows": len(rows),
+                "errors": errors,
+                "lessons": imported_lessons,
+            },
+            status=status_code,
+        )
 
 
 class SearchView(views.APIView):
     def get(self, request):
-        query = request.GET.get("q", "")
+        query = request.GET.get("q", "").strip()
         if not query:
             return response.Response({"lessons": [], "challenges": []})
-        search_query = SearchQuery(query)
+        
+        # Safe SearchQuery handling for special characters (% _ # + @ etc.)
+        try:
+            search_query = SearchQuery(query, search_type="websearch")
+        except Exception:
+            search_query = SearchQuery(query, search_type="raw")
+
         lesson_ct = ContentType.objects.get_for_model(Lesson)
         challenge_ct = ContentType.objects.get_for_model(Challenge)
 
         def get_fts_objects(model_class, content_type):
             from django.db import connection
-            org = getattr(request.user, "organization", None)
-            if not org:
-                return []
+
+            org = getattr(request.user, "organization", None) if request.user.is_authenticated else None
+            filter_kwargs = {"organization": org} if org else {}
+
             if connection.vendor != "postgresql":
                 return list(
                     model_class.objects.filter(
-                        title__icontains=query, organization=org
+                        Q(title__icontains=query) | Q(summary__icontains=query) if hasattr(model_class, "summary") else Q(title__icontains=query),
+                        **filter_kwargs
                     )[:50]
                 )
-            docs = (
-                SearchDocument.objects.filter(  # type: ignore
-                    content_type=content_type, search_vector=search_query
+            
+            try:
+                docs = (
+                    SearchDocument.objects.filter(
+                        content_type=content_type, search_vector=search_query
+                    )
+                    .annotate(rank=SearchRank("search_vector", search_query))
+                    .order_by("-rank")[:50]
                 )
-                .annotate(rank=SearchRank("search_vector", search_query))
-                .order_by("-rank")[:50]
-            )
+            except Exception:
+                docs = SearchDocument.objects.none()
 
             if not docs.exists():
-                docs = (
-                    SearchDocument.objects.filter(content_type=content_type)  # type: ignore
-                    .annotate(similarity=TrigramSimilarity("title", query))
-                    .filter(similarity__gt=0.3)
-                    .order_by("-similarity")[:50]
-                )
+                try:
+                    docs = (
+                        SearchDocument.objects.filter(content_type=content_type)
+                        .annotate(similarity=TrigramSimilarity("title", query))
+                        .filter(similarity__gt=0.2)
+                        .order_by("-similarity")[:50]
+                    )
+                except Exception:
+                    docs = SearchDocument.objects.none()
 
             object_ids = [doc.object_id for doc in docs]
-            if not object_ids:
-                return []
-
-            org = getattr(request.user, "organization", None)
-            if not org:
-                return []
+            if object_ids:
+                objects = model_class.objects.filter(id__in=object_ids, **filter_kwargs)
+                if model_class == Lesson:
+                    objects = objects.prefetch_related("exercises", "prerequisites")
+                return sorted(objects, key=lambda x: object_ids.index(x.id))
+            
+            # Fallback to direct icontains search if FTS / Trigram produced no matches
             objects = model_class.objects.filter(
-                id__in=object_ids, organization=org
-            )
+                Q(title__icontains=query) | Q(summary__icontains=query) if hasattr(model_class, "summary") else Q(title__icontains=query),
+                **filter_kwargs
+            )[:50]
             if model_class == Lesson:
                 objects = objects.prefetch_related("exercises", "prerequisites")
-            # Sort them in the exact order returned by FTS
-            ordered_objects = sorted(objects, key=lambda x: object_ids.index(x.id))
-            return ordered_objects
+            return list(objects)
 
         lessons = get_fts_objects(Lesson, lesson_ct)
         challenges = get_fts_objects(Challenge, challenge_ct)
@@ -312,17 +443,18 @@ class LessonPDFView(views.APIView):
 
         return response_obj
 
+
 class LessonAccessCheckView(views.APIView):
     """
     Check if user can access a lesson.
     """
+
     permission_classes = [IsLessonUnlocked]
-    
+
     def get(self, request, slug):
-        return Response({
-            "has_access": True,
-            "message": "You have access to this lesson"
-        })
+        return Response(
+            {"has_access": True, "message": "You have access to this lesson"}
+        )
 
 
 import json
@@ -362,8 +494,8 @@ from django.db.models.functions import Coalesce
 from .models import Lesson, LessonFeedback
 from .serializers import (
     LessonFeedbackCreateSerializer,
-    LessonFeedbackSerializer,
     LessonFeedbackMetricsSerializer,
+    LessonFeedbackSerializer,
 )
 
 
@@ -489,3 +621,73 @@ class UserLessonFeedbackView(views.APIView):
                 {"error": "No feedback found for this lesson"},
                 status=status.HTTP_404_NOT_FOUND,
             )
+
+
+class ModuleDraftViewSet(viewsets.ModelViewSet):
+    queryset = ModuleDraft.objects.prefetch_related("lessons__quizzes").all()
+    serializer_class = ModuleDraftSerializer
+    permission_classes = [permissions.AllowAny]
+
+    from rest_framework.decorators import action
+
+    @action(detail=False, methods=["post"], url_path="reorder")
+    def reorder(self, request):
+        modules_data = request.data.get("modules", [])
+        for mod_idx, mod_data in enumerate(modules_data):
+            mod_id = mod_data.get("id")
+            if mod_id:
+                ModuleDraft.objects.filter(id=mod_id).update(order=mod_idx)
+
+            lessons_data = mod_data.get("lessons", [])
+            for les_idx, les_data in enumerate(lessons_data):
+                les_id = les_data.get("id")
+                if les_id:
+                    LessonDraft.objects.filter(id=les_id).update(
+                        order=les_idx, module_id=mod_id if mod_id else None
+                    )
+        return response.Response({"status": "reordered"}, status=status.HTTP_200_OK)
+
+
+class LessonDraftViewSet(viewsets.ModelViewSet):
+    queryset = LessonDraft.objects.prefetch_related("quizzes").all()
+    serializer_class = LessonDraftSerializer
+    permission_classes = [permissions.AllowAny]
+
+
+class QuizDraftViewSet(viewsets.ModelViewSet):
+    queryset = QuizDraft.objects.all()
+    serializer_class = QuizDraftSerializer
+    permission_classes = [permissions.AllowAny]
+
+
+class LearningPathViewSet(viewsets.ModelViewSet):
+    serializer_class = LearningPathSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    lookup_field = "pk"
+
+    def get_queryset(self):
+        user = self.request.user
+        if (
+            user
+            and user.is_authenticated
+            and (
+                getattr(user, "is_superuser", False) or getattr(user, "is_staff", False)
+            )
+        ):
+            return LearningPath.objects.all().prefetch_related("required_roles")
+        return LearningPath.objects.filter(is_published=True).prefetch_related(
+            "required_roles"
+        )
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if not instance.has_access(request.user):
+            return Response(
+                {
+                    "detail": "Access restricted by role. Required role missing.",
+                    "required_roles": [r.name for r in instance.required_roles.all()],
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)

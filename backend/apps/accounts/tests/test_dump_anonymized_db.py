@@ -6,8 +6,8 @@ from django.core.management import call_command
 from django.test import TestCase
 
 from apps.accounts.models import UserProfile
-from apps.progress.models import HelpRequest
 from apps.content.models import Lesson
+from apps.progress.models import HelpRequest
 
 User = get_user_model()
 
@@ -21,11 +21,10 @@ class DumpAnonymizedDBTests(TestCase):
             first_name="John",
             last_name="Doe",
         )
-        self.profile1 = UserProfile.objects.create(
-            user=self.user1,
-            twitter_url="https://twitter.com/johndoe",
-            github_url="https://github.com/johndoe",
-        )
+        self.profile1, _ = UserProfile.objects.get_or_create(user=self.user1)
+        self.profile1.twitter_url = "https://twitter.com/johndoe"
+        self.profile1.github_url = "https://github.com/johndoe"
+        self.profile1.save()
 
         self.lesson = Lesson.objects.create(
             title="Test Lesson",

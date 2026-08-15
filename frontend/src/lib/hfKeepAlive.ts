@@ -14,7 +14,8 @@ const API_BASE =
   (typeof window !== "undefined"
     ? `${window.location.origin}/api`
     : "http://localhost:8000/api");
-const PING_URL = `${API_BASE}/ping/`;
+const BACKEND_ROOT = API_BASE.replace(/\/api\/?$/, "");
+const PING_URL = `${BACKEND_ROOT}/health/`;
 
 let intervalId: ReturnType<typeof setInterval> | null = null;
 

@@ -1,14 +1,30 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import ReportIssueModal from "./ReportIssueModal";
 
 export default function ReportIssueButton() {
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  return (
+  const pathname =
+    typeof window !== "undefined" ? window.location.pathname : "";
+  if (
+    !mounted ||
+    pathname === "/" ||
+    pathname === "/login" ||
+    pathname === "/signup"
+  ) {
+    return null;
+  }
+
+  return createPortal(
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-40 px-4 py-3 bg-black text-white font-bold rounded-full shadow-[4px_4px_0px_0px_#ffb5e8] hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_#ffb5e8] active:translate-y-1 active:shadow-none transition-all flex items-center gap-2"
+        className="fixed bottom-6 left-6 lg:left-[256px] z-50 px-4 py-3 bg-black text-white font-bold rounded-full shadow-[4px_4px_0px_0px_#ffb5e8] hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_#ffb5e8] active:translate-y-1 active:shadow-none transition-all flex items-center gap-2"
         aria-label="Report Issue"
       >
         <svg
@@ -30,6 +46,7 @@ export default function ReportIssueButton() {
       </button>
 
       <ReportIssueModal open={isOpen} onClose={() => setIsOpen(false)} />
-    </>
+    </>,
+    document.body,
   );
 }

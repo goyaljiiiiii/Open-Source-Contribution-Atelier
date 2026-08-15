@@ -1,13 +1,13 @@
 import re
 from datetime import timedelta
 
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework import serializers
-from .models import UserProfile
 
 
 def validate_strong_password(value):
@@ -34,6 +34,13 @@ class SignupSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ("id", "username", "email", "password")
+
+    def validate_username(self, value):
+        """Reject duplicate usernames using a case-insensitive comparison."""
+        normalized = value.strip()
+        if User.objects.filter(username__iexact=normalized).exists():
+            raise serializers.ValidationError("Username is already taken.")
+        return normalized
 
     def validate_email(self, value):
         """Reject signup if the email address is already registered (case-insensitive)."""
@@ -104,20 +111,11 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-        
         if password:
             instance.set_password(password)
-
-            if hasattr(instance, "profile"):
-                # ✅ Increment JWT token version on password change
-                instance.profile.jwt_token_version += 1
-                instance.profile.last_password_change = timezone.now()
-                instance.profile.save(update_fields=["jwt_token_version", "last_password_change"])
-
             if hasattr(instance, "user_profile"):
                 instance.user_profile.last_password_change = timezone.now()
                 instance.user_profile.save(update_fields=["last_password_change"])
-
         instance.save()
 
         if (
@@ -130,11 +128,9 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             or bio is not None
             or receive_weekly_digest is not None
         ):
-            if hasattr(instance, "user_profile"):
-                profile = instance.user_profile
-            else:
-                profile, _ = UserProfile.objects.get_or_create(user=instance)
+            from apps.accounts.models import UserProfile
 
+            profile, _ = UserProfile.objects.get_or_create(user=instance)
             if avatar is not None:
                 profile.avatar = avatar
             if cover_image is not None:
@@ -152,9 +148,23 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             if receive_weekly_digest is not None:
                 profile.receive_weekly_digest = receive_weekly_digest
             profile.save()
-            instance.user_profile = profile
 
         return instance
+
+
+class BulkUserListSerializer(serializers.ListSerializer):
+    def to_representation(self, data):
+        from apps.progress.services.milestone_track_service import MilestoneTrackService
+
+        users = list(data)
+        self.context["bulk_track_statuses"] = (
+            MilestoneTrackService.get_users_active_track_statuses(users)
+        )
+        self.context["bulk_next_milestones"] = (
+            MilestoneTrackService.get_users_next_milestones(users)
+        )
+
+        return super().to_representation(data)
 
 
 class UserListSerializer(serializers.ModelSerializer):
@@ -164,11 +174,12 @@ class UserListSerializer(serializers.ModelSerializer):
     twitter_url = serializers.SerializerMethodField()
     linkedin_url = serializers.SerializerMethodField()
     github_url = serializers.SerializerMethodField()
-    bio = serializers.SerializerMethodField()
-    receive_weekly_digest = serializers.SerializerMethodField()
+    active_track_status = serializers.SerializerMethodField()
+    next_milestone = serializers.SerializerMethodField()
 
     class Meta:
         model = User
+        list_serializer_class = BulkUserListSerializer
         fields = (
             "id",
             "username",
@@ -180,9 +191,23 @@ class UserListSerializer(serializers.ModelSerializer):
             "twitter_url",
             "linkedin_url",
             "github_url",
-            "bio",
-            "receive_weekly_digest",
+            "active_track_status",
+            "next_milestone",
         )
+
+    def get_active_track_status(self, obj):
+        if "bulk_track_statuses" in self.context:
+            return self.context["bulk_track_statuses"].get(obj.id)
+        from apps.progress.services.milestone_track_service import MilestoneTrackService
+
+        return MilestoneTrackService.get_user_active_track_status(obj)
+
+    def get_next_milestone(self, obj):
+        if "bulk_next_milestones" in self.context:
+            return self.context["bulk_next_milestones"].get(obj.id)
+        from apps.progress.services.milestone_track_service import MilestoneTrackService
+
+        return MilestoneTrackService.get_user_next_milestone(obj)
 
     def get_avatar_url(self, obj):
         if hasattr(obj, "user_profile") and obj.user_profile.avatar:
@@ -220,19 +245,12 @@ class UserListSerializer(serializers.ModelSerializer):
             return obj.user_profile.github_url
         return ""
 
-    def get_bio(self, obj):
-        if hasattr(obj, "user_profile"):
-            return obj.user_profile.bio
-        return ""
-
-    def get_receive_weekly_digest(self, obj):
-        if hasattr(obj, "user_profile"):
-            return obj.user_profile.receive_weekly_digest
-        return True
-
 
 class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
-    """Allow login with either username or email in the username field."""
+    """Allow login with either username or email in the username field, plus optional remember me lifetime and 2FA TOTP code validation."""
+
+    remember = serializers.BooleanField(required=False, default=False)
+    totp_code = serializers.CharField(required=False, allow_blank=True, write_only=True)
 
     def validate(self, attrs):
         username_key = self.username_field
@@ -243,7 +261,40 @@ class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
             if user:
                 attrs = {**attrs, username_key: user.username}
 
+        remember_me = self.initial_data.get("remember", False) or attrs.get("remember", False)
+
         result = super().validate(attrs)
+
+        # Check optional 2FA TOTP enforcement
+        if hasattr(self.user, "totp_device") and self.user.totp_device.is_enabled:
+            totp_code = attrs.get("totp_code") or self.initial_data.get("totp_code")
+            if not totp_code:
+                raise AuthenticationFailed(
+                    {
+                        "requires_2fa": True,
+                        "message": "Two-factor authentication code required.",
+                    },
+                    code="2fa_required",
+                )
+
+            from .totp import verify_and_consume_backup_code, verify_totp_code
+
+            device = self.user.totp_device
+            is_valid_totp = verify_totp_code(device.secret, totp_code)
+            is_valid_backup = (
+                verify_and_consume_backup_code(device, totp_code)
+                if not is_valid_totp
+                else False
+            )
+
+            if not is_valid_totp and not is_valid_backup:
+                raise AuthenticationFailed(
+                    {"totp_code": "Invalid 2FA authentication code or recovery code."},
+                    code="invalid_2fa_code",
+                )
+
+            device.last_used_at = timezone.now()
+            device.save(update_fields=["last_used_at"])
 
         if (
             hasattr(self.user, "user_profile")
@@ -257,7 +308,47 @@ class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
                     code="password_expired",
                 )
 
+        request = self.context.get("request")
+        ip_address = None
+        user_agent = ""
+        if request:
+            ip_address = request.META.get("REMOTE_ADDR")
+            user_agent = request.META.get("HTTP_USER_AGENT", "")
+
+        from .models import UserSession
+
+        session = UserSession.objects.create(
+            user=self.user, ip_address=ip_address, user_agent=user_agent
+        )
+
+        refresh = self.get_token(self.user)
+        if remember_me:
+            refresh.set_exp(lifetime=timedelta(days=30))
+            refresh.access_token.set_exp(lifetime=timedelta(days=7))
+
+        refresh["session_id"] = str(session.session_id)
+
+        access = refresh.access_token
+        access["session_id"] = str(session.session_id)
+
+        result["refresh"] = str(refresh)
+        result["access"] = str(access)
+        result["remember"] = bool(remember_me)
+
         return result
+
+
+class TwoFactorVerifySerializer(serializers.Serializer):
+    """Accept 6-digit TOTP verification code to confirm 2FA setup."""
+
+    code = serializers.CharField(max_length=10, min_length=6)
+
+
+class TwoFactorDisableSerializer(serializers.Serializer):
+    """Accept user password to confirm disabling 2FA."""
+
+    password = serializers.CharField(write_only=True)
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -279,40 +370,6 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
     def validate_new_password(self, value):
         return validate_strong_password(value)
-
-
-class AvatarUploadSerializer(serializers.Serializer):
-    avatar = serializers.ImageField(
-        max_length=255, allow_empty_file=False, use_url=True
-    )
-
-    def validate_avatar(self, value):
-        # Check file size (max 5MB)
-        if value.size > 5 * 1024 * 1024:
-            raise serializers.ValidationError("Image size must be under 5MB")
-
-        # Check file extension
-        allowed_extensions = ["jpg", "jpeg", "png", "gif", "webp"]
-        ext = value.name.split(".")[-1].lower()
-        if ext not in allowed_extensions:
-            raise serializers.ValidationError(
-                f"File type not supported. Use: {', '.join(allowed_extensions)}"
-            )
-
-        return value
-
-
-class UserProfileSerializer(serializers.ModelSerializer):
-    avatar_url = serializers.SerializerMethodField()
-
-    class Meta:
-        model = UserProfile
-        fields = ["avatar", "avatar_url"]
-
-    def get_avatar_url(self, obj):
-        if obj.avatar:
-            return obj.avatar.url
-        return None
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -350,51 +407,35 @@ class MagicLinkVerifySerializer(serializers.Serializer):
     token = serializers.UUIDField()
 
 
-# ============================================================
-# ✅ ADDED: Change Password Serializer (with JWT Invalidation)
-# ============================================================
-
-
 class ChangePasswordSerializer(serializers.Serializer):
-    """
-    Serializer for password change with JWT invalidation.
-    """
-    current_password = serializers.CharField(required=True, write_only=True)
-    new_password = serializers.CharField(required=True, write_only=True, min_length=8)
-
-    def validate_current_password(self, value):
-        """Validate current password (checks against user)."""
-        user = self.context.get('user')
-        if not user:
-            raise serializers.ValidationError("User not found")
-        if not user.check_password(value):
-            raise serializers.ValidationError("Current password is incorrect")
-        return value
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True, min_length=8)
 
     def validate_new_password(self, value):
-        """Validate new password strength."""
         return validate_strong_password(value)
 
-    def save(self, **kwargs):
-        """Change password and invalidate JWT tokens."""
-        user = self.context.get('user')
-        new_password = self.validated_data['new_password']
-        
-        # Set new password (this will trigger JWT invalidation via signal)
-        user.set_password(new_password)
-        
-        # Increment JWT token version
-        if hasattr(user, "profile") and user.profile:
-            user.profile.jwt_token_version += 1
-            user.profile.last_password_change = timezone.now()
-            user.profile.save(update_fields=["jwt_token_version", "last_password_change"])
-        else:
-            from apps.accounts.models import UserProfile
-            UserProfile.objects.create(
-                user=user,
-                last_password_change=timezone.now(),
-                jwt_token_version=2
-            )
-        
-        user.save()
-        return user
+
+class AvatarUploadSerializer(serializers.Serializer):
+    avatar = serializers.ImageField(required=True)
+
+
+class PasswordResetValidateTokenSerializer(serializers.Serializer):
+    token = serializers.UUIDField(required=True)
+
+
+from .models import UserSession
+
+
+class UserSessionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserSession
+        fields = (
+            "id",
+            "session_id",
+            "ip_address",
+            "user_agent",
+            "device_name",
+            "created_at",
+            "last_activity",
+        )
+        read_only_fields = fields

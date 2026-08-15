@@ -1,9 +1,10 @@
+import os
+import time
+from datetime import datetime, timedelta, timezone
+from typing import Optional
+
 import jwt
 import requests
-import time
-import os
-from typing import Optional
-from datetime import datetime, timedelta
 from django.core.cache import cache
 
 
@@ -45,7 +46,9 @@ class GitHubAppAuth:
 
     def get_installation_token(self) -> Optional[str]:
         """Get an installation access token for the GitHub App"""
-        # Check cache first
+        if not self.installation_id:
+            raise ValueError("GITHUB_INSTALLATION_ID not configured")
+
         cached_token = cache.get(self.cache_key)
         if cached_token:
             return cached_token
@@ -69,7 +72,7 @@ class GitHubAppAuth:
             # Cache token with 10 minute buffer
             if token and expires_at:
                 expires = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
-                ttl = int((expires - datetime.now()).total_seconds()) - 600
+                ttl = int((expires - datetime.now(timezone.utc)).total_seconds()) - 600
                 if ttl > 0:
                     cache.set(self.cache_key, token, ttl)
 

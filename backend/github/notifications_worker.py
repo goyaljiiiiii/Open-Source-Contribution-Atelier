@@ -1,7 +1,8 @@
-from github.service import github_service
-from github.auth import refresh_github_token
-import time
 import logging
+import time
+
+from github.auth import refresh_github_token
+from github.service import github_service
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,9 @@ class NotificationsWorker:
             elif notification_type == "pull_request":
                 return self._handle_pull_request(notification_data)
             else:
+                logger.info(
+                    f"Ignoring unhandled notification type: {notification_type}"
+                )
                 return {"status": "ignored", "type": notification_type}
 
         except Exception as e:

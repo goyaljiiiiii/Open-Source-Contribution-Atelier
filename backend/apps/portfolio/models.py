@@ -1,8 +1,9 @@
 import uuid
-from django.db import models
-from django.conf import settings
-from django.utils import timezone
 from datetime import timedelta
+
+from django.conf import settings
+from django.db import models
+from django.utils import timezone
 
 
 class PortfolioTemplate(models.Model):
@@ -65,7 +66,7 @@ class GeneratedPortfolio(models.Model):
     class Meta:
         ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["user", "status"]),
+            models.Index(fields=["user", "status"], name="idx_userstatus"),
         ]
 
     def save(self, *args, **kwargs):

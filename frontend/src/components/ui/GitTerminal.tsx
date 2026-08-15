@@ -1,11 +1,23 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { RotateCcw, Terminal, ChevronRight, BookOpen } from "lucide-react";
+import {
+  RotateCcw,
+  Terminal,
+  ChevronRight,
+  BookOpen,
+  Link2,
+  Check,
+} from "lucide-react";
 import { useGitShell } from "../../hooks/useGitShell";
 import type { TerminalLine } from "../../hooks/useGitShell";
 import { useTerminalAutocomplete } from "../../hooks/useTerminalAutocomplete";
 import { useFailureAnimation } from "../../hooks/useFailureAnimation";
 import { Textarea } from "./Textarea";
 import { GitCheatSheet } from "./GitCheatSheet";
+import { ContextualGitCheatSheet } from "./ContextualGitCheatSheet";
+import {
+  buildReplayShareUrl,
+  replayCommandsFromTerminalLines,
+} from "../../lib/terminalReplayShare";
 
 interface GitTerminalProps {
   /** Called when a lesson-objective command succeeds */
@@ -16,6 +28,12 @@ interface GitTerminalProps {
   title?: string;
   /** XP reward amount */
   xp?: number;
+  /** Current lesson slug — enables contextual cheat-sheet overlay */
+  lessonSlug?: string;
+  /** Curriculum module id (e.g. module-2) */
+  moduleId?: string;
+  /** Path for shareable replay links (default /sandbox) */
+  replaySharePath?: string;
 }
 
 function LineRenderer({ line }: { line: TerminalLine }) {
@@ -54,6 +72,9 @@ export function GitTerminal({
   hint,
   title = "Git Sandbox Terminal",
   xp = 20,
+  lessonSlug,
+  moduleId,
+  replaySharePath = "/sandbox",
 }: GitTerminalProps) {
   const [isExecuting, setIsExecuting] = useState(false);
   const [inputVal, setInputVal] = useState("");
@@ -61,9 +82,9 @@ export function GitTerminal({
   const [completed, setCompleted] = useState(false);
   const [showCheatSheet, setShowCheatSheet] = useState(false);
   const [liveMsg, setLiveMsg] = useState("");
+  const [shareCopied, setShareCopied] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
 
   const handleComplete = useCallback(() => {
     setCompleted(true);
@@ -83,8 +104,12 @@ export function GitTerminal({
   } = useGitShell({ onObjectiveComplete: handleComplete });
 
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const { suggestions, selectedIndex, setSelectedIndex } =
-    useTerminalAutocomplete(inputVal, shellState);
+  const {
+    suggestions,
+    selectedIndex,
+    setSelectedIndex,
+    commonCompletionPrefix,
+  } = useTerminalAutocomplete(inputVal, shellState);
 
   useEffect(() => {
     if (suggestions.length > 0 && inputVal.trim().length > 0) {
@@ -142,7 +167,9 @@ export function GitTerminal({
   const copyTerminalText = useCallback(async () => {
     // Best-effort: copy rendered terminal lines (excluding nano editor UI).
     const text = lines
-      .map((l) => (l.kind === "command" ? `${l.prompt ?? "~"}$ ${l.text}` : l.text))
+      .map((l) =>
+        l.kind === "command" ? `${l.prompt ?? "~"}$ ${l.text}` : l.text,
+      )
       .join("\n");
     try {
       await navigator.clipboard.writeText(text);
@@ -152,6 +179,28 @@ export function GitTerminal({
       setLiveMsg("Unable to copy terminal output to clipboard.");
     }
   }, [lines]);
+
+  const copyReplayShareLink = useCallback(async () => {
+    const commands = replayCommandsFromTerminalLines(lines);
+    const url = buildReplayShareUrl({
+      commands,
+      sessionName: title,
+      pathname: replaySharePath,
+    });
+    if (!url) {
+      setLiveMsg("Run at least one command before copying a share link.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      setLiveMsg("Replay share link copied to clipboard.");
+      setTimeout(() => setShareCopied(false), 2000);
+    } catch {
+      window.location.hash = url.slice(url.indexOf("#") + 1);
+      setLiveMsg("Share hash applied to the address bar.");
+    }
+  }, [lines, title, replaySharePath]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     // Allow standard Tab/keyboard traversal when no suggestions are being displayed.
@@ -177,7 +226,6 @@ export function GitTerminal({
       return;
     }
 
-
     // Ctrl+/ focuses the input (defensive; input already has focus)
     if (e.ctrlKey && e.key === "/") {
       e.preventDefault();
@@ -202,7 +250,17 @@ export function GitTerminal({
       }
       if (e.key === "Tab") {
         e.preventDefault();
-        setInputVal(suggestions[selectedIndex].completionText);
+        if (suggestions.length === 1) {
+          setInputVal(suggestions[0].completionText);
+        } else if (
+          commonCompletionPrefix &&
+          commonCompletionPrefix.length > inputVal.length
+        ) {
+          setInputVal(commonCompletionPrefix);
+        } else {
+          // IDE fallback for visual selection
+          setInputVal(suggestions[selectedIndex].completionText);
+        }
         return;
       }
       if (e.key === "Escape") {
@@ -211,10 +269,9 @@ export function GitTerminal({
         return;
       }
     } else if (e.key === "Tab") {
-      // If suggestions are not open, keep default Tab behavior.
+      e.preventDefault(); // Prevent focus shift even if no suggestions
       return;
     }
-
 
     if (e.key === "ArrowUp") {
       e.preventDefault();
@@ -272,7 +329,6 @@ export function GitTerminal({
         }
       }}
     >
-
       {/* ── Title bar ─────────────────────────────────────────────── */}
       <div className="flex items-center justify-between px-4 py-2 bg-[#1a1a2e] border-b-4 border-black dark:border-[#2e2924]">
         <div className="flex items-center gap-3">
@@ -289,6 +345,13 @@ export function GitTerminal({
           <span className="text-xs font-black text-yellow-300 bg-black/40 px-2 py-0.5 rounded-full">
             {xp} XP
           </span>
+          {(lessonSlug || moduleId) && (
+            <ContextualGitCheatSheet
+              lessonSlug={lessonSlug}
+              moduleId={moduleId}
+              onInsertCommand={(command) => setInputVal(command)}
+            />
+          )}
           <button
             onClick={() => setShowCheatSheet(true)}
             title="Git Cheat Sheet"
@@ -296,6 +359,22 @@ export function GitTerminal({
           >
             <BookOpen size={13} />
             <span className="hidden sm:inline">Cheat Sheet</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => void copyReplayShareLink()}
+            title="Copy shareable replay link"
+            aria-label="Copy shareable replay link"
+            className="text-gray-400 hover:text-white transition-colors p-1 rounded flex items-center gap-1 text-xs"
+          >
+            {shareCopied ? (
+              <Check size={13} className="text-emerald-400" />
+            ) : (
+              <Link2 size={13} />
+            )}
+            <span className="hidden sm:inline">
+              {shareCopied ? "Copied" : "Share"}
+            </span>
           </button>
           <button
             onClick={handleReset}

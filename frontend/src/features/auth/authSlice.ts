@@ -1,5 +1,10 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { fetchApi } from "../../lib/api";
+import {
+  clearAccessToken,
+  getAccessToken,
+  setAccessToken,
+} from "../../lib/authToken";
 
 type User = {
   id: number;
@@ -14,7 +19,6 @@ type User = {
   twitter_url?: string;
   linkedin_url?: string;
   github_url?: string;
-  receive_weekly_digest?: boolean;
 };
 
 interface AuthState {
@@ -41,17 +45,9 @@ function sanitizeStorageData(value: string): string {
 
 function safeSetItem(key: string, value: string) {
   try {
-    localStorage.setItem(key, value);
+    localStorage.setItem(key, sanitizeStorageData(value));
   } catch {
     /* localStorage unavailable */
-  }
-}
-
-function safeGetItem(key: string): string | null {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
   }
 }
 
@@ -66,7 +62,7 @@ function safeRemoveItem(key: string) {
 export const checkUser = createAsyncThunk(
   "auth/checkUser",
   async (_, { rejectWithValue }) => {
-    const token = safeGetItem("accessToken");
+    const token = getAccessToken();
     if (!token) {
       return rejectWithValue("No token");
     }
@@ -74,14 +70,14 @@ export const checkUser = createAsyncThunk(
       const data = await fetchApi("/auth/me/", { requireAuth: true });
       return data as User;
     } catch {
-      safeRemoveItem("accessToken");
+      clearAccessToken();
       safeRemoveItem("refreshToken");
       return rejectWithValue("Failed to fetch user");
     }
   },
 );
 
-export const logoutAction = createAsyncThunk("auth/logout", async () => {
+export const logoutAction = createAsyncThunk("auth/logout", async (_, { dispatch }) => {
   try {
     if ("serviceWorker" in navigator && "PushManager" in window) {
       const reg = await navigator.serviceWorker.ready;
@@ -104,7 +100,9 @@ export const logoutAction = createAsyncThunk("auth/logout", async () => {
     console.error("Error unsubscribing push on logout", e);
   }
 
-  safeRemoveItem("accessToken");
+  dispatch({ type: "persist/PURGE" });
+
+  clearAccessToken();
   safeRemoveItem("refreshToken");
 });
 
@@ -116,8 +114,19 @@ export const authSlice = createSlice({
       state,
       action: PayloadAction<{ access: string; refresh: string }>,
     ) => {
-      safeSetItem("accessToken", action.payload.access);
+      setAccessToken(action.payload.access);
       safeSetItem("refreshToken", action.payload.refresh);
+    },
+    setDemoUser: (state) => {
+      // Intentional local demo only — never call from Google OAuth failure paths.
+      state.user = {
+        id: 1,
+        username: "Demo Learner",
+        email: "demo@atelier.local",
+        is_staff: false,
+      };
+      state.isAuthenticated = true;
+      state.isLoading = false;
     },
   },
   extraReducers: (builder) => {
@@ -142,6 +151,6 @@ export const authSlice = createSlice({
   },
 });
 
-export const { loginTokens } = authSlice.actions;
+export const { loginTokens, setDemoUser } = authSlice.actions;
 
 export default authSlice.reducer;

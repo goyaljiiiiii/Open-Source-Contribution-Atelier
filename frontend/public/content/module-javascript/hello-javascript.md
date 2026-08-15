@@ -1,32 +1,26 @@
-# 🇯‌🇸‌ Hello, JavaScript
+## 🇯‌🇸‌ JavaScript is the programming language of the web. In this lesson, we will learn how to write basic JavaScript functions and see the output directly in the browser, and delve into the topic of Web Workers.
 
-### JavaScript is the programming language of the web. In this lesson, we will learn how to write basic JavaScript functions and see the output directly in the browser, and delve into the topic of Web Workers.
-
-<div align="Center">
-  <img width="150" height=auto alt="image" src="https://github.com/user-attachments/assets/6066bbdf-7825-4499-947e-a9cb9f3200a6" />
-</div>
+<img width="1492" height="312" alt="image" src="https://github.com/user-attachments/assets/e247359d-fbc6-436d-8c2a-0d53db6e85b7" />
 
 ---
 
-## 🛠️ Hands-On Task: Running a JavaScript Program
-
-### Visit [this site](https://javascript-code-sandbox.netlify.app/) to access a live Interactive JavaScript Sandbox tool.
-
----
+## 🛠️ Hands-On Task: Simple JavaScript Program
 
 ### Steps
 
+**1.** Visit [this site](https://javascript-code-sandbox.netlify.app/) to access a live Interactive JavaScript Sandbox tool.
+
 <img width="1402" height="908" alt="image" src="https://github.com/user-attachments/assets/2f87bb6e-d846-432d-9dc5-6072a0239ac7" />
 
-**1.** First, you look at the editor panel on the left side of the page. This is where the JavaScript code is written.
+**2.** First, you look at the editor panel on the left side of the page. This is where the JavaScript code is written.
 
-**2.** Next, you can use the code that is already in the editor, or you can type your own code into that editor.
+**3.** Next, you can use the code that is already in the editor, or you can type your own code into that editor.
 
-**3.** Then, you click the teal **Run** button above the editor. This starts the program inside the sandbox.
+**4.** Then, you click the teal **Run** button above the editor. This starts the program inside the sandbox.
 
-**4.** After that, you look at the Console Output panel on the right side of the page. This is where the sandbox shows messages from console.log(), console.info(), console.warn(), console.error(), and any value returned by the code.
+**5.** After that, you look at the Console Output panel on the right side of the page. This is where the sandbox shows messages from console.log(), console.info(), console.warn(), console.error(), and any value returned by the code.
 
-**5.** For the code shown in the screenshot, the **output** should look like this:
+**6.** For the code shown in the screenshot, the **output** should look like this:
 
 ```
 Items: keyboard, notebook, adapter

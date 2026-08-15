@@ -1,6 +1,8 @@
 import uuid
+
 from django.core.management.base import BaseCommand
-from apps.sandbox.models import TemplateCategory, ProjectTemplate, TemplateFile
+
+from apps.sandbox.models import ProjectTemplate, TemplateCategory, TemplateFile
 
 
 class Command(BaseCommand):

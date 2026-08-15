@@ -1,19 +1,29 @@
+import logging
+import re
+
 from django.conf import settings
-from django.core.cache import cache
 from django.contrib.postgres.search import (
     SearchHeadline,
     SearchQuery,
     SearchRank,
     TrigramSimilarity,
 )
+from django.core.cache import cache
+from django.db import connection
+from django.db.models import Q
+from django.db.models.functions import Greatest
 from rest_framework import generics
+from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+from .meili_client import get_meili_index
 from .models import SearchAnalytics, SearchDocument
 from .serializers import SearchAnalyticsSerializer, SearchDocumentSerializer
 from .utils import get_search_cache_version
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Pagination
@@ -65,20 +75,17 @@ class UnifiedSearchView(generics.ListAPIView):
     Unified search API across all indexed models.
 
     Query parameters:
-      q         — required — the search term
-      type      — optional — filter by content type (lesson, challenge, issue, user …)
-      page      — optional — page number (default 1)
-      page_size — optional — results per page (default 20, max 100)
+      q                   — required — the search term
+      type                — optional — filter by content type (lesson, challenge, issue, user …)
+      content_type_filter — optional — alias for type filter parameter
+      page                — optional — page number (default 1)
+      page_size           — optional — results per page (default 20, max 100)
 
     Strategy:
-      1. Try PostgreSQL Full-Text Search with 'websearch' mode (handles partial
-         words, phrases, negation).  Results are ranked by SearchRank.
-      2. If FTS returns nothing, fall back to Trigram similarity on the title
-         for typo tolerance (threshold > 0.3).
-
-    Highlights:
-      Matched keywords are wrapped in <mark>…</mark> for title, description,
-      and body_text via Postgres SearchHeadline.
+      1. Try Meilisearch for typo-tolerant, relevant full-text search.
+      2. If Meilisearch fails or is not available, fall back to Postgres
+         Full-Text Search with 'websearch' mode.
+      3. If FTS returns nothing, fall back to Trigram similarity on the title.
     """
 
     serializer_class = SearchDocumentSerializer
@@ -91,54 +98,121 @@ class UnifiedSearchView(generics.ListAPIView):
         if not q:
             return Response({"count": 0, "next": None, "previous": None, "results": []})
 
-        content_type_filter = request.query_params.get("type", "").strip().lower()
+        content_type_filter = (
+            (
+                request.query_params.get("type")
+                or request.query_params.get("content_type_filter")
+                or ""
+            )
+            .strip()
+            .lower()
+        )
+
+        if content_type_filter:
+            # Server-side validation rejecting special characters, single quotes, semicolons, and operators
+            if not re.match(r"^[a-z0-9_-]{1,100}$", content_type_filter):
+                raise ValidationError(
+                    {
+                        "type": [
+                            "Invalid content_type_filter parameter. Special characters and filter "
+                            "operators are not allowed."
+                        ]
+                    }
+                )
 
         version = get_search_cache_version()
         cache_key = f"search_api:v{version}:q:{q}:type:{content_type_filter}"
+        
+        from apps.core.cache.stampede import stampede_protected_get_or_set
 
-        # Only cache un-paginated metadata; actual pages are not cached to
-        # keep memory usage bounded.
-        cached_data = cache.get(cache_key)
-        if cached_data is not None:
-            return Response(cached_data)
+        def generate():
+            queryset = self._build_queryset(q, content_type_filter)
 
-        queryset = self._build_queryset(q, content_type_filter)
+            # Paginate
+            page_obj = self.paginate_queryset(queryset)
+            if page_obj is not None:
+                serializer = self.get_serializer(page_obj, many=True)
+                return self.get_paginated_response(serializer.data).data
 
-        # Paginate
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            response = self.get_paginated_response(serializer.data)
-            # Cache the full paginated envelope
-            timeout = getattr(settings, "SEARCH_CACHE_TIMEOUT", 3600)
-            cache.set(cache_key, response.data, timeout=timeout)
-            return response
+            serializer = self.get_serializer(queryset, many=True)
+            return serializer.data
 
-        serializer = self.get_serializer(queryset, many=True)
-        data = serializer.data
         timeout = getattr(settings, "SEARCH_CACHE_TIMEOUT", 3600)
-        cache.set(cache_key, data, timeout=timeout)
+        data = stampede_protected_get_or_set(cache_key, generate, timeout=timeout)
         return Response(data)
 
     # ------------------------------------------------------------------ queryset
 
     def _build_queryset(self, q: str, content_type_filter: str):
         """
-        Build an annotated, ordered queryset.
-
-        Uses 'websearch' SearchQuery mode which supports:
-          - Partial word matching  (postgres `:*` prefix is used internally)
-          - AND / OR / NOT operators
-          - Phrase matching ("quoted strings")
+        Build an annotated, ordered queryset or list of SearchDocument objects.
         """
-        # websearch mode mirrors Google-style query parsing — no need to escape
-        search_query = SearchQuery(q, search_type="websearch")
+        # 1. Try Meilisearch path
+        index = get_meili_index()
+        if index:
+            try:
+                search_options = {
+                    "attributesToHighlight": ["title", "description", "body_text"],
+                    "highlightStartTag": "<mark>",
+                    "highlightEndTag": "</mark>",
+                    "limit": 200,
+                }
+                if content_type_filter:
+                    escaped_filter = content_type_filter.replace("\\", "\\\\").replace(
+                        "'", "\\'"
+                    )
+                    search_options["filter"] = [
+                        f"content_type_name = '{escaped_filter}'"
+                    ]
+
+                res = index.search(q, search_options)
+                hits = res.get("hits", [])
+
+                if hits:
+                    doc_ids = [int(hit["id"]) for hit in hits]
+                    docs = {
+                        doc.id: doc
+                        for doc in SearchDocument.objects.filter(
+                            id__in=doc_ids
+                        ).select_related("content_type")
+                    }
+
+                    ordered_docs = []
+                    for hit in hits:
+                        doc_id = int(hit["id"])
+                        if doc_id in docs:
+                            doc = docs[doc_id]
+                            formatted = hit.get("_formatted", {})
+                            doc.headline_title = formatted.get("title", doc.title)
+                            doc.headline_description = formatted.get(
+                                "description", doc.description
+                            )
+                            doc.headline_body = formatted.get(
+                                "body_text", doc.body_text
+                            )
+                            ordered_docs.append(doc)
+
+                    return ordered_docs
+            except Exception as exc:
+                logger.warning(
+                    "Meilisearch search failed, falling back to Postgres: %s", exc
+                )
 
         base_qs = SearchDocument.objects.all()
 
-        # Apply content-type filter (fast: uses the denormalized char field)
         if content_type_filter:
             base_qs = base_qs.filter(content_type_name=content_type_filter)
+
+        # 2. SQLite fallback (local dev)
+        if connection.vendor == "sqlite":
+            return base_qs.filter(
+                Q(title__icontains=q)
+                | Q(description__icontains=q)
+                | Q(body_text__icontains=q)
+            ).distinct()
+
+        # 3. Postgres FTS / Trigram fallback paths
+        search_query = SearchQuery(q, search_type="websearch")
 
         # --- FTS path -------------------------------------------------------
         fts_qs = (
@@ -180,7 +254,11 @@ class UnifiedSearchView(generics.ListAPIView):
 
         # --- Trigram fallback (typo tolerance) ------------------------------
         return (
-            base_qs.annotate(similarity=TrigramSimilarity("title", q))
+            base_qs.annotate(
+                similarity=Greatest(
+                    TrigramSimilarity("title", q), TrigramSimilarity("description", q)
+                )
+            )
             .filter(similarity__gt=0.25)
             .distinct()
             .order_by("-similarity")
