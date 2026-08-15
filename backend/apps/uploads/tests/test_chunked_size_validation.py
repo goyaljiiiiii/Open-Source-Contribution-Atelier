@@ -14,16 +14,12 @@ def test_complete_upload_revalidates_size_against_limit(api_client, tmp_path, dj
     user = django_user_model.objects.create_user(username="testuser", password="password")
     api_client.force_authenticate(user=user)
 
-    # Avatar limit is 5MB. Let's create an assembled size of 6MB.
-    # To bypass StartUploadView, we just insert it directly into DB.
-    # The vulnerability implies a client might have declared 6MB or somehow got 6MB assembled size,
-    # and the check in CompleteUploadView is meant to catch this and return FAILED.
     size_in_bytes = 6 * 1024 * 1024
 
     session = UploadSession.objects.create(
         user=user,
         filename="test.png",
-        upload_type=UploadSession.UploadType.AVATAR,
+        upload_type="avatar",
         total_size=size_in_bytes,
         total_chunks=1,
         uploaded_chunks=[0],
