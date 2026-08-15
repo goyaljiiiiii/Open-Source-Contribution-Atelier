@@ -96,7 +96,8 @@ export function useSearchWithCategories(): UseSearchWithCategoriesResult {
         signal: controller.signal,
       });
 
-      setResults(response.data.results || []);
+      const rawResults = response.data.results || response.data.lessons || [];
+      setResults(rawResults);
       // Best-effort: if the backend ever reports which search tier
       // served the response (e.g. Meilisearch down, Postgres fallback
       // used), surface it. Safe no-op if the field isn't present yet.

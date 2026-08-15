@@ -866,3 +866,65 @@ def test_draft_content_studio_crud_and_reorder():
         "/api/content/modules/reorder/", reorder_payload, format="json"
     )
     assert res_reorder.status_code == 200
+
+
+@pytest.mark.django_db
+def test_search_special_characters_no_crash():
+    from apps.content.models import Lesson
+
+    Lesson.objects.create(
+        title="C# and React+ Advanced Guide",
+        slug="csharp-react-guide",
+        summary="Mastering C# with React+ hooks and 100% test coverage",
+        content="Guide to C# programming",
+        difficulty="advanced",
+    )
+
+    client = APIClient()
+
+    for special_query in ["C#", "100%", "react+hooks", "%", "_", "#", "+", "@"]:
+        response = client.get(f"/api/content/search/?q={special_query}")
+        assert response.status_code == 200
+        assert "lessons" in response.data or "results" in response.data
+
+
+def test_bulk_import_csv_special_characters():
+    from io import BytesIO
+    from apps.content.models import Lesson
+
+    client = APIClient()
+
+    csv_content = (
+        "title,summary,content,difficulty,category,estimated_minutes\n"
+        "Introduction to Git,Basic git commands,Git is a VCS,beginner,git,10\n"
+        "Lessons in Español: Introducción,\"Lección con caracteres especiales: é, ñ, ü, ¡Hola!\",Contenido en español,intermediate,git,15\n"
+        "Advanced C# & React+,Deep dive into \"C#\" and 'React+',Advanced guide,advanced,react,20\n"
+        ",Missing title row,Content without title,beginner,general,5\n"
+    )
+
+    # Encode with UTF-8 BOM to test full robustness
+    file_bytes = csv_content.encode("utf-8-sig")
+    file_obj = BytesIO(file_bytes)
+    file_obj.name = "lessons.csv"
+
+    response = client.post(
+        "/api/content/published-lessons/bulk-import/",
+        {"file": file_obj},
+        format="multipart",
+    )
+
+    assert response.status_code == 201
+    data = response.json()
+
+    assert data["imported_count"] == 3
+    assert data["failed_count"] == 1
+    assert data["total_rows"] == 4
+    assert len(data["errors"]) == 1
+    assert data["errors"][0]["row"] == 5
+
+    # Check imported lessons in DB
+    spanish_lesson = Lesson.objects.get(title="Lessons in Español: Introducción")
+    assert "é, ñ, ü" in spanish_lesson.summary
+
+    csharp_lesson = Lesson.objects.get(title="Advanced C# & React+")
+    assert '"C#"' in csharp_lesson.summary

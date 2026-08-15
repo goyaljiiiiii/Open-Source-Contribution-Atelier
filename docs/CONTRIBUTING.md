@@ -56,6 +56,7 @@ We tag non-code issues to make them easy to discover:
 | Design & UI/UX | `design`, `ui/ux`, `accessibility` |
 | QA & Manual Testing | `qa`, `testing`, `bug` |
 | Translations | `translation`, `i18n` |
+| Performance & Benchmarks | `perf-review`, `performance` |
 
 ### How to Claim an Issue
 1. Browse issues filterable by labels (e.g., `is:open label:documentation`).

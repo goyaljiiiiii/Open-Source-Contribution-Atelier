@@ -8,9 +8,13 @@ live in this dedicated module to avoid a package/module name conflict.
 from __future__ import annotations
 
 from django.conf import settings
+from django.utils import timezone
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+import datetime
+
+CERTIFICATE_MAX_AGE_DAYS = 365 * 5
 
 from apps.gamification.anti_cheat.detector import AntiCheatDetector
 from apps.gamification.crypto.cert_signer import get_public_key_pem, verify_signature
@@ -46,9 +50,25 @@ class CertificateVerificationView(APIView):
             signature_valid = verify_signature(
                 payload, signed.signature, public_pem
             )
+
+            is_expired = False
+            expires_at_str = payload.get("expires_at")
+            if expires_at_str:
+                try:
+                    # Handle Z suffix if present
+                    clean_str = expires_at_str.replace("Z", "+00:00")
+                    expires_at = datetime.datetime.fromisoformat(clean_str)
+                    if timezone.now() > expires_at:
+                        is_expired = True
+                except ValueError:
+                    pass
+
+            is_valid = signature_valid and signed.is_active and not is_expired
+
             return Response(
                 {
-                    "is_valid": signature_valid and signed.is_active,
+                    "is_valid": is_valid,
+                    "is_expired": is_expired,
                     "signature_valid": signature_valid,
                     "source": "signed_certificate",
                     "certificate": {
@@ -74,9 +94,15 @@ class CertificateVerificationView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+        is_expired = False
+        if legacy.issued_at:
+            if (timezone.now() - legacy.issued_at).days > CERTIFICATE_MAX_AGE_DAYS:
+                is_expired = True
+
         return Response(
             {
-                "is_valid": legacy.is_active,
+                "is_valid": legacy.is_active and not is_expired,
+                "is_expired": is_expired,
                 "signature_valid": None,
                 "source": "progress_certificate",
                 "certificate": {

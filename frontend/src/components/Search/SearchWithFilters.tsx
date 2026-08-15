@@ -179,15 +179,26 @@ export const SearchWithFilters: React.FC<SearchWithFiltersProps> = ({
             </span>
             <div className="search-error-body">
               <p className="search-error-message">{error}</p>
-              {onRetry && (
-                <button
-                  type="button"
-                  className="search-retry-btn"
-                  onClick={onRetry}
-                >
-                  Try again
-                </button>
-              )}
+              <div className="search-error-actions">
+                {onRetry && (
+                  <button
+                    type="button"
+                    className="search-retry-btn"
+                    onClick={onRetry}
+                  >
+                    Try again
+                  </button>
+                )}
+                {hasQuery && (
+                  <button
+                    type="button"
+                    className="search-error-clear-btn"
+                    onClick={handleClearSearch}
+                  >
+                    Clear search
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         ) : (
@@ -207,12 +218,34 @@ export const SearchWithFilters: React.FC<SearchWithFiltersProps> = ({
             {/* Results list */}
             {filteredResults.length === 0 ? (
               <div className="no-results">
-                <p>No results found</p>
+                <div className="no-results-icon" aria-hidden="true">
+                  🔍
+                </div>
+                <h2 className="no-results-title">
+                  {debouncedQuery && selectedCategory
+                    ? `No lessons found for "${debouncedQuery}" in #${selectedCategory}`
+                    : debouncedQuery
+                      ? `No lessons found for "${debouncedQuery}"`
+                      : selectedCategory
+                        ? `No lessons found for category #${selectedCategory}`
+                        : "No lessons found"}
+                </h2>
                 <p className="no-results-hint">
                   {hasQuery
-                    ? "Try adjusting your search or filters"
+                    ? "Try adjusting your search or clearing your filters"
                     : "Search for lessons, modules, and resources above"}
                 </p>
+                {hasQuery && (
+                  <div className="no-results-actions">
+                    <button
+                      type="button"
+                      className="clear-search-btn-action"
+                      onClick={handleClearSearch}
+                    >
+                      Clear search
+                    </button>
+                  </div>
+                )}
                 {hasQuery && (
                   <div className="no-results-suggestions">
                     <p className="no-results-suggestions-label">Try:</p>

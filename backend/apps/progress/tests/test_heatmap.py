@@ -117,7 +117,10 @@ class TestHeatmapViews:
         assert response["Content-Type"] == "text/csv"
         assert "attachment; filename=" in response["Content-Disposition"]
 
-        content = response.content.decode("utf-8")
+        content = b"".join(
+            chunk if isinstance(chunk, bytes) else chunk.encode("utf-8")
+            for chunk in response.streaming_content
+        ).decode("utf-8")
         reader = csv.reader(content.splitlines())
         rows = list(reader)
 
@@ -134,3 +137,36 @@ class TestHeatmapViews:
         assert rows[1][1] == "All Activities"
         assert rows[1][3] == "1"
         assert rows[1][5] == "1"
+
+    def test_heatmap_csv_export_date_range_cap_400(self, api_client, test_setup):
+        user, lesson, exercise = test_setup
+        api_client.force_authenticate(user=user)
+
+        # Range > 365 days
+        response = api_client.get(
+            reverse("heatmap-export-csv"),
+            {"start_date": "2024-01-01", "end_date": "2025-01-02"},
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.data["error"] == "Date range cannot exceed 1 year (365 days)."
+
+    def test_heatmap_csv_export_invalid_dates_400(self, api_client, test_setup):
+        user, lesson, exercise = test_setup
+        api_client.force_authenticate(user=user)
+
+        # start_date > end_date
+        response = api_client.get(
+            reverse("heatmap-export-csv"),
+            {"start_date": "2025-05-01", "end_date": "2025-04-01"},
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.data["error"] == "start_date cannot be after end_date."
+
+        # Invalid date string format
+        response = api_client.get(
+            reverse("heatmap-export-csv"),
+            {"start_date": "invalid-date"},
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.data["error"] == "Invalid start_date format. Use YYYY-MM-DD."
+
