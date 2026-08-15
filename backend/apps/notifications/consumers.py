@@ -194,17 +194,15 @@ class NotificationConsumer(AsyncWebsocketConsumer):
     # ------------------------------------------------------------------ #
     # DB helpers (run in thread pool)                                     #
     # ------------------------------------------------------------------ #
-    @database_sync_to_async
-    def get_unread_count(self, user):
+    async def get_unread_count(self, user):
         from .models import Notification
 
-        return Notification.objects.filter(recipient=user, is_read=False).count()
+        return await Notification.objects.filter(recipient=user, is_read=False).acount()
 
-    @database_sync_to_async
-    def mark_notification_read(self, notif_id):
+    async def mark_notification_read(self, notif_id):
         from .models import Notification
 
-        Notification.objects.filter(id=notif_id, recipient=self.scope["user"]).update(
+        await Notification.objects.filter(id=notif_id, recipient=self.scope["user"]).aupdate(
             is_read=True
         )
 

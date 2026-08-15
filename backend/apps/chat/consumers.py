@@ -160,29 +160,23 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def get_last_50_messages(self):
-        qs = Message.objects.filter(room_id=self.room_id).order_by("-created_at")[:50]
+    async def get_last_50_messages(self):
+        qs = Message.objects.select_related("user").filter(room_id=self.room_id).order_by("-created_at")[:50]
+        messages = [m async for m in qs]
         return [
             {
-
-                "id": getattr(m, "id", None),
-                "parent_id": getattr(m, "parent_id", None),
-                "username": getattr(m.user, "username", ""),
-                "user_id": getattr(m.user, "pk", getattr(m.user, "id", None)),
-
                 "id": m.id, # type: ignore
                 "parent_id": m.parent,
                 "username": m.user.username,
                 "user_id": m.user.id, # type: ignore
-
                 "content": m.content,
                 "created_at": m.created_at.isoformat(),
             }
-            for m in reversed(qs)
+            for m in reversed(messages)
         ]
 
-    @database_sync_to_async
-    def save_message(self, user, room_id, content, parent_id=None):
-        return Message.objects.create(
+    async def save_message(self, user, room_id, content, parent_id=None):
+        return await Message.objects.acreate(
             user=user, room_id=room_id, content=content, parent_id=parent_id
         )
 
@@ -223,10 +217,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 code,
             )
 
-    @database_sync_to_async
-    def add_user_to_presence(self):
+    async def add_user_to_presence(self):
         key = f"chat_presence_{self.room_id}"
-        users = cache.get(key, {})
+        users = await cache.aget(key, {})
         user_id = getattr(self.user, "pk", getattr(self.user, "id", None))
         uid_str = str(user_id)
         is_new = False
@@ -238,13 +231,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             is_new = True
         else:
             users[uid_str]["count"] += 1
-        cache.set(key, users, timeout=86400)
+        await cache.aset(key, users, timeout=86400)
         return is_new
 
-    @database_sync_to_async
-    def remove_user_from_presence(self):
+    async def remove_user_from_presence(self):
         key = f"chat_presence_{self.room_id}"
-        users = cache.get(key, {})
+        users = await cache.aget(key, {})
         user_id = getattr(self.user, "pk", getattr(self.user, "id", None))
         uid_str = str(user_id)
         is_gone = False
@@ -253,13 +245,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             if users[uid_str]["count"] <= 0:
                 del users[uid_str]
                 is_gone = True
-        cache.set(key, users, timeout=86400)
+        await cache.aset(key, users, timeout=86400)
         return is_gone
 
-    @database_sync_to_async
-    def get_online_users(self):
+    async def get_online_users(self):
         key = f"chat_presence_{self.room_id}"
-        users = cache.get(key, {})
+        users = await cache.aget(key, {})
         return [
             {"user_id": int(uid), "username": info["username"]}
             for uid, info in users.items()
