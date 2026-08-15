@@ -217,6 +217,26 @@ export function CommunityPage() {
           open source contributors across the cohort.
         </p>
       </SectionCard>
+      {/* Community Stats */}
+      {isLoading ? (
+        <SkeletonStatGrid />
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {displayStats.map((stat) => (
+            <div
+              key={stat.label}
+              className="rounded-2xl border-4 border-black bg-white p-4 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924]"
+            >
+              <p className="text-xs font-black uppercase tracking-wider text-muted dark:text-[#c4bbae]">
+                {stat.label}
+              </p>
+              <p className="mt-2 text-2xl font-black text-text dark:text-[#f0ebe2]">
+                {stat.value}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Leaderboard Table Grid */}
       <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
