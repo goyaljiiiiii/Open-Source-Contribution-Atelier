@@ -193,6 +193,31 @@ const markAsRead = useCallback(
     }
   }, [user, dispatch]);
 
+  // Polling fallback: re-fetch notifications periodically when WS is disconnected
+  const isPollingFallback = !isConnected;
+  useEffect(() => {
+    if (!user || user.is_staff || !isPollingFallback) return;
+
+    const POLL_INTERVAL_MS = 15_000;
+    const intervalId = setInterval(async () => {
+      try {
+        const result = await dispatch(fetchNotifications(1)).unwrap();
+        // Sync unread count from fetched results since WS isn't providing updates
+        if (result && typeof result === "object" && "results" in result) {
+          const results = result.results as AppNotification[];
+          const serverUnread = results.filter(
+            (n: AppNotification) => !n.is_read,
+          ).length;
+          dispatch(setWsUnreadCount(serverUnread));
+        }
+      } catch {
+        // Silently ignore polling errors
+      }
+    }, POLL_INTERVAL_MS);
+
+    return () => clearInterval(intervalId);
+  }, [user, isPollingFallback, dispatch]);
+
   const value = {
     notifications,
     unreadCount,
@@ -205,7 +230,7 @@ const markAsRead = useCallback(
     loadMore,
     hasMore,
     isWsConnected: isConnected,
-    isPollingFallback: !isConnected,
+    isPollingFallback,
   };
 
   return (

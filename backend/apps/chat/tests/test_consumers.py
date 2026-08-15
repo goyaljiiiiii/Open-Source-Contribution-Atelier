@@ -230,3 +230,104 @@ class TestChatConsumer:
         assert await comm1.receive_nothing(timeout=0.5)
 
         await comm1.disconnect()
+
+    async def test_rate_limit_burst_prevention(self, auth_user, token):
+        headers = [(b"origin", b"http://localhost")]
+        comm = WebsocketCommunicator(
+            application, f"/ws/chat/room1/?token={token}", headers=headers
+        )
+        await comm.connect()
+        await comm.receive_json_from()  # connection_established
+        await comm.receive_json_from()  # presence_sync
+        await comm.receive_json_from()  # presence_joined
+
+        from apps.chat import consumers
+
+        consumers._IN_MEMORY_RATE_LIMITS.clear()
+        consumers._LAST_RATE_LIMIT_WARN_TIME = 0.0
+
+        consumer = comm.instance
+        key = f"throttle_chat_ws_test_burst_{auth_user.id}"
+
+        for i in range(5):
+            allowed = await consumer.check_rate_limit(
+                key, max_requests=5, window_seconds=60
+            )
+            assert allowed is True
+
+        allowed = await consumer.check_rate_limit(
+            key, max_requests=5, window_seconds=60
+        )
+        assert allowed is False
+
+        await comm.disconnect()
+
+    async def test_rate_limit_redis_outage_fallback(self, auth_user, token):
+        from unittest.mock import patch
+
+        headers = [(b"origin", b"http://localhost")]
+        comm = WebsocketCommunicator(
+            application, f"/ws/chat/room1/?token={token}", headers=headers
+        )
+        await comm.connect()
+        await comm.receive_json_from()  # connection_established
+        await comm.receive_json_from()  # presence_sync
+        await comm.receive_json_from()  # presence_joined
+
+        from apps.chat import consumers
+
+        consumers._IN_MEMORY_RATE_LIMITS.clear()
+        consumers._LAST_RATE_LIMIT_WARN_TIME = 0.0
+
+        consumer = comm.instance
+        key = f"throttle_chat_ws_outage_{auth_user.id}"
+
+        with patch(
+            "django.core.cache.cache.get",
+            side_effect=Exception("Redis connection error"),
+        ):
+            for _ in range(3):
+                allowed = await consumer.check_rate_limit(
+                    key, max_requests=3, window_seconds=60
+                )
+                assert allowed is True
+
+            allowed = await consumer.check_rate_limit(
+                key, max_requests=3, window_seconds=60
+            )
+            assert allowed is False
+
+        await comm.disconnect()
+
+    async def test_rate_limit_log_throttling(self, auth_user, token):
+        from unittest.mock import patch
+
+        headers = [(b"origin", b"http://localhost")]
+        comm = WebsocketCommunicator(
+            application, f"/ws/chat/room1/?token={token}", headers=headers
+        )
+        await comm.connect()
+        await comm.receive_json_from()  # connection_established
+        await comm.receive_json_from()  # presence_sync
+        await comm.receive_json_from()  # presence_joined
+
+        from apps.chat import consumers
+
+        consumers._IN_MEMORY_RATE_LIMITS.clear()
+        consumers._LAST_RATE_LIMIT_WARN_TIME = 0.0
+
+        consumer = comm.instance
+        key = f"throttle_chat_ws_log_throttle_{auth_user.id}"
+
+        with patch("apps.chat.consumers.logger.warning") as mock_warn:
+            with patch(
+                "django.core.cache.cache.get", side_effect=Exception("Cache down")
+            ):
+                for _ in range(10):
+                    await consumer.check_rate_limit(
+                        key, max_requests=100, window_seconds=60
+                    )
+
+                assert mock_warn.call_count == 1
+
+        await comm.disconnect()

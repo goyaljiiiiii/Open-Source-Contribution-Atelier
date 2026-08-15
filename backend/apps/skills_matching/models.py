@@ -19,9 +19,10 @@ class ContributorProfile(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="skill_profile"
     )
 
-    # GitHub data
-    github_username = models.CharField(max_length=255)
-    github_data = models.JSONField(default=dict)
+    # VCS data
+    vcs_provider = models.CharField(max_length=50, default="github")
+    vcs_username = models.CharField(max_length=255)
+    vcs_data = models.JSONField(default=dict)
 
     # Skills
     primary_languages = models.JSONField(default=list)
@@ -55,7 +56,7 @@ class ContributorProfile(models.Model):
         ordering = ["-success_rate"]
 
     def __str__(self):
-        return f"Profile: {self.github_username}"
+        return f"Profile: {self.vcs_username}"
 
     def calculate_success_rate(self):
         """Calculate success rate from recommendations."""
@@ -184,7 +185,7 @@ class Recommendation(models.Model):
         ordering = ["-combined_score"]
 
     def __str__(self):
-        return f"Recommendation for {self.contributor.github_username}: Issue #{self.issue.number}"
+        return f"Recommendation for {self.contributor.vcs_username}: Issue #{self.issue.number}"
 
     def accept(self):
         """Accept recommendation."""

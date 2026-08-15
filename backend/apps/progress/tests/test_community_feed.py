@@ -56,6 +56,7 @@ class TestCommunityFeedView(APITestCase):
         self.exercise = Exercise.objects.create(
             lesson=self.lesson,
             title="Interactive Rebase Challenge",
+            instructions="Rebase 3 commits",
         )
 
         self.badge = Badge.objects.create(

@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import uuid  # NEW: Added for cryptographic nonce generation
@@ -76,18 +77,76 @@ class ExportNotesView(APIView):
     def get(self, request):
         user = request.user
         format_type = request.query_params.get("format", "md").lower()
+        limit_param = request.query_params.get("limit")
+        start_param = request.query_params.get("start_date")
+        end_param = request.query_params.get("end_date")
 
-        # Fetch all notes for the user
+        if limit_param:
+            try:
+                limit = int(limit_param)
+                if limit <= 0 or limit > 1000:
+                    return Response(
+                        {"error": "Export limit must be a positive integer up to 1000."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid limit parameter."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        else:
+            limit = 1000
+
+        start_date = None
+        end_date = None
+        if start_param:
+            try:
+                start_date = datetime.strptime(start_param, "%Y-%m-%d").date()
+            except ValueError:
+                return Response(
+                    {"error": "Invalid start_date format. Use YYYY-MM-DD."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        if end_param:
+            try:
+                end_date = datetime.strptime(end_param, "%Y-%m-%d").date()
+            except ValueError:
+                return Response(
+                    {"error": "Invalid end_date format. Use YYYY-MM-DD."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        if start_date and end_date:
+            if start_date > end_date:
+                return Response(
+                    {"error": "start_date cannot be after end_date."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if (end_date - start_date).days > 365:
+                return Response(
+                    {"error": "Date range cannot exceed 1 year (365 days)."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # Fetch notes for the user
         notes = (
             UserNote.objects.filter(user=user)
-            .select_related("lesson", "lesson__module")
-            .order_by("lesson__module__order", "lesson__order")
+            .select_related("lesson")
+            .order_by("lesson__order")
         )
-        
+
+        if start_date:
+            notes = notes.filter(created_at__date__gte=start_date)
+        if end_date:
+            notes = notes.filter(created_at__date__lte=end_date)
+
         if not notes.exists():
             return Response(
                 {"error": "No notes found to export"}, status=status.HTTP_404_NOT_FOUND
             )
+
+        notes = list(notes[:limit])
 
         if format_type == "json":
             return self._export_json(notes, user)
@@ -101,11 +160,14 @@ class ExportNotesView(APIView):
         # Group notes by module
         modules = {}
         for note in notes:
+            module_obj = getattr(note.lesson, "module", None)
             module_name = (
-                note.lesson.module.title if note.lesson.module else "Uncategorized"
+                module_obj.title
+                if module_obj and hasattr(module_obj, "title")
+                else "Uncategorized"
             )
             if module_name not in modules:
-                modules[module_name] = {"module": note.lesson.module, "lessons": {}}
+                modules[module_name] = {"module": module_obj, "lessons": {}}
 
             lesson_title = note.lesson.title
             if lesson_title not in modules[module_name]["lessons"]:
@@ -121,7 +183,7 @@ class ExportNotesView(APIView):
         markdown_lines.append(
             f"**Exported on:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
         )
-        markdown_lines.append(f"**Total Notes:** {notes.count()}")
+        markdown_lines.append(f"**Total Notes:** {len(notes)}")
         markdown_lines.append("")
         markdown_lines.append("---")
         markdown_lines.append("")
@@ -200,17 +262,20 @@ class ExportNotesView(APIView):
             "username": user.username,
             "email": user.email,
             "exported_at": datetime.now().isoformat(),
-            "total_notes": notes.count(),
+            "total_notes": len(notes),
             "notes": [],
         }
 
         for note in notes:
+            module_obj = getattr(note.lesson, "module", None)
             data["notes"].append(
                 {
                     "id": note.id,
                     "lesson_title": note.lesson.title,
                     "module_title": (
-                        note.lesson.module.title if note.lesson.module else None
+                        module_obj.title
+                        if module_obj and hasattr(module_obj, "title")
+                        else None
                     ),
                     "content": note.content,
                     "tags": note.tags if hasattr(note, "tags") else [],
@@ -503,59 +568,84 @@ class CommunityFeedView(APIView):
             .order_by("-updated_at")[:200]
         )
 
+        max_length_param = request.query_params.get("max_length")
+        max_length = None
+        if max_length_param is not None:
+            try:
+                max_length = int(max_length_param)
+                if max_length <= 0:
+                    max_length = None
+            except (ValueError, TypeError):
+                max_length = None
+
+        def format_desc(text: str) -> tuple[str, bool]:
+            if not text:
+                return "", False
+            if max_length is not None and len(text) > max_length:
+                return text[:max_length], True
+            return text, False
+
         entries = []
 
         for hr in help_requests:
-            entries.append(
-                {
-                    "id": f"hr_{hr.id}",
-                    "type": "help_request",
-                    "user_id": hr.user_id,
-                    "username": hr.user.username,
-                    "title": f"asked for help on {hr.lesson.title}",
-                    "description": hr.message[:200],
-                    "created_at": hr.created_at.isoformat(),
-                }
-            )
+            desc, is_trunc = format_desc(hr.message)
+            entry_data = {
+                "id": f"hr_{hr.id}",
+                "type": "help_request",
+                "user_id": hr.user_id,
+                "username": hr.user.username,
+                "title": f"asked for help on {hr.lesson.title}",
+                "description": desc,
+                "created_at": hr.created_at.isoformat(),
+            }
+            if max_length is not None:
+                entry_data["is_truncated"] = is_trunc
+            entries.append(entry_data)
 
         for cs in code_submissions:
-            entries.append(
-                {
-                    "id": f"cs_{cs.id}",
-                    "type": "code_submission",
-                    "user_id": cs.user_id,
-                    "username": cs.user.username,
-                    "title": f"submitted code — {cs.title}",
-                    "description": cs.description[:200] if cs.description else "",
-                    "created_at": cs.created_at.isoformat(),
-                }
-            )
+            desc, is_trunc = format_desc(cs.description if cs.description else "")
+            entry_data = {
+                "id": f"cs_{cs.id}",
+                "type": "code_submission",
+                "user_id": cs.user_id,
+                "username": cs.user.username,
+                "title": f"submitted code — {cs.title}",
+                "description": desc,
+                "created_at": cs.created_at.isoformat(),
+            }
+            if max_length is not None:
+                entry_data["is_truncated"] = is_trunc
+            entries.append(entry_data)
 
         for ub in badges:
-            entries.append(
-                {
-                    "id": f"bd_{ub.id}",
-                    "type": "badge_earned",
-                    "user_id": ub.user_id,
-                    "username": ub.user.username,
-                    "title": f"earned badge — {ub.badge.name}",
-                    "description": ub.badge.description,
-                    "created_at": ub.earned_at.isoformat(),
-                }
-            )
+            desc, is_trunc = format_desc(ub.badge.description if ub.badge.description else "")
+            entry_data = {
+                "id": f"bd_{ub.id}",
+                "type": "badge_earned",
+                "user_id": ub.user_id,
+                "username": ub.user.username,
+                "title": f"earned badge — {ub.badge.name}",
+                "description": desc,
+                "created_at": ub.earned_at.isoformat(),
+            }
+            if max_length is not None:
+                entry_data["is_truncated"] = is_trunc
+            entries.append(entry_data)
 
         for lp in lesson_progress:
-            entries.append(
-                {
-                    "id": f"lp_{lp.id}",
-                    "type": "lesson_completed",
-                    "user_id": lp.user_id,
-                    "username": lp.user.username,
-                    "title": f"completed lesson — {lp.lesson.title}",
-                    "description": f"Scored {lp.score} points",
-                    "created_at": lp.updated_at.isoformat(),
-                }
-            )
+            desc, is_trunc = format_desc(f"Scored {lp.score} points")
+            entry_data = {
+                "id": f"lp_{lp.id}",
+                "type": "lesson_completed",
+                "user_id": lp.user_id,
+                "username": lp.user.username,
+                "title": f"completed lesson — {lp.lesson.title}",
+                "description": desc,
+                "created_at": lp.updated_at.isoformat(),
+            }
+            if max_length is not None:
+                entry_data["is_truncated"] = is_trunc
+            entries.append(entry_data)
 
         entries.sort(key=lambda e: e["created_at"], reverse=True)
 
@@ -1578,6 +1668,9 @@ class HeatmapView(APIView):
         except Exception:
             today = datetime.date.today()
 
+        start_param = request.query_params.get("start_date")
+        end_param = request.query_params.get("end_date")
+
         if start_param:
             try:
                 start_date = datetime.datetime.strptime(start_param, "%Y-%m-%d").date()
@@ -1722,6 +1815,14 @@ class StreakRecoveryView(APIView):
         )
 
 
+class Echo:
+    """An object that implements just the write method of the file-like interface."""
+
+    def write(self, value):
+        """Write the value by returning it, instead of storing in a buffer."""
+        return value
+
+
 class HeatmapCSVExportView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -1730,7 +1831,7 @@ class HeatmapCSVExportView(APIView):
         import datetime
         from collections import defaultdict
 
-        from django.http import HttpResponse
+        from django.http import StreamingHttpResponse
 
         from apps.progress.models import (
             DailyActivity,
@@ -1754,7 +1855,10 @@ class HeatmapCSVExportView(APIView):
             try:
                 start_date = datetime.datetime.strptime(start_param, "%Y-%m-%d").date()
             except ValueError:
-                start_date = today - datetime.timedelta(days=365)
+                return Response(
+                    {"error": "Invalid start_date format. Use YYYY-MM-DD."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         else:
             start_date = today - datetime.timedelta(days=365)
 
@@ -1762,9 +1866,24 @@ class HeatmapCSVExportView(APIView):
             try:
                 end_date = datetime.datetime.strptime(end_param, "%Y-%m-%d").date()
             except ValueError:
-                end_date = today
+                return Response(
+                    {"error": "Invalid end_date format. Use YYYY-MM-DD."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         else:
             end_date = today
+
+        if start_date > end_date:
+            return Response(
+                {"error": "start_date cannot be after end_date."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if (end_date - start_date).days > 365:
+            return Response(
+                {"error": "Date range cannot exceed 1 year (365 days)."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         activity_breakdown = defaultdict(
             lambda: {"reading": 0, "quizzes": 0, "code_submissions": 0}
@@ -1804,59 +1923,62 @@ class HeatmapCSVExportView(APIView):
             d.isoformat() for d in daily_dates
         }
 
-        response = HttpResponse(content_type="text/csv")
-        filename = f"activity_export_{start_date}_to_{end_date}.csv"
-        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        pseudo_buffer = Echo()
+        writer = csv.writer(pseudo_buffer)
 
-        writer = csv.writer(response)
-        writer.writerow(
-            [
-                "Date",
-                "Activity Type",
-                "Reading Count",
-                "Quizzes Count",
-                "Code Submissions Count",
-                "Total Count",
-            ]
-        )
+        def csv_stream():
+            yield writer.writerow(
+                [
+                    "Date",
+                    "Activity Type",
+                    "Reading Count",
+                    "Quizzes Count",
+                    "Code Submissions Count",
+                    "Total Count",
+                ]
+            )
 
-        for date_str in sorted(all_dates):
-            date_obj = datetime.date.fromisoformat(date_str)
-            breakdown = activity_breakdown[date_str]
-            reading_cnt = breakdown["reading"]
-            quizzes_cnt = breakdown["quizzes"]
-            code_sub_cnt = breakdown["code_submissions"]
+            for date_str in sorted(all_dates):
+                date_obj = datetime.date.fromisoformat(date_str)
+                breakdown = activity_breakdown[date_str]
+                reading_cnt = breakdown["reading"]
+                quizzes_cnt = breakdown["quizzes"]
+                code_sub_cnt = breakdown["code_submissions"]
 
-            if activity_type_filter == "reading":
-                count = reading_cnt
-                activity_type_label = "Reading"
-            elif activity_type_filter == "quizzes":
-                count = quizzes_cnt
-                activity_type_label = "Quizzes"
-            elif activity_type_filter == "code_submissions":
-                count = code_sub_cnt
-                activity_type_label = "Code Submissions"
-            else:
-                total_actions = reading_cnt + quizzes_cnt + code_sub_cnt
-                if total_actions > 0:
-                    count = total_actions
-                elif date_obj in daily_dates:
-                    count = 1
+                if activity_type_filter == "reading":
+                    count = reading_cnt
+                    activity_type_label = "Reading"
+                elif activity_type_filter == "quizzes":
+                    count = quizzes_cnt
+                    activity_type_label = "Quizzes"
+                elif activity_type_filter == "code_submissions":
+                    count = code_sub_cnt
+                    activity_type_label = "Code Submissions"
                 else:
-                    count = 0
-                activity_type_label = "All Activities"
+                    total_actions = reading_cnt + quizzes_cnt + code_sub_cnt
+                    if total_actions > 0:
+                        count = total_actions
+                    elif date_obj in daily_dates:
+                        count = 1
+                    else:
+                        count = 0
+                    activity_type_label = "All Activities"
 
-            if count > 0:
-                writer.writerow(
-                    [
-                        date_str,
-                        activity_type_label,
-                        reading_cnt,
-                        quizzes_cnt,
-                        code_sub_cnt,
-                        count,
-                    ]
-                )
+                if count > 0:
+                    yield writer.writerow(
+                        [
+                            date_str,
+                            activity_type_label,
+                            reading_cnt,
+                            quizzes_cnt,
+                            code_sub_cnt,
+                            count,
+                        ]
+                    )
+
+        filename = f"activity_export_{start_date}_to_{end_date}.csv"
+        response = StreamingHttpResponse(csv_stream(), content_type="text/csv")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
         return response
 

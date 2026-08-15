@@ -1,6 +1,8 @@
 import asyncio
 import json
 import logging
+import time
+from typing import Optional
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
@@ -13,6 +15,36 @@ from .models import Message
 
 logger = logging.getLogger(__name__)
 
+_IN_MEMORY_RATE_LIMITS: dict[str, list[float]] = {}
+_LAST_RATE_LIMIT_WARN_TIME: float = 0.0
+
+
+def _log_rate_limit_warning(msg: str, exc: Exception) -> None:
+    global _LAST_RATE_LIMIT_WARN_TIME
+    now = time.time()
+    warn_interval = getattr(settings, "CHAT_WS_RATE_LIMIT_LOG_WARN_INTERVAL", 60)
+    if now - _LAST_RATE_LIMIT_WARN_TIME >= warn_interval:
+        _LAST_RATE_LIMIT_WARN_TIME = now
+        logger.warning("%s: %s", msg, exc)
+
+
+def _in_memory_rate_limit_check(
+    key: str, max_requests: int, window_seconds: int
+) -> bool:
+    try:
+        now = time.time()
+        history = _IN_MEMORY_RATE_LIMITS.get(key, [])
+        history = [t for t in history if now - t < window_seconds]
+        if len(history) >= max_requests:
+            _IN_MEMORY_RATE_LIMITS[key] = history
+            return False
+        history.append(now)
+        _IN_MEMORY_RATE_LIMITS[key] = history
+        return True
+    except Exception as e:
+        _log_rate_limit_warning("In-memory rate limiter fallback error", e)
+        return False
+
 
 class ChatConsumer(AsyncWebsocketConsumer):
     """
@@ -22,8 +54,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
     """
 
     async def check_rate_limit(
-        self, key: str, max_requests: int = 30, window_seconds: int = 60
+        self,
+        key: str,
+        max_requests: Optional[int] = None,
+        window_seconds: Optional[int] = None,
     ) -> bool:
+        if max_requests is None:
+            max_requests = getattr(settings, "CHAT_WS_RATE_LIMIT_MAX_REQUESTS", 30)
+        if window_seconds is None:
+            window_seconds = getattr(settings, "CHAT_WS_RATE_LIMIT_WINDOW_SECONDS", 60)
+
         backend = getattr(settings, "RATE_LIMIT_BACKEND", "local").lower()
 
         if backend == "redis":
@@ -36,8 +76,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 allowed, _, _ = limiter.check()
                 return allowed
             except Exception as e:
-                logger.warning(
-                    f"Chat WS Redis Lua throttling failed ({e}), falling back to local cache."
+                _log_rate_limit_warning(
+                    "Chat WS Redis Lua throttling failed, falling back to local cache/in-memory",
+                    e,
                 )
 
         try:
@@ -53,8 +94,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     cache.set(key, current + 1, window_seconds)
             return True
         except Exception as e:
-            logger.error(f"Chat WS rate limiter failed open: {e}")
-            return True
+            _log_rate_limit_warning(
+                "Chat WS rate limiter cache failed, falling back to in-memory limiter",
+                e,
+            )
+            return _in_memory_rate_limit_check(key, max_requests, window_seconds)
 
     async def connect(self):
         user = self.scope.get("user")
@@ -160,29 +204,23 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def get_last_50_messages(self):
-        qs = Message.objects.filter(room_id=self.room_id).order_by("-created_at")[:50]
+    async def get_last_50_messages(self):
+        qs = Message.objects.select_related("user").filter(room_id=self.room_id).order_by("-created_at")[:50]
+        messages = [m async for m in qs]
         return [
             {
-
-                "id": getattr(m, "id", None),
-                "parent_id": getattr(m, "parent_id", None),
-                "username": getattr(m.user, "username", ""),
-                "user_id": getattr(m.user, "pk", getattr(m.user, "id", None)),
-
                 "id": m.id, # type: ignore
                 "parent_id": m.parent,
                 "username": m.user.username,
                 "user_id": m.user.id, # type: ignore
-
                 "content": m.content,
                 "created_at": m.created_at.isoformat(),
             }
-            for m in reversed(qs)
+            for m in reversed(messages)
         ]
 
-    @database_sync_to_async
-    def save_message(self, user, room_id, content, parent_id=None):
-        return Message.objects.create(
+    async def save_message(self, user, room_id, content, parent_id=None):
+        return await Message.objects.acreate(
             user=user, room_id=room_id, content=content, parent_id=parent_id
         )
 
@@ -223,10 +261,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 code,
             )
 
-    @database_sync_to_async
-    def add_user_to_presence(self):
+    async def add_user_to_presence(self):
         key = f"chat_presence_{self.room_id}"
-        users = cache.get(key, {})
+        users = await cache.aget(key, {})
         user_id = getattr(self.user, "pk", getattr(self.user, "id", None))
         uid_str = str(user_id)
         is_new = False
@@ -238,13 +275,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             is_new = True
         else:
             users[uid_str]["count"] += 1
-        cache.set(key, users, timeout=86400)
+        await cache.aset(key, users, timeout=86400)
         return is_new
 
-    @database_sync_to_async
-    def remove_user_from_presence(self):
+    async def remove_user_from_presence(self):
         key = f"chat_presence_{self.room_id}"
-        users = cache.get(key, {})
+        users = await cache.aget(key, {})
         user_id = getattr(self.user, "pk", getattr(self.user, "id", None))
         uid_str = str(user_id)
         is_gone = False
@@ -253,13 +289,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             if users[uid_str]["count"] <= 0:
                 del users[uid_str]
                 is_gone = True
-        cache.set(key, users, timeout=86400)
+        await cache.aset(key, users, timeout=86400)
         return is_gone
 
-    @database_sync_to_async
-    def get_online_users(self):
+    async def get_online_users(self):
         key = f"chat_presence_{self.room_id}"
-        users = cache.get(key, {})
+        users = await cache.aget(key, {})
         return [
             {"user_id": int(uid), "username": info["username"]}
             for uid, info in users.items()
@@ -351,7 +386,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             parent_id = data.get("parent_id")
             if content:
                 is_allowed = await self.check_rate_limit(
-                    f"throttle_chat_ws_{self.user.id}", 30, 60
+                    f"throttle_chat_ws_{self.user.id}"
                 )
                 if not is_allowed:
                     await self.send(
