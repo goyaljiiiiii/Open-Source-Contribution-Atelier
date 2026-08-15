@@ -244,6 +244,17 @@ API_RATE_LIMIT_PREMIUM = os.getenv("API_RATE_LIMIT_PREMIUM", "10000/hour")
 API_RATE_LIMIT_HEAVY = os.getenv("API_RATE_LIMIT_HEAVY", "10/minute")
 API_RATE_LIMIT_WINDOW = int(os.getenv("API_RATE_LIMIT_WINDOW", "3600"))
 
+# Chat WebSocket Rate Limiting
+CHAT_WS_RATE_LIMIT_MAX_REQUESTS = int(
+    os.getenv("CHAT_WS_RATE_LIMIT_MAX_REQUESTS", "30")
+)
+CHAT_WS_RATE_LIMIT_WINDOW_SECONDS = int(
+    os.getenv("CHAT_WS_RATE_LIMIT_WINDOW_SECONDS", "60")
+)
+CHAT_WS_RATE_LIMIT_LOG_WARN_INTERVAL = int(
+    os.getenv("CHAT_WS_RATE_LIMIT_LOG_WARN_INTERVAL", "60")
+)
+
 # ──────────────────────────────────────────
 # Redis / Channels (graceful fallback when Redis is down)
 # ──────────────────────────────────────────
