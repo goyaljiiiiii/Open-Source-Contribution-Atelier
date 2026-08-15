@@ -14,6 +14,7 @@ import requests as http_requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.conf import settings
+from django.core.cache import cache
 
 User = get_user_model()
 from django.core.mail import send_mail
@@ -900,6 +901,8 @@ class LogoutView(APIView):
 
     def post(self, request):
         try:
+            import time
+
             refresh_token = request.data.get("refresh")
             if not refresh_token:
                 return Response(
@@ -910,6 +913,17 @@ class LogoutView(APIView):
             # This automatically adds the token to the BlacklistedToken model
             token = RefreshToken(refresh_token)
             token.blacklist()
+
+            # Redis-based blacklisting of the revoked access token
+            auth = request.auth
+            if auth:
+                access_jti = auth.get("jti")
+                access_exp = auth.get("exp")
+                if access_jti and access_exp:
+                    access_ttl = max(0, access_exp - int(time.time()))
+                    cache.set(
+                        f"jwt_blocklist:{access_jti}", True, timeout=access_ttl
+                    )
 
             return Response(
                 {"message": "Successfully logged out."},
