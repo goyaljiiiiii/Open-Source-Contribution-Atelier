@@ -7874,8 +7874,9 @@ export interface components {
         ContributorProfile: {
             /** Format: uuid */
             readonly id: string;
-            github_username: string;
-            github_data?: unknown;
+            vcs_provider?: string;
+            vcs_username: string;
+            vcs_data?: unknown;
             primary_languages?: unknown;
             all_languages?: unknown;
             frameworks?: unknown;
@@ -9394,8 +9395,9 @@ export interface components {
         PatchedContributorProfile: {
             /** Format: uuid */
             readonly id?: string;
-            github_username?: string;
-            github_data?: unknown;
+            vcs_provider?: string;
+            vcs_username?: string;
+            vcs_data?: unknown;
             primary_languages?: unknown;
             all_languages?: unknown;
             frameworks?: unknown;
