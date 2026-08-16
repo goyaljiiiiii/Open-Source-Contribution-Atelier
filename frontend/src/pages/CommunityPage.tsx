@@ -25,7 +25,11 @@ export function CommunityPage() {
   console.log("Timezone:", timezoneAbbreviation);
 
   // 1. Fetch backend community stats
-  const { data: stats, isLoading } = useQuery({
+  const {
+    data: stats,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["communityStats"],
     queryFn: () =>
       fetchApi("/progress/community-stats/", { suppressErrorToast: true }),
@@ -195,14 +199,20 @@ export function CommunityPage() {
   const displayStats = [
     {
       label: "Weekly active contributors",
-      value: stats?.active_contributors || "128",
+      value: stats?.active_contributors ?? "Unavailable",
     },
-    { label: "Merged learning PRs", value: stats?.merged_prs || "342" },
+    { label: "Merged learning PRs", value: stats?.merged_prs ?? "Unavailable" },
     {
       label: "Mentor response SLA",
-      value: `${stats?.response_sla || "3.2h"} ${timezoneAbbreviation}`,
+      value:
+        stats?.response_sla == null
+          ? "Unavailable"
+          : `${stats.response_sla} ${timezoneAbbreviation}`,
     },
-    { label: "Open help requests", value: stats?.open_requests || "0" },
+    {
+      label: "Open help requests",
+      value: stats?.open_requests ?? "Unavailable",
+    },
   ];
 
   return (
@@ -220,6 +230,12 @@ export function CommunityPage() {
       {/* Community Stats */}
       {isLoading ? (
         <SkeletonStatGrid />
+      ) : isError ? (
+        <div className="rounded-2xl border-4 border-black bg-white p-4 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924]">
+          <p className="text-sm font-bold text-muted dark:text-[#c4bbae]">
+            Community statistics are currently unavailable.
+          </p>
+        </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {displayStats.map((stat) => (
