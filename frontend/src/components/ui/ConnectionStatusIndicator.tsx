@@ -39,19 +39,41 @@ export const ConnectionStatusIndicator: React.FC<
     statusText = "Closing";
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      setShowTooltip(false);
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      setShowTooltip((prev) => !prev);
+    }
+  };
+
   return (
     <div
-      className="relative flex items-center gap-1.5 cursor-pointer select-none"
+      className="relative flex items-center gap-1.5 cursor-pointer select-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+      tabIndex={0}
+      role="button"
+      aria-label={`Connection status: ${statusText}`}
+      aria-expanded={showTooltip}
+      aria-haspopup="true"
+      aria-describedby={showTooltip && metrics ? "connection-metrics-tooltip" : undefined}
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
+      onFocus={() => setShowTooltip(true)}
+      onBlur={() => setShowTooltip(false)}
+      onKeyDown={handleKeyDown}
     >
-      <span className={`h-2.5 w-2.5 rounded-full ${colorClass}`} />
+      <span className={`h-2.5 w-2.5 rounded-full ${colorClass}`} aria-hidden="true" />
       <span className="text-[11px] font-bold text-slate-400 dark:text-[#a0a0ab] uppercase tracking-wider">
         {statusText}
       </span>
 
       {showTooltip && metrics && (
-        <div className="absolute right-0 top-full mt-2 w-64 bg-slate-900 text-white text-xs p-3 rounded-lg shadow-xl z-50 border border-slate-700 space-y-1.5">
+        <div
+          id="connection-metrics-tooltip"
+          role="tooltip"
+          className="absolute right-0 top-full mt-2 w-64 bg-slate-900 text-white text-xs p-3 rounded-lg shadow-xl z-50 border border-slate-700 space-y-1.5"
+        >
           <div className="font-semibold border-b border-slate-700 pb-1 mb-1">
             WS Connection Metrics
           </div>
