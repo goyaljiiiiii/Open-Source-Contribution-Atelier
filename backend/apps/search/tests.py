@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import RequestFactory, TestCase
 
 from apps.challenges.models import Challenge
@@ -419,3 +420,64 @@ class SearchFilterInjectionSecurityTests(TestCase):
         _, kwargs = mock_index.search.call_args
         opts = kwargs if kwargs else _[1]
         self.assertEqual(opts["filter"], ["content_type_name = 'challenge'"])
+
+
+class SearchPaginationCacheTests(TestCase):
+    """Test pagination parameters are correctly included in the search cache key."""
+
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.view = UnifiedSearchView.as_view()
+        cache.clear()
+
+        # Create multiple SearchDocument instances
+        from django.contrib.contenttypes.models import ContentType
+
+        content_type = ContentType.objects.get_for_model(SearchDocument)
+
+        for i in range(1, 25):
+            SearchDocument.objects.create(
+                id=100 + i,
+                content_type=content_type,
+                object_id=100 + i,
+                title=f"Test Document {i} react",
+                description="react testing",
+                body_text="react framework",
+                content_type_name="lesson",
+            )
+
+    def test_different_pages_not_cached_as_same(self):
+        """Page 2 request should not return cached Page 1 response."""
+        req1 = self.factory.get(
+            "/api/search/", {"q": "react", "page": "1", "page_size": "5"}
+        )
+        resp1 = self.view(req1)
+        self.assertEqual(resp1.status_code, 200)
+        page1_titles = [doc["title"] for doc in resp1.data["results"]]
+
+        req2 = self.factory.get(
+            "/api/search/", {"q": "react", "page": "2", "page_size": "5"}
+        )
+        resp2 = self.view(req2)
+        self.assertEqual(resp2.status_code, 200)
+        page2_titles = [doc["title"] for doc in resp2.data["results"]]
+
+        # Page 1 and Page 2 should have different results
+        self.assertNotEqual(page1_titles, page2_titles)
+
+    def test_different_page_sizes_not_cached_as_same(self):
+        """Different page_size requests for same query should not return cached response."""
+        req1 = self.factory.get(
+            "/api/search/", {"q": "react", "page": "1", "page_size": "2"}
+        )
+        resp1 = self.view(req1)
+        self.assertEqual(resp1.status_code, 200)
+        self.assertEqual(len(resp1.data["results"]), 2)
+
+        req2 = self.factory.get(
+            "/api/search/", {"q": "react", "page": "1", "page_size": "5"}
+        )
+        resp2 = self.view(req2)
+        self.assertEqual(resp2.status_code, 200)
+        self.assertEqual(len(resp2.data["results"]), 5)
+
