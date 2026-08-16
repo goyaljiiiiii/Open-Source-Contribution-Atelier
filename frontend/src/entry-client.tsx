@@ -10,12 +10,16 @@ import { ThemeProvider } from "./hooks/useTheme";
 import { ToastProvider } from "./features/ui/ToastContext";
 import { syncOfflineQueue } from "./lib/offlineQueue";
 import { initKeepAlive } from "./lib/hfKeepAlive";
+import { syncThemeOnLoad } from "./hooks/themeUtils";
 import i18n from "./lib/i18n";
 import { I18nextProvider } from "react-i18next";
 import "./styles.css";
 import "./plugins/coreLessonPlugins";
 import { NetworkStatusProvider } from "./context/NetworkStatusContext";
 import { initializeTracing } from "./tracing";
+
+// Synchronously sync theme before initial hydration to prevent FOUC
+syncThemeOnLoad();
 // Initialize Sentry before rendering if DSN is set and package is available
 const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
 if (SENTRY_DSN) {
