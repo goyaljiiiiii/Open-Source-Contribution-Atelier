@@ -1,6 +1,14 @@
 from django.db.models import Sum
 from django.utils import timezone
-from rest_framework import permissions, serializers, status, views, viewsets
+from rest_framework import (
+    generics,
+    pagination,
+    permissions,
+    serializers,
+    status,
+    views,
+    viewsets,
+)
 from rest_framework.response import Response
 
 from .models import Badge, Purchase, Quest, ShopItem, Streak, UserAchievement, UserQuest
@@ -54,13 +62,21 @@ class BadgeViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.AllowAny]
 
 
-class MyAchievementsView(views.APIView):
-    permission_classes = [permissions.IsAuthenticated]
+class MyAchievementsPagination(pagination.PageNumberPagination):
+    page_size = 20
+    page_size_query_param = "page_size"
+    max_page_size = 100
 
-    def get(self, request):
-        achievements = UserAchievement.objects.filter(user=request.user)
-        serializer = UserAchievementSerializer(achievements, many=True)
-        return Response(serializer.data)
+
+class MyAchievementsView(generics.ListAPIView):
+    serializer_class = UserAchievementSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = MyAchievementsPagination
+
+    def get_queryset(self):
+        return UserAchievement.objects.filter(user=self.request.user).order_by(
+            "-awarded_at", "-id"
+        )
 
 
 class MyStreakView(views.APIView):
@@ -169,6 +185,7 @@ class PurchaseItemView(views.APIView):
 
     def post(self, request):
         from django.db import transaction
+
         from apps.progress.models import XPEvent
 
         item_id = request.data.get("item_id")

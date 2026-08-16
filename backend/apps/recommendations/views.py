@@ -1,4 +1,4 @@
-from rest_framework import generics, permissions, status
+from rest_framework import generics, pagination, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -7,9 +7,16 @@ from .models import Recommendation
 from .serializers import RecommendationSerializer
 
 
+class RecommendationPagination(pagination.PageNumberPagination):
+    page_size = 20
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
 class RecommendationListView(generics.ListAPIView):
     serializer_class = RecommendationSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = RecommendationPagination
 
     def get_queryset(self):
         return Recommendation.objects.filter(
