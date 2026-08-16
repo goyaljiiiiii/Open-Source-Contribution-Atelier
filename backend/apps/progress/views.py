@@ -86,7 +86,9 @@ class ExportNotesView(APIView):
                 limit = int(limit_param)
                 if limit <= 0 or limit > 1000:
                     return Response(
-                        {"error": "Export limit must be a positive integer up to 1000."},
+                        {
+                            "error": "Export limit must be a positive integer up to 1000."
+                        },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
             except (ValueError, TypeError):
@@ -302,11 +304,27 @@ class ExportNotesView(APIView):
 # ============================================================
 
 
+class BadgePagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
 @extend_schema(responses=BadgeSerializer(many=True))
 class BadgeListView(ListAPIView):
-    queryset = Badge.objects.all()
     serializer_class = BadgeSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    pagination_class = BadgePagination
+
+    def get_queryset(self):
+        queryset = Badge.objects.all().order_by("name")
+        category = self.request.query_params.get("category")
+        if category:
+            queryset = queryset.filter(category__iexact=category.strip())
+        search = self.request.query_params.get("search")
+        if search:
+            queryset = queryset.filter(name__icontains=search.strip())
+        return queryset
 
 
 @extend_schema_view(
@@ -618,7 +636,9 @@ class CommunityFeedView(APIView):
             entries.append(entry_data)
 
         for ub in badges:
-            desc, is_trunc = format_desc(ub.badge.description if ub.badge.description else "")
+            desc, is_trunc = format_desc(
+                ub.badge.description if ub.badge.description else ""
+            )
             entry_data = {
                 "id": f"bd_{ub.id}",
                 "type": "badge_earned",
@@ -1400,9 +1420,7 @@ class LeaderboardView(APIView):
                 hour=0, minute=0, second=0, microsecond=0
             )
         elif time_period == "monthly":
-            start_date = now.replace(
-                day=1, hour=0, minute=0, second=0, microsecond=0
-            )
+            start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         elif time_period.startswith("seasonal"):
             season = Season.objects.filter(is_active=True).first()
             if season is not None and season.start_date:
@@ -1525,10 +1543,14 @@ class LeaderboardView(APIView):
         if request.user.is_authenticated and not search_username:
             me = ranked_users().filter(pk=request.user.id).first()
             if me is not None:
-                better_count = ranked_users().filter(
-                    Q(total_xp__gt=me.total_xp)
-                    | Q(total_xp=me.total_xp, username__lt=me.username)
-                ).count()
+                better_count = (
+                    ranked_users()
+                    .filter(
+                        Q(total_xp__gt=me.total_xp)
+                        | Q(total_xp=me.total_xp, username__lt=me.username)
+                    )
+                    .count()
+                )
                 personal_rank = {
                     "rank": better_count + 1,
                     "total_xp": me.total_xp,
