@@ -97,6 +97,38 @@ describe("CommunityPage statistics", () => {
     expect(screen.queryByText(/3\.2h/)).not.toBeInTheDocument();
   });
 
+  it("shows unavailable for a missing statistic in a successful response", () => {
+    useQueryMock.mockReturnValue({
+      data: {
+        merged_prs: 0,
+        response_sla: 0,
+        open_requests: 0,
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    renderPage();
+
+    const contributorsCard = screen.getByText(
+      "Weekly active contributors",
+    ).parentElement;
+    expect(contributorsCard).not.toBeNull();
+    expect(
+      within(contributorsCard!).getByText("Unavailable"),
+    ).toBeInTheDocument();
+
+    for (const label of ["Merged learning PRs", "Open help requests"]) {
+      const card = screen.getByText(label).parentElement;
+      expect(card).not.toBeNull();
+      expect(within(card!).getByText("0")).toBeInTheDocument();
+    }
+
+    const slaCard = screen.getByText("Mentor response SLA").parentElement;
+    expect(slaCard).not.toBeNull();
+    expect(within(slaCard!).getByText(/^0 /)).toBeInTheDocument();
+  });
+
   it("keeps valid zero statistics visible", () => {
     useQueryMock.mockReturnValue({
       data: {
