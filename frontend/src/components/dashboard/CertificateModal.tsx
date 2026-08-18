@@ -27,10 +27,22 @@ export function CertificateModal({
     if (!certificateRef.current) return;
     setIsExporting(true);
     try {
-      const dataUrl = await toPng(certificateRef.current, {
+      const node = certificateRef.current;
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      const width = node.offsetWidth || 800;
+      const height = node.offsetHeight || 600;
+
+      const dataUrl = await toPng(node, {
         quality: 1.0,
-        pixelRatio: 3, // Multiplies resolution scale for crisp high-density asset exports
+        pixelRatio: isSafari ? 2 : 3,
+        width,
+        height,
         backgroundColor: "#FFF9F0",
+        cacheBust: true,
+        style: {
+          transform: "scale(1)",
+          transformOrigin: "top left",
+        },
       });
       const link = document.createElement("a");
       link.download = `Certificate-${username || "User"}.png`;
@@ -68,12 +80,11 @@ export function CertificateModal({
         <button
           onClick={onClose}
           className="absolute top-4 right-4 bg-white border-2 border-black p-2 rounded-full hover:bg-surface-low transition-colors print:hidden"
-          aria-label="Close certificate"
+          aria-label="Close modal"
         >
           <X size={16} />
         </button>
 
-        {/* Bound layout wrapper targeting DOM elements for capture structure conversion */}
         <div
           ref={certificateRef}
           className="space-y-6 w-full border-4 border-dashed border-black/35 rounded-2xl p-6 sm:p-10 relative bg-[#FFF9F0]"
@@ -124,7 +135,7 @@ export function CertificateModal({
               <span className="font-mono text-xs font-black block">
                 {certificateData?.certificate?.issued_at
                   ? new Date(
-                      certificateData.certificate.issued_at,
+                      certificateData.certificate.issued_at
                     ).toLocaleDateString()
                   : new Date().toLocaleDateString()}
               </span>

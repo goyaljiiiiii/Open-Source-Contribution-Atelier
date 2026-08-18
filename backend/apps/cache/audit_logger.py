@@ -3,7 +3,7 @@ import logging
 import time
 import uuid
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger("audit")
 
@@ -50,7 +50,7 @@ class AuditLogger:
             audit_entry["error"] = error
 
         # Log as JSON
-        logger.info(json.dumps(audit_entry))
+        logger.info(json.dumps(audit_entry, default=str))
 
     @staticmethod
     def _sanitize_data(data: Dict) -> Dict:

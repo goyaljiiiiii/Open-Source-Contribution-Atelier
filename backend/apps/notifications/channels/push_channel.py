@@ -1,5 +1,6 @@
 import json
 import logging
+
 from django.conf import settings
 from pywebpush import WebPushException, webpush  # type: ignore
 

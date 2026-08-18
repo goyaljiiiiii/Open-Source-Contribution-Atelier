@@ -138,6 +138,28 @@ FORCE_INMEMORY_CHANNEL_LAYER=1
 
 Restart the backend after changing this. Multi-worker fan-out still needs Redis in Docker/prod.
 
+### Verify Redis connectivity
+
+For a local Redis installation, run:
+
+```bash
+redis-cli -u redis://localhost:6379/0 ping
+```
+
+For the Docker Compose Redis service, run:
+
+```bash
+docker compose exec redis redis-cli ping
+```
+
+A healthy Redis instance should respond with:
+
+```text
+PONG
+```
+
+If Redis is unreachable, check that the Redis service is running and that `REDIS_URL` points to the correct host and portIn Docker Compose, the backend uses `redis://redis:6379/0`; for a local backend, `backend/.env.example` uses `redis://localhost:6379/0`.
+
 ---
 
 ## 5) Traefik routing / services unreachable

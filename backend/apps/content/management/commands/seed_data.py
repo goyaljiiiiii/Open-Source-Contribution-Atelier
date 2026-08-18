@@ -2,8 +2,8 @@ from django.core.management.base import BaseCommand
 
 from apps.challenges.models import Challenge
 from apps.content.models import Exercise, Lesson
-from apps.progress.models import Badge
 from apps.issues.models import Bounty
+from apps.progress.models import Badge
 
 
 class Command(BaseCommand):

@@ -1,10 +1,14 @@
-import pytest
 import base64
 import hashlib
+from datetime import timedelta
+
+import pytest
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from rest_framework.test import APIClient
-from apps.oauth.models import OAuthClient, OAuthToken, OAuthAuthorizationCode
+
 from apps.oauth.backends import OAuth2TokenAuthentication
+from apps.oauth.models import OAuthAuthorizationCode, OAuthClient, OAuthToken
 
 User = get_user_model()
 
@@ -28,6 +32,20 @@ def oauth_client_obj(db, test_user):
     )
     client.set_client_secret("secret123")
     client.save()
+    return client
+
+
+@pytest.fixture
+def public_oauth_client(db, test_user):
+    client = OAuthClient(
+        user=test_user,
+        name="Public SPA Client",
+        client_id="client_public456",
+        client_type=OAuthClient.ClientType.PUBLIC,
+        redirect_uris=["http://localhost:3000/callback"],
+        allowed_scopes=["openid", "profile"],
+    )
+    client.save()  # no client_secret for public clients
     return client
 
 
@@ -115,6 +133,98 @@ def test_authorization_code_pkce_flow(test_user, oauth_client_obj):
     assert "refresh_token" in token_data
     assert "id_token" in token_data
     assert token_data["token_type"] == "Bearer"
+
+
+@pytest.mark.django_db
+def test_authorization_code_cannot_be_replayed(test_user, oauth_client_obj):
+    api_client = APIClient()
+    api_client.force_authenticate(user=test_user)
+
+    res_grant = api_client.post(
+        "/oauth/authorize/",
+        {
+            "client_id": oauth_client_obj.client_id,
+            "redirect_uri": "http://localhost:3000/callback",
+            "response_type": "code",
+            "scope": "openid",
+            "action": "grant",
+        },
+        format="json",
+    )
+    code = res_grant.json()["code"]
+
+    token_kwargs = {
+        "grant_type": "authorization_code",
+        "client_id": oauth_client_obj.client_id,
+        "client_secret": "secret123",
+        "code": code,
+        "redirect_uri": "http://localhost:3000/callback",
+    }
+
+    res_first = api_client.post("/oauth/token/", token_kwargs, format="json")
+    assert res_first.status_code == 200
+
+    # Replaying the same code must fail
+    res_second = api_client.post("/oauth/token/", token_kwargs, format="json")
+    assert res_second.status_code == 400
+
+
+@pytest.mark.django_db
+def test_redirect_uri_mismatch_rejected(test_user, oauth_client_obj):
+    api_client = APIClient()
+    api_client.force_authenticate(user=test_user)
+
+    res = api_client.post(
+        "/oauth/authorize/",
+        {
+            "client_id": oauth_client_obj.client_id,
+            "redirect_uri": "http://evil.example.com/callback",
+            "response_type": "code",
+            "scope": "openid",
+            "action": "grant",
+        },
+        format="json",
+    )
+    assert res.status_code == 400
+
+
+@pytest.mark.django_db
+def test_public_client_pkce_flow_without_secret(test_user, public_oauth_client):
+    api_client = APIClient()
+    api_client.force_authenticate(user=test_user)
+
+    code_verifier = "public_client_code_verifier_1234567890"
+    hashed = hashlib.sha256(code_verifier.encode("utf-8")).digest()
+    code_challenge = base64.urlsafe_b64encode(hashed).rstrip(b"=").decode("utf-8")
+
+    res_grant = api_client.post(
+        "/oauth/authorize/",
+        {
+            "client_id": public_oauth_client.client_id,
+            "redirect_uri": "http://localhost:3000/callback",
+            "response_type": "code",
+            "scope": "openid",
+            "code_challenge": code_challenge,
+            "code_challenge_method": "S256",
+            "action": "grant",
+        },
+        format="json",
+    )
+    code = res_grant.json()["code"]
+
+    res_token = api_client.post(
+        "/oauth/token/",
+        {
+            "grant_type": "authorization_code",
+            "client_id": public_oauth_client.client_id,
+            "code": code,
+            "redirect_uri": "http://localhost:3000/callback",
+            "code_verifier": code_verifier,
+        },
+        format="json",
+    )
+    assert res_token.status_code == 200
+    assert "access_token" in res_token.json()
 
 
 @pytest.mark.django_db
@@ -247,8 +357,7 @@ def test_drf_oauth2_bearer_authentication(test_user, oauth_client_obj):
         user=test_user,
         access_token="at_valid_bearer_123",
         scope="openid profile",
-        access_token_expires_at=pytest.importorskip("django.utils.timezone").now()
-        + pytest.importorskip("datetime").timedelta(hours=1),
+        access_token_expires_at=timezone.now() + timedelta(hours=1),
     )
 
     factory = APIRequestFactory()

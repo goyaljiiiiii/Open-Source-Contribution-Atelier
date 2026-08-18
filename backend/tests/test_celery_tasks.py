@@ -1,9 +1,11 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
-from tasks import example_task, MonitoredTask
-from apps.portfolio.tasks import generate_portfolio_task
-from apps.portfolio.models import GeneratedPortfolio
 from django.contrib.auth import get_user_model
+
+from apps.portfolio.models import GeneratedPortfolio
+from apps.portfolio.tasks import generate_portfolio_task
+from tasks import MonitoredTask, example_task
 
 User = get_user_model()
 

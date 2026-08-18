@@ -1,8 +1,9 @@
 import logging
+import random
 
 from django.utils.deprecation import MiddlewareMixin
+
 from .models import Experiment, ExperimentAssignment
-import random
 
 logger = logging.getLogger(__name__)
 

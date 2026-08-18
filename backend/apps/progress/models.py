@@ -1,15 +1,11 @@
 from __future__ import annotations
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
 
 from django.conf import settings
-
+from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
-from django.core.validators import MinValueValidator, MaxValueValidator
-
 
 from apps.content.models import Exercise, Lesson
 from apps.organizations.models import Organization
@@ -20,6 +16,96 @@ STREAK_MILESTONES = [
     {"days": 14, "multiplier": 1.5, "label": "2-Week Streak"},
     {"days": 30, "multiplier": 2.0, "label": "1-Month Streak"},
 ]
+
+
+class CodeSubmission(models.Model):
+    objects = models.Manager()
+
+    class Status(models.TextChoices):
+        PENDING_REVIEW = "pending_review", "Pending Review"
+        REVIEWED = "reviewed", "Reviewed"
+        ESCALATED = "escalated", "Escalated"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="code_submissions",
+    )
+    exercise = models.ForeignKey(
+        Exercise,
+        on_delete=models.CASCADE,
+        related_name="submissions",
+        null=True,
+        blank=True,
+    )
+    assigned_reviewers = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="assigned_reviews"
+    )
+    title = models.CharField(max_length=255)
+    code_snippet = models.TextField()
+    description = models.TextField(blank=True)
+    status = models.CharField(
+        max_length=25,
+        choices=Status.choices,
+        default=Status.PENDING_REVIEW,
+        db_index=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.title} by {self.user.username}"
+
+
+class PlagiarismReport(models.Model):
+    """Model to store plagiarism detection results for a code submission.
+
+    Fields correspond to the migration that creates this table.
+    """
+
+    objects = models.Manager()
+    submission = models.ForeignKey(
+        CodeSubmission, on_delete=models.CASCADE, related_name="plagiarism_reports"
+    )
+    matched_submission = models.ForeignKey(
+        CodeSubmission, on_delete=models.CASCADE, related_name="matched_in_reports"
+    )
+    similarity_score = models.FloatField()
+    is_flagged = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-similarity_score"]
+        unique_together = ("submission", "matched_submission")
+
+    def __str__(self):
+        return f"PlagiarismReport(submission={self.submission.id}, matched={self.matched_submission.id}, score={self.similarity_score})"
+
+
+class PeerReview(models.Model):
+    objects = models.Manager()
+    submission = models.ForeignKey(
+        CodeSubmission, on_delete=models.CASCADE, related_name="reviews"
+    )
+    reviewer = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="given_reviews"
+    )
+    feedback = models.TextField()
+    rating = models.PositiveIntegerField(default=5)
+    is_approved = models.BooleanField(default=True)
+    is_hidden = models.BooleanField(default=False)
+    points_earned = models.PositiveIntegerField(default=10)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("submission", "reviewer")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Review by {self.reviewer.username} for {self.submission.title}"
 
 
 class XPMultiplierEvent(models.Model):
@@ -321,96 +407,6 @@ class Certificate(models.Model):
         return f"Certificate for {self.user.username} - {self.verification_hash}"
 
 
-class CodeSubmission(models.Model):
-    objects = models.Manager()
-
-    class Status(models.TextChoices):
-        PENDING_REVIEW = "pending_review", "Pending Review"
-        REVIEWED = "reviewed", "Reviewed"
-        ESCALATED = "escalated", "Escalated"
-
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="code_submissions",
-    )
-    exercise = models.ForeignKey(
-        Exercise,
-        on_delete=models.CASCADE,
-        related_name="submissions",
-        null=True,
-        blank=True,
-    )
-    assigned_reviewers = models.ManyToManyField(
-        settings.AUTH_USER_MODEL, blank=True, related_name="assigned_reviews"
-    )
-    title = models.CharField(max_length=255)
-    code_snippet = models.TextField()
-    description = models.TextField(blank=True)
-    status = models.CharField(
-        max_length=25,
-        choices=Status.choices,
-        default=Status.PENDING_REVIEW,
-        db_index=True,
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ["-created_at"]
-
-    def __str__(self):
-        return f"{self.title} by {self.user.username}"
-
-
-class PlagiarismReport(models.Model):
-    """Model to store plagiarism detection results for a code submission.
-
-    Fields correspond to the migration that creates this table.
-    """
-
-    objects = models.Manager()
-    submission = models.ForeignKey(
-        CodeSubmission, on_delete=models.CASCADE, related_name="plagiarism_reports"
-    )
-    matched_submission = models.ForeignKey(
-        CodeSubmission, on_delete=models.CASCADE, related_name="matched_in_reports"
-    )
-    similarity_score = models.FloatField()
-    is_flagged = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ["-similarity_score"]
-        unique_together = ("submission", "matched_submission")
-
-    def __str__(self):
-        return f"PlagiarismReport(submission={self.submission.id}, matched={self.matched_submission.id}, score={self.similarity_score})"
-
-
-class PeerReview(models.Model):
-    objects = models.Manager()
-    submission = models.ForeignKey(
-        CodeSubmission, on_delete=models.CASCADE, related_name="reviews"
-    )
-    reviewer = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="given_reviews"
-    )
-    feedback = models.TextField()
-    rating = models.PositiveIntegerField(default=5)
-    is_approved = models.BooleanField(default=True)
-    is_hidden = models.BooleanField(default=False)
-    points_earned = models.PositiveIntegerField(default=10)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ("submission", "reviewer")
-        ordering = ["-created_at"]
-
-    def __str__(self):
-        return f"Review by {self.reviewer.username} for {self.submission.title}"
-
-
 class StreakProfile(models.Model):
     """Tracks daily coding streaks for a user."""
 
@@ -516,7 +512,14 @@ class DailyActivity(models.Model):
 
         Returns (created: bool, streak_profile: StreakProfile).
         """
+        from datetime import datetime
+
         from django.db import transaction
+
+        from apps.progress.streak_engine import get_user_local_date
+
+        if isinstance(date, datetime):
+            date = get_user_local_date(user, date)
 
         # Ensure deterministic behavior under concurrency.
         with transaction.atomic():
@@ -689,3 +692,82 @@ class UserMilestoneCompletion(models.Model):
 
     def __str__(self):
         return f"{self.user.username} completed {self.milestone.name}"
+
+
+class LeaderboardRank(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.DO_NOTHING,
+        primary_key=True,
+    )
+    total_xp = models.IntegerField()
+    rank = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = "progress_leaderboard_mv"
+        ordering = ["rank"]
+
+
+class WeeklyGoal(models.Model):
+    """Tracks weekly learning goals (lessons, XP, minutes) per user per week."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="weekly_goals",
+    )
+    week_start_date = models.DateField(db_index=True)
+    target_lessons = models.PositiveIntegerField(default=5)
+    target_xp = models.PositiveIntegerField(default=500)
+    target_minutes = models.PositiveIntegerField(default=120)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-week_start_date"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "week_start_date"], name="unique_user_weekly_goal"
+            )
+        ]
+
+    def __str__(self):
+        return f"WeeklyGoal(user={self.user_id}, week={self.week_start_date})"
+
+    @classmethod
+    def get_or_create_current(cls, user) -> "WeeklyGoal":
+        today = timezone.now().date()
+        week_start = today - timezone.timedelta(days=today.weekday())
+        goal, _ = cls.objects.get_or_create(
+            user=user,
+            week_start_date=week_start,
+            defaults={
+                "target_lessons": 5,
+                "target_xp": 500,
+                "target_minutes": 120,
+            },
+        )
+        return goal
+
+
+class WeeklyDigestLog(models.Model):
+    """Tracks which users have already received the weekly digest for a given week."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="weekly_digest_logs",
+    )
+    week_start = models.DateField(
+        help_text="Monday of the ISO week this digest covers."
+    )
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "week_start")
+        ordering = ["-sent_at"]
+
+    def __str__(self):
+        return f"Digest for {self.user.username} — week of {self.week_start}"
+

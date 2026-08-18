@@ -1,9 +1,10 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.signals import user_logged_in
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.utils import timezone
+
 from apps.events.services.event_bus import EventBus
 
 from .models import UserProfile
@@ -78,8 +79,13 @@ def publish_user_deindexed_event(sender, instance, **kwargs):
 def log_user_activity_on_login(sender, request, user, **kwargs):
     from apps.progress.models import DailyActivity
 
+    try:
+        local_date = user.user_profile.local_today
+    except Exception:
+        local_date = timezone.now().date()
+
     DailyActivity.log_and_update_streak(
         user=user,
-        date=timezone.now().date(),
+        date=local_date,
         activity_type="login",
     )

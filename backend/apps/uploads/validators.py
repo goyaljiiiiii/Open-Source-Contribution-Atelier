@@ -35,6 +35,34 @@ FILE_TYPES: dict[str, DetectedFileType] = {
 DEFAULT_ALLOWED_TYPES = tuple(FILE_TYPES)
 AVATAR_ALLOWED_TYPES = ("jpeg", "png", "webp", "gif", "svg")
 
+DANGEROUS_EXTENSIONS = {
+    ".php",
+    ".phtml",
+    ".php3",
+    ".php4",
+    ".php5",
+    ".phar",
+    ".exe",
+    ".bat",
+    ".cmd",
+    ".sh",
+    ".bash",
+    ".cgi",
+    ".pl",
+    ".jsp",
+    ".asp",
+    ".aspx",
+    ".dll",
+    ".scr",
+    ".vbs",
+    ".js",
+    ".mjs",
+    ".py",
+    ".rb",
+    ".ps1",
+    ".jar",
+}
+
 DANGEROUS_TEXT_MARKERS = (
     b"<?php",
     b"<%",
@@ -43,10 +71,22 @@ DANGEROUS_TEXT_MARKERS = (
     b"#!/usr/bin/env python",
 )
 
+
+def validate_filename_extensions(filename: str) -> None:
+    """Ensure filename does not contain any prohibited executable extensions in any suffix position."""
+    path = Path(filename)
+    suffixes = {s.lower() for s in path.suffixes}
+    dangerous = suffixes.intersection(DANGEROUS_EXTENSIONS)
+    if dangerous:
+        ext_list = ", ".join(sorted(dangerous))
+        raise ValidationError(f"Prohibited executable file extension found: {ext_list}")
+
+
 SVG_DANGEROUS_TAGS = {"script", "foreignObject"}
 SVG_URL_ATTRIBUTES = {"href", "{http://www.w3.org/1999/xlink}href"}
 DANGEROUS_URL_RE = re.compile(r"^\s*(?:javascript|data\s*:\s*text/html)", re.I)
 
+_SCAN_CHUNK_SIZE = 65536  # 64KB chunks, bounded memory regardless of file size
 
 def max_size_for(upload_type: str) -> int:
     limits = getattr(
@@ -88,6 +128,34 @@ def _looks_like_svg(header: bytes) -> bool:
     )
 
 
+def _contains_dangerous_marker(stream: BinaryIO) -> bool:
+    """
+    Scan the FULL stream (not just the magic-byte header) for dangerous
+    script markers, in bounded chunks so large text files don't get
+    loaded entirely into memory. Handles markers that could straddle a
+    chunk boundary by overlapping a small tail from the previous chunk.
+    """
+    position = stream.tell()
+    try:
+        stream.seek(0)
+        max_marker_len = max(len(m) for m in DANGEROUS_TEXT_MARKERS)
+        tail = b""
+        while True:
+            chunk = stream.read(_SCAN_CHUNK_SIZE)
+            if not chunk:
+                break
+            window = tail + chunk
+            lowered = window.lower()
+            if any(marker in lowered for marker in DANGEROUS_TEXT_MARKERS):
+                return True
+            # Keep a small tail so a marker split across the chunk
+            # boundary is still caught on the next iteration.
+            tail = window[-(max_marker_len - 1):] if max_marker_len > 1 else b""
+        return False
+    finally:
+        stream.seek(position)
+
+
 def detect_file_type(stream: BinaryIO) -> str:
     position = stream.tell()
     try:
@@ -113,8 +181,9 @@ def detect_file_type(stream: BinaryIO) -> str:
     if _looks_like_svg(header):
         return "svg"
     if _looks_like_text(header):
-        lowered = header.lower()
-        if any(marker in lowered for marker in DANGEROUS_TEXT_MARKERS):
+        # Scan the FULL file, not just the header, for dangerous markers —
+        # a marker placed past byte 8192 was previously invisible to this check.
+        if _contains_dangerous_marker(stream):
             raise ValidationError(
                 "Executable or server-side script content is not allowed."
             )
@@ -132,8 +201,10 @@ def validate_file(
 
     path = Path(file_path)
     validate_declared_size(path.stat().st_size, upload_type)
+    validate_filename_extensions(original_filename)
 
     extension = Path(original_filename).suffix.lower()
+
     allowed_types = (
         getattr(settings, "UPLOAD_AVATAR_ALLOWED_TYPES", AVATAR_ALLOWED_TYPES)
         if upload_type == "avatar"

@@ -104,11 +104,12 @@ def on_badge_awarded(sender, instance, created, **kwargs):
     )
 
 
+from django_q.tasks import async_task
+
 # ------------------------------------------------------------------ #
 # PeerReview signal
 # ------------------------------------------------------------------ #
 from apps.progress.models import PeerReview
-from django_q.tasks import async_task
 
 
 @receiver(post_save, sender=PeerReview, dispatch_uid="on_peer_review_submitted")

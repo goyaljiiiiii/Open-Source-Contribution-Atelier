@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Clock } from "lucide-react";
 
 interface ChallengeTimerProps {
@@ -11,10 +11,26 @@ export function ChallengeTimer({
   onExpire,
 }: ChallengeTimerProps) {
   const [timeLeft, setTimeLeft] = useState(initialSeconds);
+  const onExpireRef = useRef(onExpire);
+  const hasExpiredRef = useRef(false);
+
+  // Keep latest onExpire reference without triggering effect
+  useEffect(() => {
+    onExpireRef.current = onExpire;
+  }, [onExpire]);
+
+  // Reset if initialSeconds changes
+  useEffect(() => {
+    setTimeLeft(initialSeconds);
+    hasExpiredRef.current = false;
+  }, [initialSeconds]);
 
   useEffect(() => {
     if (timeLeft <= 0) {
-      if (onExpire) onExpire();
+      if (!hasExpiredRef.current) {
+        hasExpiredRef.current = true;
+        onExpireRef.current?.();
+      }
       return;
     }
 
@@ -23,7 +39,7 @@ export function ChallengeTimer({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, onExpire]);
+  }, [timeLeft]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;

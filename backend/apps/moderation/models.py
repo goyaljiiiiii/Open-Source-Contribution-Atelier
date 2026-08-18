@@ -1,7 +1,7 @@
-from django.db import models
 from django.contrib.auth import get_user_model
-from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from django.db import models
 
 User = get_user_model()
 
@@ -68,6 +68,17 @@ class ContentReport(models.Model):
 
     def __str__(self):
         return f"Report {self.id} - {self.category} on {self.content_type} {self.object_id}"
+
+class SentimentSnapshot(models.Model):
+    """Daily sentiment snapshot."""
+    
+    date = models.DateField(auto_now_add=True)
+    positive_count = models.IntegerField(default=0)
+    negative_count = models.IntegerField(default=0)
+    neutral_count = models.IntegerField(default=0)
+    avg_toxicity = models.FloatField(default=0)
+    total_comments = models.IntegerField(default=0)
+
 
 
 class ModerationAuditEvent(models.Model):

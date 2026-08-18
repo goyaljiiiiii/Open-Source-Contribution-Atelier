@@ -1,6 +1,7 @@
 import logging
-from django.conf import settings
+
 import meilisearch
+from django.conf import settings
 
 try:
     from meilisearch.errors import MeiliSearchApiError, MeiliSearchConnectionError

@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import ExpertiseDomain, MaintainerExpertise, IssueRouting, RoutingMetric
+
+from .models import ExpertiseDomain, IssueRouting, MaintainerExpertise, RoutingMetric
 
 
 class ExpertiseDomainSerializer(serializers.ModelSerializer):

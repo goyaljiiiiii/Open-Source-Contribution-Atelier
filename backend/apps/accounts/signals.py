@@ -2,13 +2,14 @@
 Signals for JWT token invalidation.
 """
 
+from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
-from django.contrib.auth import get_user_model
 
 User = get_user_model()
-from django.utils import timezone
 import logging
+
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,11 @@ def invalidate_tokens_on_password_change(sender, instance, **kwargs):
         old_user = User.objects.get(pk=instance.pk)
         # Check if password has changed
         if old_user.password != instance.password:
+            from apps.accounts.models import PasswordResetToken
+
+            PasswordResetToken.objects.filter(user=instance, is_used=False).update(
+                is_used=True
+            )
             # Increment token version in user profile
             if hasattr(instance, "user_profile") and instance.user_profile:
                 instance.user_profile.jwt_token_version += 1

@@ -1,15 +1,17 @@
-import pytest
 from datetime import timedelta
-from django.utils import timezone
-from django.core.management import call_command
-from django.contrib.sessions.models import Session
-from rest_framework_simplejwt.token_blacklist.models import (
-    OutstandingToken,
-    BlacklistedToken,
-)
-from apps.accounts.models import PasswordResetToken, OTPToken, MagicLinkToken
-from django.contrib.auth import get_user_model
 from io import StringIO
+
+import pytest
+from django.contrib.auth import get_user_model
+from django.contrib.sessions.models import Session
+from django.core.management import call_command
+from django.utils import timezone
+from rest_framework_simplejwt.token_blacklist.models import (
+    BlacklistedToken,
+    OutstandingToken,
+)
+
+from apps.accounts.models import MagicLinkToken, OTPToken, PasswordResetToken
 
 User = get_user_model()
 

@@ -1,5 +1,5 @@
-import re
 import hashlib
+import re
 
 # Regular expressions for identifying dynamic content
 IPV4_PATTERN = re.compile(r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b")

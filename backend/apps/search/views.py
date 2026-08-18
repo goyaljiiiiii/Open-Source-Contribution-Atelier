@@ -99,10 +99,14 @@ class UnifiedSearchView(generics.ListAPIView):
             return Response({"count": 0, "next": None, "previous": None, "results": []})
 
         content_type_filter = (
-            request.query_params.get("type")
-            or request.query_params.get("content_type_filter")
-            or ""
-        ).strip().lower()
+            (
+                request.query_params.get("type")
+                or request.query_params.get("content_type_filter")
+                or ""
+            )
+            .strip()
+            .lower()
+        )
 
         if content_type_filter:
             # Server-side validation rejecting special characters, single quotes, semicolons, and operators
@@ -117,30 +121,29 @@ class UnifiedSearchView(generics.ListAPIView):
                 )
 
         version = get_search_cache_version()
-        cache_key = f"search_api:v{version}:q:{q}:type:{content_type_filter}"
+        page = request.query_params.get("page", "1")
+        page_size = request.query_params.get("page_size", "")
+        cache_key = (
+            f"search_api:v{version}:q:{q}:type:{content_type_filter}"
+            f":page:{page}:page_size:{page_size}"
+        )
+        
+        from apps.core.cache.stampede import stampede_protected_get_or_set
 
-        # Only cache un-paginated metadata; actual pages are not cached to
-        # keep memory usage bounded.
-        cached_data = cache.get(cache_key)
-        if cached_data is not None:
-            return Response(cached_data)
+        def generate():
+            queryset = self._build_queryset(q, content_type_filter)
 
-        queryset = self._build_queryset(q, content_type_filter)
+            # Paginate
+            page_obj = self.paginate_queryset(queryset)
+            if page_obj is not None:
+                serializer = self.get_serializer(page_obj, many=True)
+                return self.get_paginated_response(serializer.data).data
 
-        # Paginate
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            response = self.get_paginated_response(serializer.data)
-            # Cache the full paginated envelope
-            timeout = getattr(settings, "SEARCH_CACHE_TIMEOUT", 3600)
-            cache.set(cache_key, response.data, timeout=timeout)
-            return response
+            serializer = self.get_serializer(queryset, many=True)
+            return serializer.data
 
-        serializer = self.get_serializer(queryset, many=True)
-        data = serializer.data
         timeout = getattr(settings, "SEARCH_CACHE_TIMEOUT", 3600)
-        cache.set(cache_key, data, timeout=timeout)
+        data = stampede_protected_get_or_set(cache_key, generate, timeout=timeout)
         return Response(data)
 
     # ------------------------------------------------------------------ queryset
@@ -160,7 +163,9 @@ class UnifiedSearchView(generics.ListAPIView):
                     "limit": 200,
                 }
                 if content_type_filter:
-                    escaped_filter = content_type_filter.replace("\\", "\\\\").replace("'", "\\'")
+                    escaped_filter = content_type_filter.replace("\\", "\\\\").replace(
+                        "'", "\\'"
+                    )
                     search_options["filter"] = [
                         f"content_type_name = '{escaped_filter}'"
                     ]

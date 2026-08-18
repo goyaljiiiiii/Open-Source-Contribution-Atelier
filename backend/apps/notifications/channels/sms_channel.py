@@ -1,5 +1,7 @@
 import logging
+
 from django.conf import settings
+
 from apps.notifications.channels.base import NotificationChannel
 
 logger = logging.getLogger(__name__)

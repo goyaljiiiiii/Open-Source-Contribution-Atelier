@@ -1,9 +1,11 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+from django.contrib.auth import get_user_model
 from django.core import mail
 from django.test import TestCase
-from django.contrib.auth import get_user_model
+
+from apps.notifications.models import Notification, NotificationPreference
 from apps.notifications.tasks import send_bulk_email, send_notification_digests
-from apps.notifications.models import NotificationPreference, Notification
 
 User = get_user_model()
 

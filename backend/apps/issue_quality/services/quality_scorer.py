@@ -2,24 +2,30 @@
 Quality scoring for issues to prevent WONTFIX labeling.
 """
 
-import re
 import hashlib
-from typing import Dict, Any, List, Tuple, Optional
-from textblob import TextBlob
-from langdetect import detect, DetectorFactory
+import re
+from typing import Any, Dict, List, Optional, Tuple
+
+from langdetect import DetectorFactory, detect
 try:
     from googletrans import Translator
 except (ImportError, ModuleNotFoundError):
+
     class Translator:
         def translate(self, text, **kwargs):
             class Translation:
                 src = "en"
                 text = text
+
             return Translation()
+
+
+import logging
+
 import numpy as np
 from django.core.cache import cache
-from apps.issue_quality.models import IssueQualityCheck, DuplicateIssue, WontfixPattern
-import logging
+
+from apps.issue_quality.models import DuplicateIssue, IssueQualityCheck, WontfixPattern
 
 logger = logging.getLogger(__name__)
 
@@ -119,6 +125,11 @@ class QualityScorer:
         Calculate clarity score using NLP.
         """
         try:
+            # TextBlob pulls in NLTK and optional NLP dependencies.  Import it
+            # only for this calculation so an unavailable NLP stack cannot
+            # prevent Django from resolving unrelated API routes.
+            from textblob import TextBlob
+
             blob = TextBlob(text)
 
             # Check sentence count and average length

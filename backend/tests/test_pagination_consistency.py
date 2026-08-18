@@ -3,14 +3,15 @@ Automated tests for pagination consistency across API endpoints.
 """
 
 import re
-from typing import Dict, Any, List, Optional
-from django.test import TestCase
-from django.urls import get_resolver, URLPattern, URLResolver
+from typing import Any, Dict, List, Optional
+
 from django.contrib.auth import get_user_model
+from django.test import TestCase
+from django.urls import URLPattern, URLResolver, get_resolver
 
 User = get_user_model()
+from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
 from rest_framework.test import APIClient
-from rest_framework.pagination import PageNumberPagination, LimitOffsetPagination
 
 
 class PaginationValidator:

@@ -1,9 +1,10 @@
-from rest_framework_simplejwt.tokens import RefreshToken
+import hashlib
+import json
+
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-import hashlib
-import json
+from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 

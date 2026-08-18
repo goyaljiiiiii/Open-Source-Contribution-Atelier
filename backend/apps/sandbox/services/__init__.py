@@ -1,3 +1,6 @@
+import logging
+
+logger = logging.getLogger(__name__)
 from dataclasses import dataclass
 
 ALLOWED_PREFIXES = (
@@ -251,5 +254,5 @@ async def run_code_trace(code: str, user_id: str = "anonymous", timeout: int = 1
         if os.path.exists(path):
             try:
                 os.remove(path)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Caught exception: %s", e)

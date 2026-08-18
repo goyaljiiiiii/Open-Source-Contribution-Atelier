@@ -193,8 +193,8 @@ export function GitGraph({ logOutput, onNodeClick }: GitGraphProps) {
     });
 
     // Legend
-    let legendX = width - 160;
-    let legendY = 20;
+    const legendX = width - 160;
+    const legendY = 20;
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
     ctx.fillRect(legendX - 10, legendY - 10, 160, branchList.length * 22 + 20);
     

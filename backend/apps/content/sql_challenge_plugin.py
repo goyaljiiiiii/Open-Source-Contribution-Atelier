@@ -20,8 +20,17 @@ class UnsafeQueryError(Exception):
 
 
 _FORBIDDEN_KEYWORDS = (
-    "insert", "update", "delete", "drop", "alter", "create",
-    "attach", "detach", "pragma", "vacuum", "replace",
+    "insert",
+    "update",
+    "delete",
+    "drop",
+    "alter",
+    "create",
+    "attach",
+    "detach",
+    "pragma",
+    "vacuum",
+    "replace",
 )
 
 
@@ -49,7 +58,9 @@ def _assert_select_only(query: str) -> None:
             raise UnsafeQueryError(f"Forbidden keyword in query: {keyword}")
 
 
-def _run_query(schema_sql: str, seed_data_sql: str, query: str, timeout_seconds: float = 2.0) -> List[Tuple]:
+def _run_query(
+    schema_sql: str, seed_data_sql: str, query: str, timeout_seconds: float = 2.0
+) -> List[Tuple]:
     """
     Execute a SELECT query against a fresh in-memory SQLite DB seeded
     with the lesson's schema/data. Returns the result rows.

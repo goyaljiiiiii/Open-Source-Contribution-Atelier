@@ -1,7 +1,10 @@
 from django.urls import path
 
+from .views import ExportNotesView  # ✅ ADDED
+from .views import QuizNonceView  # NEW: Imported the Nonce View
 from .views import (
     BadgeListView,
+    BufferMetricsView,
     BulkProgressUpdateView,
     BulkSyncProgressView,
     CertificateVerificationView,
@@ -9,31 +12,37 @@ from .views import (
     CommunityFeedView,
     CommunityStatsView,
     ContributorTimelineView,
-    ExportNotesView,  # ✅ ADDED
     DailyLessonStatsView,
+    HeatmapCSVExportView,
+    HeatmapView,
     HelpRequestListCreateView,
+    GitHubLeaderboardView,
+    LeaderboardView,
     LessonBookmarkView,
     MentorHelpRequestListView,
     MyCertificateView,
     MyProgressView,
     PeerReviewView,
     QuizAttemptView,
-    RecommendationsView,
-    UserProgressPDFExportView,
     ReadingProgressView,
-    QuizNonceView,  # NEW: Imported the Nonce View
-    LeaderboardView,
-    BufferMetricsView,
-    HeatmapView,
-    StreakStatusView,
+    RecommendationsView,
     StreakRecoveryView,
-    HeatmapCSVExportView,
+    StreakStatusView,
+    UserProgressPDFExportView,
+    WeeklyGoalView,
 )
 
 urlpatterns = [
     # Badges
     path("leaderboard/", LeaderboardView.as_view(), name="leaderboard"),
+    path(
+        "leaderboard/github/",
+        GitHubLeaderboardView.as_view(),
+        name="github-leaderboard",
+    ),
+    path("weekly-goal/", WeeklyGoalView.as_view(), name="weekly-goal"),
     path("buffer-metrics/", BufferMetricsView.as_view(), name="buffer-metrics"),
+
     path("heatmap/", HeatmapView.as_view(), name="heatmap"),
     path("heatmap/export/", HeatmapCSVExportView.as_view(), name="heatmap-export-csv"),
     path("streak/", StreakStatusView.as_view(), name="streak-status"),

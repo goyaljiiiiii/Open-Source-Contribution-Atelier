@@ -7,5 +7,5 @@ class NotificationsConfig(AppConfig):
     label = "notifications"
 
     def ready(self):
-        import apps.notifications.signals  # noqa: F401
         import apps.notifications.mentions  # noqa: F401
+        import apps.notifications.signals  # noqa: F401

@@ -3,7 +3,9 @@ Celery tasks for async event processing.
 """
 
 import logging
+
 from django.db import transaction
+
 from apps.events.models import DomainEvent
 from apps.events.services.event_bus import EventBus
 
@@ -65,9 +67,10 @@ def retry_failed_events():
     """
     Scheduled task to retry failed events.
     """
-    from django.utils import timezone
     from datetime import timedelta
+
     from django.db import models
+    from django.utils import timezone
     from django_q.tasks import async_task
 
     # Get events that failed and are eligible for retry
@@ -88,8 +91,9 @@ def cleanup_old_events():
     """
     Clean up old completed events.
     """
-    from django.utils import timezone
     from datetime import timedelta
+
+    from django.utils import timezone
 
     # Delete events older than 30 days
     cutoff = timezone.now() - timedelta(days=30)

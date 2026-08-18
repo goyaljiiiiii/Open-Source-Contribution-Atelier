@@ -1,4 +1,4 @@
-from rest_framework import generics, permissions, status
+from rest_framework import generics, pagination, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -7,9 +7,16 @@ from .models import Recommendation
 from .serializers import RecommendationSerializer
 
 
+class RecommendationPagination(pagination.PageNumberPagination):
+    page_size = 20
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
 class RecommendationListView(generics.ListAPIView):
     serializer_class = RecommendationSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = RecommendationPagination
 
     def get_queryset(self):
         return Recommendation.objects.filter(
@@ -45,10 +52,10 @@ class NextLessonRecommendationView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
+        from apps.content.serializers import LessonSerializer
         from apps.recommendations.next_lesson_service import (
             NextLessonRecommendationService,
         )
-        from apps.content.serializers import LessonSerializer
 
         service = NextLessonRecommendationService(request.user)
         result = service.get_next_lesson()
@@ -66,8 +73,8 @@ class NextLessonRecommendationView(APIView):
 
 
 class OSSIssueListView(generics.ListAPIView):
-    from .serializers import OSSIssueSerializer
     from .models import OSSIssue
+    from .serializers import OSSIssueSerializer
 
     serializer_class = OSSIssueSerializer
     permission_classes = [permissions.IsAuthenticated]

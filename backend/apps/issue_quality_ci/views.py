@@ -1,10 +1,11 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from .models import IssueQualityRecord, QualityMetric, QualityComment, QualityTrend
+
+from .models import IssueQualityRecord, QualityComment, QualityMetric, QualityTrend
 from .serializers import (
     IssueQualityRecordSerializer,
-    QualityMetricSerializer,
     QualityCommentSerializer,
+    QualityMetricSerializer,
     QualityTrendSerializer,
 )
 

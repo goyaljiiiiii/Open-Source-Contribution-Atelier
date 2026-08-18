@@ -68,6 +68,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     linkedin_url = serializers.URLField(required=False, allow_blank=True)
     github_url = serializers.URLField(required=False, allow_blank=True)
     bio = serializers.CharField(required=False, allow_blank=True)
+    receive_weekly_digest = serializers.BooleanField(required=False)
 
     class Meta:
         model = User
@@ -81,6 +82,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             "linkedin_url",
             "github_url",
             "bio",
+            "receive_weekly_digest",
         )
         extra_kwargs = {
             "email": {"required": False},
@@ -105,6 +107,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         linkedin_url = validated_data.pop("linkedin_url", None)
         github_url = validated_data.pop("github_url", None)
         bio = validated_data.pop("bio", None)
+        receive_weekly_digest = validated_data.pop("receive_weekly_digest", None)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -123,6 +126,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             or linkedin_url is not None
             or github_url is not None
             or bio is not None
+            or receive_weekly_digest is not None
         ):
             from apps.accounts.models import UserProfile
 
@@ -141,6 +145,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                 profile.github_url = github_url
             if bio is not None:
                 profile.bio = bio
+            if receive_weekly_digest is not None:
+                profile.receive_weekly_digest = receive_weekly_digest
             profile.save()
 
         return instance
@@ -241,7 +247,10 @@ class UserListSerializer(serializers.ModelSerializer):
 
 
 class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
-    """Allow login with either username or email in the username field."""
+    """Allow login with either username or email in the username field, plus optional remember me lifetime and 2FA TOTP code validation."""
+
+    remember = serializers.BooleanField(required=False, default=False)
+    totp_code = serializers.CharField(required=False, allow_blank=True, write_only=True)
 
     def validate(self, attrs):
         username_key = self.username_field
@@ -252,7 +261,40 @@ class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
             if user:
                 attrs = {**attrs, username_key: user.username}
 
+        remember_me = self.initial_data.get("remember", False) or attrs.get("remember", False)
+
         result = super().validate(attrs)
+
+        # Check optional 2FA TOTP enforcement
+        if hasattr(self.user, "totp_device") and self.user.totp_device.is_enabled:
+            totp_code = attrs.get("totp_code") or self.initial_data.get("totp_code")
+            if not totp_code:
+                raise AuthenticationFailed(
+                    {
+                        "requires_2fa": True,
+                        "message": "Two-factor authentication code required.",
+                    },
+                    code="2fa_required",
+                )
+
+            from .totp import verify_and_consume_backup_code, verify_totp_code
+
+            device = self.user.totp_device
+            is_valid_totp = verify_totp_code(device.secret, totp_code)
+            is_valid_backup = (
+                verify_and_consume_backup_code(device, totp_code)
+                if not is_valid_totp
+                else False
+            )
+
+            if not is_valid_totp and not is_valid_backup:
+                raise AuthenticationFailed(
+                    {"totp_code": "Invalid 2FA authentication code or recovery code."},
+                    code="invalid_2fa_code",
+                )
+
+            device.last_used_at = timezone.now()
+            device.save(update_fields=["last_used_at"])
 
         if (
             hasattr(self.user, "user_profile")
@@ -280,6 +322,10 @@ class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
         )
 
         refresh = self.get_token(self.user)
+        if remember_me:
+            refresh.set_exp(lifetime=timedelta(days=30))
+            refresh.access_token.set_exp(lifetime=timedelta(days=7))
+
         refresh["session_id"] = str(session.session_id)
 
         access = refresh.access_token
@@ -287,8 +333,22 @@ class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         result["refresh"] = str(refresh)
         result["access"] = str(access)
+        result["remember"] = bool(remember_me)
 
         return result
+
+
+class TwoFactorVerifySerializer(serializers.Serializer):
+    """Accept 6-digit TOTP verification code to confirm 2FA setup."""
+
+    code = serializers.CharField(max_length=10, min_length=6)
+
+
+class TwoFactorDisableSerializer(serializers.Serializer):
+    """Accept user password to confirm disabling 2FA."""
+
+    password = serializers.CharField(write_only=True)
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -1,0 +1,155 @@
+name: Vulnerability Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, labeled]
+  schedule:
+    - cron: "0 6 * * 1"
+
+concurrency:
+  group: vuln-scan-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pip-audit:
+    name: pip-audit (Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pip-audit
+        run: pip install pip-audit==2.7.3
+
+      - name: Run pip-audit on requirements.txt
+        run: pip-audit --require-hashes --strict -r backend/requirements.txt -o vuln-report-pip.json 2>&1 || true
+
+      - name: Run pip-audit on requirements-prod.txt
+        run: pip-audit --require-hashes --strict -r backend/requirements-prod.txt -o vuln-report-pip-prod.json 2>&1 || true
+
+      - name: Upload pip-audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: vuln-report-pip
+          path: vuln-report-pip*.json
+          retention-days: 7
+        if: always()
+
+  npm-audit:
+    name: npm audit (Frontend)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Run npm audit (high severity)
+        run: npm audit --audit-level=high --json > vuln-report-npm.json 2>&1 || true
+
+      - name: Upload npm audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: vuln-report-npm
+          path: vuln-report-npm.json
+          retention-days: 7
+        if: always()
+
+  grype-scan:
+    name: Grype (Container)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker compose build backend
+
+      - name: Install Grype
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin v0.79.1
+
+      - name: Scan image with Grype
+        run: |
+          grype open-contribution-atelier-backend:latest \
+            --fail-on HIGH \
+            --only-fixed \
+            --file vuln-report-grype.json \
+            --output json \
+            --ignore-states "not-fixed" || true
+        continue-on-error: true
+
+      - name: Upload Grype report
+        uses: actions/upload-artifact@v4
+        with:
+          name: vuln-report-grype
+          path: vuln-report-grype.json
+          retention-days: 7
+        if: always()
+
+  consolidate:
+    name: Consolidate & Allowlist Check
+    needs: [pip-audit, npm-audit, grype-scan]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install pip-audit==2.7.3
+
+      - name: Download all scan reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: vuln-report-*
+          path: reports/
+          merge-multiple: true
+
+      - name: Check against vulnerability allowlist
+        run: |
+          python backend/scripts/check_dependency_allowlist.py \
+            --reports-dir reports/ \
+            --allowlist backend/scripts/vuln-allowlist.json \
+            --output vuln-report-consolidated.json
+
+      - name: Upload consolidated report
+        uses: actions/upload-artifact@v4
+        with:
+          name: vuln-report-consolidated
+          path: vuln-report-consolidated.json
+          retention-days: 30
+        if: always()
+
+      - name: Fail build on unallowed HIGH/CRITICAL vulnerabilities
+        run: |
+          python -c "
+          import json
+          with open('vuln-report-consolidated.json') as f:
+              report = json.load(f)
+          unallowed = report.get('unallowed_vulnerabilities', [])
+          if len(unallowed) > 0:
+              print(f'FAIL: {len(unallowed)} HIGH/CRITICAL vulnerabilities not in allowlist')
+              for v in unallowed:
+                  print(f'  - {v.get(\"id\", \"unknown\")}: {v.get(\"severity\", \"?\")} in {v.get(\"package\", \"?\")}')
+              exit(1)
+          print('PASS: No unallowed HIGH/CRITICAL vulnerabilities found')
+          "

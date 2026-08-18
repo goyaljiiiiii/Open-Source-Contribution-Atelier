@@ -14,8 +14,16 @@ from typing import Any, Dict, List, Tuple
 from .plugins import LessonPlugin, registry
 
 _DEFAULT_ALLOWED_TYPES = (
-    "feat", "fix", "docs", "style", "refactor",
-    "perf", "test", "chore", "ci", "build",
+    "feat",
+    "fix",
+    "docs",
+    "style",
+    "refactor",
+    "perf",
+    "test",
+    "chore",
+    "ci",
+    "build",
 )
 
 # type(optional-scope): description
@@ -34,13 +42,17 @@ def _looks_imperative(description: str) -> bool:
     (contributes partial credit, not a hard pass/fail gate), since full
     imperative-mood detection needs real NLP and would be overkill here.
     """
-    first_word = description.strip().split(" ", 1)[0].lower() if description.strip() else ""
+    first_word = (
+        description.strip().split(" ", 1)[0].lower() if description.strip() else ""
+    )
     if not first_word:
         return False
     return not first_word.endswith(_COMMON_NON_IMPERATIVE_SUFFIXES)
 
 
-def _evaluate_rules(message: str, allowed_types: Tuple[str, ...]) -> List[Tuple[str, bool]]:
+def _evaluate_rules(
+    message: str, allowed_types: Tuple[str, ...]
+) -> List[Tuple[str, bool]]:
     """
     Evaluate a commit message header against Conventional Commits rules.
     Returns a list of (rule_name, passed) tuples.
@@ -62,10 +74,22 @@ def _evaluate_rules(message: str, allowed_types: Tuple[str, ...]) -> List[Tuple[
 
     rules.append(("type_is_allowed", commit_type in allowed_types))
     rules.append(("has_description", bool(description and description.strip())))
-    rules.append(("description_not_empty_after_colon", description != "" and not description.isspace()))
-    rules.append(("description_no_trailing_period", not description.rstrip().endswith(".")))
+    rules.append(
+        (
+            "description_not_empty_after_colon",
+            description != "" and not description.isspace(),
+        )
+    )
+    rules.append(
+        ("description_no_trailing_period", not description.rstrip().endswith("."))
+    )
     rules.append(("description_reasonable_length", len(description) <= 72))
-    rules.append(("description_starts_lowercase", description[:1].islower() if description else False))
+    rules.append(
+        (
+            "description_starts_lowercase",
+            description[:1].islower() if description else False,
+        )
+    )
     rules.append(("description_looks_imperative", _looks_imperative(description)))
 
     if scope is not None:
@@ -108,7 +132,9 @@ class CommitMessageChallengePlugin(LessonPlugin):
 
         allowed_types = data.get("allowed_types")
         if allowed_types is not None:
-            if not isinstance(allowed_types, list) or not all(isinstance(t, str) for t in allowed_types):
+            if not isinstance(allowed_types, list) or not all(
+                isinstance(t, str) for t in allowed_types
+            ):
                 return False
 
         return True

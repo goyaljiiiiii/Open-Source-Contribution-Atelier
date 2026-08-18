@@ -1,8 +1,11 @@
-from datetime import datetime, timezone as dt_timezone
+from datetime import datetime
+from datetime import timezone as dt_timezone
+
 from django.db import transaction
 from django.utils import timezone
 from django_q.tasks import async_task
 
+from apps.content.services.lesson_service import LessonService
 from apps.progress.models import (
     DailyActivity,
     LessonProgress,
@@ -10,7 +13,6 @@ from apps.progress.models import (
     XPEvent,
     XPMultiplierEvent,
 )
-from apps.content.services.lesson_service import LessonService
 
 
 class ProgressTrackingService:
@@ -141,9 +143,13 @@ class ProgressTrackingService:
             )
 
             if completed:
+                try:
+                    local_date = user.user_profile.local_today
+                except Exception:
+                    local_date = timezone.now().date()
                 DailyActivity.log_and_update_streak(
                     user=user,
-                    date=timezone.now().date(),
+                    date=local_date,
                     activity_type="lesson",
                 )
 

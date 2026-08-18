@@ -19,6 +19,7 @@ export interface UseGoodFirstIssuesResult {
   error: string | null;
   fromCache: boolean;
   totalCount: number;
+  refetch: () => void;
 }
 
 export function useGoodFirstIssues(
@@ -30,6 +31,9 @@ export function useGoodFirstIssues(
   const [fromCache, setFromCache] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [debounced, setDebounced] = useState(() => normalizeFilters(filters));
+  const [reloadIndex, setReloadIndex] = useState(0);
+
+  const refetch = () => setReloadIndex((prev) => prev + 1);
 
   useEffect(() => {
     const id = window.setTimeout(() => {
@@ -75,7 +79,7 @@ export function useGoodFirstIssues(
       cancelled = true;
       controller.abort();
     };
-  }, [debounced]);
+  }, [debounced, reloadIndex]);
 
-  return { issues, isLoading, error, fromCache, totalCount };
+  return { issues, isLoading, error, fromCache, totalCount, refetch };
 }

@@ -13,7 +13,8 @@ class SandboxExecutionLogMiddleware(MiddlewareMixin):
     def _is_verify_request(self, request):
         try:
             return request.path == reverse("sandbox-verify")
-        except Exception:
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)
             # Fallback if URL is not yet fully resolvable or missing
             return request.path.rstrip("/") == "/api/sandbox/verify"
 
@@ -23,15 +24,16 @@ class SandboxExecutionLogMiddleware(MiddlewareMixin):
                 # Read request body to cache it in request._body
                 # before DRF consumes the stream in the view.
                 _ = request.body
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Caught exception: %s", e)
 
     def process_response(self, request, response):
         if self._is_verify_request(request) and request.method == "POST":
             if response.status_code == 200:
                 try:
                     req_data = json.loads(request.body.decode("utf-8"))
-                except Exception:
+                except Exception as e:
+                    logger.warning("Caught exception: %s", e)
                     req_data = {}
 
                 # Safely extract response data
@@ -39,7 +41,8 @@ class SandboxExecutionLogMiddleware(MiddlewareMixin):
                 if res_data is None:
                     try:
                         res_data = json.loads(response.content.decode("utf-8"))
-                    except Exception:
+                    except Exception as e:
+                        logger.warning("Caught exception: %s", e)
                         res_data = {}
 
                 if req_data and res_data:

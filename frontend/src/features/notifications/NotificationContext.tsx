@@ -152,26 +152,30 @@ export function NotificationProvider({
     },
   });
 
-  const markAsRead = useCallback(
-    async (id: number) => {
-      if (!user || user.is_staff) return;
+const markAsRead = useCallback(
+  async (id: number) => {
+    if (!user || user.is_staff) return;
 
-      // Optimistic update
-      dispatch(markReadLocally(id));
+    // Optimistic update
+    dispatch(markReadLocally(id));
 
-      try {
-        // Use WS to mark read if possible, fallback to REST
-        sendMessage({ action: "mark_read", notification_id: id });
-        await fetchApi(`/notifications/${id}/mark-read/`, {
-          method: "PATCH",
-        });
-      } catch (error) {
-        console.error("Failed to mark notification as read", error);
-        dispatch(fetchNotifications(1));
-      }
-    },
-    [user, sendMessage, dispatch],
-  );
+    try {
+      // Use WS to mark read if possible, fallback to REST
+      sendMessage({
+        action: "mark_read",
+        notification_id: id,
+      });
+
+      await fetchApi(`/notifications/${id}/mark-read/`, {
+        method: "POST",
+      });
+    } catch (error) {
+      console.error("Failed to mark notification as read", error);
+      dispatch(fetchNotifications(1));
+    }
+  },
+  [user, sendMessage, dispatch],
+);
 
   const markAllAsRead = useCallback(async () => {
     if (!user || user.is_staff) return;
@@ -189,6 +193,31 @@ export function NotificationProvider({
     }
   }, [user, dispatch]);
 
+  // Polling fallback: re-fetch notifications periodically when WS is disconnected
+  const isPollingFallback = !isConnected;
+  useEffect(() => {
+    if (!user || user.is_staff || !isPollingFallback) return;
+
+    const POLL_INTERVAL_MS = 15_000;
+    const intervalId = setInterval(async () => {
+      try {
+        const result = await dispatch(fetchNotifications(1)).unwrap();
+        // Sync unread count from fetched results since WS isn't providing updates
+        if (result && typeof result === "object" && "results" in result) {
+          const results = result.results as AppNotification[];
+          const serverUnread = results.filter(
+            (n: AppNotification) => !n.is_read,
+          ).length;
+          dispatch(setWsUnreadCount(serverUnread));
+        }
+      } catch {
+        // Silently ignore polling errors
+      }
+    }, POLL_INTERVAL_MS);
+
+    return () => clearInterval(intervalId);
+  }, [user, isPollingFallback, dispatch]);
+
   const value = {
     notifications,
     unreadCount,
@@ -201,7 +230,7 @@ export function NotificationProvider({
     loadMore,
     hasMore,
     isWsConnected: isConnected,
-    isPollingFallback: !isConnected,
+    isPollingFallback,
   };
 
   return (

@@ -1,6 +1,8 @@
+from unittest.mock import MagicMock, patch
+
 from django.test import TestCase
+
 from github.auth import GitHubAppAuth, get_github_token
-from unittest.mock import patch, MagicMock
 
 
 class GithubAuthTest(TestCase):

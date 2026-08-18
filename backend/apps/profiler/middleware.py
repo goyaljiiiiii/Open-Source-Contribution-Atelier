@@ -2,15 +2,16 @@
 Middleware for profiling slow endpoints.
 """
 
-import time
-import logging
 import json
+import logging
+import time
 from datetime import datetime
-from typing import Dict, Any, List, Optional
-from django.utils.deprecation import MiddlewareMixin
-from django.db import connection
+from typing import Any, Dict, List, Optional
+
 from django.conf import settings
 from django.core.cache import cache
+from django.db import connection
+from django.utils.deprecation import MiddlewareMixin
 
 logger = logging.getLogger(__name__)
 

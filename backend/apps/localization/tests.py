@@ -1,7 +1,7 @@
 import pytest
+from django.core.cache import cache
 from django.test import RequestFactory
 from django.utils import translation
-from django.core.cache import cache
 
 from apps.localization.middleware import LocaleMiddleware, resolve_locale
 

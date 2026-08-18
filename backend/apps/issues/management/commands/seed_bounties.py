@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
+
 from apps.issues.models import Bounty
 from apps.progress.models import Badge
 

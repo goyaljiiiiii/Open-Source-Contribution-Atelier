@@ -1,9 +1,10 @@
-from django.db.models.signals import post_save, post_delete
-from django.dispatch import receiver
-from django.contrib.contenttypes.models import ContentType
-from apps.core.models import AdminAuditLog
-from apps.core.middleware import get_current_audit_info
 from django.contrib import admin
+from django.contrib.contenttypes.models import ContentType
+from django.db.models.signals import post_delete, post_save
+from django.dispatch import receiver
+
+from apps.core.middleware import get_current_audit_info
+from apps.core.models import AdminAuditLog
 
 
 def _is_registered_in_admin(model):

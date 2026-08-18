@@ -1,10 +1,11 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from .models import SearchEmbedding, UserSearchProfile, SearchAnalytics
+
+from .models import SearchAnalytics, SearchEmbedding, UserSearchProfile
 from .serializers import (
+    SearchAnalyticsSerializer,
     SearchEmbeddingSerializer,
     UserSearchProfileSerializer,
-    SearchAnalyticsSerializer,
 )
 
 

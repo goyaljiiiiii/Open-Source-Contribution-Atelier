@@ -12,13 +12,11 @@ function mockExecCommand(result: boolean) {
 
 describe("useClipboard", () => {
   afterEach(() => {
-    vi.useRealTimers();
     vi.restoreAllMocks();
     Reflect.deleteProperty(document, "execCommand");
   });
 
   it("reports success and resets", async () => {
-    vi.useFakeTimers();
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
       value: { writeText: vi.fn().mockResolvedValue(undefined) },
@@ -57,7 +55,6 @@ describe("useClipboard", () => {
   });
 
   it("clears the timer on unmount", async () => {
-    vi.useFakeTimers();
     const clearTimeoutSpy = vi.spyOn(globalThis, "clearTimeout");
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,

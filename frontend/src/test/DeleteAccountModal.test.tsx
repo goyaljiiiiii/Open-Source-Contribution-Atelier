@@ -72,7 +72,7 @@ describe("DeleteAccountModal", () => {
   });
 
   it("calls the API and logout on successful deletion", async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     (fetchApi as any).mockResolvedValueOnce({});
 
     renderWithProviders(

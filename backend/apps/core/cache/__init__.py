@@ -32,5 +32,19 @@ class MultiLevelCache:
 
         self.l1.set(key, value, timeout=l1_timeout)
 
+    def delete(self, key):
+        self.l1.delete(key)
+        self.l2.delete(key)
+
+    def incr(self, key, delta=1):
+        val = self.get(key, 0) or 0
+        new_val = val + delta
+        self.set(key, new_val)
+        return new_val
+
 
 multi_level_cache = MultiLevelCache()
+
+from .coalescing import CoalescingCache
+
+__all__ = ["MultiLevelCache", "multi_level_cache", "CoalescingCache"]

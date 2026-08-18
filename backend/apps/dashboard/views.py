@@ -1,14 +1,15 @@
+import csv
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
+from django.http import StreamingHttpResponse
 
 User = get_user_model()
-from apps.core.cache import multi_level_cache as cache
-from django.db import models, transaction
+from django.db import models
 from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce, TruncDate
 from django.utils import timezone
-from rest_framework import permissions, serializers, status
+from rest_framework import permissions, serializers
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
@@ -16,15 +17,15 @@ from rest_framework.views import APIView
 
 from apps.challenges.models import ChallengeCompletion
 from apps.content.models import Lesson
+from apps.core.cache import multi_level_cache as cache
 from apps.dashboard.models import Issue, PullRequest
 from apps.progress.models import (
     CodeSubmission,
-    ExerciseAttempt,
+    DailyActivity,
     LessonProgress,
     QuizAttempt,
     XPEvent,
 )
-from apps.rbac.permissions import HasRole
 
 
 class LeaderboardPagination(PageNumberPagination):
@@ -52,16 +53,16 @@ class LeaderboardView(ListAPIView):
     pagination_class = LeaderboardPagination
 
     def list(self, request, *args, **kwargs):
+        from apps.core.cache.stampede import stampede_protected_get_or_set
+
         page = request.query_params.get("page", "1")
         cache_key = f"leaderboard_page_{page}"
 
-        cached_data = cache.get(cache_key)
-        if cached_data is not None:
-            return Response(cached_data)
+        def generate():
+            return super(LeaderboardView, self).list(request, *args, **kwargs).data
 
-        response = super().list(request, *args, **kwargs)
-        cache.set(cache_key, response.data, 300)
-        return response
+        data = stampede_protected_get_or_set(cache_key, generate, timeout=300)
+        return Response(data)
 
     def get_queryset(self):
         timeframe = self.request.query_params.get("timeframe", "all")
@@ -308,33 +309,6 @@ class ContributorDashboardView(APIView):
             longest_streak = streak_profile.longest_streak
             # ------------------------------
 
-            # Calculate streak based on unique days of activity (attempts or completed lessons) and active/used freezes
-            activity_days = set()
-            attempts = ExerciseAttempt.objects.filter(user=user).values_list(
-                "created_at", flat=True
-            )
-            for dt in attempts:
-                activity_days.add(timezone.localdate(dt))
-            progress_entries = LessonProgress.objects.filter(user=user).values_list(
-                "updated_at", flat=True
-            )
-            for dt in progress_entries:
-                activity_days.add(timezone.localdate(dt))
-
-            # Apply streak freezes to calculate streak days
-            streak_days = 0
-            current_day = today
-            while True:
-                if current_day < join_date:
-                    break
-                if current_day in activity_days:
-                    streak_days += 1
-                elif current_day == today:
-                    pass
-                else:
-                    break
-                current_day -= timedelta(days=1)
-
             # Determine Rank based on user XP vs others
             lesson_xp_sub = (
                 LessonProgress.objects.filter(user=OuterRef("pk"), completed=True)
@@ -488,8 +462,40 @@ class ContributorDashboardView(APIView):
                 "next_milestone": MilestoneTrackService.get_user_next_milestone(user),
             }
 
+        elif field == "continue_learning":
+            incomplete_qs = (
+                LessonProgress.objects.filter(user=user, completed=False)
+                .select_related("lesson")
+                .order_by("-updated_at")[:3]
+            )
+            continue_learning_list = []
+            for lp in incomplete_qs:
+                progress_pct = min(100, int(lp.score)) if lp.score else 0
+                continue_learning_list.append(
+                    {
+                        "id": lp.lesson.id,
+                        "lesson_slug": lp.lesson.slug,
+                        "lesson_title": lp.lesson.title,
+                        "summary": lp.lesson.summary,
+                        "progress_percentage": progress_pct,
+                        "score": lp.score,
+                        "updated_at": lp.updated_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    }
+                )
+            return continue_learning_list
+
+        elif field == "weekly_goal":
+            from apps.progress.models import WeeklyGoal
+            goal = WeeklyGoal.get_or_create_current(user)
+            return {
+                "target_lessons": goal.target_lessons,
+                "target_xp": goal.target_xp,
+                "target_minutes": goal.target_minutes,
+            }
+
     def get(self, request):
         user = request.user
+
         fields_param = request.query_params.get("fields")
         if fields_param:
             requested_fields = [f.strip() for f in fields_param.split(",") if f.strip()]
@@ -500,36 +506,38 @@ class ContributorDashboardView(APIView):
                 "recent_prs",
                 "progress_tracker",
                 "active_track",
+                "continue_learning",
+                "weekly_goal",
             ]
 
         data = {}
+        from apps.core.cache.coalescing import CoalescingCache
+
+        valid_fields = [
+            "personal_stats",
+            "assigned_issues",
+            "recent_prs",
+            "progress_tracker",
+            "active_track",
+            "continue_learning",
+            "weekly_goal",
+        ]
         for field in requested_fields:
-            if field not in [
-                "personal_stats",
-                "assigned_issues",
-                "recent_prs",
-                "progress_tracker",
-                "active_track",
-            ]:
+            if field not in valid_fields:
                 continue
 
             cache_key = f"dashboard_contributor_{field}_{user.id}"
-            field_data = cache.get(cache_key)
-            if field_data is None:
-                field_data = self._calculate_field(user, field)
-                cache.set(cache_key, field_data, 300)
+
+            def compute_field_data(u=user, f=field):
+                return self._calculate_field(u, f)
+
+            field_data = CoalescingCache().get_or_set_coalesced(
+                cache_key, 300, compute_field_data
+            )
             data[field] = field_data
 
         return Response(data)
 
-
-from drf_spectacular.utils import extend_schema
-from rest_framework import status
-
-
-from django.db import models
-
-from apps.rbac.models import UserRole
 
 
 class ModeratorAnalyticsView(APIView):
@@ -587,3 +595,212 @@ class ModeratorAnalyticsView(APIView):
                 "challenge_stats": list(challenge_stats),
             }
         )
+
+
+from zoneinfo import available_timezones
+
+
+class UsageAnalyticsView(APIView):
+    def get_permissions(self):
+        from rest_framework import permissions
+
+        from apps.rbac.permissions import HasAnyRole
+
+        return [permissions.IsAuthenticated(), HasAnyRole(["Admin"])]
+
+    def get(self, request):
+        today = timezone.now().date()
+        thirty_days_ago = today - timedelta(days=30)
+        twelve_months_ago = today - timedelta(days=365)
+
+        # 1. Daily Active Users (last 30 days)
+        daily_active = (
+            DailyActivity.objects.filter(date__gte=thirty_days_ago)
+            .values("date")
+            .annotate(count=Count("user", distinct=True))
+            .order_by("date")
+        )
+
+        # 2. Monthly Active Users (last 12 months)
+        from django.db.models.functions import TruncMonth
+
+        monthly_active = (
+            DailyActivity.objects.filter(date__gte=twelve_months_ago)
+            .annotate(month=TruncMonth("date"))
+            .values("month")
+            .annotate(count=Count("user", distinct=True))
+            .order_by("month")
+        )
+
+        # 3. Most Popular Lessons (by completion count)
+        popular_lessons = (
+            LessonProgress.objects.filter(completed=True)
+            .values("lesson__slug", "lesson__title")
+            .annotate(count=Count("id"))
+            .order_by("-count")[:10]
+        )
+
+        # 4. Lesson Completion Rates
+        total_lessons = Lesson.objects.count()
+        lesson_completion_rates = []
+        for lesson in Lesson.objects.all():
+            total = LessonProgress.objects.filter(lesson=lesson).count()
+            completed = LessonProgress.objects.filter(
+                lesson=lesson, completed=True
+            ).count()
+            rate = round((completed / total * 100), 1) if total > 0 else 0
+            lesson_completion_rates.append(
+                {
+                    "slug": lesson.slug,
+                    "title": lesson.title,
+                    "total_attempts": total,
+                    "completed": completed,
+                    "completion_rate": rate,
+                }
+            )
+        lesson_completion_rates.sort(key=lambda x: x["completion_rate"], reverse=True)
+
+        # 5. User Signup Trend (last 12 months)
+        signup_trend = (
+            User.objects.filter(date_joined__gte=twelve_months_ago)
+            .annotate(month=TruncMonth("date_joined"))
+            .values("month")
+            .annotate(count=Count("id"))
+            .order_by("month")
+        )
+
+        # 6. Average Session Duration (approximated via DailyActivity count per user)
+        from django.db.models import Avg
+
+        avg_sessions = (
+            DailyActivity.objects.filter(date__gte=thirty_days_ago)
+            .values("user")
+            .annotate(active_days=Count("date", distinct=True))
+            .aggregate(avg_active_days=Avg("active_days"))
+        )
+        average_session_duration_minutes = round(
+            (avg_sessions["avg_active_days"] or 0) * 15, 1
+        )
+
+        # 7. Geographic Distribution (by timezone)
+        geo_distribution = (
+            User.objects.filter(
+                profile__timezone__isnull=False,
+                is_active=True,
+            )
+            .values("profile__timezone")
+            .annotate(count=Count("id"))
+            .order_by("-count")
+        )
+
+        return Response(
+            {
+                "daily_active_users": list(daily_active),
+                "monthly_active_users": list(monthly_active),
+                "popular_lessons": list(popular_lessons),
+                "lesson_completion_rates": lesson_completion_rates,
+                "signup_trend": list(signup_trend),
+                "average_session_duration_minutes": average_session_duration_minutes,
+                "geo_distribution": [
+                    {
+                        "timezone": item["profile__timezone"],
+                        "count": item["count"],
+                    }
+                    for item in geo_distribution
+                ],
+            }
+        )
+
+
+class Echo:
+    """An object that implements just the write method of the file-like interface."""
+
+    def write(self, value):
+        return value
+
+
+class AnalyticsExportCSVView(APIView):
+    """
+    Server-side streamed CSV export for analytics dashboard metrics.
+    Supports filtering by date range (days) and dataset type.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            days = int(request.query_params.get("days", 30))
+        except (ValueError, TypeError):
+            days = 30
+
+        dataset = request.query_params.get("dataset", "all").lower()
+
+        now = timezone.now()
+        start_date = now - timedelta(days=days)
+
+        pseudo_buffer = Echo()
+        writer = csv.writer(pseudo_buffer)
+
+        def csv_stream():
+            if dataset in ("all", "registrations"):
+                yield writer.writerow(["--- REGISTRATIONS ---"])
+                yield writer.writerow(["Date", "Count"])
+                registrations = (
+                    User.objects.filter(date_joined__gte=start_date)
+                    .annotate(date=TruncDate("date_joined"))
+                    .values("date")
+                    .annotate(count=Count("id"))
+                    .order_by("date")
+                )
+                for item in registrations:
+                    yield writer.writerow([str(item["date"]), item["count"]])
+                yield writer.writerow([])
+
+            if dataset in ("all", "progress_stats"):
+                yield writer.writerow(["--- COURSE ENGAGEMENT / PROGRESS STATS ---"])
+                yield writer.writerow(["Date", "Enrolled", "Completed"])
+                progress_stats = (
+                    LessonProgress.objects.filter(updated_at__gte=start_date)
+                    .annotate(date=TruncDate("updated_at"))
+                    .values("date")
+                    .annotate(
+                        completed=Count("id", filter=models.Q(completed=True)),
+                        enrolled=Count("id"),
+                    )
+                    .order_by("date")
+                )
+                for item in progress_stats:
+                    yield writer.writerow(
+                        [str(item["date"]), item["enrolled"], item["completed"]]
+                    )
+                yield writer.writerow([])
+
+            if dataset in ("all", "quiz_stats"):
+                yield writer.writerow(["--- QUIZ ACCURACY STATS ---"])
+                yield writer.writerow(["Outcome", "Count"])
+                quiz_stats = (
+                    QuizAttempt.objects.filter(created_at__gte=start_date)
+                    .values("is_correct")
+                    .annotate(count=Count("id"))
+                )
+                for item in quiz_stats:
+                    outcome = "Correct" if item["is_correct"] else "Incorrect"
+                    yield writer.writerow([outcome, item["count"]])
+                yield writer.writerow([])
+
+            if dataset in ("all", "challenge_stats"):
+                yield writer.writerow(["--- CHALLENGE SUBMISSIONS STATS ---"])
+                yield writer.writerow(["Status", "Count"])
+                challenge_stats = (
+                    CodeSubmission.objects.filter(created_at__gte=start_date)
+                    .values("status")
+                    .annotate(count=Count("id"))
+                )
+                for item in challenge_stats:
+                    yield writer.writerow([item["status"], item["count"]])
+
+        filename = f"analytics_export_{dataset}_{days}d.csv"
+        response = StreamingHttpResponse(csv_stream(), content_type="text/csv")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+

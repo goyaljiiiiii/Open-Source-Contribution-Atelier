@@ -1,5 +1,6 @@
-from django.test import TestCase, RequestFactory
 from django.http import HttpResponse
+from django.test import RequestFactory, TestCase
+
 from apps.core.middleware.request_id import RequestIdMiddleware, get_request_id
 
 

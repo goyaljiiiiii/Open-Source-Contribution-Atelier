@@ -16,12 +16,16 @@ import {
   CheckCircle2,
   Lock,
   Bookmark,
+  AlertTriangle,
   History,
   ArrowLeft,
   ArrowRight,
   WifiOff,
   HardDrive,
+  Flag,
+  Keyboard,
 } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 import SkeletonLesson from "../components/ui/skeletons/SkeletonLesson";
 import { useUserProgress } from "../hooks/useUserProgress";
@@ -44,8 +48,10 @@ import { OfflineStatusBadge } from "../components/ui/OfflineStatusBadge";
 import { OfflineBanner } from "../components/ui/OfflineBanner";
 import { CurriculumDriftBanner } from "../components/ui/CurriculumDriftBanner";
 import { AITutorFloatingPanel } from "../components/ui/AITutorPanel";
+import { Breadcrumb, type BreadcrumbItem } from "../components/ui/Breadcrumb";
 
 const SESSION_KEY_RECENT = "recentlyViewedLessonsV1";
+
 const MAX_RECENT_ITEMS = 3;
 
 function safeParseRecentlyViewedLessons(
@@ -79,6 +85,12 @@ const RichTextEditor = React.lazy(() =>
 const MarkdownRenderer = React.lazy(() =>
   import("../components/ui/MarkdownRenderer").then((module) => ({
     default: module.MarkdownRenderer,
+  })),
+);
+
+const VirtualizedMarkdownRenderer = React.lazy(() =>
+  import("../components/ui/VirtualizedMarkdownRenderer").then((module) => ({
+    default: module.VirtualizedMarkdownRenderer,
   })),
 );
 import { LessonHistoryModal } from "../components/LessonHistoryModal";
@@ -147,6 +159,17 @@ export function LessonPage() {
     }[]
   >([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+  return localStorage.getItem("lesson-sidebar-collapsed") === "true";
+});
+
+useEffect(() => {
+  localStorage.setItem(
+    "lesson-sidebar-collapsed",
+    String(isSidebarCollapsed),
+  );
+}, [isSidebarCollapsed]);
 
   const curriculumLessonRefs = useMemo(
     () =>
@@ -248,7 +271,7 @@ export function LessonPage() {
   // Reading progress scroll ref
   const mainContentRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
-
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const helpRequestMutation = useMutation({
     mutationFn: (message: string) => {
       if (!lesson) {
@@ -291,6 +314,9 @@ export function LessonPage() {
         );
       }
       console.error("Failed to submit quiz attempt:", err);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["userProgress"] });
     },
   });
 
@@ -372,7 +398,8 @@ export function LessonPage() {
       .catch((err) => {
         console.error("[LessonPage] Unexpected error loading lesson:", err);
         setError(
-          "Failed to load lesson. Please check your connection and try again.",
+          err?.message ||
+            "Failed to load lesson. Please check your connection and try again.",
         );
       })
       .finally(() => {
@@ -486,30 +513,80 @@ export function LessonPage() {
     }
   }, [timeLeft, quizFeedback, handleTimeout]);
 
-  // 3. Scroll tracking for reading progress
+  // 3. Scroll tracking for reading progress + back to top
   useEffect(() => {
+    const element = mainContentRef.current;
+
+    if (!element) return;
+
     const handleScroll = () => {
-      if (!mainContentRef.current) return;
-      const element = mainContentRef.current;
       const totalHeight = element.scrollHeight - element.clientHeight;
+
       if (totalHeight <= 0) {
         setScrollProgress(100);
-        return;
-      }
-      const scrollPercent = (element.scrollTop / totalHeight) * 100;
-      setScrollProgress(Math.min(100, Math.max(0, Math.round(scrollPercent))));
+      } else {
+          const scrollPercent =
+            (element.scrollTop / totalHeight) * 100;
+
+          setScrollProgress(
+          Math.min(100, Math.max(0, Math.round(scrollPercent))),
+          );
+      }   
+
+      setShowBackToTop(element.scrollTop > 300);
     };
 
-    const container = mainContentRef.current;
-    if (container) {
-      container.addEventListener("scroll", handleScroll);
-    }
+    element.addEventListener("scroll", handleScroll);
+
     return () => {
-      if (container) {
-        container.removeEventListener("scroll", handleScroll);
-      }
+      element.removeEventListener("scroll", handleScroll);
     };
   }, [markdownContent]);
+
+  // 4. Keyboard Shortcuts for Lesson Navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      const isInput =
+        activeEl &&
+        (activeEl.tagName === "INPUT" ||
+          activeEl.tagName === "TEXTAREA" ||
+          activeEl.getAttribute("contenteditable") === "true");
+
+      if (isInput) return;
+
+      if (e.altKey && (e.key === "ArrowRight" || e.key === "n" || e.key === "N")) {
+        e.preventDefault();
+        if (nextLesson) {
+          if (isCompleted) {
+            navigate(`/lessons/${nextLesson.slug}`);
+          } else {
+            toast.error("Complete the current lesson first to unlock the next module!");
+          }
+        }
+      } else if (e.altKey && (e.key === "ArrowLeft" || e.key === "p" || e.key === "P")) {
+        e.preventDefault();
+        if (previousLesson) {
+          navigate(`/lessons/${previousLesson.slug}`);
+        }
+      } else if (e.altKey && (e.key === "s" || e.key === "S" || e.key === "m" || e.key === "M")) {
+        e.preventDefault();
+        setIsSidebarOpen((prev) => !prev);
+      } else if (e.altKey && (e.key === "b" || e.key === "B")) {
+        e.preventDefault();
+        if (lesson) toggleBookmark(lesson.slug);
+      } else if (e.altKey && (e.key === "c" || e.key === "C")) {
+        e.preventDefault();
+        setIsNotePanelOpen((prev) => !prev);
+      } else if (e.altKey && (e.key === "h" || e.key === "H")) {
+        e.preventDefault();
+        setIsHelpPanelOpen((prev) => !prev);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [navigate, nextLesson, previousLesson, isCompleted, lesson, toggleBookmark]);
 
   const handleCommandSubmit = async (
     e: React.FormEvent | React.KeyboardEvent,
@@ -648,37 +725,40 @@ export function LessonPage() {
   if (error) {
     return (
       <div
-        className="pt-20 h-screen w-full flex items-center justify-center px-4"
+        className="pt-20 h-screen w-full flex items-center justify-center p-6"
         role="alert"
         aria-live="assertive"
       >
-        <div className="w-full max-w-2xl">
-          <div className="rounded-2xl border-4 border-red-600 bg-red-50 p-8 shadow-card dark:bg-red-950 dark:border-red-700">
-            <h2 className="text-2xl font-black mb-4 text-red-900 dark:text-red-200">
-              ⚠️ Error Loading Lesson
+        <div className="w-full max-w-md rounded-2xl border-4 border-black bg-white dark:bg-[#1f1c18] dark:border-[#2e2924] p-8 shadow-[6px_6px_0px_#000] flex flex-col items-center gap-6 text-center">
+          <div className="flex items-center justify-center w-16 h-16 rounded-full bg-red-100 border-4 border-red-600">
+            <AlertTriangle size={32} className="text-red-600" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black text-text dark:text-[#f0ebe2] mb-2">
+              Failed to Load Lesson
             </h2>
-            <p className="text-red-800 dark:text-red-300 mb-6 font-semibold">
+            <p className="text-sm font-bold text-muted dark:text-[#c4bbae] break-words">
               {error}
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button
-                onClick={() => {
-                  setError(null);
-                  setIsLoading(true);
-                  // Re-trigger the fetch by resetting the effect
-                  window.location.reload();
-                }}
-                className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-black rounded-lg border-2 border-red-800 transition-colors"
-              >
-                🔄 Retry
-              </button>
-              <Link
-                to="/dashboard"
-                className="flex-1 px-6 py-3 bg-black dark:bg-[#2e2924] hover:bg-gray-800 text-white font-black rounded-lg border-2 border-black dark:border-[#2e2924] transition-colors text-center"
-              >
-                ← Go Back to Dashboard
-              </Link>
-            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 w-full">
+            <button
+              onClick={() => {
+                setError(null);
+                setIsLoading(true);
+                // Re-trigger by bumping slug-based effect via navigate
+                navigate(0);
+              }}
+              className="flex-1 px-5 py-3 bg-primary text-black font-black text-sm rounded-xl border-4 border-black shadow-[3px_3px_0px_#000] hover:-translate-y-0.5 active:translate-y-0.5 transition-all"
+            >
+              Retry
+            </button>
+            <Link
+              to="/dashboard"
+              className="flex-1 px-5 py-3 bg-surface-low text-text dark:text-[#f0ebe2] font-black text-sm rounded-xl border-4 border-black shadow-[3px_3px_0px_#000] hover:-translate-y-0.5 active:translate-y-0.5 transition-all text-center"
+            >
+              Go Back
+            </Link>
           </div>
         </div>
       </div>
@@ -700,7 +780,34 @@ export function LessonPage() {
     mod.lessons.some((les) => les.slug === lesson.slug),
   )?.id;
 
+  const breadcrumbItems: BreadcrumbItem[] = useMemo(() => {
+    const activeModule = modules.find((mod) =>
+      mod.lessons.some((les) => les.slug === lesson.slug),
+    );
+
+    const items: BreadcrumbItem[] = [
+      { label: "Dashboard", href: "/dashboard" },
+      { label: "Pathway", href: "/pathway" },
+    ];
+
+    if (activeModule) {
+      items.push({
+        label: activeModule.title,
+      });
+    }
+
+    if (lesson?.title) {
+      items.push({
+        label: lesson.title,
+        isCurrent: true,
+      });
+    }
+
+    return items;
+  }, [modules, lesson]);
+
   return (
+
     <div className="w-full h-screen flex flex-col overflow-hidden bg-white dark:bg-[#0a0a0f]">
       {/* Immersive Lesson Top Header Bar */}
       <header className="h-[72px] border-b-4 border-black dark:border-[#2e2924] bg-white dark:bg-[#0f0e0c] flex items-center justify-between px-4 sm:px-6 flex-shrink-0 z-40">
@@ -737,6 +844,8 @@ export function LessonPage() {
         <ResponsiveSidebar
           isOpen={isSidebarOpen}
           onClose={closeSidebar}
+          isSidebarCollapsed={isSidebarCollapsed}
+          setIsSidebarCollapsed={setIsSidebarCollapsed}
           title={
             <>
               <BookOpen size={18} className="text-primary" />
@@ -745,9 +854,11 @@ export function LessonPage() {
           }
         >
           <div className="space-y-6">
+          {!isSidebarCollapsed && (
             <div className="pt-2">
               <RecentlyViewedLessonsWidget />
             </div>
+          )}
 
             {modules.map((mod, modIdx) => (
               <div key={mod.id} className="space-y-2">
@@ -759,7 +870,9 @@ export function LessonPage() {
                                : "text-muted dark:text-[#c4bbae] border-transparent"
                            }`}
                 >
-                  Module {modIdx + 1}: {mod.title}
+                {isSidebarCollapsed
+                    ? `M${modIdx + 1}`
+                    : `Module {modIdx + 1}: {mod.title}`}
                 </h3>
                 <div className="space-y-1">
                   {mod.lessons.map(
@@ -790,7 +903,10 @@ export function LessonPage() {
                             ) : (
                               <div className="w-3.5 h-3.5 rounded-full border-2 border-black/35 flex-shrink-0" />
                             )}
-                            <span className="truncate">{les.title}</span>
+                            {!isSidebarCollapsed && (
+                              <span className="truncate">{les.title}</span>
+                            )}
+
                           </div>
                           {les.difficulty === "advanced" && (
                             <span className="text-[8px] bg-red-100 text-red-700 px-1 py-0.5 rounded border border-red-700">
@@ -824,7 +940,9 @@ export function LessonPage() {
             className="flex-1 overflow-y-auto p-6 sm:p-10 space-y-8"
           >
             <div className="max-w-3xl mx-auto space-y-6">
+              <Breadcrumb items={breadcrumbItems} className="mb-2" />
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-[10px] font-mono font-black bg-accent text-black px-3 py-1 rounded-full border-2 border-black rotate-[-1deg] inline-block shadow-card-sm uppercase">
@@ -942,18 +1060,46 @@ export function LessonPage() {
                         <div className="w-full h-64 animate-pulse rounded-2xl border-4 border-black/20 bg-surface-low dark:border-[#2e2924]/50 dark:bg-[#151411]" />
                       }
                     >
-                      <MarkdownRenderer content={markdownContent} />
+                      {markdownContent.length > 102400 ? (
+                        <VirtualizedMarkdownRenderer content={markdownContent} />
+                      ) : (
+                        <MarkdownRenderer content={markdownContent} />
+                      )}
+                      {lesson?.updatedAt && (
+                        <div className="mt-8 border-t pt-4 text-sm text-muted-foreground">
+                          <strong>Last updated:</strong>{" "}
+                          {new Date(lesson.updatedAt).toLocaleDateString()}
+                       </div>
+                      )}
                     </React.Suspense>
                   </article>
                 </>
               )}
-              <div className="mt-4 flex justify-end">
-                <button
-                  onClick={() => alert("Thanks for reporting the typo")}
-                  className="px-4 py-2 bg-red-500 text-white rounded-lg font-bold border-2 border-black hover:opacity-90 transition"
-                >
-                  Report Typo 🐛
-                </button>
+              <div className="mt-6 flex justify-end">
+                {(() => {
+                  const currentUrl = window.location.href;
+                  const lessonTitle = lesson?.title || "Lesson";
+                  const issueTitle = encodeURIComponent(`[Lesson Issue]: ${lessonTitle}`);
+                  const issueBody = encodeURIComponent(
+                    `**Lesson Title:** ${lessonTitle}\n` +
+                      `**Lesson URL:** ${currentUrl}\n\n` +
+                      `### What's wrong?\n` +
+                      `Please describe the typo, broken link, or incorrect information in this lesson.`
+                  );
+                  const githubIssueUrl = `https://github.com/Babin123456/Open-Source-Contribution-Atelier/issues/new?title=${issueTitle}&body=${issueBody}&labels=bug,documentation`;
+
+                  return (
+                    <a
+                      href={githubIssueUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 font-bold border-2 border-red-300 rounded-xl hover:bg-red-100 hover:border-red-500 transition-all text-xs shadow-sm dark:bg-red-950/20 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-900/30"
+                    >
+                      <Flag className="w-4 h-4 text-red-600 dark:text-red-400" />
+                      Report a problem
+                    </a>
+                  );
+                })()}
               </div>
 
               <div className="pt-8 space-y-6">
@@ -1463,6 +1609,16 @@ export function LessonPage() {
           <div className="border-t-4 border-black p-4 bg-white dark:bg-[#151411] dark:border-[#2e2924] flex justify-end gap-4 flex-shrink-0 flex-wrap">
             <button
               onClick={() => {
+                window.dispatchEvent(new CustomEvent("toggle-keyboard-shortcuts"));
+              }}
+              className="px-4 py-2 bg-white text-text dark:bg-[#151411] dark:text-[#f0ebe2] font-black text-xs rounded-lg border-4 border-black shadow-card-sm hover:-translate-y-0.5 cursor-pointer flex items-center gap-1.5"
+              title="Press '?' for keyboard shortcuts cheat sheet"
+            >
+              <Keyboard className="w-3.5 h-3.5 text-[#FFCC00]" />
+              Shortcuts ⌨️
+            </button>
+            <button
+              onClick={() => {
                 setIsCommitCoachOpen(!isCommitCoachOpen);
                 if (!isCommitCoachOpen) setIsNotePanelOpen(false);
               }}
@@ -1623,7 +1779,7 @@ export function LessonPage() {
           />
         )}
       </div>
-
+      
       <AITutorFloatingPanel
         lessonSlug={lesson.slug}
         lessonTitle={lesson.title}

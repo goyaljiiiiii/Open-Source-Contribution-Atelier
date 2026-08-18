@@ -3,10 +3,11 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (
     AutoFixPRViewSet,
+    ProjectDependencyViewSet,
     VulnerabilityItemViewSet,
     VulnerabilityReportViewSet,
-    VulnerabilitySuppressionViewSet,
     VulnerabilitySummaryView,
+    VulnerabilitySuppressionViewSet,
 )
 
 router = DefaultRouter()
@@ -24,6 +25,9 @@ router.register(
     basename="vulnerability-suppression",
 )
 router.register(r"autofix-prs", AutoFixPRViewSet, basename="autofix-pr")
+router.register(
+    r"project-dependencies", ProjectDependencyViewSet, basename="project-dependency"
+)
 
 urlpatterns = [
     path("summary/", VulnerabilitySummaryView.as_view(), name="vulnerability-summary"),

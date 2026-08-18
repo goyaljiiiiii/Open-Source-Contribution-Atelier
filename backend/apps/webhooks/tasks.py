@@ -10,8 +10,8 @@ from django_q.tasks import async_task
 from .models import (
     DeadLetterWebhook,
     WebhookDelivery,
-    WebhookEndpoint,
     WebhookDeliveryLog,
+    WebhookEndpoint,
 )
 
 logger = logging.getLogger(__name__)
@@ -106,6 +106,13 @@ def deliver_webhook(delivery_id, attempt=1):
         recovery_timeout=30,
     )
 
+    from django.conf import settings
+
+    active_key_id = None
+    signing_keys = getattr(settings, "WEBHOOK_SIGNING_KEYS", None)
+    if signing_keys and isinstance(signing_keys, (list, tuple)) and len(signing_keys) > 0:
+        active_key_id = signing_keys[0][0]
+
     try:
         with cb:
             response = requests.post(
@@ -118,6 +125,7 @@ def deliver_webhook(delivery_id, attempt=1):
                 delivery=delivery,
                 status_code=delivery.status_code,
                 response_body=delivery.response_body,
+                key_id=active_key_id,
             )
 
             if 200 <= response.status_code < 300:
@@ -136,7 +144,10 @@ def deliver_webhook(delivery_id, attempt=1):
         delivery.response_body = failure_reason
         delivery.status_code = None
         WebhookDeliveryLog.objects.create(
-            delivery=delivery, status_code=None, response_body=failure_reason
+            delivery=delivery,
+            status_code=None,
+            response_body=failure_reason,
+            key_id=active_key_id,
         )
 
     except requests.exceptions.RequestException as exc:
@@ -145,7 +156,10 @@ def deliver_webhook(delivery_id, attempt=1):
         delivery.response_body = failure_reason
         delivery.status_code = None
         WebhookDeliveryLog.objects.create(
-            delivery=delivery, status_code=None, response_body=failure_reason
+            delivery=delivery,
+            status_code=None,
+            response_body=failure_reason,
+            key_id=active_key_id,
         )
 
     # --- Schedule retry or move to DLQ ---

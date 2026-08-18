@@ -15,10 +15,14 @@ export interface Recommendation {
 
 export function RecommendationsList() {
   const queryClient = useQueryClient();
-  const { data, isLoading } = useQuery<Recommendation[]>({
+  const { data, isLoading } = useQuery<
+    Recommendation[] | { results: Recommendation[] }
+  >({
     queryKey: ["recommendations"],
     queryFn: () => fetchApi("/recommendations/", { suppressErrorToast: true }),
   });
+
+  const items = Array.isArray(data) ? data : data?.results ?? [];
 
   const dismissMutation = useMutation({
     mutationFn: (id: number) =>
@@ -38,7 +42,7 @@ export function RecommendationsList() {
     );
   }
 
-  if (!data || data.length === 0) {
+  if (!items || items.length === 0) {
     return (
       <div className="p-8 text-center bg-white rounded-2xl border-4 border-dashed border-black dark:bg-[#151411] dark:border-[#2e2924]">
         <p className="font-bold text-muted dark:text-[#c4bbae]">
@@ -76,7 +80,7 @@ export function RecommendationsList() {
 
   return (
     <div className="space-y-4">
-      {data.map((rec) => (
+      {items.map((rec) => (
         <div
           key={rec.id}
           className="relative flex flex-col gap-2 p-5 rounded-lg border-4 border-black bg-surface-lowest shadow-card-sm hover:shadow-card hover:-translate-y-1 transition-all dark:bg-[#151411] dark:border-[#2e2924] dark:hover:bg-[#1f1c18]"

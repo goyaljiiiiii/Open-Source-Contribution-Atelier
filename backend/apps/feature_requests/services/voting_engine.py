@@ -3,10 +3,12 @@ Voting engine with weighted calculations and prioritization.
 """
 
 import logging
-from typing import Dict, Any, List, Optional
-from django.db.models import Count, Sum, Avg, Q, F
+from typing import Any, Dict, List, Optional
+
+from django.db.models import Avg, Count, F, Q, Sum
 from django.utils import timezone
-from apps.feature_requests.models import FeatureRequest, Vote, RoadmapMilestone
+
+from apps.feature_requests.models import FeatureRequest, RoadmapMilestone, Vote
 
 logger = logging.getLogger(__name__)
 

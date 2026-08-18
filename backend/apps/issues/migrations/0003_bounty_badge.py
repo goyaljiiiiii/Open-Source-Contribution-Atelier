@@ -1,7 +1,7 @@
 # Generated migration for adding badge field to Bounty model
 
-from django.db import migrations, models
 import django.db.models.deletion
+from django.db import migrations, models
 
 
 class Migration(migrations.Migration):

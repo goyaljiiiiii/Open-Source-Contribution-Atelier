@@ -4,8 +4,10 @@ Tests for request deduplication.
 
 import threading
 import time
-from django.test import TestCase
+
 from django.core.cache import cache
+from django.test import TestCase
+
 from apps.deduplication.middleware import RequestCoalescer
 
 

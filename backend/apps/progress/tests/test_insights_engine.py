@@ -1,12 +1,13 @@
-from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.test import TestCase
 
 User = get_user_model()
-from django.utils import timezone
 from datetime import timedelta
 
+from django.utils import timezone
+
+from apps.content.models import Exercise, Lesson
 from apps.progress.models import ExerciseAttempt, QuizAttempt
-from apps.content.models import Lesson, Exercise
 from apps.progress.services.insights_engine import InsightsEngine
 
 

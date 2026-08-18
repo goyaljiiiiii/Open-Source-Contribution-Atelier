@@ -1,51 +1,63 @@
+import json
+import logging
+import os
 import uuid  # NEW: Added for cryptographic nonce generation
-from datetime import datetime, timezone as dt_timezone
+from datetime import datetime
+from datetime import timezone as dt_timezone
 
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
+from django.core.cache import cache
 from django.db import transaction
-from django.utils import timezone
 from django.db.models import Count, Min, Sum
-from apps.progress.constants import XP_PER_LEVEL
-from apps.progress.models import XPEvent
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import permissions, status
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
-from apps.core.throttling import SlidingWindowAnonThrottle, SlidingWindowScopedThrottle
 from rest_framework.views import APIView
-from django.http import HttpResponse
-from django.core.cache import cache
-from apps.content.serializers import LessonSerializer
-from apps.content.models import Lesson
 
+from apps.content.models import Lesson
+from apps.content.serializers import LessonSerializer
+from apps.core.throttling import SlidingWindowAnonThrottle, SlidingWindowScopedThrottle
+from apps.deduplication.idempotency import idempotent
+from apps.progress.constants import XP_PER_LEVEL
+from apps.progress.models import XPEvent
+
+from .models import UserNote  # ✅ ADD: UserNote model
 from .models import (
     Badge,
     Certificate,
     CodeSubmission,
+    DailyActivity,
     ExerciseAttempt,
     HelpRequest,
     LessonBookmark,
     LessonProgress,
     QuizAttempt,
     UserBadge,
-    UserNote,  # ✅ ADD: UserNote model
+    WeeklyGoal,
 )
 from .serializers import (
     BadgeSerializer,
     BulkSyncSerializer,
     CertificateVerificationSerializer,
+    DailyProgressSerializer,
     HelpRequestSerializer,
     LessonProgressCreateSerializer,
     LessonProgressSerializer,
     QuizAttemptSerializer,
-    DailyProgressSerializer,
+    WeeklyGoalSerializer,
 )
 from .throttles import HelpRequestRateThrottle
+
+logger = logging.getLogger(__name__)
+
 
 # ============================================================
 # ✅ ADD: Notes Export View
@@ -65,18 +77,76 @@ class ExportNotesView(APIView):
     def get(self, request):
         user = request.user
         format_type = request.query_params.get("format", "md").lower()
+        limit_param = request.query_params.get("limit")
+        start_param = request.query_params.get("start_date")
+        end_param = request.query_params.get("end_date")
 
-        # Fetch all notes for the user
+        if limit_param:
+            try:
+                limit = int(limit_param)
+                if limit <= 0 or limit > 1000:
+                    return Response(
+                        {"error": "Export limit must be a positive integer up to 1000."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid limit parameter."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        else:
+            limit = 1000
+
+        start_date = None
+        end_date = None
+        if start_param:
+            try:
+                start_date = datetime.strptime(start_param, "%Y-%m-%d").date()
+            except ValueError:
+                return Response(
+                    {"error": "Invalid start_date format. Use YYYY-MM-DD."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        if end_param:
+            try:
+                end_date = datetime.strptime(end_param, "%Y-%m-%d").date()
+            except ValueError:
+                return Response(
+                    {"error": "Invalid end_date format. Use YYYY-MM-DD."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        if start_date and end_date:
+            if start_date > end_date:
+                return Response(
+                    {"error": "start_date cannot be after end_date."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if (end_date - start_date).days > 365:
+                return Response(
+                    {"error": "Date range cannot exceed 1 year (365 days)."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # Fetch notes for the user
         notes = (
             UserNote.objects.filter(user=user)
-            .select_related("lesson", "lesson__module")
-            .order_by("lesson__module__order", "lesson__order")
+            .select_related("lesson")
+            .order_by("lesson__order")
         )
+
+        if start_date:
+            notes = notes.filter(created_at__date__gte=start_date)
+        if end_date:
+            notes = notes.filter(created_at__date__lte=end_date)
 
         if not notes.exists():
             return Response(
                 {"error": "No notes found to export"}, status=status.HTTP_404_NOT_FOUND
             )
+
+        notes = list(notes[:limit])
 
         if format_type == "json":
             return self._export_json(notes, user)
@@ -90,11 +160,14 @@ class ExportNotesView(APIView):
         # Group notes by module
         modules = {}
         for note in notes:
+            module_obj = getattr(note.lesson, "module", None)
             module_name = (
-                note.lesson.module.title if note.lesson.module else "Uncategorized"
+                module_obj.title
+                if module_obj and hasattr(module_obj, "title")
+                else "Uncategorized"
             )
             if module_name not in modules:
-                modules[module_name] = {"module": note.lesson.module, "lessons": {}}
+                modules[module_name] = {"module": module_obj, "lessons": {}}
 
             lesson_title = note.lesson.title
             if lesson_title not in modules[module_name]["lessons"]:
@@ -110,7 +183,7 @@ class ExportNotesView(APIView):
         markdown_lines.append(
             f"**Exported on:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
         )
-        markdown_lines.append(f"**Total Notes:** {notes.count()}")
+        markdown_lines.append(f"**Total Notes:** {len(notes)}")
         markdown_lines.append("")
         markdown_lines.append("---")
         markdown_lines.append("")
@@ -189,17 +262,20 @@ class ExportNotesView(APIView):
             "username": user.username,
             "email": user.email,
             "exported_at": datetime.now().isoformat(),
-            "total_notes": notes.count(),
+            "total_notes": len(notes),
             "notes": [],
         }
 
         for note in notes:
+            module_obj = getattr(note.lesson, "module", None)
             data["notes"].append(
                 {
                     "id": note.id,
                     "lesson_title": note.lesson.title,
                     "module_title": (
-                        note.lesson.module.title if note.lesson.module else None
+                        module_obj.title
+                        if module_obj and hasattr(module_obj, "title")
+                        else None
                     ),
                     "content": note.content,
                     "tags": note.tags if hasattr(note, "tags") else [],
@@ -252,12 +328,13 @@ class MyProgressView(APIView):
         serializer = LessonProgressSerializer(progress, many=True)
         return Response(serializer.data)
 
+    @idempotent
     def post(self, request):
+        from apps.content.models import Lesson
+        from apps.progress.services.progress_buffer import ProgressBufferService
         from apps.progress.services.progress_tracking_service import (
             ProgressTrackingService,
         )
-        from apps.progress.services.progress_buffer import ProgressBufferService
-        from apps.content.models import Lesson
 
         lesson_slug = request.data.get("lesson_slug")
         idempotency_key = request.data.get("idempotency_key")
@@ -324,6 +401,7 @@ class MyProgressView(APIView):
 class BulkSyncProgressView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @idempotent
     def post(self, request):
         serializer = BulkSyncSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -376,9 +454,9 @@ class BulkProgressUpdateView(APIView):
         validated_data = serializer.validated_data["lessons"]
 
         from apps.progress.services.progress_batch_service import (
-            process_bulk_progress_updates,
             DuplicateEntryException,
             InvalidLessonException,
+            process_bulk_progress_updates,
         )
 
         try:
@@ -490,59 +568,84 @@ class CommunityFeedView(APIView):
             .order_by("-updated_at")[:200]
         )
 
+        max_length_param = request.query_params.get("max_length")
+        max_length = None
+        if max_length_param is not None:
+            try:
+                max_length = int(max_length_param)
+                if max_length <= 0:
+                    max_length = None
+            except (ValueError, TypeError):
+                max_length = None
+
+        def format_desc(text: str) -> tuple[str, bool]:
+            if not text:
+                return "", False
+            if max_length is not None and len(text) > max_length:
+                return text[:max_length], True
+            return text, False
+
         entries = []
 
         for hr in help_requests:
-            entries.append(
-                {
-                    "id": f"hr_{hr.id}",
-                    "type": "help_request",
-                    "user_id": hr.user_id,
-                    "username": hr.user.username,
-                    "title": f"asked for help on {hr.lesson.title}",
-                    "description": hr.message[:200],
-                    "created_at": hr.created_at.isoformat(),
-                }
-            )
+            desc, is_trunc = format_desc(hr.message)
+            entry_data = {
+                "id": f"hr_{hr.id}",
+                "type": "help_request",
+                "user_id": hr.user_id,
+                "username": hr.user.username,
+                "title": f"asked for help on {hr.lesson.title}",
+                "description": desc,
+                "created_at": hr.created_at.isoformat(),
+            }
+            if max_length is not None:
+                entry_data["is_truncated"] = is_trunc
+            entries.append(entry_data)
 
         for cs in code_submissions:
-            entries.append(
-                {
-                    "id": f"cs_{cs.id}",
-                    "type": "code_submission",
-                    "user_id": cs.user_id,
-                    "username": cs.user.username,
-                    "title": f"submitted code — {cs.title}",
-                    "description": cs.description[:200] if cs.description else "",
-                    "created_at": cs.created_at.isoformat(),
-                }
-            )
+            desc, is_trunc = format_desc(cs.description if cs.description else "")
+            entry_data = {
+                "id": f"cs_{cs.id}",
+                "type": "code_submission",
+                "user_id": cs.user_id,
+                "username": cs.user.username,
+                "title": f"submitted code — {cs.title}",
+                "description": desc,
+                "created_at": cs.created_at.isoformat(),
+            }
+            if max_length is not None:
+                entry_data["is_truncated"] = is_trunc
+            entries.append(entry_data)
 
         for ub in badges:
-            entries.append(
-                {
-                    "id": f"bd_{ub.id}",
-                    "type": "badge_earned",
-                    "user_id": ub.user_id,
-                    "username": ub.user.username,
-                    "title": f"earned badge — {ub.badge.name}",
-                    "description": ub.badge.description,
-                    "created_at": ub.earned_at.isoformat(),
-                }
-            )
+            desc, is_trunc = format_desc(ub.badge.description if ub.badge.description else "")
+            entry_data = {
+                "id": f"bd_{ub.id}",
+                "type": "badge_earned",
+                "user_id": ub.user_id,
+                "username": ub.user.username,
+                "title": f"earned badge — {ub.badge.name}",
+                "description": desc,
+                "created_at": ub.earned_at.isoformat(),
+            }
+            if max_length is not None:
+                entry_data["is_truncated"] = is_trunc
+            entries.append(entry_data)
 
         for lp in lesson_progress:
-            entries.append(
-                {
-                    "id": f"lp_{lp.id}",
-                    "type": "lesson_completed",
-                    "user_id": lp.user_id,
-                    "username": lp.user.username,
-                    "title": f"completed lesson — {lp.lesson.title}",
-                    "description": f"Scored {lp.score} points",
-                    "created_at": lp.updated_at.isoformat(),
-                }
-            )
+            desc, is_trunc = format_desc(f"Scored {lp.score} points")
+            entry_data = {
+                "id": f"lp_{lp.id}",
+                "type": "lesson_completed",
+                "user_id": lp.user_id,
+                "username": lp.user.username,
+                "title": f"completed lesson — {lp.lesson.title}",
+                "description": desc,
+                "created_at": lp.updated_at.isoformat(),
+            }
+            if max_length is not None:
+                entry_data["is_truncated"] = is_trunc
+            entries.append(entry_data)
 
         entries.sort(key=lambda e: e["created_at"], reverse=True)
 
@@ -571,38 +674,46 @@ class CommunityStatsView(APIView):
             else None
         )
 
-        user_count = User.objects.count()
+        cache_key = f"community:stats:{org.id}" if org else "community:stats"
 
-        if org:
-            completed_lessons = LessonProgress.objects.filter(
-                organization=org,
-                completed=True,
-            ).count()
+        def compute_stats():
+            user_count = User.objects.count()
 
-            open_help_requests = HelpRequest.objects.filter(
-                organization=org,
-                status=HelpRequest.Status.OPEN,
-            ).count()
-        else:
-            completed_lessons = LessonProgress.objects.filter(
-                completed=True,
-            ).count()
+            if org:
+                completed_lessons = LessonProgress.objects.filter(
+                    organization=org,
+                    completed=True,
+                ).count()
 
-            open_help_requests = HelpRequest.objects.filter(
-                status=HelpRequest.Status.OPEN,
-            ).count()
+                open_help_requests = HelpRequest.objects.filter(
+                    organization=org,
+                    status=HelpRequest.Status.OPEN,
+                ).count()
+            else:
+                completed_lessons = LessonProgress.objects.filter(
+                    completed=True,
+                ).count()
 
-        active_contributors = 100 + user_count
-        merged_prs = 300 + completed_lessons
+                open_help_requests = HelpRequest.objects.filter(
+                    status=HelpRequest.Status.OPEN,
+                ).count()
 
-        return Response(
-            {
+            active_contributors = 100 + user_count
+            merged_prs = 300 + completed_lessons
+            return {
                 "active_contributors": active_contributors,
                 "merged_prs": merged_prs,
                 "response_sla": "3.5h",
                 "open_requests": open_help_requests,
             }
-        )
+
+        from apps.core.cache.coalescing import CoalescingCache
+
+        org_id = org.id if org else "none"
+        cache_key = f"community_stats_org_{org_id}"
+        stats = CoalescingCache().get_or_set_coalesced(cache_key, 300, compute_stats)
+
+        return Response(stats)
 
 
 class UserAchievementsView(APIView):
@@ -794,6 +905,7 @@ class QuizNonceView(APIView):
 class QuizAttemptView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @idempotent
     def post(self, request):
         # NEW: Validate the cryptographic nonce
         nonce = request.data.get("nonce")
@@ -1076,13 +1188,20 @@ class PeerReviewView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        if PeerReview.objects.filter(
+        existing_review = PeerReview.objects.filter(
             submission=submission, reviewer=request.user
-        ).exists():
-            return Response(
-                {"error": "You have already reviewed this submission"},
-                status=status.HTTP_400_BAD_REQUEST,
+        ).first()
+
+        if existing_review:
+            serializer = PeerReviewSerializer(
+                existing_review, data=request.data, partial=True
             )
+            if serializer.is_valid():
+                with transaction.atomic():
+                    # Update review content cleanly without granting duplicate XP
+                    serializer.save(points_earned=0)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = PeerReviewSerializer(data=request.data)
         if serializer.is_valid():
@@ -1090,6 +1209,21 @@ class PeerReviewView(APIView):
                 review = serializer.save(
                     submission=submission, reviewer=request.user, points_earned=10
                 )
+
+                # Ensure XPEvent is only created once per reviewer review submission
+                if not XPEvent.objects.filter(
+                    user=request.user,
+                    source_type="peer_review",
+                    source_id=review.id,
+                ).exists():
+                    XPEvent.objects.create(
+                        user=request.user,
+                        source_type="peer_review",
+                        source_id=review.id,
+                        base_points=10,
+                        xp_delta=10,
+                    )
+
                 review_count = PeerReview.objects.filter(submission=submission).count()
                 if review_count >= 2:
                     reviews = list(
@@ -1154,8 +1288,6 @@ class LessonBookmarkView(APIView):
             LessonBookmark, user=request.user, lesson__slug=slug
         )
         bookmark.delete()
-
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -1235,29 +1367,178 @@ class LeaderboardView(APIView):
         except ValueError:
             page = 1
             limit = 50
+        page = max(page, 1)
+        limit = min(max(limit, 1), 200)
 
-        from apps.progress.services.leaderboard_service import LeaderboardService
+        from datetime import datetime, timedelta
 
-        result = LeaderboardService.get_leaderboard(
-            time_period=time_period,
-            page=page,
-            limit=limit,
-            search_username=search_username,
+        from django.contrib.auth import get_user_model
+        from django.db.models import (
+            Count,
+            F,
+            IntegerField,
+            OuterRef,
+            Q,
+            Subquery,
+            Sum,
+            Value,
         )
+        from django.db.models.functions import Coalesce
 
-        # Add user's personal rank if authenticated and not searching
-        personal_rank = None
-        if request.user.is_authenticated and not search_username:
-            personal_rank = LeaderboardService.get_user_rank(
-                request.user.username, time_period=time_period
+        from apps.challenges.models import ChallengeCompletion
+        from apps.core.cache.coalescing import CoalescingCache
+        from apps.dashboard.models import Issue, PullRequest
+        from apps.progress.models import LessonProgress, Season, StreakProfile
+
+        User = get_user_model()
+
+        # Period start boundary (None means all-time).
+        now = timezone.now()
+        start_date = None
+        if time_period == "weekly":
+            start_date = (now - timedelta(days=now.weekday())).replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+        elif time_period == "monthly":
+            start_date = now.replace(
+                day=1, hour=0, minute=0, second=0, microsecond=0
+            )
+        elif time_period.startswith("seasonal"):
+            season = Season.objects.filter(is_active=True).first()
+            if season is not None and season.start_date:
+                start_date = timezone.make_aware(
+                    datetime.combine(season.start_date, datetime.min.time())
+                )
+
+        # Compute XP the same way as the contributor dashboard so leaderboard
+        # ranks always match a user's dashboard rank. XPEvent is a gamification
+        # ledger that most contribution paths never write, so using it as the
+        # source yields an empty leaderboard even with real contributions.
+        def ranked_users():
+            date_filter = {}
+            if start_date is not None:
+                date_filter["updated_at__gte"] = start_date
+
+            lesson_progress = (
+                LessonProgress.objects.filter(
+                    user=OuterRef("pk"), completed=True, **date_filter
+                )
+                .values("user")
+                .annotate(total=Sum("score"))
+                .values("total")
+            )
+            issues_xp = (
+                Issue.objects.filter(
+                    assigned_to=OuterRef("pk"),
+                    status=Issue.Status.SOLVED,
+                    **date_filter,
+                )
+                .values("assigned_to")
+                .annotate(total=Sum("points") + Sum("bonus_points"))
+                .values("total")
+            )
+            challenge_xp = (
+                ChallengeCompletion.objects.filter(user=OuterRef("pk"))
+                .values("user")
+                .annotate(total=Sum("bonus_earned"))
+                .values("total")
+            )
+            prs_merged = (
+                PullRequest.objects.filter(
+                    user=OuterRef("pk"),
+                    status=PullRequest.Status.MERGED,
+                    **date_filter,
+                )
+                .values("user")
+                .annotate(total=Count("id"))
+                .values("total")
             )
 
-        total_users = result.get("total_users", 0)
+            users = (
+                User.objects.filter(is_staff=False)
+                .annotate(
+                    lesson_xp=Coalesce(
+                        Subquery(lesson_progress, output_field=IntegerField()),
+                        Value(0),
+                    ),
+                    issues_xp=Coalesce(
+                        Subquery(issues_xp, output_field=IntegerField()), Value(0)
+                    ),
+                    challenge_xp=Coalesce(
+                        Subquery(challenge_xp, output_field=IntegerField()),
+                        Value(0),
+                    ),
+                    prs_merged=Coalesce(
+                        Subquery(prs_merged, output_field=IntegerField()), Value(0)
+                    ),
+                )
+                .annotate(
+                    total_xp=F("lesson_xp") + F("issues_xp") + F("challenge_xp"),
+                )
+                .order_by("-total_xp", "username")
+            )
+            if search_username:
+                users = users.filter(username__icontains=search_username)
+            return users
+
+        def compute_leaderboard():
+            users = ranked_users()
+            total_users_count = users.count()
+            offset = (page - 1) * limit
+            page_rows = list(users[offset : offset + limit])
+
+            user_ids = [u.pk for u in page_rows]
+            streak_map = dict(
+                StreakProfile.objects.filter(user_id__in=user_ids).values_list(
+                    "user_id", "current_streak"
+                )
+            )
+
+            leaderboard = []
+            for i, user in enumerate(page_rows):
+                rank = offset + i + 1
+                leaderboard.append(
+                    {
+                        "user_id": user.pk,
+                        "username": user.username,
+                        "rank": rank,
+                        "total_xp": user.total_xp,
+                        "merged_prs": user.prs_merged,
+                        "streak_days": streak_map.get(user.pk, 0),
+                        "avatar_url": f"https://github.com/{user.username}.png",
+                        "html_url": f"https://github.com/{user.username}",
+                        "is_top_3": rank <= 3,
+                    }
+                )
+            return total_users_count, leaderboard
+
+        cache_key = (
+            f"leaderboard_hof_{time_period}_p{page}_l{limit}_u"
+            f"{search_username or 'none'}"
+        )
+        total_users, leaderboard = CoalescingCache().get_or_set_coalesced(
+            cache_key, 300, compute_leaderboard
+        )
+
+        # Personal rank from the same computation so it matches the dashboard.
+        personal_rank = None
+        if request.user.is_authenticated and not search_username:
+            me = ranked_users().filter(pk=request.user.id).first()
+            if me is not None:
+                better_count = ranked_users().filter(
+                    Q(total_xp__gt=me.total_xp)
+                    | Q(total_xp=me.total_xp, username__lt=me.username)
+                ).count()
+                personal_rank = {
+                    "rank": better_count + 1,
+                    "total_xp": me.total_xp,
+                }
+
         total_pages = (total_users + limit - 1) // limit if total_users > 0 else 1
 
         return Response(
             {
-                "leaderboard": result.get("leaderboard", []),
+                "leaderboard": leaderboard,
                 "personal_rank": personal_rank,
                 "page": page,
                 "limit": limit,
@@ -1266,6 +1547,69 @@ class LeaderboardView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class GitHubLeaderboardView(APIView):
+    """Read-only ranking of real contributions to the configured GitHub repo."""
+
+    permission_classes = [permissions.AllowAny]
+    cache_timeout = 15 * 60
+
+    def get(self, request):
+        repository = os.getenv(
+            "GITHUB_LEADERBOARD_REPOSITORY",
+            "goyaljiiiiii/Open-Source-Contribution-Atelier",
+        )
+        cache_key = f"github_leaderboard:{repository}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
+        try:
+            import requests
+
+            headers = {"Accept": "application/vnd.github+json"}
+            token = os.getenv("GITHUB_TOKEN")
+            if token:
+                headers["Authorization"] = f"Bearer {token}"
+            response = requests.get(
+                f"https://api.github.com/repos/{repository}/contributors",
+                params={"per_page": 100, "anon": "false"},
+                headers=headers,
+                timeout=10,
+            )
+            response.raise_for_status()
+            contributors = response.json()
+        except Exception as exc:
+            logger.warning("GitHub leaderboard request failed: %s", exc)
+            return Response(
+                {"detail": "GitHub contribution data is temporarily unavailable."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        leaderboard = [
+            {
+                "rank": index,
+                "username": contributor["login"],
+                "total_xp": contributor.get("contributions", 0),
+                "merged_prs": contributor.get("contributions", 0),
+                "streak_days": 0,
+                "avatar_url": contributor.get("avatar_url", ""),
+                "html_url": contributor.get("html_url", ""),
+            }
+            for index, contributor in enumerate(contributors, start=1)
+            if contributor.get("login")
+        ]
+        data = {
+            "source": "github",
+            "repository": repository,
+            "leaderboard": leaderboard,
+            "total_users": len(leaderboard),
+            "page": 1,
+            "total_pages": 1,
+        }
+        cache.set(cache_key, data, self.cache_timeout)
+        return Response(data)
 
 
 class BufferMetricsView(APIView):
@@ -1296,15 +1640,17 @@ class HeatmapView(APIView):
         from django.contrib.auth import get_user_model
 
         User = get_user_model()
-        from django.shortcuts import get_object_or_404
-        from apps.progress.models import (
-            DailyActivity,
-            LessonProgress,
-            QuizAttempt,
-            ExerciseAttempt,
-        )
         import datetime
         from collections import defaultdict
+
+        from django.shortcuts import get_object_or_404
+
+        from apps.progress.models import (
+            DailyActivity,
+            ExerciseAttempt,
+            LessonProgress,
+            QuizAttempt,
+        )
 
         username = request.query_params.get("username")
         if username:
@@ -1317,6 +1663,11 @@ class HeatmapView(APIView):
                 )
             user = request.user
 
+        try:
+            today = user.user_profile.local_today
+        except Exception:
+            today = datetime.date.today()
+
         start_param = request.query_params.get("start_date")
         end_param = request.query_params.get("end_date")
 
@@ -1324,17 +1675,17 @@ class HeatmapView(APIView):
             try:
                 start_date = datetime.datetime.strptime(start_param, "%Y-%m-%d").date()
             except ValueError:
-                start_date = datetime.date.today() - datetime.timedelta(days=365)
+                start_date = today - datetime.timedelta(days=365)
         else:
-            start_date = datetime.date.today() - datetime.timedelta(days=365)
+            start_date = today - datetime.timedelta(days=365)
 
         if end_param:
             try:
                 end_date = datetime.datetime.strptime(end_param, "%Y-%m-%d").date()
             except ValueError:
-                end_date = datetime.date.today()
+                end_date = today
         else:
-            end_date = datetime.date.today()
+            end_date = today
 
         activity_type_filter = request.query_params.get("activity_type")
 
@@ -1464,20 +1815,30 @@ class StreakRecoveryView(APIView):
         )
 
 
+class Echo:
+    """An object that implements just the write method of the file-like interface."""
+
+    def write(self, value):
+        """Write the value by returning it, instead of storing in a buffer."""
+        return value
+
+
 class HeatmapCSVExportView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        from apps.progress.models import (
-            DailyActivity,
-            LessonProgress,
-            QuizAttempt,
-            ExerciseAttempt,
-        )
+        import csv
         import datetime
         from collections import defaultdict
-        import csv
-        from django.http import HttpResponse
+
+        from django.http import StreamingHttpResponse
+
+        from apps.progress.models import (
+            DailyActivity,
+            ExerciseAttempt,
+            LessonProgress,
+            QuizAttempt,
+        )
 
         user = request.user
 
@@ -1485,21 +1846,44 @@ class HeatmapCSVExportView(APIView):
         end_param = request.query_params.get("end_date")
         activity_type_filter = request.query_params.get("activity_type")
 
+        try:
+            today = user.user_profile.local_today
+        except Exception:
+            today = datetime.date.today()
+
         if start_param:
             try:
                 start_date = datetime.datetime.strptime(start_param, "%Y-%m-%d").date()
             except ValueError:
-                start_date = datetime.date.today() - datetime.timedelta(days=365)
+                return Response(
+                    {"error": "Invalid start_date format. Use YYYY-MM-DD."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         else:
-            start_date = datetime.date.today() - datetime.timedelta(days=365)
+            start_date = today - datetime.timedelta(days=365)
 
         if end_param:
             try:
                 end_date = datetime.datetime.strptime(end_param, "%Y-%m-%d").date()
             except ValueError:
-                end_date = datetime.date.today()
+                return Response(
+                    {"error": "Invalid end_date format. Use YYYY-MM-DD."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         else:
-            end_date = datetime.date.today()
+            end_date = today
+
+        if start_date > end_date:
+            return Response(
+                {"error": "start_date cannot be after end_date."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if (end_date - start_date).days > 365:
+            return Response(
+                {"error": "Date range cannot exceed 1 year (365 days)."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         activity_breakdown = defaultdict(
             lambda: {"reading": 0, "quizzes": 0, "code_submissions": 0}
@@ -1539,58 +1923,165 @@ class HeatmapCSVExportView(APIView):
             d.isoformat() for d in daily_dates
         }
 
-        response = HttpResponse(content_type="text/csv")
+        pseudo_buffer = Echo()
+        writer = csv.writer(pseudo_buffer)
+
+        def csv_stream():
+            yield writer.writerow(
+                [
+                    "Date",
+                    "Activity Type",
+                    "Reading Count",
+                    "Quizzes Count",
+                    "Code Submissions Count",
+                    "Total Count",
+                ]
+            )
+
+            for date_str in sorted(all_dates):
+                date_obj = datetime.date.fromisoformat(date_str)
+                breakdown = activity_breakdown[date_str]
+                reading_cnt = breakdown["reading"]
+                quizzes_cnt = breakdown["quizzes"]
+                code_sub_cnt = breakdown["code_submissions"]
+
+                if activity_type_filter == "reading":
+                    count = reading_cnt
+                    activity_type_label = "Reading"
+                elif activity_type_filter == "quizzes":
+                    count = quizzes_cnt
+                    activity_type_label = "Quizzes"
+                elif activity_type_filter == "code_submissions":
+                    count = code_sub_cnt
+                    activity_type_label = "Code Submissions"
+                else:
+                    total_actions = reading_cnt + quizzes_cnt + code_sub_cnt
+                    if total_actions > 0:
+                        count = total_actions
+                    elif date_obj in daily_dates:
+                        count = 1
+                    else:
+                        count = 0
+                    activity_type_label = "All Activities"
+
+                if count > 0:
+                    yield writer.writerow(
+                        [
+                            date_str,
+                            activity_type_label,
+                            reading_cnt,
+                            quizzes_cnt,
+                            code_sub_cnt,
+                            count,
+                        ]
+                    )
+
         filename = f"activity_export_{start_date}_to_{end_date}.csv"
+        response = StreamingHttpResponse(csv_stream(), content_type="text/csv")
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
-        writer = csv.writer(response)
-        writer.writerow(
-            [
-                "Date",
-                "Activity Type",
-                "Reading Count",
-                "Quizzes Count",
-                "Code Submissions Count",
-                "Total Count",
-            ]
+        return response
+
+
+class WeeklyGoalView(APIView):
+    """
+    GET /api/progress/weekly-goal/
+    PUT /api/progress/weekly-goal/
+
+    View and update current weekly learning goal targets and progress metrics.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        goal = WeeklyGoal.get_or_create_current(user)
+
+        today = timezone.now().date()
+        week_start = goal.week_start_date
+        week_end = week_start + timezone.timedelta(days=6)
+
+        # Completed lessons this week
+        completed_lessons = LessonProgress.objects.filter(
+            user=user,
+            completed=True,
+            updated_at__date__gte=week_start,
+            updated_at__date__lte=week_end,
+        ).count()
+
+        # XP earned this week
+        earned_xp = (
+            XPEvent.objects.filter(
+                user=user,
+                created_at__date__gte=week_start,
+                created_at__date__lte=week_end,
+            ).aggregate(total=Sum("xp_delta"))["total"]
+            or 0
         )
 
-        for date_str in sorted(all_dates):
-            date_obj = datetime.date.fromisoformat(date_str)
-            breakdown = activity_breakdown[date_str]
-            reading_cnt = breakdown["reading"]
-            quizzes_cnt = breakdown["quizzes"]
-            code_sub_cnt = breakdown["code_submissions"]
+        # Active learning days and estimated learning time (30 mins per active day)
+        activity_dates = set(
+            DailyActivity.objects.filter(
+                user=user,
+                date__gte=week_start,
+                date__lte=week_end,
+            ).values_list("date", flat=True)
+        )
+        minutes_spent = max(len(activity_dates) * 30, completed_lessons * 15)
 
-            if activity_type_filter == "reading":
-                count = reading_cnt
-                activity_type_label = "Reading"
-            elif activity_type_filter == "quizzes":
-                count = quizzes_cnt
-                activity_type_label = "Quizzes"
-            elif activity_type_filter == "code_submissions":
-                count = code_sub_cnt
-                activity_type_label = "Code Submissions"
-            else:
-                total_actions = reading_cnt + quizzes_cnt + code_sub_cnt
-                if total_actions > 0:
-                    count = total_actions
-                elif date_obj in daily_dates:
-                    count = 1
-                else:
-                    count = 0
-                activity_type_label = "All Activities"
+        # Calculate percentages
+        lessons_pct = (
+            min(100, int((completed_lessons / goal.target_lessons) * 100))
+            if goal.target_lessons > 0
+            else 0
+        )
+        xp_pct = (
+            min(100, int((earned_xp / goal.target_xp) * 100))
+            if goal.target_xp > 0
+            else 0
+        )
+        minutes_pct = (
+            min(100, int((minutes_spent / goal.target_minutes) * 100))
+            if goal.target_minutes > 0
+            else 0
+        )
+        overall_pct = min(100, int((lessons_pct + xp_pct + minutes_pct) / 3))
 
-            if count > 0:
-                writer.writerow(
-                    [
-                        date_str,
-                        activity_type_label,
-                        reading_cnt,
-                        quizzes_cnt,
-                        code_sub_cnt,
-                        count,
-                    ]
-                )
+        days_of_week = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        daily_breakdown = []
+        for i in range(7):
+            d = week_start + timezone.timedelta(days=i)
+            daily_breakdown.append(
+                {
+                    "day_name": days_of_week[i],
+                    "date": d.isoformat(),
+                    "is_active": d in activity_dates,
+                    "is_today": d == today,
+                    "is_future": d > today,
+                }
+            )
 
-        return response
+        serializer = WeeklyGoalSerializer(goal)
+        data = serializer.data
+        data.update(
+            {
+                "week_end_date": week_end.isoformat(),
+                "completed_lessons": completed_lessons,
+                "earned_xp": earned_xp,
+                "minutes_spent": minutes_spent,
+                "lessons_progress_pct": lessons_pct,
+                "xp_progress_pct": xp_pct,
+                "minutes_progress_pct": minutes_pct,
+                "overall_progress_pct": overall_pct,
+                "daily_breakdown": daily_breakdown,
+            }
+        )
+        return Response(data)
+
+    def put(self, request):
+        user = request.user
+        goal = WeeklyGoal.get_or_create_current(user)
+        serializer = WeeklyGoalSerializer(goal, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return self.get(request)

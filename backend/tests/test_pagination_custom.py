@@ -2,12 +2,15 @@
 Custom pagination tests for specific edge cases.
 """
 
-from django.test import TestCase
+import logging
+
+logger = logging.getLogger(__name__)
 from django.contrib.auth import get_user_model
+from django.test import TestCase
 
 User = get_user_model()
-from rest_framework.test import APIClient
 from django.core.paginator import Paginator
+from rest_framework.test import APIClient
 
 
 class PaginationEdgeCaseTest(TestCase):
@@ -39,8 +42,8 @@ class PaginationEdgeCaseTest(TestCase):
                         max_size,
                         f"{name} endpoint returned {len(results)} items, max {max_size}",
                     )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Caught exception: %s", e)
 
     def test_pagination_navigation(self):
         """Test that pagination navigation works."""
@@ -60,8 +63,8 @@ class PaginationEdgeCaseTest(TestCase):
                 self.assertIsInstance(data["count"], int)
                 self.assertIsInstance(data["results"], list)
 
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)
 
     def test_empty_results_pagination(self):
         """Test pagination with empty results."""
@@ -71,5 +74,5 @@ class PaginationEdgeCaseTest(TestCase):
                 data = response.data
                 self.assertEqual(data.get("results", []), [])
                 self.assertEqual(data.get("count", 0), 0)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)

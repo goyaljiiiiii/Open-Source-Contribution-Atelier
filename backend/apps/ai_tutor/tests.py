@@ -1,11 +1,12 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
-from rest_framework.test import APIClient
 from rest_framework import status
+from rest_framework.test import APIClient
 
-from apps.content.models import Lesson
 from apps.ai_tutor.services import AiTutorService
+from apps.content.models import Lesson
 
 User = get_user_model()
 

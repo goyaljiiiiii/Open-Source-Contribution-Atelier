@@ -1,8 +1,9 @@
-from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-from rest_framework.test import APIClient
+from django.test import TestCase
 from rest_framework import status
+from rest_framework.test import APIClient
+
 from apps.moderation.models import ContentReport
 from apps.progress.models import CodeSubmission, PeerReview
 

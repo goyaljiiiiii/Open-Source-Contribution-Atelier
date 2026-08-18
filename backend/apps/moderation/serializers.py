@@ -1,6 +1,7 @@
-from rest_framework import serializers
-from apps.moderation.models import ContentReport, ModerationAuditEvent
 from django.contrib.contenttypes.models import ContentType
+from rest_framework import serializers
+
+from apps.moderation.models import ContentReport, ModerationAuditEvent
 
 
 class ContentReportSerializer(serializers.ModelSerializer):

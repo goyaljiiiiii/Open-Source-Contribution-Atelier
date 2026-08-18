@@ -3,20 +3,22 @@ AI-powered recommendation engine for tasks.
 """
 
 import logging
+from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
-from typing import Dict, Any, List, Optional, Tuple
+from django.contrib.auth import get_user_model
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from django.contrib.auth import get_user_model
 
 User = get_user_model()
 from django.contrib.contenttypes.models import ContentType
+
 from apps.recommendations.models import (
-    UserSkillProfile,
     IssueSkillTag,
-    TaskRecommendation,
     MentorProfile,
     RecommendationFeedback,
+    TaskRecommendation,
+    UserSkillProfile,
 )
 
 logger = logging.getLogger(__name__)

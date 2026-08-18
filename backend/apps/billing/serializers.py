@@ -1,11 +1,12 @@
 from rest_framework import serializers
+
 from .models import (
-    SubscriptionPlan,
-    CustomerSubscription,
-    OrganizationSponsor,
     Bounty,
     BountyClaim,
+    CustomerSubscription,
     Invoice,
+    OrganizationSponsor,
+    SubscriptionPlan,
 )
 
 

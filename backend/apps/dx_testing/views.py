@@ -2,16 +2,18 @@
 Views for DX testing.
 """
 
-from rest_framework import viewsets, status
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import action
-from django.db.models import Avg
-from apps.dx_testing.models import DXTestRun, DXMetric, DXRecommendation
-from apps.dx_testing.serializers import DXTestRunSerializer, DXRecommendationSerializer
-import time
 import logging
+import time
+
+from django.db.models import Avg
 from django.utils import timezone
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+from apps.dx_testing.models import DXMetric, DXRecommendation, DXTestRun
+from apps.dx_testing.serializers import DXRecommendationSerializer, DXTestRunSerializer
 
 logger = logging.getLogger(__name__)
 

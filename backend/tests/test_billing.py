@@ -1,10 +1,12 @@
 import json
-from django.urls import reverse
-from django.contrib.auth import get_user_model
-from django.utils import timezone
 from datetime import timedelta
+
 import pytest
-from apps.billing.models import SubscriptionPlan, CustomerSubscription, Invoice, Payment
+from django.contrib.auth import get_user_model
+from django.urls import reverse
+from django.utils import timezone
+
+from apps.billing.models import CustomerSubscription, Invoice, Payment, SubscriptionPlan
 from apps.billing.tasks import generate_invoice_pdf_task
 
 User = get_user_model()

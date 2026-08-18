@@ -37,12 +37,14 @@ class EmailChannel(NotificationChannel):
         template_name = f"notifications/{notif_type}_email.html"
         try:
             html_content = render_to_string(template_name, context)
-        except Exception:
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)
             try:
                 html_content = render_to_string(
                     "notifications/default_email.html", context
                 )
-            except Exception:
+            except Exception as e:
+                logger.warning("Caught exception: %s", e)
                 html_content = (
                     f"<html><body><h2>{title}</h2><p>{message_text}</p></body></html>"
                 )

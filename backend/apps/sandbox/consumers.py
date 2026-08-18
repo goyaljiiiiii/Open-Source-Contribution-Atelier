@@ -1,3 +1,6 @@
+import logging
+
+logger = logging.getLogger(__name__)
 import json
 
 from channels.db import database_sync_to_async
@@ -8,30 +11,41 @@ from django.core.cache import cache
 class SandboxConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_group_name = "sandbox_group"
+        self.session_id = self.channel_name
         self.debug_process = None
         self.debug_file = None
         self.debug_task = None
+
+        from asgiref.sync import sync_to_async
+
+        from .services.execution_tracker import ExecutionTracker
+
+        await sync_to_async(ExecutionTracker.set_session_state)(self.session_id, {})
 
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
-        await self._cleanup_debug_session()
+        try:
+            await self.channel_layer.group_discard(
+                self.room_group_name, self.channel_name
+            )
+            await self._cleanup_debug_session()
+        finally:
+            from asgiref.sync import sync_to_async
+
+            from .services.execution_tracker import ExecutionTracker
+
+            await sync_to_async(ExecutionTracker.reset)(self.session_id)
 
     @database_sync_to_async
     def check_rate_limit(self, key, limit, period):
-        count = cache.get(key, 0)
-        if count >= limit:
-            return False
-        if count == 0:
+        try:
+            count = cache.incr(key)
+        except ValueError:
             cache.set(key, 1, timeout=period)
-        else:
-            try:
-                cache.incr(key)
-            except ValueError:
-                cache.set(key, count + 1, timeout=period)
-        return True
+            count = 1
+        return count <= limit
 
     async def receive(self, text_data):
         try:
@@ -94,6 +108,22 @@ class SandboxConsumer(AsyncWebsocketConsumer):
                 ):
                     user_id = str(self.scope["user"].id)
                     db_user = self.scope["user"]
+                else:
+                    user_id = self.channel_name
+
+                is_allowed = await self.check_rate_limit(
+                    f"throttle_sandbox_ws_{user_id}", 10, 60
+                )
+                if not is_allowed:
+                    await self.send(
+                        text_data=json.dumps(
+                            {
+                                "type": "error",
+                                "message": "Rate limit exceeded. You can only execute 10 sandbox requests per minute.",
+                            }
+                        )
+                    )
+                    return
 
                 trace_events = await run_code_trace(code, user_id=user_id)
 
@@ -119,6 +149,28 @@ class SandboxConsumer(AsyncWebsocketConsumer):
                 import os
 
                 from .services import start_debug_session
+
+                user_id = "anonymous"
+                if self.scope.get("user") and getattr(
+                    self.scope["user"], "is_authenticated", False
+                ):
+                    user_id = str(self.scope["user"].id)
+                else:
+                    user_id = self.channel_name
+
+                is_allowed = await self.check_rate_limit(
+                    f"throttle_sandbox_ws_{user_id}", 10, 60
+                )
+                if not is_allowed:
+                    await self.send(
+                        text_data=json.dumps(
+                            {
+                                "type": "error",
+                                "message": "Rate limit exceeded. You can only execute 10 sandbox requests per minute.",
+                            }
+                        )
+                    )
+                    return
 
                 await self._cleanup_debug_session()
 
@@ -147,8 +199,8 @@ class SandboxConsumer(AsyncWebsocketConsumer):
                                         "output": line.decode("utf-8"),
                                     }
                                 )
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.warning("Caught exception: %s", e)
                     finally:
                         await self._cleanup_debug_session()
 
@@ -233,8 +285,8 @@ class SandboxConsumer(AsyncWebsocketConsumer):
                             )
                         )
                 await self.send(text_data=json.dumps({"action": "search_done"}))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)
 
     async def _cleanup_debug_session(self):
         import os
@@ -253,8 +305,8 @@ class SandboxConsumer(AsyncWebsocketConsumer):
         if self.debug_file and os.path.exists(self.debug_file):
             try:
                 os.remove(self.debug_file)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Caught exception: %s", e)
             self.debug_file = None
 
     async def code_message(self, event):
@@ -283,8 +335,9 @@ class CollabConsumer(AsyncWebsocketConsumer):
         Accepts the WebSocket connection and adds the client to the collaboration room's group.
         Sends the initial Yjs document state stored in DB or cache to the connecting client.
         """
-        import uuid
         import sys
+        import uuid
+
         from django.core.exceptions import ValidationError
 
         self.room_id = self.scope["url_route"]["kwargs"]["room_id"]
@@ -317,8 +370,8 @@ class CollabConsumer(AsyncWebsocketConsumer):
                         is_allowed = session.allowed_users.filter(id=user.id).exists()
                         if is_owner or is_allowed:
                             return session
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("Caught exception: %s", e)
                 return None
 
             session = await get_and_verify_session()
@@ -391,6 +444,7 @@ class CollabConsumer(AsyncWebsocketConsumer):
 
         # Log leaving the session
         from asgiref.sync import sync_to_async
+
         from .models import CollabSessionLog
 
         user = self.scope.get("user")

@@ -13,6 +13,26 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
+# Atomic compare-and-delete: only removes the key if its current value
+# still matches the value this lock instance set when it acquired the
+# lock. Prevents a TOCTOU race where the lock expires and is
+# legitimately re-acquired by another process between a separate
+# GET and DELETE call.
+_RELEASE_LUA_SCRIPT = """
+if redis.call("get", KEYS[1]) == ARGV[1] then
+    return redis.call("del", KEYS[1])
+else
+    return 0
+end
+"""
+
+
+def _get_raw_redis_client():
+    """Get the raw redis-py client underlying Django's cache, for atomic Lua execution."""
+    from django_redis import get_redis_connection
+
+    return get_redis_connection("default")
+
 
 class RedisLock:
     """
@@ -47,14 +67,27 @@ class RedisLock:
         if not self.acquired:
             return False
         try:
-            current_value = cache.get(self.lock_key)
-            if current_value == self.lock_value:
-                cache.delete(self.lock_key)
-                self.acquired = False
-                return True
-            return False
+            redis_client = _get_raw_redis_client()
+            deleted = redis_client.eval(
+                _RELEASE_LUA_SCRIPT, 1, self.lock_key, self.lock_value
+            )
+            self.acquired = False
+            return bool(deleted)
         except Exception as e:
             logger.error(f"Failed to release Redis lock {self.lock_key}: {e}")
+            # Fall back to the old non-atomic check-then-delete only if
+            # the raw client / Lua eval genuinely isn't available (e.g.
+            # a non-Redis cache backend in a dev/test environment) —
+            # better than silently never releasing the lock at all.
+            try:
+                current_value = cache.get(self.lock_key)
+                if current_value == self.lock_value:
+                    cache.delete(self.lock_key)
+                    return True
+            except Exception as fallback_exc:
+                logger.error(
+                    f"Fallback release also failed for {self.lock_key}: {fallback_exc}"
+                )
             return False
 
     @contextmanager

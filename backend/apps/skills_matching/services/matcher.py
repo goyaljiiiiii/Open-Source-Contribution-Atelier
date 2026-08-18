@@ -2,16 +2,18 @@
 ML-based skill matching for contributors and issues.
 """
 
-from typing import List, Dict, Any, Optional
+import logging
+from typing import Any, Dict, List, Optional
+
+import numpy as np
+
+from apps.ml_triage.models import Issue
 from apps.skill_matching.models import (
     ContributorProfile,
-    Recommendation,
     NewcomerFriendlinessScore,
+    Recommendation,
 )
 from apps.skill_matching.services.skill_tagger import SkillTagger
-from apps.ml_triage.models import Issue
-import numpy as np
-import logging
 
 logger = logging.getLogger(__name__)
 

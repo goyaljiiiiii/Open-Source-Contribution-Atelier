@@ -246,7 +246,8 @@ class TestWebhookSecretSecurity:
 
     def test_verify_signature_rotation_grace_period(self, endpoint):
         from django.utils import timezone
-        from apps.webhooks.security import verify_signature, compute_signature
+
+        from apps.webhooks.security import compute_signature, verify_signature
 
         payload = b"test_payload"
         old_secret = endpoint.secret

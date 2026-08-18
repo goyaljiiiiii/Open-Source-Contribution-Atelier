@@ -2,9 +2,10 @@
 Models for CI/CD issue quality pipeline.
 """
 
+import uuid
+
 from django.db import models
 from django.utils import timezone
-import uuid
 
 
 class IssueQualityRecord(models.Model):

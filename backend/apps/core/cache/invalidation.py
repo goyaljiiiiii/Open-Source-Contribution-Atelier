@@ -1,8 +1,9 @@
 import logging
-import re
-import time
 import math
 import random
+import re
+import time
+
 from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
@@ -17,7 +18,8 @@ def add_key_to_tag(tag: str, key: str):
 
         con = get_redis_connection("default")
         con.sadd(f"cache_tag:{tag}", key)
-    except Exception:
+    except Exception as e:
+        logger.warning("Caught exception: %s", e)
         tag_key = f"cache_tag:{tag}"
         keys = cache.get(tag_key, set())
         if not isinstance(keys, set):
@@ -36,7 +38,8 @@ def get_keys_for_tag(tag: str) -> set:
         con = get_redis_connection("default")
         members = con.smembers(f"cache_tag:{tag}")
         return {m.decode("utf-8") if isinstance(m, bytes) else m for m in members}
-    except Exception:
+    except Exception as e:
+        logger.warning("Caught exception: %s", e)
         tag_key = f"cache_tag:{tag}"
         keys = cache.get(tag_key, set())
         return set(keys)
@@ -51,7 +54,8 @@ def remove_tag(tag: str):
 
         con = get_redis_connection("default")
         con.delete(f"cache_tag:{tag}")
-    except Exception:
+    except Exception as e:
+        logger.warning("Caught exception: %s", e)
         cache.delete(f"cache_tag:{tag}")
 
 
@@ -109,7 +113,8 @@ def invalidate_tag(tag: str):
             for k in con.scan_iter(match=pattern):
                 k_str = k.decode("utf-8") if isinstance(k, bytes) else k
                 matching_tags.append(k_str.replace("cache_tag:", ""))
-        except Exception:
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)
             if hasattr(cache, "_cache"):
                 for k in list(cache._cache.keys()):
                     if k.startswith("cache_tag:") and re.match(

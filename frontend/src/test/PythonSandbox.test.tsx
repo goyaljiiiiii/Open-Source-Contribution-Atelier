@@ -28,7 +28,7 @@ describe("PythonSandbox UI", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     (usePythonSandbox as any).mockReturnValue({
       isReady: true,
       isExecuting: false,

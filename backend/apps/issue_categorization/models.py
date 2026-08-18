@@ -2,14 +2,14 @@
 Models for hierarchical issue organization and categorization.
 """
 
-from django.db import models
-from django.conf import settings
-
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.utils import timezone
-import uuid
 import json
+import uuid
+
+from django.conf import settings
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from django.db import models
+from django.utils import timezone
 from mptt.models import MPTTModel, TreeForeignKey
 
 

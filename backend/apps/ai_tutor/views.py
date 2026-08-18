@@ -1,3 +1,6 @@
+import logging
+
+logger = logging.getLogger(__name__)
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -32,8 +35,8 @@ class TutorAskView(APIView):
                     lesson_context = (
                         f"Lesson title: {lesson.title}\nSummary: {summary_text[:500]}"
                     )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Caught exception: %s", e)
 
         answer = AiTutorService.get_response(
             question=question,

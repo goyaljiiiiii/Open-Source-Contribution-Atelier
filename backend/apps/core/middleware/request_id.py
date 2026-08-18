@@ -1,6 +1,6 @@
-import uuid
 import threading
 import time
+import uuid
 
 _thread_locals = threading.local()
 

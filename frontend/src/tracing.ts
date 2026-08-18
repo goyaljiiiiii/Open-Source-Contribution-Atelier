@@ -4,6 +4,13 @@ import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { ZoneContextManager } from "@opentelemetry/context-zone";
 import { registerInstrumentations } from "@opentelemetry/instrumentation";
 import { getWebAutoInstrumentations } from "@opentelemetry/auto-instrumentations-web";
+import {
+  getTraceHeaders,
+  logNavigationTiming,
+  setWebTracerProvider,
+} from "./lib/otelProvider";
+
+export { getTraceHeaders } from "./lib/otelProvider";
 
 export function initializeTracing() {
   if (import.meta.env.VITE_ENABLE_OPENTELEMETRY !== "true") {
@@ -25,6 +32,8 @@ export function initializeTracing() {
     contextManager: new ZoneContextManager(),
   });
 
+  setWebTracerProvider(provider);
+
   // Register auto-instrumentations (fetch, document load, user interaction, etc.)
   registerInstrumentations({
     instrumentations: [
@@ -36,6 +45,8 @@ export function initializeTracing() {
       }),
     ],
   });
+
+  logNavigationTiming();
 
   console.log("OpenTelemetry tracing initialized.");
 }

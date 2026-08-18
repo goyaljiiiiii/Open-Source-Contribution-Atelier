@@ -22,16 +22,16 @@ from .views import (
     SecureAccountDeleteView,
     ShopStreakFreezeView,
     SignupView,
+    TwoFactorDisableView,
+    TwoFactorGenerateBackupCodesView,
+    TwoFactorSetupView,
+    TwoFactorStatusView,
+    TwoFactorVerifySetupView,
     UserListView,
-    UserSessionListView,
     UserSessionDetailView,
+    UserSessionListView,
     UserStatisticsView,
     UserSuggestionsView,
-    AvatarUploadView,
-    PasswordResetValidateTokenView,
-    ChangePasswordView,
-    PublicProfileView,
-    ShopStreakFreezeView,
 )
 
 urlpatterns = [
@@ -53,6 +53,12 @@ urlpatterns = [
     ),
     path("profile/avatar/", AvatarUploadView.as_view(), name="avatar-upload"),
     path("logout/", LogoutView.as_view(), name="logout"),
+    # ── Two-Factor Authentication (2FA) ────────────────────────────────────────
+    path("2fa/setup/", TwoFactorSetupView.as_view(), name="2fa-setup"),
+    path("2fa/verify-setup/", TwoFactorVerifySetupView.as_view(), name="2fa-verify-setup"),
+    path("2fa/disable/", TwoFactorDisableView.as_view(), name="2fa-disable"),
+    path("2fa/status/", TwoFactorStatusView.as_view(), name="2fa-status"),
+    path("2fa/generate-backup-codes/", TwoFactorGenerateBackupCodesView.as_view(), name="2fa-generate-backup-codes"),
     # ── OAuth ──────────────────────────────────────────────────────────────────
     path("google/", GoogleLoginView.as_view(), name="google-login"),
     path("github/", GitHubOAuthStartView.as_view(), name="github-login"),

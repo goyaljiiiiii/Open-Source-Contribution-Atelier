@@ -10,23 +10,23 @@ import {
   type RecentCommand,
 } from "../hooks/useRecentCommands";
 import {
-  LayoutGrid,
+  AlignLeft,
   BookOpen,
-  Trophy,
   BriefcaseBusiness,
-  MessageSquare,
-  Settings,
-  Search,
-  X,
   ChevronRight,
+  Clock,
+  Contrast,
   FileText,
   Heading as HeadingIcon,
-  AlignLeft,
-  Sun,
+  LayoutGrid,
+  MessageSquare,
   Moon,
-  Contrast,
-  Clock,
   Palette,
+  Search,
+  Settings,
+  Sun,
+  Trophy,
+  X,
 } from "lucide-react";
 
 interface SearchIndexEntry {
@@ -399,6 +399,9 @@ export const CommandPalette: React.FC = () => {
               exit={{ opacity: 0, scale: 0.95, y: -20 }}
               transition={{ duration: 0.15 }}
               ref={modalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Command Palette"
               className="relative w-full max-w-2xl bg-[#0f0e0c] border-4 border-black rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col focus:outline-none z-10"
             >
               {/* Cmdk overrides focus logic, but we still provide shouldFilter={false} to manage custom highlighting & scoring */}

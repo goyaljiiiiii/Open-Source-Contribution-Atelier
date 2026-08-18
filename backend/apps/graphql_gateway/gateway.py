@@ -313,7 +313,8 @@ class GraphQLRouter:
             try:
                 response = requests.get(f"{service['url']}/health", timeout=2)
                 health[name] = {"status": "healthy", "code": response.status_code}
-            except Exception:
+            except Exception as e:
+                logger.warning("Caught exception: %s", e)
                 health[name] = {"status": "unhealthy", "code": None}
 
         return health

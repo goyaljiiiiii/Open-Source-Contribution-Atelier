@@ -1,20 +1,20 @@
+from unittest.mock import patch
+
 import pytest
 from django.contrib.auth import get_user_model
+from django.test import TestCase, override_settings
 from rest_framework.exceptions import ValidationError
 
+from apps.core.throttling import SlidingWindowScopedThrottle
 from apps.sandbox.models import PipelineExecution, PipelineJob
 from apps.sandbox.serializers import PipelineExecutionSerializer
 from apps.sandbox.services.pipeline_simulator import (
+    run_pipeline_simulation,
     sanitize_input_string,
     sanitize_log_output,
     validate_trigger_command,
-    run_pipeline_simulation,
 )
 from apps.sandbox.views import PipelineExecutionViewSet
-from apps.core.throttling import SlidingWindowScopedThrottle
-
-from unittest.mock import patch
-from django.test import TestCase, override_settings
 
 User = get_user_model()
 

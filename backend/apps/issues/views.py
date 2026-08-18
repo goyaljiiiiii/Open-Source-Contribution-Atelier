@@ -43,16 +43,24 @@ class BountyViewSet(viewsets.ReadOnlyModelViewSet):
         detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated]
     )
     def claim(self, request, pk=None):
-        bounty = self.get_object()
-        if bounty.status != Bounty.Status.OPEN:
-            return Response(
-                {"error": "Bounty is not open for claiming."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        with transaction.atomic():
+            try:
+                bounty = Bounty.objects.select_for_update().get(pk=pk)
+            except Bounty.DoesNotExist:
+                return Response(
+                    {"error": "Bounty not found."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
 
-        bounty.status = Bounty.Status.CLAIMED
-        bounty.claimed_by = request.user
-        bounty.save()
+            if bounty.status != Bounty.Status.OPEN:
+                return Response(
+                    {"error": "Bounty is not open for claiming."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            bounty.status = Bounty.Status.CLAIMED
+            bounty.claimed_by = request.user
+            bounty.save()
 
         return Response({"status": "Bounty claimed successfully!"})
 

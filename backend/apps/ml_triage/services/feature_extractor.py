@@ -4,9 +4,11 @@ Feature extraction for ML models.
 
 import re
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
+
 from django.utils import timezone
-from apps.ml_triage.models import Issue, Comment, Reaction
+
+from apps.ml_triage.models import Comment, Issue, Reaction
 
 
 class FeatureExtractor:

@@ -1,10 +1,11 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
+
 from .models import Experiment, ExperimentAssignment, ExperimentEvent
 from .serializers import (
-    ExperimentSerializer,
     ExperimentAssignmentSerializer,
     ExperimentEventSerializer,
+    ExperimentSerializer,
 )
 
 

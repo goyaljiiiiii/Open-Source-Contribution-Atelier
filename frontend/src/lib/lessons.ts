@@ -70,6 +70,7 @@ export interface Lesson {
   jsExercise?: JSExercise;
   debugExercise?: DebugExercise;
   category?: string;
+  updatedAt?: string;
 }
 
 // Small built-in fallback lessons (used if API unreachable)
@@ -104,9 +105,9 @@ export type LessonsFetchResult = {
 };
 
 function mapApiLessons(data: unknown[]): Lesson[] {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   return (data as any[]).map((les, index: number) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const firstExercise = (les.exercises as any[] | undefined)?.[0];
     return {
       id: Number(les.id ?? 0),
@@ -135,6 +136,11 @@ function mapApiLessons(data: unknown[]): Lesson[] {
       order: Number(les.order ?? index),
       category: String(les.category ?? "general"),
       filePath: les.filePath ? String(les.filePath) : undefined,
+      updatedAt: les.updatedAt
+        ? String(les.updatedAt)
+        : les.updated_at
+          ? String(les.updated_at)
+          : undefined,
     } satisfies Lesson;
   });
 }

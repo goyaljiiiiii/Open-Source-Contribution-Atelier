@@ -1,6 +1,8 @@
 import logging
+
 import requests
 from django.conf import settings
+
 from .models import PullRequestMetric, ReviewerAvailability
 
 logger = logging.getLogger(__name__)
@@ -42,13 +44,23 @@ class GitHubPRService:
                         "deletions": data.get("deletions", 0),
                         "changed_files": data.get("changed_files", 0),
                         "status": status_val,
-                        "requested_reviewers": [r.get("login") for r in data.get("requested_reviewers", [])],
+                        "requested_reviewers": [
+                            r.get("login") for r in data.get("requested_reviewers", [])
+                        ],
                         "is_simulated": False,
                     }
                 else:
-                    logger.warning("GitHub API returned status code %s for PR #%s. Operating in degraded fallback mode.", res.status_code, pr_number)
+                    logger.warning(
+                        "GitHub API returned status code %s for PR #%s. Operating in degraded fallback mode.",
+                        res.status_code,
+                        pr_number,
+                    )
             except Exception as exc:
-                logger.warning("GitHub API request failed for PR #%s: %s. Operating in degraded fallback mode.", pr_number, exc)
+                logger.warning(
+                    "GitHub API request failed for PR #%s: %s. Operating in degraded fallback mode.",
+                    pr_number,
+                    exc,
+                )
 
         logger.info("Using simulated fallback PR data for PR #%s", pr_number)
         return {
@@ -64,7 +76,9 @@ class GitHubPRService:
             "is_simulated": True,
         }
 
-    def sync_pr_metric(self, pr_data: dict, assigned_reviewer_username: str = None) -> PullRequestMetric:
+    def sync_pr_metric(
+        self, pr_data: dict, assigned_reviewer_username: str = None
+    ) -> PullRequestMetric:
         """
         Upserts PR metric in database scoped by (repo_name, pr_number) without resetting existing non-open status,
         and keeps reviewer workload synchronized.
@@ -72,14 +86,16 @@ class GitHubPRService:
         repo_name = pr_data.get("repo_name", "default")
         pr_number = pr_data["pr_number"]
 
-        pr_metric = PullRequestMetric.objects.filter(repo_name=repo_name, pr_number=pr_number).first()
+        pr_metric = PullRequestMetric.objects.filter(
+            repo_name=repo_name, pr_number=pr_number
+        ).first()
         old_reviewer = pr_metric.assigned_reviewer if pr_metric else None
 
         new_reviewer = old_reviewer
         if assigned_reviewer_username:
             new_reviewer, _ = ReviewerAvailability.objects.get_or_create(
                 reviewer_username=assigned_reviewer_username,
-                defaults={"current_workload": 0, "activity_score": 0.8}
+                defaults={"current_workload": 0, "activity_score": 0.8},
             )
 
         if pr_metric is None:
@@ -99,7 +115,9 @@ class GitHubPRService:
             pr_metric.author = pr_data.get("author", pr_metric.author)
             pr_metric.additions = pr_data.get("additions", pr_metric.additions)
             pr_metric.deletions = pr_data.get("deletions", pr_metric.deletions)
-            pr_metric.changed_files = pr_data.get("changed_files", pr_metric.changed_files)
+            pr_metric.changed_files = pr_data.get(
+                "changed_files", pr_metric.changed_files
+            )
             if "status" in pr_data and pr_data["status"]:
                 pr_metric.status = pr_data["status"]
             if assigned_reviewer_username:

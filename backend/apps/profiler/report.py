@@ -3,10 +3,11 @@ Generate performance reports from profile data.
 """
 
 import json
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+
+from django.conf import settings
 from django.core.cache import cache
 from django.core.management.base import BaseCommand
-from django.conf import settings
 
 
 class PerformanceReporter:

@@ -5,15 +5,12 @@
  * @location frontend/src/components/Search/AdvancedSearch.tsx
  */
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useAdvancedSearch } from "../../hooks/useAdvancedSearch";
-import { SearchResult } from "./SearchResult";
-import { FilterSuggestions } from "./FilterSuggestions";
-import { SearchHighlights } from "./SearchHighlights";
+import React, { useState, useEffect, useRef } from "react";
+import { useAdvancedSearch, AdvancedSearchResult } from "../../hooks/useAdvancedSearch";
 
 interface AdvancedSearchProps {
   initialQuery?: string;
-  onResultClick?: (result: any) => void;
+  onResultClick?: (result: AdvancedSearchResult) => void;
 }
 
 export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
@@ -130,12 +127,32 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
 
       {/* Filter Suggestions */}
       {filterSuggestions && Object.keys(filterSuggestions).length > 0 && (
-        <div className="mt-4">
-          <FilterSuggestions
-            suggestions={filterSuggestions}
-            activeFilters={filters}
-            onFilterChange={handleFilterChange}
-          />
+        <div className="mt-4 flex flex-wrap gap-2 items-center">
+          <span className="text-xs text-gray-400 font-medium">Suggested filters:</span>
+          {Object.entries(filterSuggestions).flatMap(([key, values]) =>
+            values.map((val) => {
+              const isActive = filters[key] === val;
+              return (
+                <button
+                  key={`${key}-${val}`}
+                  type="button"
+                  onClick={() =>
+                    handleFilterChange({
+                      ...filters,
+                      [key]: isActive ? undefined : val,
+                    })
+                  }
+                  className={`text-xs px-2.5 py-1 rounded-full border transition-all ${
+                    isActive
+                      ? "bg-blue-600 border-blue-500 text-white"
+                      : "bg-dark-800 border-dark-700 text-gray-300 hover:border-gray-500"
+                  }`}
+                >
+                  {key}: {val}
+                </button>
+              );
+            }),
+          )}
         </div>
       )}
 

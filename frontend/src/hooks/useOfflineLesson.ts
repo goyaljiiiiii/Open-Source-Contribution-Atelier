@@ -61,7 +61,7 @@ export function useOfflineLesson(
         // 1. Check Cache Storage API
         const cache = await caches.open("content-runtime-cache");
         const cachePath = l.filePath ? `/content/${l.filePath}` : null;
-        let cachedResponse = cachePath ? await cache.match(cachePath) : null;
+        const cachedResponse = cachePath ? await cache.match(cachePath) : null;
 
         if (!cancelled) setIsCached(!!cachedResponse);
 

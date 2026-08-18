@@ -1,6 +1,8 @@
-from .models import Experiment, ExperimentEvent
-from django.db.models import Count, Q
 import math
+
+from django.db.models import Count, Q
+
+from .models import Experiment, ExperimentEvent
 
 
 def _regularized_gamma_lower(s, x, iterations=200):

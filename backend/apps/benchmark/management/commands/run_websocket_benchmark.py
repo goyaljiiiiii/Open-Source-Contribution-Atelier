@@ -4,7 +4,9 @@ Management command to run WebSocket benchmarks.
 
 import asyncio
 import json
+
 from django.core.management.base import BaseCommand
+
 from apps.benchmark.websocket_benchmark import WebSocketBenchmark
 
 

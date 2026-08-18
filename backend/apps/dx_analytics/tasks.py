@@ -1,6 +1,7 @@
 from celery import shared_task
-from .services import DXScoreService, AnomalyDetectionService
+
 from .models import DXSnapshot
+from .services import AnomalyDetectionService, DXScoreService
 
 
 @shared_task

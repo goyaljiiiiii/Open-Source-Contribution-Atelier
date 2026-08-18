@@ -2,16 +2,16 @@
 Tests for cache system.
 """
 
-from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.test import TestCase
 
 User = get_user_model()
+from apps.cache.models import CacheDependency
 from apps.cache.services.cache_manager import CacheManager
 from apps.cache.services.write_through_cache import (
     WriteThroughCache,
     WriteThroughCacheManager,
 )
-from apps.cache.models import CacheDependency
 
 
 class CacheManagerTest(TestCase):

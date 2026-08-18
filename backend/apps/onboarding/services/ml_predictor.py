@@ -2,14 +2,16 @@
 ML model for predicting onboarding completion.
 """
 
+import logging
+from typing import Any, Dict, Tuple
+
 import numpy as np
 import pandas as pd
+from django.core.cache import cache
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
-from typing import Dict, Any, Tuple
-from django.core.cache import cache
-from apps.onboarding.models import OnboardingJourney, JourneyEvent
-import logging
+
+from apps.onboarding.models import JourneyEvent, OnboardingJourney
 
 logger = logging.getLogger(__name__)
 

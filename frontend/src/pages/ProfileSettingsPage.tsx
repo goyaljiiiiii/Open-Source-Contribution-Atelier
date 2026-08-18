@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { ProfileSettingsForm } from "../features/auth/ProfileSettingsForm";
+import { TwoFactorSetupSection } from "../features/auth/TwoFactorSetupSection";
 import { useAuth } from "../features/auth/AuthContext";
 import { getMediaUrl } from "../lib/api";
 import {
@@ -91,6 +92,8 @@ export function ProfileSettingsPage() {
             </h2>
             <ProfileSettingsForm onChange={setPreviewData} />
           </div>
+
+          <TwoFactorSetupSection />
         </div>
 
         {/* RIGHT COLUMN: Live Profile Preview & Notifications (2/5 width) */}

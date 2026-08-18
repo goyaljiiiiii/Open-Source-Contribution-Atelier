@@ -58,8 +58,16 @@ async function prerender() {
       );
 
       // Inject description meta tag
-      const metaDescription = `<meta name="description" content="${route.description}" />`;
-      html = html.replace("</head>", `  ${metaDescription}\n</head>`);
+      const metaTags = `
+  <meta name="description" content="${route.description}" />
+  <meta property="og:title" content="${route.title}" />
+  <meta property="og:description" content="${route.description}" />
+  <meta property="og:image" content="/icons/icon-512x512.png" />
+  <meta name="twitter:title" content="${route.title}" />
+  <meta name="twitter:description" content="${route.description}" />
+  <meta name="twitter:image" content="/icons/icon-512x512.png" />
+`;
+      html = html.replace("</head>", `${metaTags}\n</head>`);
 
       // Ensure parent directory exists
       const outPath = toAbsolute(route.output);

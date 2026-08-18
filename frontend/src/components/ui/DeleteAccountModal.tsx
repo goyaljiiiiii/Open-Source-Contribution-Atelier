@@ -51,6 +51,7 @@ export function DeleteAccountModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="delete-account-title"
+        aria-describedby="delete-account-desc"
         className="bg-white rounded-3xl border-4 border-black p-8 max-w-md w-full shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative animate-in fade-in zoom-in duration-200"
       >
         <button
@@ -73,7 +74,7 @@ export function DeleteAccountModal({
             Delete Account?
           </h2>
 
-          <p className="font-bold text-gray-700">
+          <p id="delete-account-desc" className="font-bold text-gray-700">
             This action is permanent and cannot be undone.
           </p>
 

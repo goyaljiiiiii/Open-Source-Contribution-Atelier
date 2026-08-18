@@ -7,6 +7,8 @@ import { useAppDispatch } from "../store/hooks";
 import { AppRouter } from "./router";
 import { queryClient } from "../lib/queryClient";
 import { CommandPalette } from "../components/CommandPalette";
+import { DocSearchModal } from "../components/docs/DocSearchModal";
+import { KeyboardShortcutsModal } from "../components/KeyboardShortcutsModal";
 import ReportIssueButton from "../components/ui/ReportIssueButton";
 import { ErrorBoundary } from "../components/ui/ErrorBoundary";
 import { NotificationProvider } from "../features/notifications/NotificationContext";
@@ -175,16 +177,10 @@ export function App({ children }: { children?: React.ReactNode }) {
             />
             {children || <AppRouter />}
             <CommandPalette />
-            <ReportIssueButton />
+            <DocSearchModal />
+            <KeyboardShortcutsModal />
             <CustomCursor />
             <WebSocketStatusIndicator url="" />
-
-            {/* ✅ Back to Top Button - Appears on all pages */}
-            <BackToTop 
-              threshold={300} 
-              behavior="smooth"
-              showProgress={true}
-            />
 
             {/* Pure React Onboarding Modals Highlight Tour Overlay Portal */}
             {currentStep >= 0 && coords && (

@@ -34,3 +34,32 @@ def version_view(request):
     """
     version = os.getenv("APP_VERSION") or _get_git_commit_hash() or "unknown"
     return JsonResponse({"version": version})
+
+
+def api_versions_view(request):
+    """Version discovery endpoint returning supported versions, default version, and changelog URLs."""
+    from django.conf import settings
+
+    discovery_map = getattr(settings, "API_VERSION_DISCOVERY", {})
+    default_version = getattr(settings, "DEFAULT_API_VERSION", "1.0")
+
+    versions_list = []
+    for ver_name, ver_info in discovery_map.items():
+        versions_list.append(
+            {
+                "version": ver_name,
+                "status": ver_info.get("status", "stable"),
+                "changelog_url": ver_info.get(
+                    "changelog_url", f"/docs/changelog/v{ver_name}"
+                ),
+                "sunset": ver_info.get("sunset"),
+                "deprecation": ver_info.get("deprecation"),
+            }
+        )
+
+    return JsonResponse(
+        {
+            "default_version": default_version,
+            "versions": versions_list,
+        }
+    )

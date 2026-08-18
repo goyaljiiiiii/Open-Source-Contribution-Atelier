@@ -1,32 +1,100 @@
+/// <reference types="vite/client" />
 import { enqueueOfflineAction } from "./offlineQueue";
-import { clearAccessToken, getAccessToken } from "./authToken";
+import { clearAccessToken, getAccessToken, setAccessToken } from "./authToken";
 import { broadcastAuthEvent } from "./authSync";
-import toast from "react-hot-toast"; // <-- YEH HUMNE ADD KIYA HAI
+import { getTraceHeaders } from "./otelProvider";
+import toast from "react-hot-toast";
+import {
+  createApiError,
+  isAuthExpiredApiError,
+  isRetryableApiError,
+} from "./apiErrors";
 
-const getApiBaseUrl = () => {
-  if (typeof import.meta !== "undefined" && import.meta.env) {
-    return import.meta.env.VITE_API_BASE_URL;
+let refreshPromise: Promise<string | null> | null = null;
+
+const getSafeEnvVar = (key: string): string => {
+  if (typeof process !== "undefined" && process.env && process.env[key]) {
+    return process.env[key] as string;
   }
-  if (typeof process !== "undefined" && process.env) {
-    return process.env.NEXT_PUBLIC_API_URL || process.env.VITE_API_BASE_URL;
+  if (
+    typeof import.meta !== "undefined" &&
+    import.meta.env &&
+    import.meta.env[key]
+  ) {
+    return import.meta.env[key] as string;
   }
-  return undefined;
+  return "";
 };
 
 export const API_BASE =
-  getApiBaseUrl()?.trim() ||
+  getSafeEnvVar("VITE_API_BASE_URL").trim() ||
   (typeof window !== "undefined"
     ? `${window.location.origin}/api`
     : "http://127.0.0.1:8000/api");
 
-type RequestOptions = RequestInit & {
+export type RequestOptions = RequestInit & {
   requireAuth?: boolean;
   suppressErrorToast?: boolean;
-  /** Request timeout in milliseconds. Default: 15000 (15s) */
+  /** Request timeout in milliseconds per single attempt. Default: 15000 (15s) */
   timeoutMs?: number;
-  /** Max retries on network/5xx errors. Default: 1 */
+  /** Max retries on transient errors. Default: 3 for GET/HEAD/OPTIONS, 0 for mutations unless retryMutations is true */
   maxRetries?: number;
+  /** Opt-in flag to enable automatic retries for mutating requests (POST, PUT, PATCH, DELETE) */
+  retryMutations?: boolean;
+  /** Base delay in milliseconds for exponential backoff. Default: 500ms */
+  baseDelayMs?: number;
+  /** Maximum delay cap in milliseconds for backoff. Default: 10000ms */
+  maxDelayMs?: number;
+  /** Overall total timeout in milliseconds across all retry attempts combined. Default: 30000ms */
+  totalTimeoutMs?: number;
+  _isRetry?: boolean;
 };
+
+export function parseRetryAfterHeader(
+  headerValue: string | null,
+): number | null {
+  if (!headerValue) return null;
+  const trimmed = headerValue.trim();
+
+  // Seconds integer format
+  if (/^\d+$/.test(trimmed)) {
+    const seconds = parseInt(trimmed, 10);
+    return isNaN(seconds) ? null : seconds * 1000;
+  }
+
+  // HTTP Date format (e.g. Wed, 21 Oct 2025 07:28:00 GMT)
+  const dateMs = Date.parse(trimmed);
+  if (!isNaN(dateMs)) {
+    const diff = dateMs - Date.now();
+    return diff > 0 ? diff : 0;
+  }
+
+  return null;
+}
+
+export function calculateBackoffDelay(
+  attempt: number,
+  baseDelayMs = 500,
+  maxDelayMs = 10000,
+  retryAfterMs: number | null = null,
+): number {
+  if (retryAfterMs !== null && retryAfterMs >= 0) {
+    return Math.min(retryAfterMs, maxDelayMs);
+  }
+
+  const exponential = Math.min(
+    maxDelayMs,
+    baseDelayMs * Math.pow(2, Math.max(0, attempt - 1)),
+  );
+  // Full jitter: uniformly random between 0 and exponential cap
+  const jittered = Math.random() * exponential;
+  return Math.floor(jittered);
+}
+
+export function isIdempotentMethod(method?: string): boolean {
+  const m = (method || "GET").toUpperCase();
+  return m === "GET" || m === "HEAD" || m === "OPTIONS";
+}
 
 /**
  * Internal fetch wrapper with timeout support.
@@ -52,21 +120,54 @@ async function fetchWithTimeout(
   }
 }
 
+export const safeGenerateUUID = (): string => {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+    return ("" + 1e7 + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) =>
+      (
+        Number(c) ^
+        (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (Number(c) / 4)))
+      ).toString(16)
+    );
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
+
 export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
+  const method = (options.method || "GET").toUpperCase();
+  const isIdempotent = isIdempotentMethod(method);
+
   const {
     requireAuth = true,
     suppressErrorToast = false,
     timeoutMs = 15_000,
-    maxRetries = 1,
+    retryMutations = false,
+    baseDelayMs = 500,
+    maxDelayMs = 10_000,
+    totalTimeoutMs = 30_000,
+    maxRetries = options.maxRetries ?? (isIdempotent || retryMutations ? 3 : 0),
     headers: customHeaders,
     ...config
   } = options;
 
   const headers = new Headers(customHeaders);
 
-  // Attach X-Request-ID for distributed tracing
-  const requestId = crypto.randomUUID();
+  // Attach X-Request-ID and W3C trace context for distributed tracing
+  const requestId = safeGenerateUUID();
   headers.set("X-Request-ID", requestId);
+  const traceHeaders = getTraceHeaders();
+  if (traceHeaders.traceparent) {
+    headers.set("traceparent", traceHeaders.traceparent);
+  }
+  if (traceHeaders.tracestate) {
+    headers.set("tracestate", traceHeaders.tracestate);
+  }
   if (!(config.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
@@ -79,84 +180,150 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
   }
 
   let lastError: unknown;
+  const startTime = Date.now();
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    // Exponential backoff on retries (0ms, 2000ms, 4000ms, ...)
-    if (attempt > 0) {
-      await new Promise((r) => setTimeout(r, 2000 * attempt));
+    const elapsed = Date.now() - startTime;
+    if (elapsed >= totalTimeoutMs && attempt > 0) {
+      throw lastError || new Error(`Overall request timeout of ${totalTimeoutMs}ms exceeded`);
     }
 
     try {
+      const remainingTime = Math.max(100, totalTimeoutMs - (Date.now() - startTime));
+      const currentTimeoutMs = Math.min(timeoutMs, remainingTime);
+
       const response = await fetchWithTimeout(
         `${API_BASE}${endpoint}`,
-        { ...config, headers },
-        timeoutMs,
+        { ...config, method, headers },
+        currentTimeoutMs,
       );
 
-      // Retry on 503 (Service Unavailable) — common during HF cold starts
-      if (response.status === 503 && attempt < maxRetries) {
-        lastError = new Error("Service unavailable (503)");
-        continue;
+      const isRetryableStatus =
+        response.status === 429 ||
+        (response.status >= 500 && response.status < 600);
+
+      // Retry temporary HTTP failures (429 & 5xx) before surfacing an error.
+      if (isRetryableStatus && attempt < maxRetries) {
+        lastError = new Error(`HTTP ${response.status}`);
+        const retryAfterMs = parseRetryAfterHeader(
+          response.headers.get("Retry-After"),
+        );
+        const delay = calculateBackoffDelay(
+          attempt + 1,
+          baseDelayMs,
+          maxDelayMs,
+          retryAfterMs,
+        );
+
+        if (Date.now() + delay - startTime < totalTimeoutMs) {
+          await new Promise((r) => setTimeout(r, delay));
+          continue;
+        }
       }
 
       if (!response.ok) {
-        const errorBody = await response.json().catch(() => ({}));
-        const errorMessage =
-          errorBody.error ||
-          errorBody.message ||
-          errorBody.non_field_errors?.[0] ||
-          `HTTP error ${response.status} (Req ID: ${requestId})`;
+        const hasAuthHeader = Boolean(headers.get("Authorization"));
 
-        console.error(`[API Error] ReqID=${requestId}`, errorBody);
-
-        lastError = new Error(errorMessage);
-
-        if (!suppressErrorToast) {
-          switch (response.status) {
-            case 400:
-              toast.error(
-                errorMessage || "Invalid request. Please check your inputs.",
-              );
-              break;
-            case 401:
-              clearAccessToken();
-              try {
-                localStorage.removeItem("refreshToken");
-              } catch {
-                /* storage unavailable */
+        if (response.status === 401 && requireAuth && !options._isRetry) {
+          try {
+            const refreshToken = localStorage.getItem("refreshToken");
+            if (refreshToken) {
+              if (!refreshPromise) {
+                refreshPromise = fetch(`${API_BASE}/auth/refresh/`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ refresh: refreshToken }),
+                }).then(async (res) => {
+                  if (res.ok) {
+                    const data = await res.json();
+                    if (data.access) {
+                      setAccessToken(data.access);
+                      if (data.refresh) {
+                        localStorage.setItem("refreshToken", data.refresh);
+                      }
+                      return data.access;
+                    }
+                  }
+                  throw new Error("Refresh failed");
+                }).finally(() => {
+                  refreshPromise = null;
+                });
               }
-              broadcastAuthEvent("LOGOUT");
-              toast.error("Session expired. Please log in again.");
-              break;
-            case 403:
-              toast.error("You do not have permission to perform this action.");
-              break;
-            case 429:
-              toast.error(
-                errorMessage || "Too many requests. Please slow down!",
-              );
-              break;
-            case 500:
-              toast.error("Server error. Our team has been notified.");
-              break;
-            default:
-              toast.error(errorMessage);
+              const newAccessToken = await refreshPromise;
+              if (newAccessToken) {
+                return await fetchApi(endpoint, {
+                  ...options,
+                  _isRetry: true,
+                });
+              }
+            }
+          } catch (e) {
+            console.error("[fetchApi] Token refresh failed", e);
           }
         }
 
-        throw new Error(errorMessage);
+        const errorBody = await response.json().catch(() => ({}));
+        const apiError = createApiError({
+          status: response.status,
+          endpoint,
+          requestId,
+          body: errorBody,
+          retryable: isRetryableStatus,
+          authExpired: response.status === 401 && requireAuth,
+        });
+
+        console.error(`[API Error] ReqID=${requestId}`, errorBody);
+
+        if (response.status === 401 && requireAuth && !options._isRetry) {
+          clearAccessToken();
+          try {
+            localStorage.removeItem("refreshToken");
+          } catch {
+            /* storage unavailable */
+          }
+          broadcastAuthEvent("LOGOUT");
+        }
+
+        if (!suppressErrorToast && !apiError.authExpired && hasAuthHeader) {
+          if (response.status === 403) {
+            toast.error("You do not have permission to perform this action.");
+          } else if (response.status === 404) {
+            toast.error("We couldn't find the requested resource.");
+          } else if (response.status >= 500) {
+            toast.error("The server is having trouble right now. Please try again.");
+          }
+        }
+
+        lastError = apiError;
+        throw apiError;
       }
 
       return await response.json().catch(() => ({}));
     } catch (error) {
       lastError = error;
 
-      // If it's a timeout / network error and we have retries left, try again
+      // Non-retryable ApiErrors (400, 401, 403, 404, 409, 422, etc) should fail fast without retrying
+      if (error instanceof ApiError && !error.retryable) {
+        throw error;
+      }
+
+      // If it's a timeout / network error / 5xx error and we have retries left, try again
       const isRetryable =
         error instanceof DOMException || // AbortError from timeout
-        error instanceof TypeError; // Network error
+        error instanceof TypeError || // Network error
+        isRetryableApiError(error);
+
       if (isRetryable && attempt < maxRetries) {
-        continue;
+        const delay = calculateBackoffDelay(
+          attempt + 1,
+          baseDelayMs,
+          maxDelayMs,
+          null,
+        );
+        if (Date.now() + delay - startTime < totalTimeoutMs) {
+          await new Promise((r) => setTimeout(r, delay));
+          continue;
+        }
       }
 
       // Prevent toast spam if it's specifically the offline background sync firing a network error
@@ -245,6 +412,16 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
           }
         }
       }
+      if (isAuthExpiredApiError(error)) {
+        clearAccessToken();
+        try {
+          localStorage.removeItem("refreshToken");
+        } catch {
+          /* storage unavailable */
+        }
+        broadcastAuthEvent("LOGOUT");
+      }
+
       throw error;
     }
   }

@@ -1,13 +1,15 @@
 import json
-from django.test import TestCase, RequestFactory
+
 from django.contrib.auth import get_user_model
+from django.test import RequestFactory, TestCase
 
 User = get_user_model()
 from django.contrib.contenttypes.models import ContentType
-from apps.core.models import AdminAuditLog
-from apps.core.middleware import AdminAuditMiddleware, _audit_local
-from apps.core.utils import log_action
 from django.http import HttpResponse
+
+from apps.core.middleware import AdminAuditMiddleware, _audit_local
+from apps.core.models import AdminAuditLog
+from apps.core.utils import log_action
 
 
 class AuditLogTests(TestCase):

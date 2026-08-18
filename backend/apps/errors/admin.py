@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.utils import timezone
-from apps.errors.models import ErrorGroup, ErrorEvent
+
+from apps.errors.models import ErrorEvent, ErrorGroup
 
 
 @admin.register(ErrorGroup)

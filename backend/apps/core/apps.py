@@ -1,3 +1,6 @@
+import logging
+
+logger = logging.getLogger(__name__)
 from django.apps import AppConfig
 
 
@@ -6,10 +9,10 @@ class CoreConfig(AppConfig):
     name = "apps.core"
 
     def ready(self):
-        import apps.core.checks  # noqa
-        import apps.core.celery_signals  # noqa
-
         from django.db.backends.signals import connection_created
+
+        import apps.core.celery_signals  # noqa
+        import apps.core.checks  # noqa
 
         def configure_sqlite(sender, connection, **kwargs):
             if connection.vendor == "sqlite":
@@ -22,11 +25,16 @@ class CoreConfig(AppConfig):
         connection_created.connect(configure_sqlite)
 
         try:
-            import apps.core.signals  # noqa: F401
             import apps.core.cache.signals  # noqa: F401
+            import apps.core.signals  # noqa: F401
         except ImportError:
             pass
 
+        from django.db.models.signals import post_migrate
+
+        post_migrate.connect(self.setup_initial_data, sender=self)
+
+    def setup_initial_data(self, sender, **kwargs):
         try:
             from django_q.models import Schedule
 
@@ -77,6 +85,38 @@ class CoreConfig(AppConfig):
                     "repeats": -1,
                 },
             )
-        except Exception:
+
+            # Performance sample cleanup
+            Schedule.objects.get_or_create(
+                name="perf-sample-prune-daily",
+                defaults={
+                    "func": "apps.core.tasks.prune_performance_samples",
+                    "schedule_type": Schedule.DAILY,
+                    "repeats": -1,
+                },
+            )
+
+            # Performance sample anonymization
+            Schedule.objects.get_or_create(
+                name="perf-sample-anonymize-hourly",
+                defaults={
+                    "func": "apps.core.tasks.anonymize_performance_samples",
+                    "schedule_type": Schedule.HOURLY,
+                    "repeats": -1,
+                },
+            )
+            # Connection pool auto-tuning every 5 minutes
+            Schedule.objects.get_or_create(
+                name="tune-connection-pool-5min",
+                defaults={
+                    "func": "apps.core.tasks.tune_connection_pool_task",
+                    "schedule_type": Schedule.MINUTES,
+                    "minutes": 5,
+                    "repeats": -1,
+                },
+            )
+        except Exception as e:
+            logger.warning("Caught exception: %s", e)
             # Table might not be migrated yet or django_q not installed
             pass
+

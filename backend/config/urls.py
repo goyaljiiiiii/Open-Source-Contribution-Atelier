@@ -1,5 +1,6 @@
+from django.conf import settings
 from django.contrib import admin
-from django.urls import include, path, re_path
+from django.urls import include, path
 from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.views import (
     SpectacularAPIView,
@@ -8,30 +9,42 @@ from drf_spectacular.views import (
 )
 from graphene_django.views import GraphQLView
 
-from apps.dashboard.views import LeaderboardView
-
-from .health_view import health_view
-from .version_view import version_view
 from apps.billing.views import CheckoutSessionView
 from apps.billing.webhooks import stripe_webhook
+from apps.dashboard.views import LeaderboardView
+from apps.content.views_notes import LessonNoteAPIView
 
-urlpatterns = [
-    # ── Admin ──────────────────────────────────────────────────────────────────
+from .health_view import health_view
+from .version_view import api_versions_view, version_view
+
+api_v1_patterns = [
+    # ── Django Admin & External Webhooks ──────────────────────────────────────
     path("admin/", admin.site.urls),
+    path("api/admin/audit/", include("apps.audit.urls")),
+    path("api/audit/", include("apps.audit.urls")),
+    path("api/admin/", include("apps.monitoring.urls")),
+    path("api/monitoring/", include("apps.monitoring.urls")),
+    path("api/admin/core/", include("apps.core.urls")),
+    path("api/admin/db/", include("apps.core.urls")),
     # ── Health Checks ──────────────────────────────────────────────────────────
     path("health/", include("apps.health.urls")),
-    # ── Legacy Health (keep for backward compatibility) ──────────────────────
     path("health/legacy/", health_view, name="health"),
-    # ── API Version ────────────────────────────────────────────────────────────
+    # ── Version Discovery (root /api/versions/) ─────────────────────────────
     path("api/version/", version_view, name="version"),
+    path("api/versions/", api_versions_view, name="root-api-versions"),
     # ── Leaderboard ────────────────────────────────────────────────────────────
     path("api/leaderboard/", LeaderboardView.as_view(), name="leaderboard"),
     # ── Authentication ─────────────────────────────────────────────────────────
     path("accounts/", include("allauth.urls")),
     path("api/auth/", include("apps.accounts.urls")),
     path("api/users/", include("apps.accounts.user_urls")),
+    # ── OAuth 2.0 & OpenID Connect ──────────────────────────────────────────────
+    path("oauth/", include("apps.oauth.urls")),
+    path("", include("apps.oauth.urls")),
     # ── Core Apps ──────────────────────────────────────────────────────────────
     path("api/content/", include("apps.content.urls")),
+    path("api/lessons/<str:lesson_id>/notes", LessonNoteAPIView.as_view(), name="api-lesson-notes"),
+    path("api/lessons/<str:lesson_id>/notes/", LessonNoteAPIView.as_view(), name="api-lesson-notes-slash"),
     path("api/billing/", include("apps.billing.urls")),
     path("api/progress/", include("apps.progress.urls")),
     path("api/localization/", include("apps.localization.urls")),
@@ -40,6 +53,7 @@ urlpatterns = [
     path("api/gamification/", include("apps.gamification.urls")),
     # ── Notifications & Real-time ─────────────────────────────────────────────
     path("api/notifications/", include("apps.notifications.urls")),
+    path("api/chat/", include("apps.chat.urls")),
     path("api/dashboard/", include("apps.dashboard.urls")),
     path("api/predictions/", include("apps.predictions.urls")),
     path("create-checkout-session/", CheckoutSessionView.as_view()),
@@ -50,6 +64,7 @@ urlpatterns = [
     # ============================================================
     # WEBHOOKS & UPLOADS
     # ============================================================
+    path("api/webhooks/", include("apps.webhooks.urls")),
     path("api/uploads/", include("apps.uploads.urls")),
     # ── RBAC ───────────────────────────────────────────────────────────────────
     path("api/rbac/", include("apps.rbac.urls")),
@@ -78,6 +93,7 @@ urlpatterns = [
     path("api/experiments/", include("apps.experiments.urls")),
     path("api/feed/", include("apps.feed.urls")),
     path("api/dx-testing/", include("apps.dx_testing.urls")),
+    path("api/dx-analytics/", include("apps.dx_analytics.urls")),
     path("api/issue-quality/", include("apps.issue_quality.urls")),
     path("api/ml-triage/", include("apps.ml_triage.urls")),
     # ── AI Tutor ────────────────────────────────────────────────────────────────
@@ -94,20 +110,18 @@ urlpatterns = [
         SpectacularSwaggerView.as_view(url_name="schema"),
         name="swagger-ui",
     ),
-    # ============================================================
-    # PROMETHEUS METRICS
-    # ============================================================
-    path("api/graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
 ]
 
-# ── Development URLs ──────────────────────────────────────────────────────────
-from django.conf import settings
-from django.conf.urls.static import static
-
+urlpatterns = [
+    path("api/versions/", version_view, name="root-api-versions"),
+    path("", include(api_v1_patterns)),
+    path("api/health/", include("apps.health.urls")),
+]
 if settings.DEBUG:
     from apps.feature_flags.debug_view import feature_flags_debug_view
 
     urlpatterns += [
-        path("api/organizations/", include("apps.organizations.urls")),
+        path("api/v1/feature-flags/", include("apps.feature_flags.urls")),
         path("api/feature-flags/", include("apps.feature_flags.urls")),
+        path("graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
     ]

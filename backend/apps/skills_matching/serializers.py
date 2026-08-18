@@ -1,11 +1,12 @@
 from rest_framework import serializers
+
 from .models import (
     ContributorProfile,
-    SkillTag,
     IssueSkillTag,
     NewcomerFriendlinessScore,
     Recommendation,
     SkillGapAnalysis,
+    SkillTag,
 )
 
 

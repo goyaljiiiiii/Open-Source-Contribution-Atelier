@@ -76,3 +76,60 @@ class IssueModelTests(APITestCase):
 
         issue = Issue.objects.create(title="Test", assigned_to=self.user, points=50)
         self.assertEqual(issue.total_points, 50)
+
+
+class ContinueLearningTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="learner", password="password")
+        from apps.content.models import Lesson
+        from apps.progress.models import LessonProgress
+
+        self.lesson1 = Lesson.objects.create(
+            title="Lesson 1", slug="lesson-1", summary="Summary 1", difficulty="beginner"
+        )
+        self.lesson2 = Lesson.objects.create(
+            title="Lesson 2", slug="lesson-2", summary="Summary 2", difficulty="beginner"
+        )
+        self.lesson3 = Lesson.objects.create(
+            title="Lesson 3", slug="lesson-3", summary="Summary 3", difficulty="intermediate"
+        )
+        self.lesson4 = Lesson.objects.create(
+            title="Lesson 4", slug="lesson-4", summary="Summary 4", difficulty="advanced"
+        )
+
+        # Create progress items
+        self.lp1 = LessonProgress.objects.create(
+            user=self.user, lesson=self.lesson1, completed=False, score=40
+        )
+        self.lp2 = LessonProgress.objects.create(
+            user=self.user, lesson=self.lesson2, completed=False, score=70
+        )
+        self.lp3 = LessonProgress.objects.create(
+            user=self.user, lesson=self.lesson3, completed=False, score=10
+        )
+        self.lp4 = LessonProgress.objects.create(
+            user=self.user, lesson=self.lesson4, completed=True, score=100
+        )
+
+    def test_continue_learning_returns_max_3_incomplete_lessons(self):
+        self.client.force_authenticate(user=self.user)
+        url = reverse("dashboard:contributor_stats")
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("continue_learning", response.data)
+        continue_learning = response.data["continue_learning"]
+
+        self.assertEqual(len(continue_learning), 3)
+        slugs = [item["lesson_slug"] for item in continue_learning]
+        self.assertNotIn("lesson-4", slugs)  # Completed lesson excluded
+
+    def test_continue_learning_empty_when_no_incomplete(self):
+        user2 = User.objects.create_user(username="finished_user", password="password")
+        self.client.force_authenticate(user=user2)
+        url = reverse("dashboard:contributor_stats")
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["continue_learning"], [])
+

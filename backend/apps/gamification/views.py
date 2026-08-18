@@ -1,7 +1,14 @@
 from django.db.models import Sum
 from django.utils import timezone
-
-from rest_framework import permissions, serializers, status, views, viewsets
+from rest_framework import (
+    generics,
+    pagination,
+    permissions,
+    serializers,
+    status,
+    views,
+    viewsets,
+)
 from rest_framework.response import Response
 
 from .models import Badge, Purchase, Quest, ShopItem, Streak, UserAchievement, UserQuest
@@ -55,13 +62,21 @@ class BadgeViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.AllowAny]
 
 
-class MyAchievementsView(views.APIView):
-    permission_classes = [permissions.IsAuthenticated]
+class MyAchievementsPagination(pagination.PageNumberPagination):
+    page_size = 20
+    page_size_query_param = "page_size"
+    max_page_size = 100
 
-    def get(self, request):
-        achievements = UserAchievement.objects.filter(user=request.user)
-        serializer = UserAchievementSerializer(achievements, many=True)
-        return Response(serializer.data)
+
+class MyAchievementsView(generics.ListAPIView):
+    serializer_class = UserAchievementSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = MyAchievementsPagination
+
+    def get_queryset(self):
+        return UserAchievement.objects.filter(user=self.request.user).order_by(
+            "-awarded_at", "-id"
+        )
 
 
 class MyStreakView(views.APIView):
@@ -169,6 +184,10 @@ class PurchaseItemView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
+        from django.db import transaction
+
+        from apps.progress.models import XPEvent
+
         item_id = request.data.get("item_id")
         try:
             item = ShopItem.objects.get(id=item_id, is_active=True)
@@ -177,41 +196,41 @@ class PurchaseItemView(views.APIView):
                 {"error": "Item not found"}, status=status.HTTP_404_NOT_FOUND
             )
 
-        if item.is_limited:
-            existing = Purchase.objects.filter(user=request.user, item=item).exists()
-            if existing:
+        with transaction.atomic():
+            # Lock the user's XP rows to prevent concurrent balance reads
+            user_xp_events = XPEvent.objects.select_for_update().filter(
+                user=request.user
+            )
+            total_xp = user_xp_events.aggregate(total=Sum("xp_delta"))["total"] or 0
+
+            if item.is_limited:
+                existing = Purchase.objects.filter(
+                    user=request.user, item=item
+                ).exists()
+                if existing:
+                    return Response(
+                        {"error": "You already own this item"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+            if total_xp < item.cost:
                 return Response(
-                    {"error": "You already own this item"},
+                    {
+                        "error": f"Not enough XP. You need {item.cost} XP but have {total_xp}"
+                    },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        from apps.progress.models import XPEvent
-
-        total_xp = (
-            XPEvent.objects.filter(user=request.user).aggregate(total=Sum("xp_delta"))[
-                "total"
-            ]
-            or 0
-        )
-
-        if total_xp < item.cost:
-            return Response(
-                {
-                    "error": f"Not enough XP. You need {item.cost} XP but have {total_xp}"
-                },
-                status=status.HTTP_400_BAD_REQUEST,
+            XPEvent.objects.create(
+                user=request.user,
+                source_type="shop",
+                source_id=item.id,
+                base_points=item.cost,
+                multiplier=1.0,
+                xp_delta=-item.cost,
             )
 
-        XPEvent.objects.create(
-            user=request.user,
-            source_type="shop",
-            source_id=item.id,
-            base_points=item.cost,
-            multiplier=1.0,
-            xp_delta=-item.cost,
-        )
-
-        Purchase.objects.create(user=request.user, item=item, xp_spent=item.cost)
+            Purchase.objects.create(user=request.user, item=item, xp_spent=item.cost)
 
         return Response(
             {

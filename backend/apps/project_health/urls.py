@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import AnalyzeRepositoryView, RepoHealthHistoryView, MaintainerWorkloadView
+from .views import AnalyzeRepositoryView, MaintainerWorkloadView, RepoHealthHistoryView
 
 urlpatterns = [
     path("analyze/", AnalyzeRepositoryView.as_view(), name="project-health-analyze"),

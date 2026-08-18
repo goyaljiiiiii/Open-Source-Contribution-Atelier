@@ -3,7 +3,8 @@ Admin configuration for events app.
 """
 
 from django.contrib import admin
-from .models import DomainEvent, EventSubscription, EventHandler
+
+from .models import DomainEvent, EventHandler, EventSubscription
 
 
 @admin.register(DomainEvent)

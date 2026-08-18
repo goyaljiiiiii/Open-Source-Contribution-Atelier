@@ -1,5 +1,6 @@
-from typing import Optional, List
 from datetime import datetime
+from typing import List, Optional
+
 from pydantic import BaseModel, Field, field_validator, model_validator
 from typing_extensions import Annotated
 
@@ -7,9 +8,10 @@ from typing_extensions import Annotated
 # BASE SCHEMA WITH COMMON VALIDATIONS
 # ============================================
 
+
 class BaseLessonSchema(BaseModel):
     """Base schema with common validations for all lesson schemas."""
-    
+
     title: Annotated[
         str,
         Field(
@@ -17,7 +19,7 @@ class BaseLessonSchema(BaseModel):
             max_length=200,
             description="Lesson title (3-200 characters)",
             examples=["Introduction to Git", "Understanding Open Source"],
-        )
+        ),
     ]
     content: Annotated[
         str,
@@ -25,7 +27,7 @@ class BaseLessonSchema(BaseModel):
             min_length=10,
             description="Lesson content in Markdown format (minimum 10 characters)",
             examples=["# Lesson 1\n\nWelcome to the world of open source..."],
-        )
+        ),
     ]
     module_id: Annotated[
         int,
@@ -33,7 +35,7 @@ class BaseLessonSchema(BaseModel):
             gt=0,
             description="ID of the module this lesson belongs to",
             examples=[1, 2, 3],
-        )
+        ),
     ]
     order: Annotated[
         int,
@@ -41,7 +43,7 @@ class BaseLessonSchema(BaseModel):
             ge=0,
             description="Display order within the module (0-based)",
             examples=[0, 1, 2],
-        )
+        ),
     ]
     is_published: bool = Field(
         default=False,
@@ -96,9 +98,10 @@ class BaseLessonSchema(BaseModel):
 # CREATE SCHEMA
 # ============================================
 
+
 class LessonCreateSchema(BaseLessonSchema):
     """Schema for creating a new lesson."""
-    
+
     # Inherits all fields from BaseLessonSchema
     # Additional fields specific to creation can be added here
     pass
@@ -108,9 +111,10 @@ class LessonCreateSchema(BaseLessonSchema):
 # UPDATE SCHEMA
 # ============================================
 
+
 class LessonUpdateSchema(BaseModel):
     """Schema for updating an existing lesson. All fields are optional."""
-    
+
     title: Annotated[
         Optional[str],
         Field(
@@ -118,7 +122,7 @@ class LessonUpdateSchema(BaseModel):
             max_length=200,
             description="Lesson title (3-200 characters)",
             examples=["Updated: Introduction to Git"],
-        )
+        ),
     ] = None
     content: Annotated[
         Optional[str],
@@ -126,21 +130,21 @@ class LessonUpdateSchema(BaseModel):
             min_length=10,
             description="Lesson content in Markdown format",
             examples=["# Updated Content\n\nNew learning materials..."],
-        )
+        ),
     ] = None
     module_id: Annotated[
         Optional[int],
         Field(
             gt=0,
             description="ID of the module this lesson belongs to",
-        )
+        ),
     ] = None
     order: Annotated[
         Optional[int],
         Field(
             ge=0,
             description="Display order within the module",
-        )
+        ),
     ] = None
     is_published: Optional[bool] = Field(
         default=None,
@@ -169,7 +173,9 @@ class LessonUpdateSchema(BaseModel):
             if not stripped:
                 raise ValueError("Content cannot be empty or only whitespace")
             if len(stripped) < 10:
-                raise ValueError("Content must be at least 10 characters after trimming")
+                raise ValueError(
+                    "Content must be at least 10 characters after trimming"
+                )
             return stripped
         return v
 
@@ -178,9 +184,10 @@ class LessonUpdateSchema(BaseModel):
 # RESPONSE SCHEMA
 # ============================================
 
+
 class LessonResponseSchema(BaseModel):
     """Schema for lesson response (includes computed fields)."""
-    
+
     id: int = Field(..., description="Unique identifier for the lesson")
     title: str
     content: str
@@ -236,9 +243,10 @@ class LessonResponseSchema(BaseModel):
 # LIST RESPONSE (PAGINATION)
 # ============================================
 
+
 class LessonListResponseSchema(BaseModel):
     """Schema for paginated list of lessons."""
-    
+
     items: List[LessonResponseSchema]
     total: int
     page: int
@@ -252,9 +260,10 @@ class LessonListResponseSchema(BaseModel):
 # BULK CREATE SCHEMA (OPTIONAL)
 # ============================================
 
+
 class LessonBulkCreateSchema(BaseModel):
     """Schema for creating multiple lessons at once."""
-    
+
     lessons: List[LessonCreateSchema] = Field(
         ...,
         min_length=1,
@@ -267,6 +276,7 @@ class LessonBulkCreateSchema(BaseModel):
         """Ensure that within the bulk, no two lessons have the same order in the same module."""
         # Group by module_id and check order duplicates
         from collections import defaultdict
+
         module_orders = defaultdict(set)
         for lesson in self.lessons:
             key = (lesson.module_id, lesson.order)

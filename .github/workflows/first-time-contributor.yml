@@ -1,0 +1,54 @@
+name: First-Time Contributor Welcome
+
+on:
+  pull_request_target:
+    types: [opened]
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  welcome-first-time-contributor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Welcome New Contributor
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const author = pr.user.login;
+
+            // Search for PRs authored by this user in this repo
+            const searchRes = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${owner}/${repo} is:pr author:${author}`
+            });
+
+            const userPrCount = searchRes.data.total_count || 0;
+
+            if (userPrCount <= 1) {
+              const welcomeBody = [
+                `## 🌟 Welcome to Open-Source Contribution Atelier, @${author}! 🎉`,
+                ``,
+                `Thank you for opening your **very first Pull Request** in this repository! We are thrilled to have you participating in **ECSoC 2026**.`,
+                ``,
+                `### 🛠️ Quick Checklist for Your First Contribution:`,
+                `1. 🧪 **Pre-Push Checks**: Verify tests pass locally (\`pytest\` for backend, \`npm test\` for frontend).`,
+                `2. 🔗 **Link Issue**: Ensure your PR description includes \`Fixes #issue_number\`.`,
+                `3. 💬 **Need Help?**: Comment directly on this PR or join our [Community Discussions](https://github.com/${owner}/${repo}/discussions).`,
+                ``,
+                `> 🚀 Thank you for taking your first step in open source with us!`
+              ].join('\n');
+
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: pr.number,
+                body: welcomeBody
+              });
+              console.log(`Welcomed first-time contributor @${author} on PR #${pr.number}`);
+            }

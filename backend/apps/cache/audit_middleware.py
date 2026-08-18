@@ -1,7 +1,9 @@
-import time
 import json
-from django.utils.deprecation import MiddlewareMixin
+import time
+
 from django.core.exceptions import PermissionDenied
+from django.utils.deprecation import MiddlewareMixin
+
 from .audit_logger import AuditLogger
 
 

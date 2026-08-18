@@ -1,19 +1,20 @@
 from datetime import timedelta
-from django.utils import timezone
+
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 User = get_user_model()
 from django.test import TestCase
 
-from apps.progress.models import (
-    XPEvent,
-    LessonProgress,
-    UserBadge,
-    Badge,
-    StreakProfile,
-)
-from apps.content.models import Lesson
 from apps.accounts.models import UserProfile
+from apps.content.models import Lesson
+from apps.progress.models import (
+    Badge,
+    LessonProgress,
+    StreakProfile,
+    UserBadge,
+    XPEvent,
+)
 from apps.progress.services.digest_service import WeeklyDigestService
 
 
@@ -110,3 +111,11 @@ class WeeklyDigestServiceTests(TestCase):
         self.assertIn("Lesson 3", context["recommendations"])
         self.assertIn("Lesson 4", context["recommendations"])
         self.assertNotIn("Lesson 1", context["recommendations"])
+
+        # Verify new streak risk and learning path progress keys
+        self.assertTrue("streak_at_risk" in context)
+        self.assertTrue("learning_path_progress" in context)
+        self.assertEqual(context["learning_path_progress"]["completed_count"], 2)
+        self.assertEqual(context["learning_path_progress"]["total_count"], 4)
+        self.assertEqual(context["learning_path_progress"]["percentage"], 50.0)
+

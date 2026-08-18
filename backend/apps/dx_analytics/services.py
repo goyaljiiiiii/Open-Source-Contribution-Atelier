@@ -1,8 +1,10 @@
-import pandas as pd
-from sklearn.ensemble import IsolationForest
-from django.utils import timezone
 from datetime import timedelta
+
+import pandas as pd
 from django.db.models import Avg, Sum
+from django.utils import timezone
+from sklearn.ensemble import IsolationForest
+
 from .models import DeveloperExperienceMetric, DXSnapshot
 
 

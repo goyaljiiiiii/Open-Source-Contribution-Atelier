@@ -1,20 +1,21 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
+
 from .models import (
     ContributorProfile,
-    SkillTag,
     IssueSkillTag,
     NewcomerFriendlinessScore,
     Recommendation,
     SkillGapAnalysis,
+    SkillTag,
 )
 from .serializers import (
     ContributorProfileSerializer,
-    SkillTagSerializer,
     IssueSkillTagSerializer,
     NewcomerFriendlinessScoreSerializer,
     RecommendationSerializer,
     SkillGapAnalysisSerializer,
+    SkillTagSerializer,
 )
 
 

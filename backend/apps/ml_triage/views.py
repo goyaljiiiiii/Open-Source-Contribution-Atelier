@@ -2,16 +2,18 @@
 Views for ML triage dashboard.
 """
 
-from rest_framework import viewsets, status
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import action
+import logging
+
 from django.db.models import Q
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
 from apps.ml_triage.models import Issue, TrainingData
 from apps.ml_triage.serializers import IssueSerializer, TrainingDataSerializer
-from apps.ml_triage.services.models import MLModel
 from apps.ml_triage.services.github_collector import GitHubCollector
-import logging
+from apps.ml_triage.services.models import MLModel
 
 logger = logging.getLogger(__name__)
 

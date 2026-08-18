@@ -3,6 +3,7 @@ WebSocket consumer for benchmarking.
 """
 
 import json
+
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 

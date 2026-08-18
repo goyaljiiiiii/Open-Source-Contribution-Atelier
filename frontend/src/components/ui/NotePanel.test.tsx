@@ -15,6 +15,7 @@ describe("NotePanel", () => {
 
   afterEach(() => {
     cleanup();
+    vi.useRealTimers();
   });
 
   beforeEach(() => {
@@ -27,7 +28,7 @@ describe("NotePanel", () => {
       isSaving: false,
       isError: false,
       isSuccess: true,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
     } as any);
   });
 
@@ -42,7 +43,6 @@ describe("NotePanel", () => {
     render(<NotePanel lessonSlug="test-lesson" onClose={mockOnClose} />);
 
     const closeButtons = screen.getAllByRole("button");
-    // The close button is the only button rendered currently (with an X icon)
     fireEvent.click(closeButtons[0]);
 
     expect(mockOnClose).toHaveBeenCalledTimes(1);
@@ -57,14 +57,11 @@ describe("NotePanel", () => {
 
     fireEvent.change(textarea, { target: { value: "New content" } });
 
-    // Should not save immediately
     expect(mockSaveNote).not.toHaveBeenCalled();
 
-    // Fast forward 500ms
     vi.advanceTimersByTime(500);
     expect(mockSaveNote).not.toHaveBeenCalled();
 
-    // Fast forward remaining 500ms
     vi.advanceTimersByTime(500);
 
     expect(mockSaveNote).toHaveBeenCalledWith("New content");
@@ -80,7 +77,7 @@ describe("NotePanel", () => {
       isSaving: false,
       isError: false,
       isSuccess: false,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
     } as any);
 
     render(<NotePanel lessonSlug="test-lesson" onClose={mockOnClose} />);
@@ -98,7 +95,7 @@ describe("NotePanel", () => {
       isSaving: true,
       isError: false,
       isSuccess: false,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
     } as any);
 
     render(<NotePanel lessonSlug="test-lesson" onClose={mockOnClose} />);

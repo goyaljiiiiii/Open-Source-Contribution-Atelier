@@ -7,9 +7,9 @@ Unit tests for:
 
 from unittest.mock import MagicMock, patch
 
-from django.test import TestCase, RequestFactory, override_settings
+from django.test import RequestFactory, TestCase, override_settings
 
-from config.db_router import PrimaryReplicaRouter, mark_user_dirty, is_user_dirty
+from config.db_router import PrimaryReplicaRouter, is_user_dirty, mark_user_dirty
 
 REPLICAS_SETTINGS = {
     "default": {

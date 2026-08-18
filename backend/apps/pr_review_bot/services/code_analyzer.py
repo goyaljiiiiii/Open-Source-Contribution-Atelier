@@ -3,14 +3,24 @@ Code analysis service using AST parsing.
 """
 
 import ast
-import re
 import builtins
-from typing import List, Dict, Any, Tuple
-import radon.complexity as radon_complexity
-from radon.visitors import ComplexityVisitor
-import pycodestyle
-from apps.pr_review_bot.models import CodeIssue
 import logging
+import re
+from typing import Any, Dict, List, Tuple
+
+try:
+    import pycodestyle
+except ImportError:
+    pycodestyle = None
+
+try:
+    import radon.complexity as radon_complexity
+    from radon.visitors import ComplexityVisitor
+except ImportError:
+    radon_complexity = None
+    ComplexityVisitor = None
+
+from apps.pr_review_bot.models import CodeIssue
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +58,8 @@ class CodeAnalyzer:
 
     def _check_style(self, code: str, file_path: str):
         """Check code style using pycodestyle."""
+        if not pycodestyle:
+            return
         try:
             style_checker = pycodestyle.Checker(filename=file_path)
             errors = style_checker.check_all()

@@ -5,11 +5,12 @@ Decorators for request deduplication.
 import functools
 import hashlib
 import json
+import logging
 import time
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
 from django.core.cache import cache
 from django.http import JsonResponse
-import logging
 
 logger = logging.getLogger(__name__)
 

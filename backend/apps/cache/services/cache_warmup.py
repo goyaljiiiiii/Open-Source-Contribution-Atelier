@@ -3,9 +3,11 @@ Cache warming service for dashboard endpoints.
 """
 
 import logging
-from typing import List, Dict, Any
-from django.core.management import call_command
+from typing import Any, Dict, List
+
 from django.apps import apps
+from django.core.management import call_command
+
 from apps.cache.models import CacheConfig
 from apps.cache.services.cache_manager import CacheManager
 

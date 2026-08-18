@@ -3,6 +3,7 @@ Management command to generate performance report.
 """
 
 from django.core.management.base import BaseCommand
+
 from apps.profiler.report import PerformanceReporter
 
 

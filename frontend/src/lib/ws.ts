@@ -71,6 +71,20 @@ export class ManagedWebSocket {
       this.setState("CONNECTING");
     }
 
+    if (this.ws) {
+      this.ws.onopen = null;
+      this.ws.onmessage = null;
+      this.ws.onclose = null;
+      this.ws.onerror = null;
+      if (
+        this.ws.readyState === WebSocket.OPEN ||
+        this.ws.readyState === WebSocket.CONNECTING
+      ) {
+        this.ws.close();
+      }
+      this.ws = null;
+    }
+
     try {
       const wsUrl = this.buildUrl();
       this.ws = new WebSocket(wsUrl);

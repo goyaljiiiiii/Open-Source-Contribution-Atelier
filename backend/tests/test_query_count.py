@@ -2,14 +2,15 @@
 Test to detect excessive query counts in API endpoints.
 """
 
-from django.test import TestCase, TransactionTestCase
 from django.contrib.auth import get_user_model
+from django.test import TestCase, TransactionTestCase
 
 User = get_user_model()
+import time
+
 from django.db import connection
 from django.urls import reverse
 from rest_framework.test import APIClient
-import time
 
 
 class QueryCountTest(TransactionTestCase):

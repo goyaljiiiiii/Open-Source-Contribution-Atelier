@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import ContributorActivity, BurnoutSignal, Intervention, BurnoutMetric
+
+from .models import BurnoutMetric, BurnoutSignal, ContributorActivity, Intervention
 
 
 class ContributorActivitySerializer(serializers.ModelSerializer):

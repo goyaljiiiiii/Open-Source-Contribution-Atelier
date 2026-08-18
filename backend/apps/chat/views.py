@@ -1,10 +1,11 @@
 from django.contrib.auth import get_user_model
-from django.db.models import Count, Max, Q
+from django.db.models import Count, Max, OuterRef, Q, Subquery
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import generics, pagination, permissions, status
 from rest_framework.response import Response
-from apps.core.throttling import SlidingWindowScopedThrottle
 from rest_framework.views import APIView
+
+from apps.core.throttling import SlidingWindowScopedThrottle
 
 from .models import DirectMessage, Message, UserPublicKey
 from .serializers import (
@@ -116,11 +117,15 @@ class ChatRoomListView(APIView):
             .distinct()
         )
 
+        latest_content_subquery = Message.objects.filter(
+            room_id=OuterRef("room_id")
+        ).order_by("-created_at", "-id").values("content")[:1]
+
         rooms = (
             Message.objects.filter(room_id__in=user_rooms)
             .values("room_id")
             .annotate(
-                last_message=Max("content"),
+                last_message=Subquery(latest_content_subquery),
                 last_message_at=Max("created_at"),
                 participant_count=Count("user", distinct=True),
             )
@@ -128,10 +133,8 @@ class ChatRoomListView(APIView):
         )
 
         room_list = list(rooms)
-        from django.contrib.auth import get_user_model
 
-        User = get_user_model()
-
+        dm_other_ids = set()
         for r in room_list:
             if r["room_id"].startswith("dm_"):
                 parts = r["room_id"].split("_")
@@ -139,11 +142,25 @@ class ChatRoomListView(APIView):
                     try:
                         u1, u2 = int(parts[1]), int(parts[2])
                         other_id = u2 if u1 == request.user.id else u1
-                        other_user = User.objects.filter(id=other_id).first()
-                        if other_user:
-                            r["dm_user"] = other_user.username
+                        dm_other_ids.add(other_id)
                     except ValueError:
                         pass
+
+        if dm_other_ids:
+            user_map = dict(
+                User.objects.filter(id__in=dm_other_ids).values_list("id", "username")
+            )
+            for r in room_list:
+                if r["room_id"].startswith("dm_"):
+                    parts = r["room_id"].split("_")
+                    if len(parts) == 3:
+                        try:
+                            u1, u2 = int(parts[1]), int(parts[2])
+                            other_id = u2 if u1 == request.user.id else u1
+                            if other_id in user_map:
+                                r["dm_user"] = user_map[other_id]
+                        except ValueError:
+                            pass
 
         serializer = ChatRoomSerializer(room_list, many=True)
         return Response(serializer.data)
