@@ -88,6 +88,15 @@ If your non-code contribution involves editing markdown files, documentation, or
    make verify
    ```
 
+### Playwright E2E Tests
+
+Run the Playwright end-to-end suite locally from the `frontend/` directory:
+
+```bash
+cd frontend
+npm run test:e2e
+```
+
 ---
 
 ## 📋 Pull Request Requirements
