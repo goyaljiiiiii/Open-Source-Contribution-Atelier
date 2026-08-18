@@ -5,6 +5,8 @@ import React from "react";
 import { SearchWithFilters } from "../components/Search/SearchWithFilters";
 import { SearchPage } from "../pages/SearchPage";
 
+const mockSearch = vi.fn();
+
 // Mock useSearchWithCategories hook for SearchPage component testing
 vi.mock("../hooks/useSearchWithCategories", () => ({
   useSearchWithCategories: () => ({
@@ -13,7 +15,7 @@ vi.mock("../hooks/useSearchWithCategories", () => ({
     error: null,
     isDegraded: false,
     categories: ["Git", "GitHub", "Security"],
-    search: vi.fn(),
+    search: mockSearch,
     retry: vi.fn(),
     clearSearch: vi.fn(),
   }),
@@ -37,6 +39,40 @@ describe("SearchPage and SearchWithFilters", () => {
       expect(
         screen.getByText("Find lessons, modules, and resources"),
       ).toBeInTheDocument();
+    });
+
+    it("does not fire a search call on mount when no URL parameters are present", () => {
+      render(
+        <MemoryRouter initialEntries={["/search"]}>
+          <SearchPage />
+        </MemoryRouter>,
+      );
+
+      expect(mockSearch).not.toHaveBeenCalled();
+    });
+
+    it("fires a single search call on mount when URL query parameter is present", () => {
+      render(
+        <MemoryRouter initialEntries={["/search?q=react"]}>
+          <SearchPage />
+        </MemoryRouter>,
+      );
+
+      expect(mockSearch).toHaveBeenCalledTimes(1);
+      expect(mockSearch).toHaveBeenCalledWith("react", null);
+    });
+  });
+
+  describe("SearchWithFilters mount reactivity", () => {
+    it("does not trigger onSearch on initial mount", () => {
+      const handleSearch = vi.fn();
+      render(
+        <MemoryRouter initialEntries={["/search"]}>
+          <SearchWithFilters onSearch={handleSearch} />
+        </MemoryRouter>,
+      );
+
+      expect(handleSearch).not.toHaveBeenCalled();
     });
   });
 
