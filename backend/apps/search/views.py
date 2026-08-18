@@ -121,7 +121,12 @@ class UnifiedSearchView(generics.ListAPIView):
                 )
 
         version = get_search_cache_version()
-        cache_key = f"search_api:v{version}:q:{q}:type:{content_type_filter}"
+        page = request.query_params.get("page", "1")
+        page_size = request.query_params.get("page_size", "")
+        cache_key = (
+            f"search_api:v{version}:q:{q}:type:{content_type_filter}"
+            f":page:{page}:page_size:{page_size}"
+        )
         
         from apps.core.cache.stampede import stampede_protected_get_or_set
 
