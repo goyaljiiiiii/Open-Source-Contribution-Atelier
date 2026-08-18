@@ -5,7 +5,7 @@
  * @location frontend/src/pages/SearchPage.tsx
  */
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { SearchWithFilters } from "../components/Search/SearchWithFilters";
 import { useSearchWithCategories } from "../hooks/useSearchWithCategories";
@@ -14,9 +14,13 @@ export const SearchPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { results, isLoading, error, isDegraded, categories, search, retry } =
     useSearchWithCategories();
+  const hasInitializedRef = useRef(false);
 
   // Initial search from URL params
   useEffect(() => {
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
+
     const query = searchParams.get("q") || "";
     const category = searchParams.get("category") || null;
     if (query || category) {

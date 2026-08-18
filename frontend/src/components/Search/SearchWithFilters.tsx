@@ -5,7 +5,7 @@
  * @location frontend/src/components/Search/SearchWithFilters.tsx
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import CategoryFilterPills from "./CategoryFilterPills";
 import "./SearchWithFilters.css";
@@ -48,6 +48,7 @@ export const SearchWithFilters: React.FC<SearchWithFiltersProps> = ({
     searchParams.get("category") || null,
   );
   const [debouncedQuery, setDebouncedQuery] = useState(query);
+  const isFirstRender = useRef(true);
 
   // Debounce search query
   useEffect(() => {
@@ -60,6 +61,11 @@ export const SearchWithFilters: React.FC<SearchWithFiltersProps> = ({
 
   // Perform search when query or category changes
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
     if (onSearch) {
       onSearch(debouncedQuery, selectedCategory);
     }
