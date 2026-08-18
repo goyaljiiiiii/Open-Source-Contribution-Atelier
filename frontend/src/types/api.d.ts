@@ -1672,6 +1672,155 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/chat/dm/{username}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Lists all DMs in the conversation between the authenticated user
+         *     and the specified peer (by username).
+         */
+        get: operations["api_chat_dm_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/chat/dm/send/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Send an E2E encrypted direct message to another user.
+         *     The client must encrypt the content before calling this endpoint.
+         *     The server never sees plaintext.
+         */
+        post: operations["api_chat_dm_send_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/chat/public-keys/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description GET  /api/chat/public-keys/<username>/  — retrieve a user's public key
+         *     POST /api/chat/public-keys/             — publish the authenticated user's public key
+         */
+        get: operations["api_chat_public_keys_retrieve"];
+        put?: never;
+        /**
+         * @description GET  /api/chat/public-keys/<username>/  — retrieve a user's public key
+         *     POST /api/chat/public-keys/             — publish the authenticated user's public key
+         */
+        post: operations["api_chat_public_keys_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/chat/public-keys/{username}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description GET  /api/chat/public-keys/<username>/  — retrieve a user's public key
+         *     POST /api/chat/public-keys/             — publish the authenticated user's public key
+         */
+        get: operations["api_chat_public_keys_retrieve_2"];
+        put?: never;
+        /**
+         * @description GET  /api/chat/public-keys/<username>/  — retrieve a user's public key
+         *     POST /api/chat/public-keys/             — publish the authenticated user's public key
+         */
+        post: operations["api_chat_public_keys_create_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/chat/rooms/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List chat rooms with recent activity
+         * @description Returns a list of chat rooms the current user has participated in, along with the last message, timestamp, and participant count. Results are ordered by most recent activity first.
+         */
+        get: operations["api_chat_rooms_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/chat/rooms/{room_id}/messages/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List chat messages for a room
+         * @description Returns a paginated list of messages for the given `room_id`. Results are ordered chronologically (oldest first). Use the `page` and `page_size` query parameters to paginate.
+         */
+        get: operations["api_chat_rooms_messages_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/chat/rooms/{room_id}/messages/send/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send a chat message
+         * @description Creates a new message in the specified `room_id`. The message is broadcast to all connected WebSocket clients in the same room.
+         */
+        post: operations["api_chat_rooms_messages_send_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/content/feedback/{id}/": {
         parameters: {
             query?: never;
@@ -2676,7 +2825,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_gamification_my_achievements_retrieve"];
+        get: operations["api_gamification_my_achievements_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7626,6 +7775,25 @@ export interface components {
             old_password: string;
             new_password: string;
         };
+        ChatMessageCreate: {
+            /** @description The text content of the chat message. */
+            content: string;
+        };
+        ChatRoom: {
+            /** @description Unique identifier for the chat room. */
+            room_id: string;
+            /** @description Content of the most recent message in the room. */
+            last_message: string;
+            /**
+             * Format: date-time
+             * @description Timestamp of the most recent message.
+             */
+            last_message_at: string;
+            /** @description Number of distinct users who have sent messages in this room. */
+            participant_count: number;
+            /** @description The username of the other participant if this is a DM room. */
+            dm_user?: string | null;
+        };
         /**
          * @description * `confidential` - Confidential
          *     * `public` - Public
@@ -7963,6 +8131,18 @@ export interface components {
             package_license: string;
             /** @description Mock code diff showing the dependency being added. */
             diff_text: string;
+        };
+        DirectMessage: {
+            readonly id: number;
+            readonly sender_username: string;
+            readonly recipient_username: string;
+            /** @description Base64-encoded ciphertext. Encrypted client-side; server cannot read this. */
+            encrypted_content: string;
+            /** @description Base64-encoded nonce used for this message's encryption. */
+            nonce: string;
+            is_read?: boolean;
+            /** Format: date-time */
+            readonly created_at: string;
         };
         /** @description Allow login with either username or email in the username field, plus optional remember me lifetime and 2FA TOTP code validation. */
         EmailOrUsernameTokenObtainPair: {
@@ -8654,6 +8834,14 @@ export interface components {
             /** Format: date-time */
             readonly created_at: string;
         };
+        Message: {
+            readonly id: number;
+            room_id: string;
+            readonly username: string;
+            content: string;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
         ModerationAuditEvent: {
             readonly id: number;
             readonly event_type: string;
@@ -9027,6 +9215,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["AuditEvent"][];
         };
+        PaginatedBadgeList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["Badge"][];
+        };
         PaginatedChallengeList: components["schemas"]["Challenge"][];
         PaginatedLeaderboardList: {
             /** @example 123 */
@@ -9044,6 +9247,21 @@ export interface components {
             results: components["schemas"]["Leaderboard"][];
         };
         PaginatedLessonList: components["schemas"]["Lesson"][];
+        PaginatedMessageList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["Message"][];
+        };
         PaginatedModerationAuditEventList: {
             /** @example 123 */
             count: number;
@@ -9074,6 +9292,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["Note"][];
         };
+        PaginatedRecommendationList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["Recommendation"][];
+        };
         PaginatedSearchDocumentList: {
             /** @example 123 */
             count: number;
@@ -9088,6 +9321,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["SearchDocument"][];
+        };
+        PaginatedUserAchievementList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["UserAchievement"][];
         };
         PaginatedUserListList: {
             /** @example 123 */
@@ -11020,6 +11268,13 @@ export interface components {
          * @enum {string}
          */
         TriageIssueDifficultyEnum: "easy" | "medium" | "hard";
+        UserAchievement: {
+            readonly id: number;
+            readonly badge: components["schemas"]["Badge"];
+            /** Format: date-time */
+            readonly awarded_at: string;
+            user: number;
+        };
         UserBadge: {
             readonly id: number;
             readonly name: string;
@@ -14277,6 +14532,221 @@ export interface operations {
             };
         };
     };
+    api_chat_dm_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                username: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DirectMessage"][];
+                };
+            };
+        };
+    };
+    api_chat_dm_send_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_chat_public_keys_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_chat_public_keys_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_chat_public_keys_retrieve_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                username: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_chat_public_keys_create_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                username: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_chat_rooms_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatRoom"][];
+                };
+            };
+            /** @description Authentication credentials were not provided. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_chat_rooms_messages_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path: {
+                room_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedMessageList"];
+                };
+            };
+            /** @description Authentication credentials were not provided. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_chat_rooms_messages_send_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                room_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatMessageCreate"];
+                "application/x-www-form-urlencoded": components["schemas"]["ChatMessageCreate"];
+                "multipart/form-data": components["schemas"]["ChatMessageCreate"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Validation error (e.g. empty content). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication credentials were not provided. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     api_content_feedback_retrieve: {
         parameters: {
             query?: never;
@@ -17219,21 +17689,27 @@ export interface operations {
             };
         };
     };
-    api_gamification_my_achievements_retrieve: {
+    api_gamification_my_achievements_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PaginatedUserAchievementList"];
+                };
             };
         };
     };
@@ -22498,7 +22974,12 @@ export interface operations {
     };
     api_progress_badges_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -22510,7 +22991,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Badge"][];
+                    "application/json": components["schemas"]["PaginatedBadgeList"];
                 };
             };
         };
@@ -23490,7 +23971,12 @@ export interface operations {
     };
     api_recommendations_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -23502,7 +23988,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Recommendation"][];
+                    "application/json": components["schemas"]["PaginatedRecommendationList"];
                 };
             };
         };
