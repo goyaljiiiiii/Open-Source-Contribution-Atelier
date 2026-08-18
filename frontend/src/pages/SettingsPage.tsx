@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchApi } from '../lib/api';
+import { LanguageSwitcher } from '../components/ui/LanguageSwitcher';
 
 export function SettingsPage() {
   const [prefs, setPrefs] = useState<Record<string, any>>({
@@ -54,6 +55,21 @@ export function SettingsPage() {
           <input type="checkbox" checked={Boolean(prefs.websocket)} onChange={() => toggle('websocket')} className="w-4 h-4 rounded text-indigo-600" />
           🔄 WebSocket Real-time Updates
         </label>
+      </div>
+
+      <div className="mt-8 pt-6 border-t border-black/10 dark:border-white/10">
+        <h2 className="text-xl font-black text-black dark:text-white mb-4 flex items-center gap-2">
+          🌐 Language & Localization
+        </h2>
+        <p className="text-xs text-muted dark:text-[#9b8f80] mb-4">
+          Select your preferred interface language across the application.
+        </p>
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher buttonClassName="px-3 py-2" />
+          <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+            Choose from 9 supported languages (cached and persisted)
+          </span>
+        </div>
       </div>
     </div>
   );

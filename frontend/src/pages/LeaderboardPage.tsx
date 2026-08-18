@@ -592,7 +592,7 @@ export function LeaderboardPage() {
             <button
               onClick={() => setPage((p) => p + 1)}
               disabled={isFetching}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-black text-white dark:bg-white dark:text-black text-xs font-black uppercase tracking-wider border-2 border-black shadow-card-sm hover:opacity-90 transition-opacity disabled:opacity-50 ${CARD_FOCUS_RING}"
+              className={`inline-flex items-center gap-2 px-6 py-3 rounded-full bg-black text-white dark:bg-white dark:text-black text-xs font-black uppercase tracking-wider border-2 border-black shadow-card-sm hover:opacity-90 transition-opacity disabled:opacity-50 ${CARD_FOCUS_RING}`}
             >
               {isFetching ? (
                 <LoaderCircle className="w-4 h-4 animate-spin" />

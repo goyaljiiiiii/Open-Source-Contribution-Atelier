@@ -142,3 +142,198 @@ DEPRECATED_API_VERSIONS = {
     }
 }
 ```
+
+---
+
+## 6. Endpoints Reference
+
+### A. Notes Export
+
+Export user-authored notes across completed or in-progress lessons as structured Markdown or JSON.
+
+- **Endpoint**: `GET /api/progress/notes/export/`
+- **Authentication**: Required (`Token <token>` or Session)
+- **Permissions**: Authenticated users only
+- **Query Parameters**:
+  - `format` (string, optional): Output format. Choices: `markdown` / `md` (default), `json`.
+  - `limit` (integer, optional): Maximum notes to export (1–1000, default: `1000`).
+  - `start_date` (string, optional): Inclusive filter starting on creation date (`YYYY-MM-DD`).
+  - `end_date` (string, optional): Inclusive filter ending on creation date (`YYYY-MM-DD`). Note: Max date range span is 365 days.
+
+#### Example Request:
+```http
+GET /api/progress/notes/export/?format=json&start_date=2026-01-01&end_date=2026-06-30 HTTP/1.1
+Host: localhost:8000
+Authorization: Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b
+Accept: application/json; version=1.0
+```
+
+#### Example JSON Response (`200 OK`):
+```json
+{
+  "username": "johndoe",
+  "email": "johndoe@example.com",
+  "exported_at": "2026-08-16T12:00:00.000000",
+  "total_notes": 2,
+  "notes": [
+    {
+      "id": 14,
+      "lesson_id": 3,
+      "lesson_title": "Interactive Git Rebase",
+      "lesson_slug": "interactive-git-rebase",
+      "module_title": "Advanced Git Workflows",
+      "content": "Remember to use git rebase -i HEAD~3 to squash exploratory commits.",
+      "tags": ["git", "rebase"],
+      "created_at": "2026-02-15T14:30:00Z",
+      "updated_at": "2026-02-15T14:35:00Z"
+    }
+  ]
+}
+```
+
+#### Example Markdown Response (`200 OK`):
+- `Content-Type`: `text/markdown; charset=utf-8`
+- `Content-Disposition`: `attachment; filename="notes_export_johndoe_20260816_120000.md"`
+
+---
+
+### B. Activity Heatmap CSV Export
+
+Export granular daily learning activity data as a CSV file for offline analytics or personal tracking.
+
+- **Endpoint**: `GET /api/progress/activity/export/` (alias: `GET /api/progress/heatmap/export/`)
+- **Authentication**: Required (`Token <token>` or Session)
+- **Permissions**: Authenticated users only
+- **Query Parameters**:
+  - `start_date` (string, optional): Filter records starting on date (`YYYY-MM-DD`).
+  - `end_date` (string, optional): Filter records ending on date (`YYYY-MM-DD`).
+
+#### Example Request:
+```http
+GET /api/progress/activity/export/?start_date=2026-01-01&end_date=2026-06-30 HTTP/1.1
+Host: localhost:8000
+Authorization: Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b
+Accept: application/json; version=1.0
+```
+
+#### Example Response (`200 OK`):
+- `Content-Type`: `text/csv; charset=utf-8`
+- `Content-Disposition`: `attachment; filename="activity_heatmap_20260101_20260630.csv"`
+
+```csv
+Date,Lessons Completed,XP Earned,Active Minutes
+2026-01-10,3,150,45
+2026-01-11,1,50,20
+```
+
+---
+
+### C. Notification Preferences
+
+Retrieve and update user delivery channel preferences and weekly progress digest subscription settings.
+
+- **Endpoint**: `GET /api/notifications/prefs/` | `PUT /api/notifications/prefs/`
+- **Authentication**: Required (`Token <token>` or Session)
+- **Permissions**: Authenticated users only
+
+#### GET Request Example:
+```http
+GET /api/notifications/prefs/ HTTP/1.1
+Host: localhost:8000
+Authorization: Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b
+Accept: application/json; version=1.0
+```
+
+#### GET Response Example (`200 OK`):
+```json
+{
+  "email": true,
+  "in_app": true,
+  "websocket": true,
+  "receive_weekly_digest": true,
+  "weekly_digest": true
+}
+```
+
+#### PUT Request Example:
+```http
+PUT /api/notifications/prefs/ HTTP/1.1
+Host: localhost:8000
+Authorization: Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b
+Content-Type: application/json
+Accept: application/json; version=1.0
+
+{
+  "email": true,
+  "in_app": true,
+  "websocket": false,
+  "receive_weekly_digest": false
+}
+```
+
+#### PUT Response Example (`200 OK`):
+```json
+{
+  "email": true,
+  "in_app": true,
+  "websocket": false,
+  "receive_weekly_digest": false,
+  "weekly_digest": false
+}
+```
+
+---
+
+### D. Bulk Lesson Import (CSV)
+
+Upload and bulk-import lesson records into curriculum content from a UTF-8 encoded CSV file. Automatically handles slug creation, collision suffixing, and organization tenancy.
+
+- **Endpoint**: `POST /api/content/published-lessons/bulk-import/`
+- **Authentication**: Required (`Token <token>` or Session)
+- **Permissions**: Authenticated users (Staff / `create_content` permission)
+- **Request Format**: `multipart/form-data`
+- **Form Fields**:
+  - `file` (binary, required): UTF-8 CSV file containing lesson definitions.
+
+#### Supported CSV Headers:
+- `title` / `Title` (required)
+- `summary` / `Summary` (optional)
+- `content` / `Content` (optional)
+- `difficulty` / `Difficulty` (`beginner` | `intermediate` | `advanced`, default: `beginner`)
+- `category` / `Category` (default: `general`)
+- `estimated_minutes` / `Estimated Minutes` (integer, default: `15`)
+- `slug` / `Slug` (optional, auto-derived from title if omitted)
+
+#### Example Request:
+```http
+POST /api/content/published-lessons/bulk-import/ HTTP/1.1
+Host: localhost:8000
+Authorization: Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="new_lessons.csv"
+Content-Type: text/csv
+
+title,summary,content,difficulty,category,estimated_minutes
+"Git Stashing Deep Dive","Learn git stash save and pop","Detailed markdown content...","intermediate","git",20
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+```
+
+#### Example Success Response (`201 Created` or `200 OK`):
+```json
+{
+  "imported_count": 1,
+  "imported_lessons": [
+    {
+      "id": 88,
+      "slug": "git-stashing-deep-dive",
+      "title": "Git Stashing Deep Dive",
+      "category": "git",
+      "difficulty": "intermediate",
+      "estimated_minutes": 20
+    }
+  ],
+  "errors": []
+}
+```

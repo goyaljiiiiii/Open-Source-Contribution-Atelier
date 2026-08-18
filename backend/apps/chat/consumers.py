@@ -202,8 +202,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 },
             )
 
-    @database_sync_to_async
-    def get_last_50_messages(self):
     async def get_last_50_messages(self):
         qs = Message.objects.select_related("user").filter(room_id=self.room_id).order_by("-created_at")[:50]
         messages = [m async for m in qs]

@@ -14,6 +14,8 @@ export function LessonSearchModal({ isOpen, onClose }: LessonSearchModalProps) {
   const { search, loading } = useLessonSearch();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   const results = useMemo(() => {
     return search(query);
@@ -21,11 +23,47 @@ export function LessonSearchModal({ isOpen, onClose }: LessonSearchModalProps) {
 
   useEffect(() => {
     if (isOpen) {
+      previousFocusRef.current = document.activeElement as HTMLElement | null;
       setTimeout(() => inputRef.current?.focus(), 50);
       setSelectedIndex(0);
     } else {
       setQuery("");
+      if (previousFocusRef.current && typeof previousFocusRef.current.focus === "function") {
+        previousFocusRef.current.focus();
+      }
     }
+  }, [isOpen]);
+
+  // Focus trap on Tab and Shift+Tab
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleTabKey = (e: KeyboardEvent) => {
+      if (e.key !== "Tab" || !modalRef.current) return;
+
+      const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusableElements.length === 0) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement.focus();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement.focus();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleTabKey);
+    return () => window.removeEventListener("keydown", handleTabKey);
   }, [isOpen]);
 
   // Listen for global Cmd+K / Ctrl+K keyboard shortcut
@@ -78,21 +116,26 @@ export function LessonSearchModal({ isOpen, onClose }: LessonSearchModalProps) {
       aria-label="Full-Text Lesson Search Palette"
     >
       <div
+        ref={modalRef}
         className="w-full max-w-2xl bg-white dark:bg-[#151411] border-4 border-black dark:border-[#2e2924] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input Bar */}
         <div className="flex items-center gap-3 p-4 border-b-4 border-black dark:border-[#2e2924]">
-          <Search size={20} className="text-slate-400 shrink-0" />
+          <Search size={20} className="text-slate-400 shrink-0" aria-hidden="true" />
           <input
             ref={inputRef}
             type="text"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={results.length > 0}
+            aria-controls="lesson-search-listbox"
+            aria-activedescendant={results.length > 0 ? `lesson-option-${selectedIndex}` : undefined}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
               setSelectedIndex(0);
             }}
-            onKeyDown={handleKeyDown}
             placeholder="Search lessons, code snippets, topics... (Cmd+K)"
             className="w-full bg-transparent border-none outline-none text-base font-medium text-black dark:text-[#f0ebe2] placeholder:text-slate-400"
           />
@@ -111,15 +154,20 @@ export function LessonSearchModal({ isOpen, onClose }: LessonSearchModalProps) {
         </div>
 
         {/* Search Results Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+        <div
+          id="lesson-search-listbox"
+          role="listbox"
+          aria-label="Search results"
+          className="flex-1 overflow-y-auto p-4 space-y-2"
+        >
           {loading && (
-            <p className="text-sm text-slate-500 animate-pulse py-8 text-center">
+            <p className="text-sm text-slate-500 animate-pulse py-8 text-center" aria-live="polite">
               Indexing curriculum content...
             </p>
           )}
 
           {!loading && query.trim() && results.length === 0 && (
-            <div className="text-center py-12">
+            <div className="text-center py-12" aria-live="polite">
               <BookOpen size={36} className="mx-auto text-slate-400 mb-2" />
               <p className="font-bold text-base text-black dark:text-[#f0ebe2]">No matching lessons found</p>
               <p className="text-xs text-slate-500 mt-1">
@@ -151,6 +199,10 @@ export function LessonSearchModal({ isOpen, onClose }: LessonSearchModalProps) {
               return (
                 <div
                   key={item.slug}
+                  id={`lesson-option-${idx}`}
+                  role="option"
+                  aria-selected={isSelected}
+                  tabIndex={-1}
                   onClick={() => {
                     navigate(`/lessons/${item.slug}`);
                     onClose();
