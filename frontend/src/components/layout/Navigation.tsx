@@ -36,6 +36,7 @@ import LogoutButtonWithConfirm from "./LogoutButtonWithConfirm";
 import { SyncStatusIndicator } from "../ui/SyncStatusIndicator";
 import { NotificationMenu } from "../ui/NotificationMenu";
 import { ThemeToggle } from "../ui/ThemeToggle";
+import { LanguageSwitcher } from "../ui/LanguageSwitcher";
 import { useTranslate } from "../../i18n/useTranslate";
 import { LessonSearchModal } from "../Search/LessonSearchModal";
 
@@ -473,6 +474,7 @@ export function Navigation() {
             </Link>
             <SyncStatusIndicator />
             <ThemeToggle />
+            <LanguageSwitcher />
             {user && !user.is_staff && <NotificationMenu />}
             {user ? (
               <div className="flex items-center space-x-1.5 sm:space-x-2">
