@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.pagination import SecureCursorPagination
+from apps.progress.streak_engine import get_user_local_date
 
 from .models import Challenge, ChallengeCompletion, ChallengeOfTheDay
 from .serializers import ChallengeSerializer
@@ -316,7 +317,7 @@ class ChallengeOfTheDayView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        today = timezone.localdate(timezone.now())
+        today = get_user_local_date(request.user)
         cotd = (
             ChallengeOfTheDay.objects.filter(date=today)
             .select_related("challenge")
@@ -350,7 +351,7 @@ class CompleteChallengeOfTheDayView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        today = timezone.localdate(timezone.now())
+        today = get_user_local_date(request.user)
         cotd = get_object_or_404(ChallengeOfTheDay, date=today)
 
         with transaction.atomic():
@@ -367,9 +368,12 @@ class CompleteChallengeOfTheDayView(APIView):
             )
 
         # Invalidate contributor dashboard cache so XP reflects immediately
-        from apps.dashboard.signals import clear_dashboard_caches
+        try:
+            from apps.dashboard.signals import clear_dashboard_caches
 
-        clear_dashboard_caches(user_id=request.user.id)
+            clear_dashboard_caches(user_id=request.user.id)
+        except (ImportError, AttributeError):
+            pass
 
         return Response(
             {"bonus_earned": cotd.bonus_points},
