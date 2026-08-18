@@ -239,22 +239,44 @@ export const SkillTreePage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedNode, setSelectedNode] = useState<SkillNode | null>(null);
   const [isCompleting, setIsCompleting] = useState<boolean>(false);
-  const [userXP, setUserXP] = useState<number>(1250);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [userXP, setUserXP] = useState<number>(0);
+
+  const fetchSkillTree = async (signal?: AbortSignal) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/skills-matching/skill-tree/", { signal });
+      if (!res.ok) {
+        throw new Error(`Failed to load skill tree: ${res.statusText}`);
+      }
+      const data = await res.json();
+      if (data && data.nodes) {
+        setNodes(data.nodes);
+        if (data.edges) setEdges(data.edges);
+        if (typeof data.user_xp === "number") {
+          setUserXP(data.user_xp);
+        }
+      }
+    } catch (err: any) {
+      if (err?.name === "AbortError") return;
+      // Fallback to default nodes if offline / dev mode
+      setNodes(DEFAULT_NODES);
+      setEdges(DEFAULT_EDGES);
+      setUserXP(1250);
+      setError(err?.message || "Failed to fetch live skill tree.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Fetch live skill tree data from backend if server available
-    fetch("/api/skills-matching/skill-tree/")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data && data.nodes) {
-          setNodes(data.nodes);
-          setEdges(data.edges);
-          if (data.user_xp) setUserXP(data.user_xp);
-        }
-      })
-      .catch(() => {
-        // Fallback to rich default nodes if offline / dev mode
-      });
+    const controller = new AbortController();
+    fetchSkillTree(controller.signal);
+    return () => {
+      controller.abort();
+    };
   }, []);
 
   const masteredCount = nodes.filter((n) => n.status === "completed").length;
@@ -392,16 +414,27 @@ export const SkillTreePage: React.FC = () => {
             ))}
           </div>
 
-          {/* Search Box */}
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-            <input
-              type="text"
-              placeholder="Search skill nodes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
-            />
+          {/* Search Box & Refresh Button */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-64">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Search skill nodes..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+              />
+            </div>
+            <button
+              onClick={() => fetchSkillTree()}
+              disabled={isLoading}
+              title="Refresh skill tree data"
+              aria-label="Refresh skill tree data"
+              className="p-2 bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-xl text-slate-400 hover:text-slate-200 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin text-indigo-400" : ""}`} />
+            </button>
           </div>
         </div>
 
