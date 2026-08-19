@@ -22,6 +22,7 @@ import { fetchApi } from "../../lib/api";
 import { fetchLessonsApi, type Lesson } from "../../lib/lessons";
 import { BADGES } from "../../constants/badges";
 import { DailyQuoteWidget } from "../ui/DailyQuoteWidget";
+import { DailyChallengeQuizCard } from "../ui/DailyChallengeQuizCard";
 import { NotesWidget } from "../ui/NotesWidget";
 import { OnboardingTour } from "../ui/OnboardingTour";
 import { QuestsPanel } from "./QuestsPanel";
@@ -360,6 +361,11 @@ export function ContributorDashboard() {
       {/* 2. Weekly Learning Goal Tracker */}
       <section id="tour-weekly-goal">
         <WeeklyGoalTracker />
+      </section>
+
+      {/* 2b. Daily Challenge Quiz Card */}
+      <section id="tour-daily-challenge-quiz">
+        <DailyChallengeQuizCard />
       </section>
 
 

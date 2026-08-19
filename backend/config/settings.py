@@ -371,6 +371,27 @@ else:
         ),
     }
 
+# Optional dedicated replica for analytics/reporting reads.  It is deliberately
+# absent unless DB_REPLICA_HOST is configured so deployments without a
+# dedicated replica continue to use the primary without introducing a second
+# database alias.
+_db_replica_host = os.getenv("DB_REPLICA_HOST", "").strip()
+if _db_replica_host:
+    _read_replica = DATABASES["default"].copy()
+    _read_replica["HOST"] = _db_replica_host
+    _read_replica["PORT"] = os.getenv(
+        "DB_REPLICA_PORT", _read_replica.get("PORT", "")
+    )
+    if os.getenv("DB_REPLICA_NAME"):
+        _read_replica["NAME"] = os.getenv("DB_REPLICA_NAME")
+    if os.getenv("DB_REPLICA_USER"):
+        _read_replica["USER"] = os.getenv("DB_REPLICA_USER")
+    if os.getenv("DB_REPLICA_PASSWORD"):
+        _read_replica["PASSWORD"] = os.getenv("DB_REPLICA_PASSWORD")
+    if os.getenv("DB_REPLICA_ENGINE"):
+        _read_replica["ENGINE"] = os.getenv("DB_REPLICA_ENGINE")
+    DATABASES["read_replica"] = _read_replica
+
 for db_name, db_config in DATABASES.items():
     if db_config.get("ENGINE") == "django.db.backends.postgresql":
         db_config["ENGINE"] = "django_prometheus.db.backends.postgresql"
