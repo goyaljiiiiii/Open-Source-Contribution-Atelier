@@ -15,6 +15,8 @@ import { useOfflineReadyLessons } from "../hooks/useOfflineReadyLessons";
 import { useCurriculumLessons } from "../hooks/useCurriculum";
 import { BADGES } from "../constants/badges";
 
+import { DailyChallengeQuizCard } from "../components/ui/DailyChallengeQuizCard";
+
 import { ContinueLearning } from "../components/ContinueLearning";
 import {
   Flame,
@@ -254,6 +256,11 @@ export function DashboardPage() {
             </p>
           </div>
         </div>
+      </section>
+
+      {/* Daily Challenge Quiz Card */}
+      <section>
+        <DailyChallengeQuizCard />
       </section>
 
       {/* Learning Queue */}
