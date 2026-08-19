@@ -774,6 +774,30 @@ _audit_file_enabled = bool(
 )
 _audit_handlers: list = ["console_audit"] + (["file_audit"] if _audit_file_enabled else [])
 
+_logging_handlers = {
+    # General-purpose console handler: human-readable, PII-masked.
+    "console": {
+        "class": "logging.StreamHandler",
+        "filters": ["mask_sensitive_data"],
+        "formatter": "verbose",
+    },
+    # Audit console handler: structured JSON with request correlation.
+    "console_audit": {
+        "class": "logging.StreamHandler",
+        "filters": ["request_id", "mask_sensitive_data"],
+        "formatter": "json_audit",
+    },
+}
+
+if _audit_file_enabled:
+    _logging_handlers["file_audit"] = {
+        "class": "logging.FileHandler",
+        "filename": _audit_log_file,
+        "filters": ["request_id", "mask_sensitive_data"],
+        "formatter": "json_audit",
+        "delay": True,
+    }
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -808,31 +832,7 @@ LOGGING = {
         },
     },
     # ── Handlers ─────────────────────────────────────────────────────────────
-    "handlers": {
-        # General-purpose console handler: human-readable, PII-masked.
-        "console": {
-            "class": "logging.StreamHandler",
-            "filters": ["mask_sensitive_data"],
-            "formatter": "verbose",
-        },
-        # Audit console handler: structured JSON with request correlation.
-        # Separate from the general console handler so that audit events
-        # always appear in JSON form regardless of verbosity settings.
-        "console_audit": {
-            "class": "logging.StreamHandler",
-            "filters": ["request_id", "mask_sensitive_data"],
-            "formatter": "json_audit",
-        },
-        # Audit file handler: writes JSON-structured audit events to
-        # audit.log, satisfying the AUDIT_LOG_ENABLED = True requirement.
-        # Disabled automatically in TESTING mode (see _audit_handlers above).
-        "file_audit": {
-            "class": "logging.FileHandler",
-            "filename": _audit_log_file,
-            "filters": ["request_id", "mask_sensitive_data"],
-            "formatter": "json_audit",
-        },
-    },
+    "handlers": _logging_handlers,
     # ── Loggers ──────────────────────────────────────────────────────────────
     "loggers": {
         # Dedicated audit logger — writes to both the audit console and
@@ -842,6 +842,7 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
+
         # Django framework loggers: general console with PII masking.
         "django": {
             "handlers": ["console"],
