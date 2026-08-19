@@ -8,7 +8,16 @@ endif
 
 VENV_BIN := backend/.venv/$(BIN_DIR)
 
-.PHONY: install start format test verify
+.PHONY: install start format test verify setup env
+
+setup: env
+	@echo "Setup complete! Run 'make install' to set up dependencies or 'make start' for Docker."
+
+env:
+	@echo "Setting up environment files from examples..."
+	@test -f backend/.env || cp backend/.env.example backend/.env && echo "Created backend/.env" || echo "backend/.env already exists"
+	@test -f frontend/.env || cp frontend/.env.example frontend/.env && echo "Created frontend/.env" || echo "frontend/.env already exists"
+	@test -f docker-compose.override.yml || cp docker-compose.override.yml.example docker-compose.override.yml && echo "Created docker-compose.override.yml" || echo "docker-compose.override.yml already exists"
 
 install:
 	@echo "Installing backend dependencies..."
