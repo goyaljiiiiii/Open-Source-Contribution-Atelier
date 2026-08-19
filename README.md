@@ -111,16 +111,27 @@ GitHub Actions CI · ESLint · Prettier · Black
 
 ### 1. Setup Environment
 
+You can automatically copy all missing `.env` and `docker-compose.override.yml` files using Make:
+
+```bash
+make setup
+# or: make env
+```
+
+Alternatively, copy them manually:
+
 ```bash
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
+cp docker-compose.override.yml.example docker-compose.override.yml
 ```
 
-> **Windows users:** If `cp` is unavailable in PowerShell, use:
+> **Windows users:** If `cp` is unavailable in PowerShell, use `make setup` or:
 >
 > ```powershell
 > Copy-Item backend/.env.example backend/.env
 > Copy-Item frontend/.env.example frontend/.env
+> Copy-Item docker-compose.override.yml.example docker-compose.override.yml
 > ```
 
 > [!WARNING]

@@ -42,6 +42,7 @@ describe("MarkdownRenderer Code Block Copy Button", () => {
 
     expect(screen.getByText("BASH")).toBeInTheDocument();
     expect(screen.getByText("echo 'hello world'")).toBeInTheDocument();
+    expect(screen.getByTestId("code-block-copy-wrapper")).toBeInTheDocument();
 
     const copyBtn = screen.getByRole("button", { name: /Copy code/i });
     expect(copyBtn).toBeInTheDocument();
@@ -58,6 +59,7 @@ describe("MarkdownRenderer Code Block Copy Button", () => {
     );
 
     expect(screen.getByText("PYTHON")).toBeInTheDocument();
+    expect(screen.getByTestId("code-block-copy-wrapper")).toBeInTheDocument();
     const copyBtns = screen.getAllByRole("button", { name: /Copy code/i });
     fireEvent.click(copyBtns[0]);
 

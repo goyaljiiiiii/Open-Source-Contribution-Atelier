@@ -27,6 +27,33 @@ _local = threading.local()
 READ_AFTER_WRITE_SECONDS = getattr(settings, "READ_AFTER_WRITE_SECONDS", 5)
 REPLICA_DEAD_TIMEOUT = getattr(settings, "REPLICA_DEAD_TIMEOUT", 60)
 
+# Models used by the expensive analytics/reporting endpoints.  Django's
+# database-router API receives the model (and query hints), not the request,
+# so routing by model is the reliable way to keep analytics reads on the
+# dedicated read replica without coupling the router to URL/middleware state.
+ANALYTICS_READ_REPLICA_MODELS = {
+    ("auth", "user"),
+    ("dashboard", "issue"),
+    ("dashboard", "pullrequest"),
+    ("progress", "lessonprogress"),
+    ("challenges", "challengecompletion"),
+    ("progress", "codesubmission"),
+    ("progress", "dailyactivity"),
+    ("progress", "quizattempt"),
+    ("progress", "userbadge"),
+    ("progress", "streakprofile"),
+    ("progress", "weeklygoal"),
+    ("progress", "season"),
+    ("progress", "trackmilestone"),
+    ("progress", "usermilestonecompletion"),
+    ("progress", "exerciseattempt"),
+    ("progress", "xpevent"),
+    ("progress", "badge"),
+    ("content", "lesson"),
+    ("audit", "auditevent"),
+}
+
+
 
 def mark_user_dirty(user_id: int) -> None:
     """
@@ -120,6 +147,18 @@ class PrimaryReplicaRouter:
                 return r
         return available[-1]
 
+    def _select_specific_replica(self, alias: str) -> str:
+        """Return a dedicated replica alias when its connection is healthy."""
+        conn = connections[alias]
+        try:
+            if conn.connection is None:
+                conn.ensure_connection()
+            return alias
+        except OperationalError as exc:
+            logger.warning("Replica %s health check failed: %s", alias, exc)
+            self._mark_dead(alias)
+            return "default"
+
     def _probe_and_select(self) -> str:
         """
         From healthy replicas, try to establish a connection.
@@ -172,6 +211,18 @@ class PrimaryReplicaRouter:
             logger.debug("Read-after-write: routing user %s read to primary.", user_id)
             return "default"
 
+        # Analytics/reporting reads get their own replica when it is explicitly
+        # configured. If the dedicated replica is not configured, preserve the
+        # existing generic replica behaviour (or fall back to primary).
+        model_key = (
+            getattr(model._meta, "app_label", None),
+            getattr(model._meta, "model_name", None),
+        )
+        if model_key in ANALYTICS_READ_REPLICA_MODELS:
+            if "read_replica" not in settings.DATABASES:
+                return "default"
+            return self._select_specific_replica("read_replica")
+
         if not self.replicas:
             return "default"
 
@@ -182,14 +233,14 @@ class PrimaryReplicaRouter:
         return "default"
 
     def allow_relation(self, obj1, obj2, **hints):
-        db_set = {"default"} | set(self.replicas)
+        db_set = {"default", "read_replica"} | set(self.replicas)
         if obj1._state.db in db_set and obj2._state.db in db_set:
             return True
         return None
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):
         """Migrations must only run on the primary database."""
-        if db in self.replicas or db.startswith("replica"):
+        if db == "read_replica" or db in self.replicas or db.startswith("replica"):
             return False
         return True
 
