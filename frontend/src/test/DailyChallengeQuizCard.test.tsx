@@ -53,6 +53,7 @@ describe("DailyChallengeQuizCard", () => {
   const storageKey = `daily_challenge_quiz_${todayStr}`;
 
   beforeEach(() => {
+    vi.useRealTimers();
     localStorage.clear();
     vi.clearAllMocks();
   });
@@ -60,6 +61,7 @@ describe("DailyChallengeQuizCard", () => {
   afterEach(() => {
     cleanup();
     localStorage.clear();
+    vi.useRealTimers();
   });
 
   it("renders daily challenge quiz card with question and option buttons", () => {
