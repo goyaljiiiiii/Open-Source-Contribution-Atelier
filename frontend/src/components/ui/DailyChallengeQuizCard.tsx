@@ -93,27 +93,36 @@ export function DailyChallengeQuizCard() {
 
   const storageKey = `daily_challenge_quiz_${todayStr}`;
 
-  const [selectedOption, setSelectedOption] = useState<number | null>(null);
-  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
-  const [isCompleted, setIsCompleted] = useState<boolean>(false);
-  const [earnedXp, setEarnedXp] = useState<number>(0);
-
-  useEffect(() => {
-    const saved = localStorage.getItem(storageKey);
-    if (saved) {
-      try {
+  const getInitialState = () => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.completed) {
-          setIsCompleted(true);
-          setSelectedOption(parsed.selectedOption);
-          setIsSubmitted(true);
-          setEarnedXp(parsed.earnedXp || 15);
+          return {
+            isCompleted: true,
+            selectedOption: parsed.selectedOption,
+            isSubmitted: true,
+            earnedXp: parsed.earnedXp || 15,
+          };
         }
-      } catch (e) {
-        console.error("Failed to parse daily challenge storage", e);
       }
+    } catch {
+      // ignore
     }
-  }, [storageKey]);
+    return {
+      isCompleted: false,
+      selectedOption: null,
+      isSubmitted: false,
+      earnedXp: 0,
+    };
+  };
+
+  const [initial] = useState(getInitialState);
+  const [selectedOption, setSelectedOption] = useState<number | null>(initial.selectedOption);
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(initial.isSubmitted);
+  const [isCompleted, setIsCompleted] = useState<boolean>(initial.isCompleted);
+  const [earnedXp, setEarnedXp] = useState<number>(initial.earnedXp);
 
   const handleSubmit = async () => {
     if (selectedOption === null || isSubmitted) return;
