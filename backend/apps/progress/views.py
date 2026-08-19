@@ -14,6 +14,7 @@ from django.db.models import Count, Min, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.http import content_disposition_header
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import permissions, status
 from rest_framework.generics import ListAPIView
@@ -73,6 +74,7 @@ class ExportNotesView(APIView):
     """
 
     permission_classes = [permissions.IsAuthenticated]
+    format_kwarg = None
 
     def get(self, request):
         user = request.user
@@ -252,7 +254,7 @@ class ExportNotesView(APIView):
         response = HttpResponse(
             markdown_content, content_type="text/markdown; charset=utf-8"
         )
-        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        response["Content-Disposition"] = content_disposition_header(True, filename)
 
         return response
 
@@ -294,7 +296,7 @@ class ExportNotesView(APIView):
         response = HttpResponse(
             json_content, content_type="application/json; charset=utf-8"
         )
-        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        response["Content-Disposition"] = content_disposition_header(True, filename)
 
         return response
 
