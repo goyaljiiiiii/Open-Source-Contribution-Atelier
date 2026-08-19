@@ -1415,7 +1415,9 @@ class LeaderboardView(APIView):
         # Period start boundary (None means all-time).
         now = timezone.now()
         start_date = None
-        if time_period == "weekly":
+        if time_period == "all_time":
+            start_date = None
+        elif time_period == "weekly":
             start_date = (now - timedelta(days=now.weekday())).replace(
                 hour=0, minute=0, second=0, microsecond=0
             )
@@ -1427,6 +1429,13 @@ class LeaderboardView(APIView):
                 start_date = timezone.make_aware(
                     datetime.combine(season.start_date, datetime.min.time())
                 )
+        elif time_period.startswith("cohort_"):
+            start_date = None
+        else:
+            return Response(
+                {"error": f"Invalid time_period parameter: '{time_period}'"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         # Compute XP the same way as the contributor dashboard so leaderboard
         # ranks always match a user's dashboard rank. XPEvent is a gamification
