@@ -17,6 +17,7 @@ setup_telemetry()
 
 django_asgi_app = get_asgi_application()
 
+from apps.accounts.routing import websocket_urlpatterns as accounts_ws  # noqa: E402
 from apps.chat.routing import websocket_urlpatterns as chat_ws  # noqa: E402
 from apps.dashboard.routing import websocket_urlpatterns as dashboard_ws  # noqa: E402
 from apps.feed.routing import websocket_urlpatterns as feed_ws  # noqa: E402
@@ -28,11 +29,9 @@ from apps.notifications.routing import (  # noqa: E402
 )
 from apps.sandbox.routing import websocket_urlpatterns as sandbox_ws  # noqa: E402
 
-# Combine all WebSocket patterns across the platform modules
-# Including dashboard_ws which handles real-time metric distributions
-# Including feed_ws — previously omitted, meaning ws/feed/ was unroutable
 combined_websocket_urlpatterns = (
-    notifications_ws
+    accounts_ws
+    + notifications_ws
     + dashboard_ws
     + chat_ws
     + sandbox_ws
@@ -40,7 +39,6 @@ combined_websocket_urlpatterns = (
     + monitoring_ws
     + content_ws
 )
-
 
 from apps.chat.middleware import ProfanityFilterMiddleware
 from apps.core.middleware import WebSocketRateLimitMiddleware
