@@ -486,3 +486,25 @@ class TestAuditMessageFormat:
             test_logger.removeHandler(handler)
             _thread_locals.request_id = None
             _thread_locals.user_id = None
+
+
+# ===========================================================================
+# 9. ResilientFileHandler graceful fallback on PermissionError
+# ===========================================================================
+
+
+class TestResilientFileHandler:
+    """Verify ResilientFileHandler falls back to devnull on PermissionError."""
+
+    def test_permission_error_degrades_gracefully(self):
+        from config.logging_filters import ResilientFileHandler
+
+        with patch.object(
+            logging.FileHandler,
+            "_open",
+            side_effect=PermissionError("Permission denied: '/app/audit.log'"),
+        ):
+            handler = ResilientFileHandler("/nonexistent/path/audit.log", delay=False)
+            assert handler.stream is not None
+            assert handler.stream.name == os.devnull
+            handler.close()
