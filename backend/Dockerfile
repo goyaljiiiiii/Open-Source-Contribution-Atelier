@@ -49,6 +49,10 @@ COPY --from=deps /install /usr/local
 COPY --chown=appuser:appgroup manage.py ./
 COPY --chown=appuser:appgroup config/ ./config/
 COPY --chown=appuser:appgroup apps/ ./apps/
+COPY --chown=appuser:appgroup schemas/ ./schemas/
+COPY --chown=appuser:appgroup plugins/ ./plugins/
+COPY --chown=appuser:appgroup data/ ./data/
+
 
 EXPOSE 8000
 USER appuser
