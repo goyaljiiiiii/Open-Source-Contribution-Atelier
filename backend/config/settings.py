@@ -107,6 +107,15 @@ CONTENT_SECURITY_POLICY = (
     "form-action 'self'; "
 )
 
+# Session & CSRF Cookie Security
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+
+
 TESTING = "test" in sys.argv or "pytest" in sys.modules
 
 _raw_hosts = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
@@ -287,7 +296,6 @@ MIDDLEWARE = [
     "apps.core.middleware.db_pool_monitor.DatabasePoolMonitorMiddleware",
     "apps.core.middleware.request_id.RequestIdMiddleware",
     "config.middleware.DatabaseConnectionGuardMiddleware",
-
     "config.logging_middleware.RequestResponseLoggingMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
@@ -379,9 +387,7 @@ _db_replica_host = os.getenv("DB_REPLICA_HOST", "").strip()
 if _db_replica_host:
     _read_replica = DATABASES["default"].copy()
     _read_replica["HOST"] = _db_replica_host
-    _read_replica["PORT"] = os.getenv(
-        "DB_REPLICA_PORT", _read_replica.get("PORT", "")
-    )
+    _read_replica["PORT"] = os.getenv("DB_REPLICA_PORT", _read_replica.get("PORT", ""))
     if os.getenv("DB_REPLICA_NAME"):
         _read_replica["NAME"] = os.getenv("DB_REPLICA_NAME")
     if os.getenv("DB_REPLICA_USER"):
@@ -745,6 +751,7 @@ AUDIT_LOG_ENABLED = True
 # ──────────────────────────────────────────
 REQUEST_LOGGING_VERBOSITY = os.getenv("REQUEST_LOGGING_VERBOSITY", "minimal")
 
+
 # Audit file handler is active unless we are running the test suite,
 # where writing to disk is undesirable and would leave stale files.
 # In read-only environments (e.g. Hugging Face Spaces, serverless) the
@@ -753,17 +760,55 @@ REQUEST_LOGGING_VERBOSITY = os.getenv("REQUEST_LOGGING_VERBOSITY", "minimal")
 # and audit events fall back to the console handler only.
 def _audit_log_writable(path: Path) -> bool:
     try:
+        existed = path.exists()
         with open(path, "a"):
-            return True
+            pass
+        if not existed and path.exists():
+            try:
+                path.unlink()
+            except OSError:
+                pass
+        return True
     except OSError:
         return False
 
 
-_audit_log_file = os.getenv("AUDIT_LOG_FILE", str(BASE_DIR / "audit.log"))
+IS_HF_SPACE = bool(os.getenv("SPACE_ID") or os.getenv("HF_SPACE_ID"))
+_default_audit_file = str(
+    Path("/tmp/audit.log") if IS_HF_SPACE else BASE_DIR / "audit.log"
+)
+_audit_log_file = os.getenv("AUDIT_LOG_FILE", _default_audit_file)
 _audit_file_enabled = bool(
     _audit_log_file and not TESTING and _audit_log_writable(Path(_audit_log_file))
 )
-_audit_handlers: list = ["console_audit"] + (["file_audit"] if _audit_file_enabled else [])
+
+_audit_handlers: list = ["console_audit"] + (
+    ["file_audit"] if _audit_file_enabled else []
+)
+
+_logging_handlers = {
+    # General-purpose console handler: human-readable, PII-masked.
+    "console": {
+        "class": "logging.StreamHandler",
+        "filters": ["mask_sensitive_data"],
+        "formatter": "verbose",
+    },
+    # Audit console handler: structured JSON with request correlation.
+    "console_audit": {
+        "class": "logging.StreamHandler",
+        "filters": ["request_id", "mask_sensitive_data"],
+        "formatter": "json_audit",
+    },
+    # Audit file handler: structured JSON with request correlation (resilient to permission errors).
+    "file_audit": {
+        "class": "config.logging_filters.ResilientFileHandler",
+        "filename": _audit_log_file,
+        "filters": ["request_id", "mask_sensitive_data"],
+        "formatter": "json_audit",
+        "delay": True,
+    },
+}
+
 
 LOGGING = {
     "version": 1,
@@ -799,31 +844,7 @@ LOGGING = {
         },
     },
     # ── Handlers ─────────────────────────────────────────────────────────────
-    "handlers": {
-        # General-purpose console handler: human-readable, PII-masked.
-        "console": {
-            "class": "logging.StreamHandler",
-            "filters": ["mask_sensitive_data"],
-            "formatter": "verbose",
-        },
-        # Audit console handler: structured JSON with request correlation.
-        # Separate from the general console handler so that audit events
-        # always appear in JSON form regardless of verbosity settings.
-        "console_audit": {
-            "class": "logging.StreamHandler",
-            "filters": ["request_id", "mask_sensitive_data"],
-            "formatter": "json_audit",
-        },
-        # Audit file handler: writes JSON-structured audit events to
-        # audit.log, satisfying the AUDIT_LOG_ENABLED = True requirement.
-        # Disabled automatically in TESTING mode (see _audit_handlers above).
-        "file_audit": {
-            "class": "logging.FileHandler",
-            "filename": _audit_log_file,
-            "filters": ["request_id", "mask_sensitive_data"],
-            "formatter": "json_audit",
-        },
-    },
+    "handlers": _logging_handlers,
     # ── Loggers ──────────────────────────────────────────────────────────────
     "loggers": {
         # Dedicated audit logger — writes to both the audit console and

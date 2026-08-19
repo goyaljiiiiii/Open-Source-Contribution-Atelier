@@ -1,4 +1,16 @@
+---
+title: Open Source Contribution Atelier Backend
+emoji: 🚀
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
+
 ![CI](https://github.com/MILAN-123865/Open-Source-Contribution-Atelier/actions/workflows/ci.yml/badge.svg)
+
 
 <br />
 
