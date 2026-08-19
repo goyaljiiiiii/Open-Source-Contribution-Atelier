@@ -773,10 +773,15 @@ def _audit_log_writable(path: Path) -> bool:
         return False
 
 
-_audit_log_file = os.getenv("AUDIT_LOG_FILE", str(BASE_DIR / "audit.log"))
+IS_HF_SPACE = bool(os.getenv("SPACE_ID") or os.getenv("HF_SPACE_ID"))
+_default_audit_file = str(
+    Path("/tmp/audit.log") if IS_HF_SPACE else BASE_DIR / "audit.log"
+)
+_audit_log_file = os.getenv("AUDIT_LOG_FILE", _default_audit_file)
 _audit_file_enabled = bool(
     _audit_log_file and not TESTING and _audit_log_writable(Path(_audit_log_file))
 )
+
 _audit_handlers: list = ["console_audit"] + (
     ["file_audit"] if _audit_file_enabled else []
 )
