@@ -7,10 +7,36 @@ This guide helps contributors quickly resolve common failures when running the p
 From the repo root:
 
 ```bash
+# 1. Bootstrap all required environment files
+make setup
+# or: make env
+
+# 2. Build and start containers
 docker compose up --build
 ```
 
 If something fails, use the sections below to identify the issue.
+
+---
+
+## 0) Missing environment files (`.env` / `docker-compose.override.yml`)
+
+### Symptoms
+- Backend or frontend fails to start with errors about missing environment variables.
+- Docker Compose fails to read configuration settings or hot-reloading does not trigger.
+
+### Fix
+Run the automated setup target to copy all example environment files:
+```bash
+make setup
+# or: make env
+```
+Or manually copy the files:
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+cp docker-compose.override.yml.example docker-compose.override.yml
+```
 
 ---
 
