@@ -5,10 +5,12 @@ import { broadcastAuthEvent } from "./authSync";
 import { getTraceHeaders } from "./otelProvider";
 import toast from "react-hot-toast";
 import {
+  ApiError,
   createApiError,
   isAuthExpiredApiError,
   isRetryableApiError,
 } from "./apiErrors";
+
 
 let refreshPromise: Promise<string | null> | null = null;
 
