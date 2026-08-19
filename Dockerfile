@@ -21,6 +21,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY --chown=appuser:appgroup backend/manage.py ./
 COPY --chown=appuser:appgroup backend/config/ ./config/
 COPY --chown=appuser:appgroup backend/apps/ ./apps/
+COPY --chown=appuser:appgroup backend/schemas/ ./schemas/
+COPY --chown=appuser:appgroup backend/plugins/ ./plugins/
+COPY --chown=appuser:appgroup backend/data/ ./data/
 
 EXPOSE 7860
 
