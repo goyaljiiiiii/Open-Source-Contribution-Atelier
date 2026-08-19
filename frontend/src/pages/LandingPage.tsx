@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGoogleLogin } from "@react-oauth/google";
-import { Moon, Sun, ShieldCheck, Flame, Sparkles } from "lucide-react";
+import { Moon, Sun, ShieldCheck, Sparkles } from "lucide-react";
 import { fetchApi } from "../lib/api";
 import { useAuth } from "../features/auth/AuthContext";
 import { useTheme } from "../hooks/useTheme";
@@ -9,7 +9,6 @@ import { DraggableSticker } from "../components/ui/DraggableSticker";
 import { DemoLoginButton } from "../features/auth/DemoLoginButton";
 import { formatGoogleOAuthError } from "../lib/googleOAuth";
 import { PasswordInput } from "../components/PasswordInput";
-import { toast } from "react-hot-toast";
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
@@ -21,7 +20,6 @@ interface VibeOption {
   emoji: string;
   color: string;
   textColor: string;
-  quote: string;
 }
 
 const VIBE_OPTIONS: VibeOption[] = [
@@ -31,7 +29,6 @@ const VIBE_OPTIONS: VibeOption[] = [
     emoji: "🐛",
     color: "bg-[#FF6B6B]",
     textColor: "text-white",
-    quote: "Squashing bugs before they hit production!",
   },
   {
     id: "shipped",
@@ -39,7 +36,6 @@ const VIBE_OPTIONS: VibeOption[] = [
     emoji: "🚀",
     color: "bg-[#6BCB77]",
     textColor: "text-black",
-    quote: "Merged PR #100 with 0 test failures!",
   },
   {
     id: "coffee",
@@ -47,7 +43,6 @@ const VIBE_OPTIONS: VibeOption[] = [
     emoji: "☕",
     color: "bg-[#FFD93D]",
     textColor: "text-black",
-    quote: "Converting caffeine into clean TypeScript code.",
   },
   {
     id: "wizard",
@@ -55,7 +50,6 @@ const VIBE_OPTIONS: VibeOption[] = [
     emoji: "👑",
     color: "bg-[#4D96FF]",
     textColor: "text-white",
-    quote: "Master of interactive rebase & cherry-picking.",
   },
 ];
 
@@ -136,8 +130,8 @@ export function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-surface-lowest dark:bg-[#0a0a0f] text-text transition-colors duration-300 relative flex items-center justify-center p-4 sm:p-8 lg:p-12 overflow-x-hidden">
-      {/* FLOATING EMOJI PARTICLES FOR PLAYFUL INTERACTION */}
+    <div className="min-h-screen w-full bg-surface-lowest dark:bg-[#0a0a0f] text-text transition-colors duration-300 relative flex flex-col justify-between p-4 sm:p-8 lg:p-12 overflow-x-hidden">
+      {/* EMOJI BURSTS */}
       {bursts.map((b) => (
         <div
           key={b.id}
@@ -148,31 +142,24 @@ export function LandingPage() {
         </div>
       ))}
 
-      {/* DRAGGABLE STICKERS - DESKTOP ONLY, SAFELY POSITIONED OUTSIDE CONTENT */}
+      {/* FLOATING CORNER STICKERS - DESKTOP ONLY */}
       <div className="hidden xl:block select-none pointer-events-auto">
-        <DraggableSticker initialX={40} initialY={40} className="bg-[#FF6B6B] text-white rotate-[-5deg]">
+        <DraggableSticker initialX={40} initialY={40} className="bg-[#FF6B6B] text-white rotate-[-6deg]">
           Bug Hunter 🐛
         </DraggableSticker>
 
-        <DraggableSticker initialX={500} initialY={30} className="bg-[#6BCB77] text-black rotate-[6deg]">
+        <DraggableSticker initialX={520} initialY={30} className="bg-[#6BCB77] text-black rotate-[6deg]">
           100% Merged ✅
-        </DraggableSticker>
-
-        <DraggableSticker initialX={50} initialY={560} className="bg-[#FFD93D] text-black rotate-[-6deg]">
-          Git Master 👑
-        </DraggableSticker>
-
-        <DraggableSticker initialX={440} initialY={570} className="bg-[#4D96FF] text-white rotate-[8deg]">
-          git commit -m "success" 🚀
         </DraggableSticker>
       </div>
 
-      <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center z-10 my-auto">
-        {/* LEFT COLUMN: Clean, Spacious Hero Section */}
+      {/* MAIN CONTAINER */}
+      <div className="w-full max-w-6xl mx-auto my-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-20 items-center z-10 py-8 lg:py-16">
+        {/* LEFT COLUMN: Spacious, Clean Hero */}
         <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
           {/* Top Tag & Theme Toggle */}
           <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3">
-            <span className="font-black text-xs bg-accent text-black px-4 py-2 rounded-full border-2 border-black rotate-[-2deg] inline-flex items-center gap-1.5 shadow-card-sm">
+            <span className="font-black text-xs bg-accent text-black px-4 py-1.5 rounded-full border-2 border-black rotate-[-1deg] inline-flex items-center gap-1.5 shadow-card-sm">
               <ShieldCheck size={14} /> AUTHORIZED ACCESS ONLY
             </span>
             <button
@@ -186,8 +173,8 @@ export function LandingPage() {
           </div>
 
           {/* Headline & Subtitle */}
-          <div className="space-y-3">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-black dark:text-white tracking-tight leading-none uppercase">
+          <div className="space-y-4">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-black dark:text-white tracking-tight leading-[1.05] uppercase">
               Contribution <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-500">
                 Atelier
@@ -198,16 +185,13 @@ export function LandingPage() {
             </p>
           </div>
 
-          {/* PLAYFUL ELEMENT: Lightweight Interactive Dev Vibe Bar */}
-          <div className="pt-2 max-w-lg mx-auto lg:mx-0 space-y-3">
-            <div className="flex items-center justify-between text-xs font-bold text-muted dark:text-[#9b8f80]">
-              <span className="flex items-center gap-1.5 font-black uppercase text-black dark:text-[#f0ebe2]">
-                <Sparkles size={14} className="text-amber-500 animate-spin" /> Interactive Dev Vibe:
-              </span>
-              <span className="text-[10px] font-bold">Tap a mood 🎨</span>
+          {/* PLAYFUL ELEMENT: Sleek Interactive Mood Pill Row */}
+          <div className="pt-2 max-w-lg mx-auto lg:mx-0 space-y-2.5">
+            <div className="flex items-center gap-1.5 text-xs font-black uppercase text-black dark:text-[#f0ebe2] justify-center lg:justify-start">
+              <Sparkles size={14} className="text-amber-500 animate-spin" /> Select Dev Mood:
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2">
               {VIBE_OPTIONS.map((vibe) => {
                 const isActive = activeVibe.id === vibe.id;
                 return (
@@ -215,31 +199,22 @@ export function LandingPage() {
                     key={vibe.id}
                     type="button"
                     onClick={(e) => handleVibeClick(vibe, e)}
-                    className={`py-2 px-2.5 rounded-xl border-2 font-black text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    className={`py-1.5 px-3 rounded-xl border-2 font-black text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
                       isActive
                         ? `${vibe.color} ${vibe.textColor} border-black shadow-card-sm -translate-y-0.5`
                         : "bg-white dark:bg-[#151411] border-black/20 dark:border-white/20 text-black dark:text-white hover:border-black hover:-translate-y-0.5"
                     }`}
                   >
                     <span>{vibe.emoji}</span>
-                    <span className="truncate">{vibe.label}</span>
+                    <span>{vibe.label}</span>
                   </button>
                 );
               })}
             </div>
-
-            {/* Active Vibe Status */}
-            <div className={`p-3 rounded-2xl border-2 border-black ${activeVibe.color} ${activeVibe.textColor} shadow-card-sm flex items-center justify-between gap-3 transition-all`}>
-              <div className="flex items-center gap-2">
-                <span className="text-lg">{activeVibe.emoji}</span>
-                <span className="text-xs font-black">{activeVibe.quote}</span>
-              </div>
-              <Flame size={18} className="animate-pulse flex-shrink-0" />
-            </div>
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Clean, Responsive Login Card */}
+        {/* RIGHT COLUMN: Clean, Elevated Login Card */}
         <div className="lg:col-span-5 w-full max-w-md mx-auto bg-white dark:bg-[#151411] rounded-[2.5rem] border-4 border-black dark:border-[#4a4238] shadow-card p-6 sm:p-8 relative z-20">
           {/* Contributor / Maintainer Role Tabs */}
           <div className="flex p-1 bg-surface-low dark:bg-[#0f0e0c] rounded-2xl border-2 border-black dark:border-[#4a4238] mb-6">
