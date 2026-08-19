@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGoogleLogin } from "@react-oauth/google";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, Sparkles, ShieldCheck } from "lucide-react";
 import { fetchApi } from "../lib/api";
 import { useAuth } from "../features/auth/AuthContext";
 import { useTheme } from "../hooks/useTheme";
@@ -10,9 +10,19 @@ import { DemoLoginButton } from "../features/auth/DemoLoginButton";
 import { formatGoogleOAuthError } from "../lib/googleOAuth";
 import { TrendingReels } from "../components/ui/TrendingReels";
 import { PasswordInput } from "../components/PasswordInput";
+import { PlayfulGitVibeWidget } from "../components/ui/PlayfulGitVibeWidget";
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
+}
+
+interface CustomSticker {
+  id: number;
+  label: string;
+  color: string;
+  textColor: string;
+  x: number;
+  y: number;
 }
 
 export function LandingPage() {
@@ -28,6 +38,7 @@ export function LandingPage() {
 
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [isEmailFocused, setIsEmailFocused] = useState(false);
+  const [stampedStickers, setStampedStickers] = useState<CustomSticker[]>([]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -76,53 +87,101 @@ export function LandingPage() {
     },
   });
 
+  const handleStampSticker = (label: string, color: string, textColor: string) => {
+    const newSticker: CustomSticker = {
+      id: Date.now(),
+      label,
+      color,
+      textColor,
+      x: Math.floor(Math.random() * 200) + 40,
+      y: Math.floor(Math.random() * 150) + 480,
+    };
+    setStampedStickers((prev) => [...prev.slice(-4), newSticker]);
+  };
+
   return (
-    <div className="min-h-screen bg-surface-lowest dark:bg-[#0a0a0f] text-text transition-colors duration-300 relative flex flex-col items-center overflow-x-hidden">
-      <div className="min-h-screen w-full flex items-center justify-center p-3 sm:p-6 relative">
-        <div className="hidden lg:block select-none pointer-events-auto">
-          <DraggableSticker initialX={80} initialY={100} className="bg-[#FF6B6B] text-white rotate-[-6deg]">
+    <div className="w-full bg-surface-lowest dark:bg-[#0a0a0f] text-text transition-colors duration-300 relative flex flex-col items-center overflow-x-hidden">
+      {/* HERO & LOGIN SECTION */}
+      <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-16 relative">
+        {/* DRAGGABLE STICKERS - NEATLY ALIGNED OUTSIDE TEXT BOUNDS */}
+        <div className="hidden xl:block select-none pointer-events-auto">
+          {/* Top-Left Safe Zone */}
+          <DraggableSticker initialX={30} initialY={30} className="bg-[#FF6B6B] text-white rotate-[-4deg]">
             Bug Hunter 🐛
           </DraggableSticker>
-          <DraggableSticker initialX={100} initialY={620} className="bg-[#4D96FF] text-white rotate-[8deg]">
-            git commit -m "success" 🚀
-          </DraggableSticker>
-          <DraggableSticker initialX={60} initialY={320} className="bg-[#6BCB77] text-black rotate-[4deg]">
+
+          {/* Top-Right Safe Zone */}
+          <DraggableSticker initialX={450} initialY={25} className="bg-[#6BCB77] text-black rotate-[5deg]">
             100% Merged ✅
           </DraggableSticker>
-          <DraggableSticker initialX={120} initialY={480} className="bg-[#FFD93D] text-black rotate-[-10deg]">
-            Git expert 👑
+
+          {/* Mid-Left Safe Zone below slogan */}
+          <DraggableSticker initialX={40} initialY={470} className="bg-[#FFD93D] text-black rotate-[-6deg]">
+            Git Expert 👑
           </DraggableSticker>
+
+          {/* Mid-Right Safe Zone */}
+          <DraggableSticker initialX={380} initialY={500} className="bg-[#4D96FF] text-white rotate-[7deg]">
+            git commit -m "success" 🚀
+          </DraggableSticker>
+
+          {/* Dynamically Stamped Custom Stickers */}
+          {stampedStickers.map((st) => (
+            <DraggableSticker
+              key={st.id}
+              initialX={st.x}
+              initialY={st.y}
+              className={`${st.color} ${st.textColor} rotate-[-3deg]`}
+            >
+              {st.label}
+            </DraggableSticker>
+          ))}
         </div>
 
-        <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-12 items-center">
-          <div className="text-center md:text-left space-y-4">
-            <div className="flex flex-row items-center justify-center md:justify-start space-x-4 mb-2">
-              <span className="font-black text-xs bg-accent text-black px-4 py-2 rounded-full border-2 border-black rotate-[-2deg] inline-block shadow-sm">
-                AUTHORIZED ACCESS ONLY
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+          {/* LEFT COLUMN: Hero Brand Header & Interactive Playful Widget */}
+          <div className="lg:col-span-7 space-y-6 text-center md:text-left">
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+              <span className="font-black text-xs bg-accent text-black px-4 py-2 rounded-full border-2 border-black rotate-[-2deg] inline-flex items-center gap-1.5 shadow-card-sm">
+                <ShieldCheck size={14} /> AUTHORIZED ACCESS ONLY
               </span>
               <button
                 onClick={toggleTheme}
                 aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
                 title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
-                className="rounded-lg bg-surface-low p-2 text-muted hover:text-text border-2 border-black dark:border-[#4a4238] shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2] w-fit toggle-theme"
+                className="rounded-xl bg-surface-low p-2 text-muted hover:text-text border-2 border-black dark:border-[#4a4238] shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all dark:bg-[#151411] dark:text-[#c4bbae] dark:hover:text-[#f0ebe2] toggle-theme cursor-pointer"
               >
-                {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
+                {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
               </button>
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-black dark:text-white tracking-tight leading-none uppercase">
-              Contribution
-              <br className="hidden md:block" /> Atelier
-            </h1>
-            <p className="text-muted dark:text-[#9b8f80] text-sm sm:text-base font-bold max-w-md mx-auto md:mx-0">
-              Make your first open source contribution with guided mentorship and real-world projects.
-            </p>
+
+            {/* Restructured Main Headline */}
+            <div className="space-y-2">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-black dark:text-white tracking-tight leading-none uppercase">
+                Contribution <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-500">
+                  Atelier
+                </span>
+              </h1>
+              <p className="text-muted dark:text-[#9b8f80] text-base sm:text-lg font-bold max-w-lg mx-auto md:mx-0 leading-relaxed">
+                Make your first open source contribution with guided mentorship, interactive tools, and real-world projects.
+              </p>
+            </div>
+
+            {/* PLAYFUL ELEMENT: Interactive Dev Vibe & Commit Generator */}
+            <div className="pt-2">
+              <PlayfulGitVibeWidget onStampSticker={handleStampSticker} />
+            </div>
           </div>
 
-          <div className="w-full max-w-md mx-auto bg-white dark:bg-[#151411] rounded-[2.5rem] border-4 border-black dark:border-[#4a4238] shadow-card p-6 sm:p-8">
+          {/* RIGHT COLUMN: Modern Structured Login Card */}
+          <div className="lg:col-span-5 w-full max-w-md mx-auto bg-white dark:bg-[#151411] rounded-[2.5rem] border-4 border-black dark:border-[#4a4238] shadow-card p-6 sm:p-8 relative z-20">
+            {/* Contributor / Maintainer Role Tabs */}
             <div className="flex p-1 bg-surface-low dark:bg-[#0f0e0c] rounded-2xl border-2 border-black dark:border-[#4a4238] mb-6">
               <button
+                type="button"
                 onClick={() => setAuthRole("student")}
-                className={`flex-1 py-3 px-4 text-center font-black rounded-xl transition-all text-sm border-2 menu-tab ${
+                className={`flex-1 py-3 px-4 text-center font-black rounded-xl transition-all text-sm border-2 menu-tab cursor-pointer ${
                   authRole === "student"
                     ? "bg-white dark:bg-[#1f1c18] border-black dark:border-[#4a4238] shadow-card-sm -translate-y-0.5 text-black dark:text-[#f0ebe2]"
                     : "border-transparent text-muted dark:text-[#9b8f80] hover:text-text dark:hover:text-[#f0ebe2]"
@@ -131,8 +190,9 @@ export function LandingPage() {
                 Contributor
               </button>
               <button
+                type="button"
                 onClick={() => setAuthRole("admin")}
-                className={`flex-1 py-3 px-4 text-center font-black rounded-xl transition-all text-sm border-2 menu-tab ${
+                className={`flex-1 py-3 px-4 text-center font-black rounded-xl transition-all text-sm border-2 menu-tab cursor-pointer ${
                   authRole === "admin"
                     ? "bg-white dark:bg-[#1f1c18] border-black dark:border-[#4a4238] shadow-card-sm -translate-y-0.5 text-black dark:text-[#f0ebe2]"
                     : "border-transparent text-muted dark:text-[#9b8f80] hover:text-text dark:hover:text-[#f0ebe2]"
@@ -156,7 +216,7 @@ export function LandingPage() {
               <button
                 type="button"
                 onClick={() => googleLoginHandler()}
-                className="w-full bg-white border-4 border-black rounded-2xl py-3 px-4 flex items-center justify-center gap-3 font-black text-black hover:bg-surface-low transition-all shadow-card-sm active:translate-y-1 active:shadow-none text-sm toggle-google"
+                className="w-full bg-white border-4 border-black rounded-2xl py-3 px-4 flex items-center justify-center gap-3 font-black text-black hover:bg-surface-low transition-all shadow-card-sm active:translate-y-1 active:shadow-none text-sm cursor-pointer toggle-google"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -169,7 +229,7 @@ export function LandingPage() {
 
               <DemoLoginButton
                 label="🚀 Demo Mode (explicit local demo)"
-                className="w-full bg-green-200 border-4 border-black rounded-2xl py-3 px-4 flex items-center justify-center gap-3 font-black text-black hover:bg-green-300 transition-all shadow-card-sm active:translate-y-1 active:shadow-none text-sm"
+                className="w-full bg-green-200 border-4 border-black rounded-2xl py-3 px-4 flex items-center justify-center gap-3 font-black text-black hover:bg-green-300 transition-all shadow-card-sm active:translate-y-1 active:shadow-none text-sm cursor-pointer"
               />
             </div>
 
@@ -224,8 +284,9 @@ export function LandingPage() {
             </a>
           </div>
         </div>
-      </div>
+      </section>
 
+      {/* TRENDING REELS - ENDS CLEANLY WITHOUT EXTRA BLANK SECTION BELOW */}
       <TrendingReels />
     </div>
   );
