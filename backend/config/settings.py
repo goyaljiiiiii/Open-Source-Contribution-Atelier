@@ -107,6 +107,15 @@ CONTENT_SECURITY_POLICY = (
     "form-action 'self'; "
 )
 
+# Session & CSRF Cookie Security
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+
+
 TESTING = "test" in sys.argv or "pytest" in sys.modules
 
 _raw_hosts = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
