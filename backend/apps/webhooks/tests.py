@@ -316,3 +316,45 @@ class TestWebhookSecretSecurity:
         assert len(rotated_calls) > 0
         assert rotated_calls[0][2].get("user_id") == str(user.id)
         assert rotated_calls[0][2].get("resource_id") == str(endpoint.id)
+
+
+@pytest.mark.django_db
+class TestWebhookDirectTestAndSignals:
+    @patch("requests.post")
+    def test_direct_webhook_test_endpoint(self, mock_post, api_client, user):
+        api_client.force_authenticate(user=user)
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.text = '{"ok": true}'
+        mock_post.return_value = mock_resp
+
+        response = api_client.post(
+            "/api/webhooks/test/",
+            {
+                "target_url": "https://httpbin.org/post",
+                "secret": "my_secret",
+                "event": "lesson.completed",
+            },
+            format="json",
+        )
+        assert response.status_code == 200
+        assert response.data["success"] is True
+        assert response.data["status_code"] == 200
+
+    @patch("apps.webhooks.tasks.dispatch_event")
+    def test_webhook_signal_handlers(self, mock_dispatch):
+        from apps.webhooks.signals import webhook_on_xp_milestone
+        from apps.progress.models import XPEvent
+
+        xp_instance = MagicMock(spec=XPEvent)
+        xp_instance.user_id = 1
+        xp_instance.user.username = "alice"
+        xp_instance.xp_delta = 50
+        xp_instance.source_type = "lesson"
+        xp_instance.description = "Completed lesson"
+        xp_instance.created_at = None
+
+        webhook_on_xp_milestone(XPEvent, xp_instance, created=True)
+        mock_dispatch.assert_called_once()
+        assert mock_dispatch.call_args[0][0] == "xp.milestone"
+

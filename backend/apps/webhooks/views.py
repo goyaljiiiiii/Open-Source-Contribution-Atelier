@@ -191,3 +191,61 @@ class WebhookDeliveryViewSet(viewsets.ReadOnlyModelViewSet):
         ratio = round((failed / total) * 100, 2)
 
         return Response({"failed_ratio": ratio, "total": total, "failed": failed})
+
+
+from rest_framework.views import APIView
+import requests
+from .tasks import generate_signature
+
+
+class TestWebhookView(APIView):
+    """
+    POST /api/webhooks/test/ or /api/webhooks/test
+    Sends a test event to a given endpoint URL with HMAC-SHA256 signature without persisting a delivery.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        url = request.data.get("url") or request.data.get("target_url")
+        if not url:
+            return Response(
+                {"error": "Endpoint url is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        secret = request.data.get("secret") or "test_webhook_secret_key"
+        event_type = request.data.get("event", "test.ping")
+        payload = request.data.get(
+            "payload",
+            {
+                "event": event_type,
+                "message": "Ephemeral test ping from Open Source Contribution Atelier",
+                "timestamp": timezone.now().isoformat(),
+            },
+        )
+
+        signature = generate_signature(payload, secret)
+        headers = {
+            "Content-Type": "application/json",
+            "X-Webhook-Signature": signature,
+            "X-Webhook-Event": event_type,
+        }
+
+        try:
+            resp = requests.post(url, json=payload, headers=headers, timeout=5)
+            return Response(
+                {
+                    "success": 200 <= resp.status_code < 300,
+                    "status_code": resp.status_code,
+                    "response_body": resp.text[:1000],
+                },
+                status=status.HTTP_200_OK,
+            )
+        except requests.exceptions.RequestException as exc:
+            return Response(
+                {
+                    "success": False,
+                    "error": str(exc),
+                },
+                status=status.HTTP_200_OK,
+            )
