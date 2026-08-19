@@ -1,5 +1,5 @@
-from django.core.management.commands.migrate import Command as MigrateCommand
 from django.conf import settings
+from django.core.management.commands.migrate import Command as MigrateCommand
 
 
 class Command(MigrateCommand):
@@ -18,17 +18,20 @@ class Command(MigrateCommand):
         if timeout is None:
             timeout = getattr(settings, "DATABASE_LOCK_TIMEOUT", 5000)
 
-        # Inject lock_timeout into the database options for postgresql
-        for db_name, db_config in settings.DATABASES.items():
-            engine = db_config.get("ENGINE", "")
-            if "postgresql" in engine:
-                options_dict = db_config.setdefault("OPTIONS", {})
-                current_options = options_dict.get("options", "")
+        # Set lock_timeout via signal upon connection creation to avoid startup option
+        # parameter errors on connection poolers (e.g. PgBouncer / Neon pooler).
+        from django.db.backends.signals import connection_created
 
-                timeout_option = f"-c lock_timeout={timeout}ms"
-                if current_options:
-                    options_dict["options"] = f"{current_options} {timeout_option}"
-                else:
-                    options_dict["options"] = timeout_option
+        def set_lock_timeout(sender, connection=None, **kwargs):
+            if connection and "postgresql" in connection.settings_dict.get(
+                "ENGINE", ""
+            ):
+                try:
+                    with connection.cursor() as cursor:
+                        cursor.execute(f"SET lock_timeout = '{timeout}ms';")
+                except Exception:
+                    pass
+
+        connection_created.connect(set_lock_timeout)
 
         super().handle(*args, **options)

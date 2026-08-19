@@ -69,3 +69,23 @@ class SensitiveDataFilter(logging.Filter):
             record.exc_text = self.mask_text(record.exc_text)
 
         return True
+
+
+class ResilientFileHandler(logging.FileHandler):
+    """
+    FileHandler subclass that degrades gracefully to os.devnull if the target log file
+    cannot be opened or created due to permission denied or read-only filesystem errors.
+    """
+
+    def _open(self):
+        try:
+            return super()._open()
+        except (PermissionError, OSError) as e:
+            import os
+            import sys
+
+            sys.stderr.write(
+                f"Warning: Audit log file '{self.baseFilename}' could not be opened ({e}). "
+                "Falling back to null output for file_audit handler.\n"
+            )
+            return open(os.devnull, "a", encoding=self.encoding)
