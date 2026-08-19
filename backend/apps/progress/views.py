@@ -22,6 +22,7 @@ from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.models import UserProfile
 from apps.content.models import Lesson
 from apps.content.serializers import LessonSerializer
 from apps.core.throttling import SlidingWindowAnonThrottle, SlidingWindowScopedThrottle
@@ -528,6 +529,20 @@ class BulkProgressUpdateView(APIView):
         )
 
 
+class MergedSequence:
+    def __init__(self, items, total_count):
+        self.items = items
+        self.total_count = total_count
+
+    def __len__(self):
+        return self.total_count
+
+    def __getitem__(self, key):
+        if isinstance(key, slice):
+            return self.items[key]
+        return self.items[key]
+
+
 class CommunityFeedPagination(PageNumberPagination):
     page_size = 20
     page_size_query_param = "page_size"
@@ -543,48 +558,80 @@ class CommunityFeedView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        org = request.user.organization
-        user_ids = (
-            User.objects.filter(
-                profile__organization=org,
-                is_active=True,
-            )
-            if org
-            else User.objects.filter(is_active=True)
-        ).values_list("id", flat=True)
+        org_id = UserProfile.objects.filter(user=request.user).values_list(
+            "organization_id", flat=True
+        ).first()
 
-        help_requests = (
+        if org_id:
+            user_ids = UserProfile.objects.filter(
+                organization_id=org_id, user__is_active=True
+            ).values_list("user_id", flat=True)
+        else:
+            user_ids = User.objects.filter(is_active=True).values_list("id", flat=True)
+
+        paginator = CommunityFeedPagination()
+        page_size = paginator.get_page_size(request) or paginator.page_size
+
+        help_requests_qs = (
             HelpRequest.objects.filter(
                 user_id__in=user_ids,
             )
             .select_related("user", "lesson")
-            .order_by("-created_at")[:200]
+            .order_by("-created_at")
         )
 
-        code_submissions = (
+        code_submissions_qs = (
             CodeSubmission.objects.filter(
                 user_id__in=user_ids,
             )
             .select_related("user", "exercise")
-            .order_by("-created_at")[:200]
+            .order_by("-created_at")
         )
 
-        badges = (
+        badges_qs = (
             UserBadge.objects.filter(
                 user_id__in=user_ids,
             )
             .select_related("user", "badge")
-            .order_by("-earned_at")[:200]
+            .order_by("-earned_at")
         )
 
-        lesson_progress = (
+        lesson_progress_qs = (
             LessonProgress.objects.filter(
                 user_id__in=user_ids,
                 completed=True,
             )
             .select_related("user", "lesson")
-            .order_by("-updated_at")[:200]
+            .order_by("-updated_at")
         )
+
+        total_count = (
+            help_requests_qs.count()
+            + code_submissions_qs.count()
+            + badges_qs.count()
+            + lesson_progress_qs.count()
+        )
+
+        raw_page_param = request.query_params.get(paginator.page_query_param, 1)
+        if raw_page_param in paginator.last_page_strings:
+            import math
+
+            page_number = math.ceil(total_count / page_size) if total_count > 0 else 1
+        else:
+            try:
+                page_number = int(raw_page_param)
+                if page_number < 1:
+                    page_number = 1
+            except (ValueError, TypeError):
+                page_number = 1
+
+        offset = (page_number - 1) * page_size
+        needed = offset + page_size
+
+        help_requests = help_requests_qs[:needed]
+        code_submissions = code_submissions_qs[:needed]
+        badges = badges_qs[:needed]
+        lesson_progress = lesson_progress_qs[:needed]
 
         max_length_param = request.query_params.get("max_length")
         max_length = None
@@ -669,8 +716,8 @@ class CommunityFeedView(APIView):
 
         entries.sort(key=lambda e: e["created_at"], reverse=True)
 
-        paginator = CommunityFeedPagination()
-        page = paginator.paginate_queryset(entries, request)
+        sequence = MergedSequence(entries, total_count)
+        page = paginator.paginate_queryset(sequence, request)
         return paginator.get_paginated_response(page)
 
 

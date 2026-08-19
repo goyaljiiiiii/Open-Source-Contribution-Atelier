@@ -62,6 +62,7 @@ urlpatterns = [
     ),
     path("daily-stats/", DailyLessonStatsView.as_view(), name="daily-stats"),
     path("feed/", CommunityFeedView.as_view(), name="community-feed"),
+    path("community-feed/", CommunityFeedView.as_view(), name="community-feed-alias"),
     path("community-stats/", CommunityStatsView.as_view(), name="community-stats"),
     # Help Requests
     path("help-requests/", HelpRequestListCreateView.as_view(), name="help-requests"),

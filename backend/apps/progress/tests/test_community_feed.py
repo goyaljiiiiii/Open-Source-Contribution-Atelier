@@ -56,7 +56,7 @@ class TestCommunityFeedView(APITestCase):
         self.exercise = Exercise.objects.create(
             lesson=self.lesson,
             title="Interactive Rebase Challenge",
-            instructions="Rebase 3 commits",
+            prompt="Rebase 3 commits",
         )
 
         self.badge = Badge.objects.create(
@@ -287,8 +287,8 @@ class TestCommunityFeedView(APITestCase):
         self.assertEqual(global_response.status_code, status.HTTP_200_OK)
         self.assertEqual(global_response.data["count"], 2)
 
-    def test_per_type_200_item_cap(self):
-        """Querysets are capped at 200 items per type."""
+    def test_full_history_pagination_beyond_200_items(self):
+        """Querysets are not capped at 200 items; full history is paginated."""
         self.client.force_authenticate(user=self.user_global)
 
         # Create 205 HelpRequests
@@ -305,5 +305,13 @@ class TestCommunityFeedView(APITestCase):
         response = self.client.get("/api/progress/community-feed/?page_size=50")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # Total count in the paginated response should reflect the capped 200 items
-        self.assertEqual(response.data["count"], 200)
+        # Total count in the paginated response should reflect all 205 items
+        self.assertEqual(response.data["count"], 205)
+
+        # Page 5 with page_size=50 should return the remaining 5 items beyond 200
+        page5_response = self.client.get(
+            "/api/progress/community-feed/?page=5&page_size=50"
+        )
+        self.assertEqual(page5_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(page5_response.data["results"]), 5)
+        self.assertIsNone(page5_response.data["next"])
