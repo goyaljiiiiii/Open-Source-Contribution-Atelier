@@ -4,38 +4,6 @@
  */
 
 export interface paths {
-    "/.well-known/jwks.json": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations[".well_known_jwks.json_retrieve"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/.well-known/openid-configuration": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations[".well_known_openid_configuration_retrieve"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/accessibility/issues/": {
         parameters: {
             query?: never;
@@ -676,6 +644,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** @description Return HTTP 400 for invalid/missing/expired OAuth state. */
         get: operations["api_auth_github_callback_retrieve"];
         put?: never;
         post?: never;
@@ -4184,70 +4153,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/oauth/clients/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["api_oauth_clients_list"];
-        put?: never;
-        post: operations["api_oauth_clients_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/oauth/clients/{id}/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["api_oauth_clients_retrieve"];
-        put: operations["api_oauth_clients_update"];
-        post?: never;
-        delete: operations["api_oauth_clients_destroy"];
-        options?: never;
-        head?: never;
-        patch: operations["api_oauth_clients_partial_update"];
-        trace?: never;
-    };
-    "/api/oauth/user-apps/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["api_oauth_user_apps_retrieve"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/oauth/user-apps/{id}/revoke/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["api_oauth_user_apps_revoke_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/onboarding/journey-event/": {
         parameters: {
             query?: never;
@@ -4993,6 +4898,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["api_progress_code_submissions_reviews_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/progress/community-feed/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_progress_community_feed_retrieve"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -7205,6 +7126,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/webhooks/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST /api/webhooks/test/ or /api/webhooks/test
+         *     Sends a test event to a given endpoint URL with HMAC-SHA256 signature without persisting a delivery.
+         */
+        post: operations["api_webhooks_test_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/webhooks/test/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST /api/webhooks/test/ or /api/webhooks/test
+         *     Sends a test event to a given endpoint URL with HMAC-SHA256 signature without persisting a delivery.
+         */
+        post: operations["api_webhooks_test_create_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/create-checkout-session/": {
         parameters: {
             query?: never;
@@ -7317,38 +7278,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/oauth/authorize/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["oauth_authorize_retrieve"];
-        put?: never;
-        post: operations["oauth_authorize_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/oauth/introspect/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["oauth_introspect_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/oauth/oauth/authorize/": {
         parameters: {
             query?: never;
@@ -7407,38 +7336,6 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["oauth_oauth_token_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/oauth/revoke/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["oauth_revoke_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/oauth/token/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["oauth_token_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11503,42 +11400,6 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    ".well_known_jwks.json_retrieve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ".well_known_openid_configuration_retrieve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     api_accessibility_issues_list: {
         parameters: {
             query?: {
@@ -21014,187 +20875,6 @@ export interface operations {
             };
         };
     };
-    api_oauth_clients_list: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OAuthClient"][];
-                };
-            };
-        };
-    };
-    api_oauth_clients_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OAuthClient"];
-                "application/x-www-form-urlencoded": components["schemas"]["OAuthClient"];
-                "multipart/form-data": components["schemas"]["OAuthClient"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OAuthClient"];
-                };
-            };
-        };
-    };
-    api_oauth_clients_retrieve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this o auth client. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OAuthClient"];
-                };
-            };
-        };
-    };
-    api_oauth_clients_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this o auth client. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OAuthClient"];
-                "application/x-www-form-urlencoded": components["schemas"]["OAuthClient"];
-                "multipart/form-data": components["schemas"]["OAuthClient"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OAuthClient"];
-                };
-            };
-        };
-    };
-    api_oauth_clients_destroy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this o auth client. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    api_oauth_clients_partial_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this o auth client. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["PatchedOAuthClient"];
-                "application/x-www-form-urlencoded": components["schemas"]["PatchedOAuthClient"];
-                "multipart/form-data": components["schemas"]["PatchedOAuthClient"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OAuthClient"];
-                };
-            };
-        };
-    };
-    api_oauth_user_apps_retrieve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    api_oauth_user_apps_revoke_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     api_onboarding_journey_event_list: {
         parameters: {
             query?: never;
@@ -23271,6 +22951,24 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_progress_community_feed_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated community activity feed combining help requests, code submissions, badges, and lesson completions. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -28103,6 +27801,42 @@ export interface operations {
             };
         };
     };
+    api_webhooks_test_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_webhooks_test_create_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     create_checkout_session_create: {
         parameters: {
             query?: never;
@@ -28338,60 +28072,6 @@ export interface operations {
             };
         };
     };
-    oauth_authorize_retrieve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    oauth_authorize_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    oauth_introspect_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     oauth_oauth_authorize_retrieve: {
         parameters: {
             query?: never;
@@ -28465,42 +28145,6 @@ export interface operations {
         };
     };
     oauth_oauth_token_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    oauth_revoke_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    oauth_token_create: {
         parameters: {
             query?: never;
             header?: never;
