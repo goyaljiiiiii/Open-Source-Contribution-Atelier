@@ -7,16 +7,15 @@ from django.db import migrations, models
 
 class SafeAddConstraint(migrations.AddConstraint):
     def database_forwards(self, app_label, schema_editor, from_state, to_state):
-        sid = schema_editor.connection.savepoint()
-        try:
-            super().database_forwards(app_label, schema_editor, from_state, to_state)
-            schema_editor.connection.savepoint_commit(sid)
-        except Exception as e:
-            schema_editor.connection.savepoint_rollback(sid)
-            if "already exists" in str(e).lower():
-                pass
-            else:
-                raise
+        model = from_state.apps.get_model(app_label, self.model_name)
+        table_name = model._meta.db_table
+        with schema_editor.connection.cursor() as cursor:
+            existing_constraints = schema_editor.connection.introspection.get_constraints(
+                cursor, table_name
+            )
+        if self.constraint.name in existing_constraints:
+            return
+        super().database_forwards(app_label, schema_editor, from_state, to_state)
 
 
 class Migration(migrations.Migration):
