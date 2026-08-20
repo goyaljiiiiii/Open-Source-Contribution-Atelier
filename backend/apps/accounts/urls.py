@@ -4,8 +4,6 @@ from .views import (
     AvatarUploadView,
     ChangePasswordView,
     ExportDataView,
-    GitHubOAuthCallbackView,
-    GitHubOAuthStartView,
     GoogleLoginView,
     LoginView,
     LogoutView,
@@ -32,10 +30,11 @@ from .views import (
     UserSessionListView,
     UserStatisticsView,
     UserSuggestionsView,
+    GitHubOAuthStartView,
 )
+from .secure_oauth import SecureGitHubOAuthCallbackView
 
 urlpatterns = [
-    # ── Core Auth ──────────────────────────────────────────────────────────────
     path("signup/", SignupView.as_view(), name="signup"),
     path("login/", LoginView.as_view(), name="login"),
     path("refresh/", RefreshView.as_view(), name="refresh"),
@@ -46,56 +45,25 @@ urlpatterns = [
     path("users/", UserListView.as_view(), name="user-list"),
     path("users/suggestions/", UserSuggestionsView.as_view(), name="user-suggestions"),
     path("sessions/", UserSessionListView.as_view(), name="session-list"),
-    path(
-        "sessions/<uuid:session_id>/",
-        UserSessionDetailView.as_view(),
-        name="session-detail",
-    ),
+    path("sessions/<uuid:session_id>/", UserSessionDetailView.as_view(), name="session-detail"),
     path("profile/avatar/", AvatarUploadView.as_view(), name="avatar-upload"),
     path("logout/", LogoutView.as_view(), name="logout"),
-    # ── Two-Factor Authentication (2FA) ────────────────────────────────────────
     path("2fa/setup/", TwoFactorSetupView.as_view(), name="2fa-setup"),
     path("2fa/verify-setup/", TwoFactorVerifySetupView.as_view(), name="2fa-verify-setup"),
     path("2fa/disable/", TwoFactorDisableView.as_view(), name="2fa-disable"),
     path("2fa/status/", TwoFactorStatusView.as_view(), name="2fa-status"),
     path("2fa/generate-backup-codes/", TwoFactorGenerateBackupCodesView.as_view(), name="2fa-generate-backup-codes"),
-    # ── OAuth ──────────────────────────────────────────────────────────────────
     path("google/", GoogleLoginView.as_view(), name="google-login"),
     path("github/", GitHubOAuthStartView.as_view(), name="github-login"),
-    path("github/callback/", GitHubOAuthCallbackView.as_view(), name="github-callback"),
-    # ── Password Reset ─────────────────────────────────────────────────────────
-    path(
-        "password-reset/",
-        PasswordResetRequestView.as_view(),
-        name="password-reset-request",
-    ),
-    path(
-        "password-reset/confirm/",
-        PasswordResetConfirmView.as_view(),
-        name="password-reset-confirm",
-    ),
-    path(
-        "password-reset/validate-token/",
-        PasswordResetValidateTokenView.as_view(),
-        name="password-reset-validate",
-    ),
-    # ── Password Change (with JWT Invalidation) ──────────────────────────────
-    # ✅ ADD THIS - Change Password Endpoint
-    path(
-        "change-password/",
-        ChangePasswordView.as_view(),
-        name="change-password",
-    ),
-    # ── OTP / Email Verification ───────────────────────────────────────────────
+    path("github/callback/", SecureGitHubOAuthCallbackView.as_view(), name="github-callback"),
+    path("password-reset/", PasswordResetRequestView.as_view(), name="password-reset-request"),
+    path("password-reset/confirm/", PasswordResetConfirmView.as_view(), name="password-reset-confirm"),
+    path("password-reset/validate-token/", PasswordResetValidateTokenView.as_view(), name="password-reset-validate"),
+    path("change-password/", ChangePasswordView.as_view(), name="change-password"),
     path("otp/request/", OtpRequestView.as_view(), name="otp-request"),
     path("otp/verify/", OtpVerifyView.as_view(), name="otp-verify"),
-    # ── Magic Link ─────────────────────────────────────────────────────────────
-    path(
-        "magic-link/request/", MagicLinkRequestView.as_view(), name="magic-link-request"
-    ),
+    path("magic-link/request/", MagicLinkRequestView.as_view(), name="magic-link-request"),
     path("magic-link/verify/", MagicLinkVerifyView.as_view(), name="magic-link-verify"),
     path("profile/<str:username>/", PublicProfileView.as_view(), name="public-profile"),
-    path(
-        "shop/streak-freeze/", ShopStreakFreezeView.as_view(), name="shop-streak-freeze"
-    ),
+    path("shop/streak-freeze/", ShopStreakFreezeView.as_view(), name="shop-streak-freeze"),
 ]
