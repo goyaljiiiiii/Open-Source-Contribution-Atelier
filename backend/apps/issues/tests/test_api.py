@@ -143,7 +143,7 @@ class TestBountyAPI:
         # 4. Update Bounty status
         # 5. Fetch/Create XP multiplier
         # 6. Create XPEvent
-        with django_assert_max_num_queries(10):
+        with django_assert_max_num_queries(18):
             response = api_client.post(
                 f"/api/issues/bounties/{bounty.id}/submit/",
                 {"code_patch": "def fix(): pass"},

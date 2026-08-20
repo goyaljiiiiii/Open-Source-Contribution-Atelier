@@ -35,7 +35,7 @@ def test_dx_models_str_repr():
     metric = DeveloperExperienceMetric.objects.create(
         workflow_name="ci_test", execution_time_ms=12000, success=True
     )
-    snapshot = DXSnapshot.objects.create(score=85.5)
+    snapshot = DXSnapshot.objects.create(dx_score=85.5)
 
     assert metric.workflow_name == "ci_test"
-    assert snapshot.score == 85.5
+    assert snapshot.dx_score == 85.5

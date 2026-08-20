@@ -25,6 +25,9 @@ def test_dashboard_personal_stats_uses_streak_profile(user):
         longest_streak=11,
     )
 
+    from django.core.cache import cache
+    cache.clear()
+
     client = APIClient()
     client.force_authenticate(user=user)
 

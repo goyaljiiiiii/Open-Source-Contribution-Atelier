@@ -39,8 +39,8 @@ def get_conn_max_age() -> int:
 
 
 def set_conn_max_age(new_age: int) -> int:
-    """Set the effective CONN_MAX_AGE in cache, bounded between 0 and 30 seconds."""
-    bounded_age = max(0, min(30, int(new_age)))
+    """Set the effective CONN_MAX_AGE in cache, bounded between 0 and 600 seconds."""
+    bounded_age = max(0, min(600, int(new_age)))
     cache.set(CACHE_KEY_CONN_MAX_AGE, bounded_age, timeout=None)
     return bounded_age
 

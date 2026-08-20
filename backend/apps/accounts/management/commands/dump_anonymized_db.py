@@ -75,6 +75,8 @@ class AnonymizationEngine:
                 provider = getattr(self.faker, strategy)
                 if strategy == "user_name":
                     fields_dict[field_name] = f"anon_{provider()}_{pk}"
+                elif strategy in ("first_name", "last_name"):
+                    fields_dict[field_name] = f"Anon_{provider()}"
                 else:
                     fields_dict[field_name] = provider()
             else:

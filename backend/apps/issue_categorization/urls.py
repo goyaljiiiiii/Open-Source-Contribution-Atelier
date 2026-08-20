@@ -11,10 +11,22 @@ from .views import (
 
 router = DefaultRouter()
 router.register(r"category", CategoryViewSet)
-router.register(r"issue-category-assignment", IssueCategoryAssignmentViewSet)
-router.register(r"issue-tag", IssueTagViewSet)
-router.register(r"issue-tag-assignment", IssueTagAssignmentViewSet)
-router.register(r"category-suggestion", CategorySuggestionViewSet)
+router.register(
+    r"issue-category-assignment",
+    IssueCategoryAssignmentViewSet,
+    basename="issue-category-assignment",
+)
+router.register(r"issue-tag", IssueTagViewSet, basename="issue-tag")
+router.register(
+    r"issue-tag-assignment",
+    IssueTagAssignmentViewSet,
+    basename="issue-tag-assignment",
+)
+router.register(
+    r"category-suggestion",
+    CategorySuggestionViewSet,
+    basename="category-suggestion",
+)
 
 urlpatterns = [
     path("", include(router.urls)),

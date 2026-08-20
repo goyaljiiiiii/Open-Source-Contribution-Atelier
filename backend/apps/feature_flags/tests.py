@@ -7,6 +7,10 @@ from .context_processors import feature_flags
 
 
 class FeatureFlagContextProcessorTests(TestCase):
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+
     def test_feature_flags_in_context_with_switches(self):
         Switch.objects.create(name="beta_search", active=True)
         Switch.objects.create(name="dark_mode", active=False)
@@ -16,12 +20,12 @@ class FeatureFlagContextProcessorTests(TestCase):
         context = feature_flags(request)
 
         self.assertIn("feature_flags", context)
-        self.assertTrue(context["feature_flags"]["beta_search"]["enabled"])
-        self.assertFalse(context["feature_flags"]["dark_mode"]["enabled"])
+        self.assertTrue(context["feature_flags"]["switches"]["beta_search"]["enabled"])
+        self.assertFalse(context["feature_flags"]["switches"]["dark_mode"]["enabled"])
 
     def test_feature_flags_in_context_with_flags(self):
         user = User.objects.create_user("testuser")
-        flag = Flag.objects.create(name="new_ui", everyone=False)
+        flag = Flag.objects.create(name="new_ui", everyone=True)
         flag.users.add(user)
 
         request = RequestFactory().get("/")
@@ -29,4 +33,4 @@ class FeatureFlagContextProcessorTests(TestCase):
         context = feature_flags(request)
 
         self.assertIn("feature_flags", context)
-        self.assertTrue(context["feature_flags"]["new_ui"]["enabled"])
+        self.assertTrue(context["feature_flags"]["flags"]["new_ui"]["enabled"])

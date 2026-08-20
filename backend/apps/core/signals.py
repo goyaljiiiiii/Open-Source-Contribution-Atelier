@@ -14,7 +14,7 @@ def _is_registered_in_admin(model):
 
 @receiver(post_save)
 def log_admin_post_save(sender, instance, created, **kwargs):
-    if not _is_registered_in_admin(sender):
+    if sender == AdminAuditLog or not _is_registered_in_admin(sender):
         return
 
     audit_info = get_current_audit_info()

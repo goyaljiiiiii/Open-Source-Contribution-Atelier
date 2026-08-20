@@ -2,9 +2,9 @@ import threading
 import time
 
 from django.core.cache import cache
-from django.test import TestCase
 from hypothesis import given, settings
 from hypothesis import strategies as st
+from hypothesis.extra.django import TestCase
 
 from apps.core.cache.stampede import stampede_protected_get_or_set
 
@@ -78,17 +78,12 @@ class TestCacheStampede(TestCase):
         # If we advance time beyond expiry, it should probabilistically recompute
         # Since p = beta * (now - expiry) / timeout, if now == expiry, p = 0
         # If now == expiry + timeout, p = 1
-        with mock.patch('time.time') as mock_time:
-            # Original time + 3s, which is 1s after logical expiration.
-            # p = 1.0 * (3 - 2) / 2 = 0.5 probability
-            # We force random.random to return 0.1 so it recomputes
-            mock_time.return_value = time.time() + 3
-            
+        start_t = time.time()
+        with mock.patch('time.time', side_effect=lambda: start_t + 3):
             with mock.patch('random.random', return_value=0.1):
                 res = stampede_protected_get_or_set("xfetch_key", generate, timeout=2)
                 self.assertEqual(call_count, 2)
                 
-            # If random.random returns 0.9, it should NOT recompute (return stale data)
             with mock.patch('random.random', return_value=0.9):
                 res = stampede_protected_get_or_set("xfetch_key", generate, timeout=2)
                 self.assertEqual(call_count, 2)

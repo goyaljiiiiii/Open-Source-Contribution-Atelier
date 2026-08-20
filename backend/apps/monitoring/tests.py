@@ -20,6 +20,7 @@ User = get_user_model()
 @pytest.mark.django_db
 class TestCeleryMonitoring:
     def setup_method(self):
+        TaskRun.objects.all().delete()
         self.client = APIClient()
         self.normal_user = User.objects.create_user(
             username="normaluser", password="password123", email="user@example.com"
@@ -127,13 +128,13 @@ class TestCeleryMonitoring:
         # Search for "digest"
         res = self.client.get(f"{url}?search=digest")
         assert res.status_code == status.HTTP_200_OK
-        results = res.data.get("results", res.data)
+        results = res.data.get("results") if isinstance(res.data, dict) else res.data
         assert len(results) == 1
         assert results[0]["task_name"] == "send_digest"
 
         # Filter by status "FAILURE"
         res = self.client.get(f"{url}?status=FAILURE")
         assert res.status_code == status.HTTP_200_OK
-        results = res.data.get("results", res.data)
+        results = res.data.get("results") if isinstance(res.data, dict) else res.data
         assert len(results) == 1
         assert results[0]["task_name"] == "sync_repo"

@@ -15,18 +15,13 @@ class SecureCursorPaginationTests(APITestCase):
         lessons = [
             Lesson(
                 title=f"Lesson {i}",
-                description=f"Desc {i}",
+                summary=f"Desc {i}",
                 content="test content",
                 slug=f"lesson-{i}",
-                created_at=now,
             )
             for i in range(50)
         ]
-        # In SQLite, bulk_create doesn't return IDs, but when we query they are there.
         Lesson.objects.bulk_create(lessons)
-
-        # Update the created_at to be exactly `now` for all just in case auto_now_add tries to override it.
-        Lesson.objects.all().update(created_at=now)
 
     def test_concurrent_inserts_pagination(self):
         url = reverse("lesson-list")
@@ -97,7 +92,7 @@ class SecureCursorPaginationTests(APITestCase):
 
         # Create a fake old cursor without signature
         lesson = Lesson.objects.first()
-        payload = f"{lesson.created_at.timestamp()}|{lesson.id}"
+        payload = f"1700000000.0|{lesson.id}"
         old_cursor = base64.urlsafe_b64encode(payload.encode("ascii")).decode("ascii")
 
         response = self.client.get(url, {"cursor": old_cursor})

@@ -66,15 +66,21 @@ class SecureCursorPagination(pagination.BasePagination):
             except (ValueError, TypeError, base64.binascii.Error):
                 raise ValidationError(self.invalid_cursor_message)
 
-        # Apply ordering
-        queryset = queryset.order_by("-created_at", "-id")
+        # Apply ordering safely checking if model has created_at field
+        model_field_names = [f.name for f in queryset.model._meta.get_fields()]
+        has_created_at = "created_at" in model_field_names
 
-        if cursor_created_at is not None and cursor_id is not None:
-            # We want created_at < cursor_created_at OR (created_at == cursor_created_at AND id < cursor_id)
-            queryset = queryset.filter(
-                Q(created_at__lt=cursor_created_at)
-                | Q(created_at=cursor_created_at, id__lt=cursor_id)
-            )
+        if has_created_at:
+            queryset = queryset.order_by("-created_at", "-id")
+            if cursor_created_at is not None and cursor_id is not None:
+                queryset = queryset.filter(
+                    Q(created_at__lt=cursor_created_at)
+                    | Q(created_at=cursor_created_at, id__lt=cursor_id)
+                )
+        else:
+            queryset = queryset.order_by("-id")
+            if cursor_id is not None:
+                queryset = queryset.filter(id__lt=cursor_id)
 
         # We fetch one extra item to check if there is a next page
         results = list(queryset[: self.page_size + 1])
@@ -132,8 +138,8 @@ class SecureCursorPagination(pagination.BasePagination):
         if not item:
             return None
 
-        # Format payload as timestamp|id
-        ts = item.created_at.timestamp()
+        # Format payload as timestamp|id safely checking created_at
+        ts = item.created_at.timestamp() if hasattr(item, "created_at") and item.created_at else 0.0
         payload = f"{ts}|{item.id}"
 
         b64_payload = (

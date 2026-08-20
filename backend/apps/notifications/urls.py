@@ -1,6 +1,8 @@
 from django.urls import path
 
 from .views import (
+    AdminMetricsView,
+    ChannelPreferencesView,
     DigestAPIView,
     DigestReadView,
     MarkAllReadView,
@@ -8,6 +10,8 @@ from .views import (
     NotificationListView,
     NotificationPrefsView,
     SubscribePushView,
+    TrackClickView,
+    TrackOpenView,
     UnsubscribePushView,
 )
 
@@ -26,6 +30,10 @@ urlpatterns = [
         NotificationPrefsView.as_view(),
         name="notification-preferences",
     ),
+    path("channels/", ChannelPreferencesView.as_view(), name="notification-channels"),
+    path("admin/metrics/", AdminMetricsView.as_view(), name="notification-admin-metrics"),
+    path("track/open/<int:delivery_id>/", TrackOpenView.as_view(), name="track-open"),
+    path("track/click/<int:delivery_id>/", TrackClickView.as_view(), name="track-click"),
     path("push/subscribe/", SubscribePushView.as_view(), name="push-subscribe"),
     path("push/unsubscribe/", UnsubscribePushView.as_view(), name="push-unsubscribe"),
 ]

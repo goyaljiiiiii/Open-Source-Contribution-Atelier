@@ -47,7 +47,6 @@ class DomainEventSerializer(serializers.ModelSerializer):
             "metadata",
             "actor",
             "actor_username",
-            "target",
             "target_type",
             "status",
             "status_display",

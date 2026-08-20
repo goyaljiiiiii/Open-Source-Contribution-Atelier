@@ -208,8 +208,12 @@ def get_task_type_stats():
     now = timezone.now()
     since_24h = now - timedelta(hours=24)
 
-    # 1. Per task name aggregation
-    task_names = TaskRun.objects.values_list("task_name", flat=True).distinct()
+    task_names = (
+        TaskRun.objects.exclude(task_name="")
+        .values_list("task_name", flat=True)
+        .order_by("task_name")
+        .distinct()
+    )
     per_task_stats = []
 
     for name in task_names:

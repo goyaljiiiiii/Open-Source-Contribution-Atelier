@@ -30,6 +30,8 @@ api_v1_patterns = [
     path("health/", include("apps.health.urls")),
     path("health/legacy/", health_view, name="health"),
     # ── Version Discovery (root /api/versions/) ─────────────────────────────
+    path("version/", version_view, name="version"),
+    path("versions/", api_versions_view, name="versions-discovery"),
     path("api/version/", version_view, name="version"),
     path("api/versions/", api_versions_view, name="root-api-versions"),
     # ── Leaderboard ────────────────────────────────────────────────────────────
@@ -54,6 +56,7 @@ api_v1_patterns = [
     path("api/notifications/", include("apps.notifications.urls")),
     path("api/chat/", include("apps.chat.urls")),
     path("api/dashboard/", include("apps.dashboard.urls")),
+    path("api/errors/", include("apps.errors.urls")),
     path("api/predictions/", include("apps.predictions.urls")),
     path("create-checkout-session/", CheckoutSessionView.as_view()),
     path("webhook/", stripe_webhook),
@@ -98,6 +101,7 @@ api_v1_patterns = [
     # ── AI Tutor ────────────────────────────────────────────────────────────────
     path("api/ai/tutor/", include("apps.ai_tutor.urls")),
     # ── Events & GraphQL ──────────────────────────────────────────────────────
+    path("api/events/", include("apps.events.urls")),
     path("api/graphql/", include("apps.graphql_gateway.urls")),
     path("api/graphql/legacy/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
     # ============================================================
@@ -112,7 +116,8 @@ api_v1_patterns = [
 ]
 
 urlpatterns = [
-    path("api/versions/", version_view, name="root-api-versions"),
+    path("api/versions/", api_versions_view, name="root-api-versions"),
+    path("api/v1/", include(api_v1_patterns)),
     path("", include(api_v1_patterns)),
 ]
 if settings.DEBUG:

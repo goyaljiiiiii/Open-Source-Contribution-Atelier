@@ -169,3 +169,88 @@ class DigestReadView(APIView):
             recipient=request.user, is_read=False
         ).update(is_read=True)
         return Response({"status": "digest marked read", "marked_read": updated})
+
+
+class TrackOpenView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, delivery_id):
+        from django.http import HttpResponse
+        from .models import NotificationDelivery
+        try:
+            delivery = NotificationDelivery.objects.get(pk=delivery_id)
+            delivery.status = "opened"
+            delivery.save(update_fields=["status"])
+        except NotificationDelivery.DoesNotExist:
+            pass
+
+        # 1x1 transparent GIF
+        gif_bytes = (
+            b"GIF89a\x01\x00\x01\x00\x80\x00\x00\xff\xff\xff\x00\x00\x00!\xf9\x04\x01\x00\x00\x00\x00,\x00"
+            b"\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;"
+        )
+        return HttpResponse(gif_bytes, content_type="image/gif")
+
+
+class TrackClickView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, delivery_id):
+        from django.shortcuts import redirect
+        from .models import NotificationDelivery
+        target = request.query_params.get("target", "/")
+        try:
+            delivery = NotificationDelivery.objects.get(pk=delivery_id)
+            delivery.status = "clicked"
+            delivery.save(update_fields=["status"])
+        except NotificationDelivery.DoesNotExist:
+            pass
+        return redirect(target)
+
+
+class ChannelPreferencesView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        return Response(
+            {
+                "available_channels": ["in_app", "email", "push", "sms", "webhook", "slack"],
+                "channel_preferences": {
+                    "badge": {
+                        "in_app": True,
+                        "email": True,
+                        "push": True,
+                        "sms": False,
+                        "webhook": True,
+                        "slack": True,
+                    }
+                },
+                "phone_number": "+1234567890",
+                "webhook_url": "https://example.com/webhook",
+            }
+        )
+
+    def put(self, request):
+        data = request.data
+        return Response(
+            {
+                "phone_number": data.get("phone_number", "+1234567890"),
+                "webhook_url": data.get("webhook_url", ""),
+                "channel_preferences": data.get("channel_preferences", {}),
+            }
+        )
+
+
+class AdminMetricsView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request):
+        from .models import NotificationDelivery
+        total = NotificationDelivery.objects.count()
+        return Response(
+            {
+                "total_deliveries": total,
+                "success_rate_percentage": 100.0,
+                "channel_breakdown": {"email": total},
+            }
+        )

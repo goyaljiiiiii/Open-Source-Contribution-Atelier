@@ -55,7 +55,7 @@ def webhook_on_xp_milestone(sender, instance, created, **kwargs):
             "username": instance.user.username,
             "xp_delta": instance.xp_delta,
             "source_type": instance.source_type,
-            "description": instance.description,
+            "description": getattr(instance, "description", ""),
             "created_at": instance.created_at.isoformat() if getattr(instance, "created_at", None) else None,
         }
         dispatch_event("xp.milestone", payload)

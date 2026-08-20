@@ -110,6 +110,7 @@ def test_db_pool_status_view_permissions_and_response(api_client, admin_user, no
 @pytest.mark.django_db
 def test_tune_connection_pool_decreases_age_on_high_idle():
     """Test that tune_connection_pool decreases CONN_MAX_AGE when idle connections > 50%."""
+    cache.clear()
     set_conn_max_age(100)
     now = time.time()
 

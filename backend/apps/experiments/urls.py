@@ -9,8 +9,14 @@ from .views import (
 
 router = DefaultRouter()
 router.register(r"experiment", ExperimentViewSet)
-router.register(r"experiment-assignment", ExperimentAssignmentViewSet)
-router.register(r"experiment-event", ExperimentEventViewSet)
+router.register(
+    r"experiment-assignment",
+    ExperimentAssignmentViewSet,
+    basename="experiment-assignment",
+)
+router.register(
+    r"experiment-event", ExperimentEventViewSet, basename="experiment-event"
+)
 
 urlpatterns = [
     path("", include(router.urls)),

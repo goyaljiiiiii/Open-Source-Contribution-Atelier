@@ -25,6 +25,9 @@ def normalize_message(message: str) -> str:
     if not message:
         return ""
 
+    # Normalize Timestamps
+    message = TIMESTAMP_PATTERN.sub("<TIMESTAMP>", message)
+
     # Normalize IP addresses
     message = IPV4_PATTERN.sub("<IP>", message)
     message = IPV6_PATTERN.sub("<IP>", message)
@@ -34,9 +37,6 @@ def normalize_message(message: str) -> str:
 
     # Normalize Email addresses
     message = EMAIL_PATTERN.sub("<EMAIL>", message)
-
-    # Normalize Timestamps
-    message = TIMESTAMP_PATTERN.sub("<TIMESTAMP>", message)
 
     # Normalize User IDs
     message = USER_ID_PATTERN.sub("<USER_ID>", message)

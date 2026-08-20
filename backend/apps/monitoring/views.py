@@ -52,7 +52,7 @@ class CeleryStatsView(APIView):
     API endpoint that exposes Celery metrics: queue depth, worker count, active & reserved tasks.
     """
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAdminUser]
 
     def get(self, request):
         data = get_celery_stats()
