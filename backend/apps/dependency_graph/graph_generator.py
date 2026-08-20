@@ -172,3 +172,10 @@ class DependencyGraphGenerator:
             "total_apps": len(nodes),
             "total_edges": len(edges),
         }
+
+
+def generate_dependency_graph() -> Dict[str, Any]:
+    """Helper function to generate dependency graph."""
+    generator = DependencyGraphGenerator()
+    return generator.build_graph()
+

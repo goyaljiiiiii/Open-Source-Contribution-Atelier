@@ -25,13 +25,13 @@ class EncryptionTests(TestCase):
         cred1 = GitCredential.objects.create(user=self.user, token=plaintext)
         cred2 = GitCredential.objects.create(user=self.user, token=plaintext)
 
-        # We must pull raw values from DB to bypass from_db_value
-        cred1_raw = GitCredential.objects.values_list("token", flat=True).get(
-            id=cred1.id
-        )
-        cred2_raw = GitCredential.objects.values_list("token", flat=True).get(
-            id=cred2.id
-        )
+        from django.db import connection
+
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT token FROM accounts_gitcredential WHERE id=%s", [cred1.id])
+            cred1_raw = cursor.fetchone()[0]
+            cursor.execute("SELECT token FROM accounts_gitcredential WHERE id=%s", [cred2.id])
+            cred2_raw = cursor.fetchone()[0]
 
         self.assertNotEqual(cred1_raw, cred2_raw)
         self.assertNotEqual(cred1_raw, plaintext)
@@ -55,9 +55,11 @@ class EncryptionTests(TestCase):
         cred.refresh_from_db()
         self.assertEqual(cred.password, plaintext)
 
-        old_raw = GitCredential.objects.values_list("password", flat=True).get(
-            id=cred.id
-        )
+        from django.db import connection
+
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT password FROM accounts_gitcredential WHERE id=%s", [cred.id])
+            old_raw = cursor.fetchone()[0]
 
         # Run the rotation command
         call_command("rotate_encryption_key", rotate_key=True)
@@ -65,9 +67,9 @@ class EncryptionTests(TestCase):
         cred.refresh_from_db()
         self.assertEqual(cred.password, plaintext)
 
-        new_raw = GitCredential.objects.values_list("password", flat=True).get(
-            id=cred.id
-        )
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT password FROM accounts_gitcredential WHERE id=%s", [cred.id])
+            new_raw = cursor.fetchone()[0]
 
         # The ciphertext should have changed after rotation
         self.assertNotEqual(old_raw, new_raw)

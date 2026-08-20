@@ -70,10 +70,10 @@ class JWTInvalidationTest(TestCase):
         with self.assertRaises(ValueError):
             token.verify()
 
-    def test_api_rejects_old_token_after_password_change(self):
-        """Test that API rejects old token after password change."""
+        from apps.accounts.jwt import DynamicSaltRefreshToken
+
         # Login to get token
-        refresh = RefreshToken.for_user(self.user)
+        refresh = DynamicSaltRefreshToken.for_user(self.user)
         access_token = str(refresh.access_token)
 
         # Change password

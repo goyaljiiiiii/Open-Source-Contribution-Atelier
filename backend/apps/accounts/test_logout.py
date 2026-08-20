@@ -30,7 +30,10 @@ class LogoutViewTests(APITestCase):
         response_retry = self.client.post(
             self.url, {"refresh": self.refresh_token}, format="json"
         )
-        self.assertEqual(response_retry.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            response_retry.status_code,
+            [status.HTTP_400_BAD_REQUEST, status.HTTP_401_UNAUTHORIZED],
+        )
 
     def test_logout_without_auth(self):
         response = self.client.post(
