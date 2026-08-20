@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useRef } from "react";
 
 const STORAGE_PREFIX = "quiz_draft_";
 
@@ -15,20 +15,19 @@ function getStorageKey(quizId: string): string {
   return `${STORAGE_PREFIX}${quizId}`;
 }
 
-export function useQuizDraft(quizId: string | undefined) {
-  const draftRef = useRef<QuizDraft | null>(null);
+function readDraft(quizId: string | undefined): QuizDraft | null {
+  if (!quizId) return null;
+  try {
+    const raw = sessionStorage.getItem(getStorageKey(quizId));
+    if (raw) return JSON.parse(raw) as QuizDraft;
+  } catch {
+    // Ignore corrupt data
+  }
+  return null;
+}
 
-  useEffect(() => {
-    if (!quizId) return;
-    try {
-      const raw = sessionStorage.getItem(getStorageKey(quizId));
-      if (raw) {
-        draftRef.current = JSON.parse(raw) as QuizDraft;
-      }
-    } catch {
-      // Ignore corrupt data
-    }
-  }, [quizId]);
+export function useQuizDraft(quizId: string | undefined) {
+  const draftRef = useRef<QuizDraft | null>(() => readDraft(quizId));
 
   const saveDraft = useCallback(
     (
