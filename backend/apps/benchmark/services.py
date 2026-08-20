@@ -6,6 +6,8 @@ snapshots so that benchmark results can report actual memory consumption
 during AST-heavy verification workloads.
 """
 
+import threading
+import time
 import tracemalloc
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -25,6 +27,11 @@ class MemorySnapshot:
 def memory_profiler():
     """Context manager that records peak RSS and tracemalloc peak usage.
 
+    RSS is sampled every 50 ms in a background thread so that the true
+    peak — not just the end-of-workload value — is captured.  Tracing
+    is always stopped in a ``finally`` block so that an exception in the
+    profiled body does not leak tracemalloc state.
+
     Yields a ``MemorySnapshot`` whose values are *final* after the
     context exits.
 
@@ -38,11 +45,34 @@ def memory_profiler():
     tracemalloc.start()
     snapshot = MemorySnapshot(peak_rss_mb=0.0, tracemalloc_peak_mb=0.0)
 
-    yield snapshot
+    peak_rss_bytes = process.memory_info().rss
+    stop_event = threading.Event()
 
-    current_rss = process.memory_info().rss / (1024 * 1024)
-    _, tracemalloc_peak = tracemalloc.get_traced_memory()
-    tracemalloc.stop()
+    def _sample_rss():
+        nonlocal peak_rss_bytes
+        while not stop_event.is_set():
+            try:
+                current = process.memory_info().rss
+                if current > peak_rss_bytes:
+                    peak_rss_bytes = current
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                break
+            time.sleep(0.05)
 
-    snapshot.peak_rss_mb = current_rss
-    snapshot.tracemalloc_peak_mb = tracemalloc_peak / (1024 * 1024)
+    sampler = threading.Thread(target=_sample_rss, daemon=True)
+    sampler.start()
+
+    try:
+        yield snapshot
+    finally:
+        stop_event.set()
+        sampler.join(timeout=2)
+        try:
+            _, tracemalloc_peak = tracemalloc.get_traced_memory()
+        except RuntimeError:
+            tracemalloc_peak = 0
+        finally:
+            tracemalloc.stop()
+
+        snapshot.peak_rss_mb = peak_rss_bytes / (1024 * 1024)
+        snapshot.tracemalloc_peak_mb = tracemalloc_peak / (1024 * 1024)

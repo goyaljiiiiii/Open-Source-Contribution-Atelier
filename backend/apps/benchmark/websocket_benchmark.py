@@ -113,13 +113,17 @@ class WebSocketBenchmark:
                     failure_count += 1
                     errors.append(f"Client {client_id} error: {str(e)}")
 
+            # Initialize CPU baseline (non-blocking)
+            process.cpu_percent()
+
             # Run clients concurrently
             tasks = [client_task(i) for i in range(num_clients)]
             await asyncio.gather(*tasks)
 
             total_time = time.time() - start_time
 
-            cpu_percent = process.cpu_percent(interval=0.1)
+            # Read CPU usage since baseline (non-blocking)
+            cpu_percent = process.cpu_percent()
 
         # Calculate statistics
         total_messages = success_count * messages_per_client
@@ -192,6 +196,9 @@ class WebSocketBenchmark:
             if not clients:
                 return self._create_empty_result("broadcast_latency")
 
+            # Initialize CPU baseline (non-blocking)
+            process.cpu_percent()
+
             for _ in range(broadcasts):
                 broadcast_start = time.time()
 
@@ -217,7 +224,8 @@ class WebSocketBenchmark:
             total_time = time.time() - start_time
             total_messages = len(latencies)
 
-            cpu_percent = process.cpu_percent(interval=0.1)
+            # Read CPU usage since baseline (non-blocking)
+            cpu_percent = process.cpu_percent()
 
         result = BenchmarkResult(
             name="broadcast_latency",
@@ -252,37 +260,42 @@ class WebSocketBenchmark:
         """
         import psutil
 
-        process = psutil.Process()
-        with memory_profiler() as prof:
-            start_time = time.time()
-            success_count = 0
-            failure_count = 0
-            errors = []
-            reconnect_times = []
+            process = psutil.Process()
+            with memory_profiler() as prof:
+                start_time = time.time()
+                success_count = 0
+                failure_count = 0
+                errors = []
+                reconnect_times = []
 
-            for i in range(num_reconnects):
-                try:
-                    connect_start = time.time()
-                    communicator = WebsocketCommunicator(
-                        self.get_application(), f"/ws/test/benchmark/?client_id={i}"
-                    )
-                    connected, _ = await communicator.connect()
+                # Initialize CPU baseline (non-blocking)
+                process.cpu_percent()
 
-                    if connected:
-                        reconnect_time = (time.time() - connect_start) * 1000
-                        reconnect_times.append(reconnect_time)
-                        await communicator.disconnect()
-                        success_count += 1
-                    else:
+                for i in range(num_reconnects):
+                    try:
+                        connect_start = time.time()
+                        communicator = WebsocketCommunicator(
+                            self.get_application(), f"/ws/test/benchmark/?client_id={i}"
+                        )
+                        connected, _ = await communicator.connect()
+
+                        if connected:
+                            reconnect_time = (time.time() - connect_start) * 1000
+                            reconnect_times.append(reconnect_time)
+                            await communicator.disconnect()
+                            success_count += 1
+                        else:
+                            failure_count += 1
+                            errors.append(f"Reconnect {i} failed")
+
+                    except Exception as e:
                         failure_count += 1
-                        errors.append(f"Reconnect {i} failed")
+                        errors.append(f"Reconnect {i} error: {str(e)}")
 
-                except Exception as e:
-                    failure_count += 1
-                    errors.append(f"Reconnect {i} error: {str(e)}")
+                total_time = time.time() - start_time
 
-            total_time = time.time() - start_time
-            cpu_percent = process.cpu_percent(interval=0.1)
+                # Read CPU usage since baseline (non-blocking)
+                cpu_percent = process.cpu_percent()
 
         result = BenchmarkResult(
             name="reconnect_performance",
