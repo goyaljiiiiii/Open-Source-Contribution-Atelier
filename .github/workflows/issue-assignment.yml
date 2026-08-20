@@ -8,6 +8,7 @@ on:
 
 permissions:
   issues: write
+  pull-requests: write
   contents: read
 
 jobs:
@@ -18,7 +19,7 @@ jobs:
       - name: Check Quality & Label Issue
         uses: actions/github-script@v8
         with:
-          github-token: ${{ secrets.MAINTAINER_TOKEN || secrets.PAT || secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const issue = context.payload.issue;
             const owner = context.repo.owner;
@@ -77,7 +78,7 @@ jobs:
       - name: Process Claim / Unclaim Commands
         uses: actions/github-script@v8
         with:
-          github-token: ${{ secrets.MAINTAINER_TOKEN || secrets.PAT || secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const comment = context.payload.comment;
             const issue = context.payload.issue;

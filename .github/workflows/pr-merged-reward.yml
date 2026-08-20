@@ -20,7 +20,7 @@ jobs:
       - name: Post Contributor Certificate & Update Leaderboard
         uses: actions/github-script@v8
         with:
-          github-token: ${{ secrets.MAINTAINER_TOKEN || secrets.PAT || secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
             const pr = context.payload.pull_request;
