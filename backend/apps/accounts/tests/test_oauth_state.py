@@ -6,10 +6,14 @@ from rest_framework.test import APIClient
 
 from apps.accounts.views import GitHubOAuthCallbackView
 
+from django.core.cache import cache
+
 User = get_user_model()
 
 
 class OAuthStateValidationTests(TestCase):
+    def setUp(self):
+        cache.clear()
     @override_settings(
         GITHUB_CLIENT_ID="client-id",
         GITHUB_CLIENT_SECRET="client-secret",

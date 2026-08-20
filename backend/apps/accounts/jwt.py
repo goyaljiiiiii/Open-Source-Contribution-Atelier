@@ -123,8 +123,8 @@ class DynamicSaltRefreshToken(RefreshToken):
 
         token = cls()
         token["user_id"] = user.pk
-        token["password_hash"] = cls._get_user_password_hash(user)
-        token["token_version"] = cls._get_token_version(user)
+        token["password_hash"] = DynamicSaltAccessToken._get_user_password_hash(user)
+        token["token_version"] = DynamicSaltAccessToken._get_token_version(user)
         # Mirror the tenant claim on the refresh token so rotated
         # access tokens can inherit it without an extra DB hit.
         token["organization_id"] = cls._get_user_organization_id(user)

@@ -2,6 +2,7 @@ import uuid
 
 from django.conf import settings
 from django.db import models, transaction
+from django.utils import timezone
 
 from apps.content.models import Lesson
 from apps.core.fields import EncryptedCharField

@@ -58,16 +58,17 @@ class AiTutorTests(TestCase):
         self.assertIn("snapshot", answer.lower())
 
     def test_llm_response_mocked(self):
-        with self.settings(OPENAI_API_KEY="sk-fake-key-for-test"):
-            with patch("openai.chat.completions.create") as mock_create:
-                mock_choice = MagicMock()
-                mock_choice.message.content = (
-                    "Git commits track your repository changes over time."
-                )
-                mock_response = MagicMock()
-                mock_response.choices = [mock_choice]
-                mock_create.return_value = mock_response
+        mock_openai = MagicMock()
+        mock_choice = MagicMock()
+        mock_choice.message.content = (
+            "Git commits track your repository changes over time."
+        )
+        mock_response = MagicMock()
+        mock_response.choices = [mock_choice]
+        mock_openai.chat.completions.create.return_value = mock_response
 
+        with self.settings(OPENAI_API_KEY="sk-fake-key-for-test"):
+            with patch.dict("sys.modules", {"openai": mock_openai}):
                 answer = AiTutorService.get_response(
                     question="Explain commits",
                     lesson_context="Lesson title: Git Basics",
@@ -77,4 +78,4 @@ class AiTutorTests(TestCase):
                 self.assertEqual(
                     answer, "Git commits track your repository changes over time."
                 )
-                mock_create.assert_called_once()
+                mock_openai.chat.completions.create.assert_called_once()

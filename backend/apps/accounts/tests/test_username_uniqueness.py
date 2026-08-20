@@ -31,7 +31,14 @@ def test_signup_rejects_case_insensitive_duplicate_username():
     assert serializer.errors["username"][0] == "Username is already taken."
 
 
+from django.db import connection, IntegrityError, transaction
+
+
 @pytest.mark.django_db
+@pytest.mark.skipif(
+    connection.vendor == "sqlite",
+    reason="SQLite does not enforce case-insensitive UNIQUE indexes.",
+)
 def test_database_rejects_case_insensitive_duplicate_username():
     User.objects.create_user(
         username="DatabaseUser",
@@ -57,6 +64,8 @@ def test_github_callback_returns_400_when_username_is_taken(
     settings,
 ):
     settings.CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
+    settings.GITHUB_CLIENT_ID = "client-id"
+    settings.GITHUB_CLIENT_SECRET = "client-secret"
 
     User.objects.create_user(
         username="github-user",
@@ -78,15 +87,15 @@ def test_github_callback_returns_400_when_username_is_taken(
     mock_get.return_value = github_user_response
 
     client = APIClient()
+    session = client.session
+    session["github_oauth_state"] = {
+        "value": "test-state",
+        "created_at": __import__("time").time(),
+    }
+    session["github_oauth_verifier"] = "test-verifier"
+    session.save()
 
-    with patch.dict(
-        "os.environ",
-        {
-            "GITHUB_CLIENT_ID": "client-id",
-            "GITHUB_CLIENT_SECRET": "client-secret",
-        },
-    ):
-        response = client.get("/api/auth/github/callback/?code=test-code")
+    response = client.get("/api/auth/github/callback/?code=test-code&state=test-state")
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.data == {"detail": "Username is already taken."}

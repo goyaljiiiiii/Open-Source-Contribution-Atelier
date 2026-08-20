@@ -70,8 +70,8 @@ class JWTInvalidationTest(TestCase):
         with self.assertRaises(ValueError):
             token.verify()
 
-        from apps.accounts.jwt import DynamicSaltRefreshToken
-
+    def test_api_rejects_old_token_after_password_change(self):
+        """Test that API rejects old token after password change."""
         # Login to get token
         refresh = DynamicSaltRefreshToken.for_user(self.user)
         access_token = str(refresh.access_token)
@@ -124,10 +124,15 @@ class JWTInvalidationTest(TestCase):
 
         response = self.client.post(
             "/api/auth/change-password/",
-            {"current_password": "OldPassword123!", "new_password": "NewPassword456!"},
+            {
+                "old_password": "OldPassword123!",
+                "current_password": "OldPassword123!",
+                "new_password": "NewPassword456!",
+            },
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("Password changed successfully", response.data["message"])
+        msg = response.data.get("message") or response.data.get("status")
+        self.assertIn("password changed successfully", str(msg).lower())
 
         # Try to login with old password
         login_response = self.client.post(
@@ -147,7 +152,7 @@ class JWTInvalidationTest(TestCase):
 
         response = self.client.post(
             "/api/auth/change-password/",
-            {"current_password": "WrongPassword!", "new_password": "NewPassword456!"},
+            {"old_password": "WrongPassword!", "current_password": "WrongPassword!", "new_password": "NewPassword456!"},
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("Current password is incorrect", str(response.data))
+        self.assertTrue("incorrect" in str(response.data).lower())

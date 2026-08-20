@@ -81,7 +81,7 @@ def webhook_on_user_leveled_up(sender, instance, created, **kwargs):
 
 
 # 5. Issue Created
-@receiver(post_save, sender="issues.Issue")
+@receiver(post_save, sender="issues.IssueReport")
 def webhook_on_issue_created(sender, instance, created, **kwargs):
     if not created:
         return

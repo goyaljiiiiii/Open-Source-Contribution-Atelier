@@ -40,7 +40,6 @@ api_v1_patterns = [
     path("api/users/", include("apps.accounts.user_urls")),
     # ── OAuth 2.0 & OpenID Connect ──────────────────────────────────────────────
     path("oauth/", include("apps.oauth.urls")),
-    path("", include("apps.oauth.urls")),
     # ── Core Apps ──────────────────────────────────────────────────────────────
     path("api/content/", include("apps.content.urls")),
     path("api/lessons/<str:lesson_id>/notes", LessonNoteAPIView.as_view(), name="api-lesson-notes"),
@@ -115,7 +114,6 @@ api_v1_patterns = [
 urlpatterns = [
     path("api/versions/", version_view, name="root-api-versions"),
     path("", include(api_v1_patterns)),
-    path("api/health/", include("apps.health.urls")),
 ]
 if settings.DEBUG:
     from apps.feature_flags.debug_view import feature_flags_debug_view
