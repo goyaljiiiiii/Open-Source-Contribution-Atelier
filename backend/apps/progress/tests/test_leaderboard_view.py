@@ -34,3 +34,24 @@ def test_progress_leaderboard_route_returns_ranked_contributors():
         "bob",
         "alice",
     ]
+
+
+@pytest.mark.django_db
+def test_invalid_time_period_returns_400():
+    """An unknown time_period parameter must return 400 Bad Request."""
+    cache.clear()
+    client = APIClient()
+    response = client.get("/api/progress/leaderboard/?time_period=monthyy")
+    assert response.status_code == 400
+    assert "error" in response.data
+    assert "Invalid time_period" in response.data["error"]
+
+
+@pytest.mark.django_db
+def test_valid_time_periods_return_200():
+    """Valid time_period parameters must return 200 OK."""
+    cache.clear()
+    client = APIClient()
+    for period in ["all_time", "weekly", "monthly", "seasonal", "cohort_1"]:
+        response = client.get(f"/api/progress/leaderboard/?time_period={period}")
+        assert response.status_code == 200
