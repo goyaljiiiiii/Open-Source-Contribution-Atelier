@@ -181,6 +181,28 @@ useEffect(() => {
       ),
     [modules],
   );
+  const breadcrumbItems: BreadcrumbItem[] = useMemo(() => {
+    if (!lesson) return [];
+    const activeModule = modules.find((mod) =>
+      mod.lessons.some((les) => les.slug === lesson.slug),
+    );
+
+    const items: BreadcrumbItem[] = [
+      { label: "Dashboard", href: "/dashboard" },
+      { label: "Pathway", href: "/pathway" },
+    ];
+
+    if (activeModule) {
+      items.push({
+        label: activeModule.title,
+        href: `/module/${activeModule.id}`,
+      });
+    }
+
+    items.push({ label: lesson.title, isCurrent: true });
+    return items;
+  }, [lesson, modules]);
+
   const { isOfflineReady, refresh: refreshOfflineReady } =
     useOfflineReadyLessons(curriculumLessonRefs);
 
@@ -780,34 +802,7 @@ useEffect(() => {
     mod.lessons.some((les) => les.slug === lesson.slug),
   )?.id;
 
-  const breadcrumbItems: BreadcrumbItem[] = useMemo(() => {
-    const activeModule = modules.find((mod) =>
-      mod.lessons.some((les) => les.slug === lesson.slug),
-    );
-
-    const items: BreadcrumbItem[] = [
-      { label: "Dashboard", href: "/dashboard" },
-      { label: "Pathway", href: "/pathway" },
-    ];
-
-    if (activeModule) {
-      items.push({
-        label: activeModule.title,
-      });
-    }
-
-    if (lesson?.title) {
-      items.push({
-        label: lesson.title,
-        isCurrent: true,
-      });
-    }
-
-    return items;
-  }, [modules, lesson]);
-
   return (
-
     <div className="w-full h-screen flex flex-col overflow-hidden bg-white dark:bg-[#0a0a0f]">
       {/* Immersive Lesson Top Header Bar */}
       <header className="h-[72px] border-b-4 border-black dark:border-[#2e2924] bg-white dark:bg-[#0f0e0c] flex items-center justify-between px-4 sm:px-6 flex-shrink-0 z-40">
