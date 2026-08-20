@@ -10,11 +10,11 @@ from .views import (
 )
 
 router = DefaultRouter()
-router.register(r"feature-request", FeatureRequestViewSet)
-router.register(r"vote", VoteViewSet)
-router.register(r"comment", CommentViewSet)
-router.register(r"status-history", StatusHistoryViewSet)
-router.register(r"roadmap-milestone", RoadmapMilestoneViewSet)
+router.register(r"feature-request", FeatureRequestViewSet, basename="feature-request")
+router.register(r"vote", VoteViewSet, basename="vote")
+router.register(r"comment", CommentViewSet, basename="comment")
+router.register(r"status-history", StatusHistoryViewSet, basename="status-history")
+router.register(r"roadmap-milestone", RoadmapMilestoneViewSet, basename="roadmap-milestone")
 
 urlpatterns = [
     path("", include(router.urls)),

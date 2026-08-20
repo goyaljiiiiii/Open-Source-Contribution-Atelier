@@ -9,10 +9,10 @@ from .views import (
 )
 
 router = DefaultRouter()
-router.register(r"contributor-activity", ContributorActivityViewSet)
-router.register(r"burnout-signal", BurnoutSignalViewSet)
-router.register(r"intervention", InterventionViewSet)
-router.register(r"burnout-metric", BurnoutMetricViewSet)
+router.register(r"contributor-activity", ContributorActivityViewSet, basename="contributor-activity")
+router.register(r"burnout-signal", BurnoutSignalViewSet, basename="burnout-signal")
+router.register(r"intervention", InterventionViewSet, basename="intervention")
+router.register(r"burnout-metric", BurnoutMetricViewSet, basename="burnout-metric")
 
 urlpatterns = [
     path("", include(router.urls)),

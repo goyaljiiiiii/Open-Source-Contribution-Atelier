@@ -9,10 +9,10 @@ from .views import (
 )
 
 router = DefaultRouter()
-router.register(r"onboarding-journey", OnboardingJourneyViewSet)
-router.register(r"journey-event", JourneyEventViewSet)
-router.register(r"onboarding-nudge", OnboardingNudgeViewSet)
-router.register(r"onboarding-metric", OnboardingMetricViewSet)
+router.register(r"onboarding-journey", OnboardingJourneyViewSet, basename="onboarding-journey")
+router.register(r"journey-event", JourneyEventViewSet, basename="journey-event")
+router.register(r"onboarding-nudge", OnboardingNudgeViewSet, basename="onboarding-nudge")
+router.register(r"onboarding-metric", OnboardingMetricViewSet, basename="onboarding-metric")
 
 urlpatterns = [
     path("", include(router.urls)),
