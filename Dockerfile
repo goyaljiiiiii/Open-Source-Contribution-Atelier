@@ -3,7 +3,8 @@ FROM python:3.11-slim
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PORT=7860 \
-    AUDIT_LOG_FILE=/tmp/audit.log
+    AUDIT_LOG_FILE=/tmp/audit.log \
+    CURRICULUM_JSON_PATH=/app/frontend/public/content/curriculum.json
 
 WORKDIR /app
 
@@ -24,6 +25,7 @@ COPY --chown=appuser:appgroup backend/apps/ ./apps/
 COPY --chown=appuser:appgroup backend/schemas/ ./schemas/
 COPY --chown=appuser:appgroup backend/plugins/ ./plugins/
 COPY --chown=appuser:appgroup backend/data/ ./data/
+COPY --chown=appuser:appgroup frontend/public/content/ ./frontend/public/content/
 
 EXPOSE 7860
 
