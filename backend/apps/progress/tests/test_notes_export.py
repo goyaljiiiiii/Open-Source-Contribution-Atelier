@@ -34,6 +34,7 @@ class TestExportNotesView(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_export_json_success(self):
+        self.client.force_authenticate(user=self.user)
         UserNote.objects.create(
             user=self.user,
             lesson=self.lesson,
@@ -46,6 +47,8 @@ class TestExportNotesView(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response["Content-Type"], "application/json; charset=utf-8")
+        self.assertIn("Content-Disposition", response)
+        self.assertTrue(response["Content-Disposition"].startswith("attachment;"))
 
         data = response.json()
         self.assertEqual(data["total_notes"], 1)
@@ -54,6 +57,7 @@ class TestExportNotesView(APITestCase):
         self.assertEqual(data["notes"][0]["content"], "This is a test note")
 
     def test_export_markdown_success(self):
+        self.client.force_authenticate(user=self.user)
         UserNote.objects.create(
             user=self.user,
             lesson=self.lesson,
@@ -66,6 +70,8 @@ class TestExportNotesView(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response["Content-Type"], "text/markdown; charset=utf-8")
+        self.assertIn("Content-Disposition", response)
+        self.assertTrue(response["Content-Disposition"].startswith("attachment;"))
         self.assertIn(b"This is a test note", response.content)
 
     def test_export_limit_valid(self):
