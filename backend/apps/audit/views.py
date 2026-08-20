@@ -22,7 +22,7 @@ class AuditEventListView(generics.ListAPIView):
     """
 
     serializer_class = AuditEventSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAdminUser]
     pagination_class = AuditPagination
 
     def get_queryset(self):

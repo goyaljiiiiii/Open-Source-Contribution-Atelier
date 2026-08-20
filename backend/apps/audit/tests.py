@@ -7,7 +7,7 @@ from django.core.management import call_command
 from django.test import RequestFactory, TestCase, override_settings
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.test import APITestCase
+from rest_framework.test import APIClient, APITestCase
 
 from apps.audit.middleware import AuditContextMiddleware, _audit_ctx
 from apps.audit.models import AuditEvent
@@ -263,8 +263,8 @@ class AuditApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         # Unauthenticated request
-        self.client.logout()
-        response = self.client.get("/api/admin/audit/")
+        unauth_client = APIClient()
+        response = unauth_client.get("/api/admin/audit/")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_admin_list_audit_events(self):
