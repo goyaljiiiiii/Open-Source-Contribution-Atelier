@@ -79,6 +79,26 @@ class Command(BaseCommand):
             content = benchmark.generate_markdown_report()
             ext = "md"
 
+        # Print summary table to stdout
+        self.stdout.write("")
+        self.stdout.write("=" * 60)
+        self.stdout.write("📋 Benchmark Summary")
+        self.stdout.write("=" * 60)
+        for result in benchmark.results:
+            self.stdout.write(f"\n  {result.name}")
+            self.stdout.write(f"    Clients: {result.concurrent_clients}")
+            self.stdout.write(f"    Messages: {result.total_messages}")
+            self.stdout.write(f"    Time: {result.total_time:.2f}s")
+            self.stdout.write(f"    Avg Latency: {result.avg_latency:.2f}ms")
+            self.stdout.write(f"    P95 Latency: {result.p95_latency:.2f}ms")
+            self.stdout.write(f"    Messages/sec: {result.messages_per_second:.2f}")
+            self.stdout.write(f"    Peak Memory: {result.peak_memory_mb:.2f} MB")
+            self.stdout.write(f"    RSS Memory: {result.memory_usage_mb:.2f} MB")
+            self.stdout.write(
+                f"    Success: {result.success_count}/{result.success_count + result.failure_count}"
+            )
+        self.stdout.write("")
+
         if options["output"]:
             with open(options["output"], "w") as f:
                 f.write(content)
