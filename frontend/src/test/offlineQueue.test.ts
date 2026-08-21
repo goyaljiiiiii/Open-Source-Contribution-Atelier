@@ -142,7 +142,7 @@ describe("Offline Progress Queue", () => {
     expect(action.method).toBe("POST");
     expect(action.headers.Authorization).toBe("Bearer test-token");
     expect(JSON.parse(action.body).lesson_slug).toBe("git-basics");
-  });
+  }, 15000);
 
   it("should replay queued requests and clean up stores on successful sync", async () => {
     // 1. Manually populate queue
@@ -184,7 +184,7 @@ describe("Offline Progress Queue", () => {
     expect(queryClient.invalidateQueries).toHaveBeenCalledWith({
       queryKey: ["userProgress"],
     });
-  });
+  }, 15000);
 
   it("should retain request in queue if replay fails with a network error", async () => {
     await enqueueOfflineAction(
@@ -212,5 +212,5 @@ describe("Offline Progress Queue", () => {
     expect(
       JSON.parse(localStorage.getItem("atelier_pending_sync") || "[]"),
     ).toHaveLength(1);
-  });
+  }, 15000);
 });

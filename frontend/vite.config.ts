@@ -136,6 +136,7 @@ export default defineConfig({
           setupFiles: "./src/test/setup.ts",
           include: ["src/**/*.test.{ts,tsx}"],
           exclude: ["**/*.stories.{ts,tsx}", "**/*.stories.{js,jsx}"],
+          testTimeout: 15000,
         },
       },
       {

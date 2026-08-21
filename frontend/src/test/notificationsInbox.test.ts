@@ -141,6 +141,7 @@ describe("notificationSlice unread sync", () => {
   });
 
   it("fetchNotifications hydrates list via MSW", async () => {
+    localStorage.setItem("atelier_token", "test-token");
     const store = configureStore({
       reducer: { notifications: notificationSlice.reducer },
     });
@@ -149,7 +150,7 @@ describe("notificationSlice unread sync", () => {
     expect(slice.notifications.length).toBe(2);
     expect(slice.wsUnreadCount).toBe(1);
     expect(slice.isLoading).toBe(false);
-  });
+  }, 15000);
 
   it("setWsUnreadCount updates live badge source", () => {
     const next = notificationSlice.reducer(

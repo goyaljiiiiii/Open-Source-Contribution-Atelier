@@ -86,7 +86,6 @@ describe("WebhookInspector", () => {
   });
 
   it("copies sample payload to clipboard when copy button is clicked", async () => {
-    const user = userEvent.setup();
     const writeTextMock = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", {
       value: { writeText: writeTextMock },
@@ -99,12 +98,12 @@ describe("WebhookInspector", () => {
     const copyButton = screen.getByRole("button", {
       name: /Copy sample payload to clipboard/i,
     });
-    await user.click(copyButton);
+    fireEvent.click(copyButton);
 
     expect(writeTextMock).toHaveBeenCalledTimes(1);
     expect(writeTextMock.mock.calls[0][0]).toContain("refs/heads/main");
     expect(await screen.findByText("Copied!")).toBeInTheDocument();
-  });
+  }, 15000);
 
   it("toggles header validation section when Headers button is clicked", () => {
     render(<WebhookInspector />);

@@ -94,12 +94,11 @@ describe("TextTokenizer", () => {
     ]);
   });
 
-  it("handles mentions directly after text like user@name", () => {
+  it("handles mentions directly after text like user@name without misparsing emails", () => {
     const tokenizer = new TextTokenizer("user@name");
     const tokens = tokenizer.tokenize();
     expect(tokens).toEqual([
-      { type: "text", content: "user", raw: "user" },
-      { type: "mention", content: "name", raw: "@name" },
+      { type: "text", content: "user@name", raw: "user@name" },
     ]);
   });
 

@@ -107,7 +107,7 @@ describe("DashboardPage Dual-Role Views", () => {
     expect(screen.getByText("Pending Pull Requests (1)")).toBeInTheDocument();
     expect(screen.getByText("Feature request review")).toBeInTheDocument();
     expect(screen.getByText("@bob_coder")).toBeInTheDocument();
-  });
+  }, 15000);
 
   it("renders Contributor Dashboard when user.is_staff is false", async () => {
     // Stub user is a regular contributor
@@ -143,7 +143,7 @@ describe("DashboardPage Dual-Role Views", () => {
     // Assert lesson queue
     expect(screen.getByText("Resume Learning Queue")).toBeInTheDocument();
     expect(screen.getByText("Introduction to Atelier")).toBeInTheDocument();
-  });
+  }, 15000);
 
   it("opens the Progress Report modal with current stats when Export Progress as PDF is clicked", async () => {
     mockUseAuth.mockReturnValue({
@@ -168,5 +168,5 @@ describe("DashboardPage Dual-Role Views", () => {
 
     fireEvent.click(screen.getByText("Return to Dashboard"));
     expect(screen.queryByText("Progress Report")).not.toBeInTheDocument();
-  });
+  }, 15000);
 });

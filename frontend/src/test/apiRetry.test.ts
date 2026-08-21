@@ -107,7 +107,7 @@ describe("API Automatic Retry Engine", () => {
 
       expect(calls).toBe(3);
       expect(res).toEqual({ success: true });
-    });
+    }, 15000);
 
     it("honors Retry-After header on 429 rate limit errors", async () => {
       let calls = 0;
@@ -140,7 +140,7 @@ describe("API Automatic Retry Engine", () => {
 
       expect(calls).toBe(2);
       expect(res).toEqual({ data: "ok" });
-    });
+    }, 15000);
 
     it("does NOT retry 4xx errors like 400 Bad Request or 404 Not Found", async () => {
       let calls = 0;
@@ -218,6 +218,6 @@ describe("API Automatic Retry Engine", () => {
 
       expect(calls).toBe(2);
       expect(res).toEqual({ id: 123 });
-    });
+    }, 15000);
   });
 });

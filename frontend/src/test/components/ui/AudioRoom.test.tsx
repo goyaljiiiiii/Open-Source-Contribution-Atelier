@@ -15,9 +15,9 @@ describe("AudioRoom Component", () => {
     mockWebSocket = {
       send: vi.fn(),
       close: vi.fn(),
-      readyState: WebSocket.OPEN,
+      readyState: 1, // WebSocket.OPEN
     };
-    global.WebSocket = vi.fn().mockImplementation(() => mockWebSocket) as any;
+    vi.stubGlobal('WebSocket', vi.fn().mockImplementation(() => mockWebSocket));
 
     // Mock getUserMedia
     const mockTrack = { stop: vi.fn(), enabled: true };
