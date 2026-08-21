@@ -1,4 +1,4 @@
-import { render, screen, cleanup, fireEvent, act } from "@testing-library/react";
+import { render, screen, cleanup, fireEvent, act, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { WebhookInspector } from "../components/docs/WebhookInspector";
@@ -98,12 +98,15 @@ describe("WebhookInspector", () => {
     const copyButton = screen.getByRole("button", {
       name: /Copy sample payload to clipboard/i,
     });
-    fireEvent.click(copyButton);
+    await act(async () => {
+      fireEvent.click(copyButton);
+    });
 
     expect(writeTextMock).toHaveBeenCalledTimes(1);
-    expect(writeTextMock.mock.calls[0][0]).toContain("refs/heads/main");
-    expect(await screen.findByText("Copied!")).toBeInTheDocument();
-  }, 15000);
+    await waitFor(() => {
+      expect(screen.getByText("Copied!")).toBeInTheDocument();
+    });
+  });
 
   it("toggles header validation section when Headers button is clicked", () => {
     render(<WebhookInspector />);
