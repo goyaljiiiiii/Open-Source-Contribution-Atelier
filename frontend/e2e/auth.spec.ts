@@ -48,10 +48,10 @@ test.describe("Authentication Flows", () => {
   });
 
   test("Successful login redirects to dashboard", async ({ page }) => {
-    await mockLogin(page);
+    const testUser = await mockLogin(page);
 
     await page.goto("/login");
-    await page.getByPlaceholder("the_smartest@kid.com").fill("testuser");
+    await page.getByPlaceholder("the_smartest@kid.com").fill(testUser.user.username);
     await page.getByPlaceholder("••••••••").fill("password123");
     await page.getByRole("button", { name: "Let Me In!" }).click();
 
@@ -60,12 +60,12 @@ test.describe("Authentication Flows", () => {
   });
 
   test("Successful signup redirects to dashboard", async ({ page }) => {
-    await mockSignup(page);
-    await mockLogin(page);
+    const signupUser = await mockSignup(page);
+    await mockLogin(page, signupUser);
 
     await page.goto("/signup");
-    await page.getByPlaceholder("study_master_99").fill("newuser");
-    await page.getByPlaceholder("nerd@homework.com").fill("new@example.com");
+    await page.getByPlaceholder("study_master_99").fill(signupUser.username);
+    await page.getByPlaceholder("nerd@homework.com").fill(signupUser.email);
     await page.getByPlaceholder("••••••••").fill("StrongPassword123!");
     await page.getByRole("button", { name: "Sign Me Up!" }).click();
 
