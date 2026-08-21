@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from apps.organizations.models import Organization, OrganizationMembership
 
 from .models import AuditLog, Permission, Role, UserRole
-from .permissions import HasPermission, HasRole
+from apps.core.permissions import HasPermission, HasRole
 from .serializers import (
     AuditLogSerializer,
     PermissionSerializer,
