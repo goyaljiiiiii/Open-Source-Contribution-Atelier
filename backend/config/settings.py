@@ -518,7 +518,8 @@ SITE_NAME = os.getenv("SITE_NAME", "Open Source Contribution Atelier")
 TRUSTED_PROXY_COUNT = int(os.getenv("TRUSTED_PROXY_COUNT", "0"))
 
 # ── Password Reset ─────────────────────────────────────────────────────────────
-# How many minutes a password reset token remains valid.
+# How many seconds a password reset token remains valid (15 minutes = 900 seconds).
+PASSWORD_RESET_TIMEOUT_SECONDS = int(os.getenv("PASSWORD_RESET_TIMEOUT_SECONDS", "900"))
 PASSWORD_RESET_TIMEOUT_MINUTES = int(os.getenv("PASSWORD_RESET_TIMEOUT_MINUTES", "15"))
 
 # ── OTP Email Verification ───────────────────────────────────────────────────

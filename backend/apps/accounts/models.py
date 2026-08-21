@@ -58,13 +58,13 @@ class PasswordResetToken(models.Model):
         return f"PasswordResetToken(user={self.user.username}, used={self.is_used})"
 
     def is_expired(self) -> bool:
-        """Return True if the token is older than PASSWORD_RESET_TIMEOUT_MINUTES."""
+        """Return True if the token is older than PASSWORD_RESET_TIMEOUT_SECONDS (15 minutes)."""
         from datetime import timedelta
 
         from django.utils import timezone
 
-        timeout = getattr(settings, "PASSWORD_RESET_TIMEOUT_MINUTES", 15)
-        return timezone.now() > self.created_at + timedelta(minutes=timeout)
+        timeout_seconds = getattr(settings, "PASSWORD_RESET_TIMEOUT_SECONDS", 900)
+        return timezone.now() > self.created_at + timedelta(seconds=timeout_seconds)
 
 
 class OTPToken(models.Model):
@@ -415,4 +415,3 @@ class TOTPDevice(models.Model):
 
     def __str__(self):
         return f"TOTPDevice({self.user.username}, enabled={self.is_enabled})"
-
