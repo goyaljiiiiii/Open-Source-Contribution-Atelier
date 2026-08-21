@@ -1,15 +1,20 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchApi } from "../../../lib/api";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { useUserProgress } from "../../../hooks/useUserProgress";
+import { useQuizDraft } from "../../../hooks/useQuizDraft";
 
 interface InteractiveQuizProps {
   id: string;
 }
 
 export function InteractiveQuiz({ id }: InteractiveQuizProps) {
-  const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const quizDraft = useQuizDraft(id);
+  const [selectedOption, setSelectedOption] = useState<number | null>(() => {
+    const draft = quizDraft.getDraft();
+    return draft ? draft.selectedOption : null;
+  });
   const [submitted, setSubmitted] = useState(false);
   const { syncProgress } = useUserProgress();
 
@@ -68,6 +73,7 @@ export function InteractiveQuiz({ id }: InteractiveQuizProps) {
 
   const handleSubmit = () => {
     setSubmitted(true);
+    quizDraft.clearDraft();
     if (selectedOption === quiz.answer) {
       syncProgress({
         lesson_slug: `quiz-${id}`,
@@ -77,15 +83,36 @@ export function InteractiveQuiz({ id }: InteractiveQuizProps) {
     }
   };
 
+  const handleClearDraft = useCallback(() => {
+    quizDraft.clearDraft();
+    setSelectedOption(null);
+  }, [quizDraft]);
+
+  useEffect(() => {
+    if (!submitted && selectedOption !== null) {
+      quizDraft.saveDraft(0, selectedOption, null, null);
+    }
+  }, [selectedOption, submitted, quizDraft]);
+
   return (
     <div className="my-6 rounded-2xl border-4 border-black bg-white p-6 shadow-card dark:bg-[#1f1c18] dark:border-[#2e2924]">
       <div className="flex items-center justify-between mb-4">
         <span className="font-mono text-xs text-primary uppercase tracking-widest font-black flex items-center gap-2">
           ⚡ Interactive Quiz
         </span>
-        <span className="text-xs font-black text-accent bg-black text-white px-2 py-0.5 rounded-full dark:bg-[#2e2924]">
-          {quiz.points || 15} XP
-        </span>
+        <div className="flex items-center gap-2">
+          {!submitted && selectedOption !== null && (
+            <button
+              onClick={handleClearDraft}
+              className="text-[10px] font-black text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-300 hover:bg-red-100 transition-all"
+            >
+              Clear draft &amp; restart
+            </button>
+          )}
+          <span className="text-xs font-black text-accent bg-black text-white px-2 py-0.5 rounded-full dark:bg-[#2e2924]">
+            {quiz.points || 15} XP
+          </span>
+        </div>
       </div>
 
       <h3 className="text-lg font-black mb-4 text-text dark:text-[#f0ebe2]">

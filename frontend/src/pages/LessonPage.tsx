@@ -32,6 +32,7 @@ import { useUserProgress } from "../hooks/useUserProgress";
 import { useTerminalAutocomplete } from "../hooks/useTerminalAutocomplete";
 import { ShellState } from "../hooks/useGitShell";
 import { useBookmarks } from "../hooks/useBookmarks";
+import { useQuizDraft } from "../hooks/useQuizDraft";
 import { useNotifications } from "../features/notifications/NotificationContext";
 import { useOfflineLesson } from "../hooks/useOfflineLesson";
 import { useOfflineReadyLessons } from "../hooks/useOfflineReadyLessons";
@@ -272,6 +273,10 @@ useEffect(() => {
   const [quizNonce, setQuizNonce] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
+  // Quiz draft persistence
+  const quizDraft = useQuizDraft(lesson?.slug);
+  const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
+
   // Help Request panel
   const [isHelpPanelOpen, setIsHelpPanelOpen] = useState(false);
   const [helpMessage, setHelpMessage] = useState("");
@@ -462,6 +467,21 @@ useEffect(() => {
     setQuizNonce(null);
     setTimeLeft(null);
 
+    // Check for saved draft and restore if available
+    const draft = quizDraft.getDraft();
+    if (
+      draft &&
+      draft.quizFeedback === null &&
+      draft.currentQuizIndex < (found?.quizzes?.length || 0)
+    ) {
+      setCurrentQuizIndex(draft.currentQuizIndex);
+      setSelectedOption(draft.selectedOption);
+      setTimeLeft(draft.timeLeft);
+      setHasRestoredDraft(true);
+    } else {
+      quizDraft.clearDraft();
+    }
+
     // Markdown is loaded via useOfflineLesson (network + IndexedDB / SW cache)
     refreshOfflineReady();
   }, [lesson, refreshOfflineReady]);
@@ -499,6 +519,24 @@ useEffect(() => {
     }
   }, [lesson, currentQuizIndex]);
 
+  // Save quiz draft whenever quiz state changes
+  useEffect(() => {
+    if (!hasRestoredDraft || quizFeedback !== null) return;
+    quizDraft.saveDraft(
+      currentQuizIndex,
+      selectedOption,
+      quizFeedback,
+      timeLeft,
+    );
+  }, [
+    currentQuizIndex,
+    selectedOption,
+    quizFeedback,
+    timeLeft,
+    hasRestoredDraft,
+    quizDraft,
+  ]);
+
   useEffect(() => {
     if (timeLeft === null || timeLeft <= 0 || quizFeedback !== null) return;
     const timer = setInterval(() => {
@@ -527,7 +565,8 @@ useEffect(() => {
       nonce: quizNonce,
     });
     setQuizFeedback("timeout");
-  }, [lesson, currentQuizIndex, quizNonce, quizFeedback, quizAttemptMutation]);
+    quizDraft.clearDraft();
+  }, [lesson, currentQuizIndex, quizNonce, quizFeedback, quizAttemptMutation, quizDraft]);
 
   useEffect(() => {
     if (timeLeft === 0 && quizFeedback === null) {
@@ -695,6 +734,7 @@ useEffect(() => {
 
     if (isCorrect) {
       setQuizFeedback("correct");
+      quizDraft.clearDraft();
       if (lesson.slug) {
         syncProgress({
           lesson_slug: lesson.slug,
@@ -1206,6 +1246,22 @@ useEffect(() => {
                           {lesson.quizzes!.length}
                         </span>
                         <div className="flex items-center gap-3">
+                          {hasRestoredDraft && quizFeedback === null && (
+                            <button
+                              onClick={() => {
+                                quizDraft.clearDraft();
+                                setCurrentQuizIndex(0);
+                                setSelectedOption(null);
+                                setQuizFeedback(null);
+                                setQuizNonce(null);
+                                setTimeLeft(null);
+                                setHasRestoredDraft(false);
+                              }}
+                              className="text-[10px] font-black text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-300 hover:bg-red-100 transition-all"
+                            >
+                              Clear draft &amp; restart
+                            </button>
+                          )}
                           {timeLeft !== null && (
                             <div
                               className={`text-xs font-black px-2 py-0.5 rounded-full border-2 ${
