@@ -17,12 +17,19 @@ backend/.venv/
 
 # SQLite DB
 backend/db.sqlite3
+backend/db.sqlite3-wal
+backend/db.sqlite3-shm
 
-# Node
+# E2E Test Results & Media
+frontend/e2e/test-results/
+*.webm
+
+# Node & Build
 node_modules/
 frontend/node_modules/
 frontend/dev-dist/
 frontend/.vite/
+frontend/.next/
 
 # Build artifacts
 frontend/dist/
