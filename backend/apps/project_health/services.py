@@ -16,6 +16,18 @@ logger = logging.getLogger(__name__)
 GITHUB_API = "https://api.github.com"
 
 
+def calculate_commit_frequency(total_changes: float, commit_count: int) -> float:
+    """Return average changes per commit without dividing by zero.
+
+    Freshly imported repositories may not have any parsed commits yet. In
+    that case there is no meaningful frequency to calculate, so a neutral
+    score of ``0.0`` is returned instead of raising ``ZeroDivisionError``.
+    """
+    if commit_count <= 0:
+        return 0.0
+    return total_changes / commit_count
+
+
 def _parse_repo_url(repo_url: str) -> tuple[str, str]:
     """Extract (owner, repo_name) from a GitHub URL."""
     parsed = urlparse(repo_url.rstrip("/"))
