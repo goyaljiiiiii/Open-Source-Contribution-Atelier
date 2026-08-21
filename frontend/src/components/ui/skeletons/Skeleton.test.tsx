@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/react";
-import "@testing-library/jest-dom";
 import { Skeleton } from "../Skeleton";
 import SkeletonContributorDashboard from "./SkeletonContributorDashboard";
 
@@ -12,6 +11,7 @@ describe("Skeleton Framework Tests", () => {
     expect(skeletonEl).toBeInTheDocument();
     expect(skeletonEl).toHaveClass("animate-shimmer");
     expect(skeletonEl).toHaveClass("bg-gradient-to-r");
+    expect(skeletonEl).toHaveClass("from-surface-high");
     expect(skeletonEl).toHaveClass("rounded");
   });
 
