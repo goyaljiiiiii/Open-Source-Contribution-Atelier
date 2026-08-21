@@ -7,6 +7,8 @@ Points are awarded based on merged Pull Requests and issue difficulty levels:
 - 🟡 **Medium**: 25 Points
 - 🔴 **Hard**: 50 Points
 
+| 1 | @aaryan06-collab | 🥉 Bronze Contributor ⚡ | 2 | 50 | 2026-08-21 |
+
 ---
 
 ## 🥇 Top Contributors
