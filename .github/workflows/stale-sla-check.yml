@@ -31,6 +31,14 @@ jobs:
               per_page: 100
             });
 
+            // Fetch all open PRs once to avoid hitting search API rate limits (30 reqs/min)
+            const openPRs = await github.paginate(github.rest.pulls.list, {
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100
+            });
+
             for (const issue of openIssues) {
               // Skip PRs
               if (issue.pull_request) continue;
@@ -40,10 +48,12 @@ jobs:
               const hasAwaitingLabel = (issue.labels || []).some(l => l.name === 'awaiting-response');
 
               // Check if assignee has a linked open PR
-              const searchQuery = `repo:${owner}/${repo} is:pr ${issue.number}`;
-              const prsRes = await github.rest.search.issuesAndPullRequests({ q: searchQuery });
-              const prs = prsRes.data.items || [];
-              const hasAssigneePr = prs.some(pr => pr.user.login === assignee);
+              const issuePattern = new RegExp(`#${issue.number}\\b`);
+              const hasAssigneePr = openPRs.some(pr => {
+                const isAuthor = pr.user && pr.user.login === assignee;
+                const refsIssue = issuePattern.test(pr.body || '');
+                return isAuthor && refsIssue;
+              });
 
               if (hasAssigneePr) {
                 if (hasAwaitingLabel) {

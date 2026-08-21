@@ -29,21 +29,27 @@ jobs:
             const author = pr.user.login;
 
             // Search total merged PRs authored by this user
-            const searchRes = await github.rest.search.issuesAndPullRequests({
-              q: `repo:${owner}/${repo} is:pr is:merged author:${author}`
-            });
+            let mergedCount = 1;
+            let recentMergedCount = 1;
+            try {
+              const searchRes = await github.rest.search.issuesAndPullRequests({
+                q: `repo:${owner}/${repo} is:pr is:merged author:${author}`
+              });
 
-            const mergedPRs = searchRes.data.items || [];
-            const mergedCount = searchRes.data.total_count || 1;
+              const mergedPRs = searchRes.data.items || [];
+              mergedCount = searchRes.data.total_count || 1;
 
-            // Calculate 7-Day Hot Streak
-            const sevenDaysAgo = new Date();
-            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+              // Calculate 7-Day Hot Streak
+              const sevenDaysAgo = new Date();
+              sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-            const recentMergedCount = mergedPRs.filter(p => {
-              const closedAt = new Date(p.closed_at || p.updated_at);
-              return closedAt >= sevenDaysAgo;
-            }).length;
+              recentMergedCount = mergedPRs.filter(p => {
+                const closedAt = new Date(p.closed_at || p.updated_at);
+                return closedAt >= sevenDaysAgo;
+              }).length;
+            } catch (e) {
+              console.warn('Search API call failed (rate limited or error), falling back to count=1:', e);
+            }
 
             const isHotStreak = recentMergedCount >= 2;
 

@@ -137,6 +137,10 @@ class UnsubscribePushView(APIView):
                 status=status.HTTP_200_OK,
             )
 
+        deleted, _ = PushSubscription.objects.filter(
+            user=request.user, endpoint=endpoint
+        ).delete()
+
         return Response(
             {
                 "detail": (
