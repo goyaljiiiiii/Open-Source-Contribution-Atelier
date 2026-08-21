@@ -1,3 +1,4 @@
+from django.core.validators import MaxValueValidator, MinValueValidator
 from rest_framework import serializers
 
 from apps.ml_triage.models import (
@@ -37,3 +38,14 @@ class IssuePredictionSerializer(serializers.ModelSerializer):
     class Meta:
         model = IssuePrediction
         fields = "__all__"
+
+
+class MLTriageSettingsSerializer(serializers.Serializer):
+    """Validate ML triage confidence settings before they reach inference."""
+
+    threshold = serializers.FloatField(
+        validators=[
+            MinValueValidator(0.0, message="Threshold must be at least 0.0."),
+            MaxValueValidator(1.0, message="Threshold must be at most 1.0."),
+        ]
+    )
