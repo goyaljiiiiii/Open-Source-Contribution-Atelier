@@ -9,6 +9,26 @@ from django.db import models
 from django.utils import timezone
 
 
+class BurnoutActivityDay(models.Model):
+    """Store daily active-learning hours used by the burnout background task."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="burnout_activity_days",
+    )
+    date = models.DateField()
+    active_hours = models.FloatField(default=0.0)
+
+    class Meta:
+        ordering = ["-date"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "date"], name="unique_burnout_activity_day"
+            )
+        ]
+
+
 class ContributorActivity(models.Model):
     """
     Track contributor activity patterns.

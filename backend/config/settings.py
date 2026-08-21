@@ -704,6 +704,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "config.tasks.report_db_connections",
         "schedule": 300.0,
     },
+    "detect-user-burnout-risk-daily": {
+        "task": "apps.burnout_detection.tasks.detect_user_burnout_risk",
+        "schedule": 86400.0,  # Daily
+    },
 }
 
 MEDIA_URL = "/media/"
