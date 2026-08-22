@@ -172,6 +172,10 @@ class UserProfile(AuditableModel):
     receive_weekly_digest = models.BooleanField(
         default=True, help_text="Receive automated weekly progress digest emails"
     )
+    weekend_learning_enabled = models.BooleanField(
+        default=False,
+        help_text="Whether weekend learning activity is part of the user's normal schedule",
+    )
 
     organization = models.ForeignKey(
         "organizations.Organization",
