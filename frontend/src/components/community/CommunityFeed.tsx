@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useCallback } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { fetchApi } from "../../lib/api";
 import { HelpCircle, Code, Award, BookOpen, Clock, Search, Filter } from "lucide-react";
+import { DiscussionSearchInput } from "./DiscussionSearchInput";
 
 interface FeedEntry {
   id: string;
@@ -214,12 +215,10 @@ export function CommunityFeed() {
         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
           <div className="relative flex-grow">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted" />
-            <input
-              type="text"
-              placeholder="Search feed posts..."
+            <DiscussionSearchInput
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs font-bold bg-gray-50 dark:bg-slate-900 border-2 border-black dark:border-[#3a3a45] rounded-xl focus:outline-none focus:border-accent text-text dark:text-[#eef2f6]"
+              onChange={setSearchQuery}
+              placeholder="Search feed posts..."
             />
           </div>
 
