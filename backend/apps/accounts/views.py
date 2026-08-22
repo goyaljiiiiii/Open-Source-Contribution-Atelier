@@ -13,7 +13,6 @@ from urllib.parse import urlencode
 import requests as http_requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.conf import settings
 from django.core.cache import cache
 
 User = get_user_model()
@@ -179,7 +178,7 @@ class MeView(APIView):
     @extend_schema(responses=UserListSerializer)
     def get(self, request):
         serializer = UserListSerializer(request.user, context={"request": request})
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(request=UserUpdateSerializer, responses=UserListSerializer)
     def put(self, request):
@@ -192,7 +191,7 @@ class MeView(APIView):
         if hasattr(instance, "user_profile"):
             instance.user_profile.refresh_from_db()
         response_serializer = UserListSerializer(instance, context={"request": request})
-        return Response(response_serializer.data)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
 
 
 class MyBadgesView(APIView):
@@ -222,7 +221,8 @@ class MyBadgesView(APIView):
             {
                 "progress_points": progress_points,
                 "badges": serializer.data,
-            }
+            },
+            status=status.HTTP_200_OK,
         )
 
 
@@ -323,7 +323,8 @@ class GoogleLoginView(APIView):
                         "email": user.email,
                         "is_staff": user.is_staff,
                     },
-                }
+                },
+                status=status.HTTP_200_OK,
             )
 
         except Exception as e:
@@ -921,9 +922,7 @@ class LogoutView(APIView):
                 access_exp = auth.get("exp")
                 if access_jti and access_exp:
                     access_ttl = max(0, access_exp - int(time.time()))
-                    cache.set(
-                        f"jwt_blocklist:{access_jti}", True, timeout=access_ttl
-                    )
+                    cache.set(f"jwt_blocklist:{access_jti}", True, timeout=access_ttl)
 
             return Response(
                 {"message": "Successfully logged out."},
@@ -1183,16 +1182,19 @@ class LearningPathView(APIView):
         all_completed = all(m["status"] == "completed" for m in scored_modules)
         if all_completed and scored_modules:
             scored_modules[0]["score"] = 1
-            scored_modules[0]["explanation"] = (
-                "You have completed the entire curriculum! Review this module to refresh your memory."
-            )
+            scored_modules[0][
+                "explanation"
+            ] = "You have completed the entire curriculum! Review this module to refresh your memory."
 
         # Find the recommended next step (highest score)
         recommended = None
         if scored_modules:
             recommended = max(scored_modules, key=lambda m: m["score"])
 
-        return Response({"modules": scored_modules, "next_step": recommended})
+        return Response(
+            {"modules": scored_modules, "next_step": recommended},
+            status=status.HTTP_200_OK,
+        )
 
 
 from .serializers import (
@@ -1536,4 +1538,3 @@ class TwoFactorGenerateBackupCodesView(APIView):
             },
             status=status.HTTP_200_OK,
         )
-
