@@ -1,10 +1,11 @@
+import urllib.parse
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
+from django.db.models import Sum
 from django.utils import timezone
 
 User = get_user_model()
-from django.db.models import Sum
 
 from apps.content.models import Lesson
 from apps.progress.models import LessonProgress, StreakProfile, UserBadge, XPEvent
@@ -12,6 +13,94 @@ from apps.progress.services.insights_engine import InsightsEngine
 
 
 class WeeklyDigestService:
+    @classmethod
+    def format_markdown_lesson_link(
+        cls, title: str, slug: str, base_url: str = "https://atelier.dev"
+    ) -> str:
+        """
+        Generates a valid, unbroken Markdown link for a lesson, escaping special
+        characters in the title (like brackets `[` and `]`) and safely URL-encoding
+        the slug/path (handling spaces, hashes, parens, and unicode).
+        """
+        # Escape brackets in the link text to prevent breaking Markdown link syntax
+        safe_title = (title or "Lesson").replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
+        # Percent-encode URL path components while preserving valid path separators
+        safe_slug = urllib.parse.quote(str(slug or "").strip(), safe="/-")
+        # Ensure parentheses in URL are encoded so they don't terminate [text](url)
+        safe_slug = safe_slug.replace("(", "%28").replace(")", "%29")
+        base = base_url.rstrip("/")
+        url = f"{base}/lessons/{safe_slug}"
+        return f"[{safe_title}]({url})"
+
+    @classmethod
+    def generate_markdown_summary(
+        cls, context: dict, base_url: str = "https://atelier.dev"
+    ) -> str:
+        """
+        Generates a full, properly formatted Markdown email summary.
+        """
+        username = context.get("username", "Contributor")
+        xp_earned = context.get("xp_earned", 0)
+        lessons_completed = context.get("lessons_completed", 0)
+        streak = context.get("current_streak", 0)
+        rank = context.get("rank", "-")
+
+        lines = [
+            f"# Weekly Progress Summary for {username} 📊",
+            f"*{context.get('start_date', '')} - {context.get('end_date', '')}*",
+            "",
+            "## 📈 This Week's Highlights",
+            f"- **XP Earned**: {xp_earned}",
+            f"- **Lessons Completed**: {lessons_completed}",
+            f"- **Current Streak**: {streak} days 🔥",
+            f"- **Leaderboard Rank**: #{rank}",
+            "",
+        ]
+
+        if context.get("streak_at_risk"):
+            lines.extend([
+                "⚠️ **Streak at Risk!** Complete an activity today to keep your streak alive.",
+                "",
+            ])
+
+        recs = context.get("recommendation_details", [])
+        if recs:
+            lines.append("## 🎯 Recommended Next Steps")
+            for item in recs:
+                link = item.get("markdown_link") or cls.format_markdown_lesson_link(
+                    item.get("title", ""), item.get("slug", ""), base_url
+                )
+                summary = item.get("summary")
+                if summary:
+                    lines.append(f"- {link} — {summary}")
+                else:
+                    lines.append(f"- {link}")
+            lines.append("")
+
+        new_items = context.get("new_content_details", [])
+        if new_items:
+            lines.append("## 🚀 Newly Released Content")
+            for item in new_items:
+                link = item.get("markdown_link") or cls.format_markdown_lesson_link(
+                    item.get("title", ""), item.get("slug", ""), base_url
+                )
+                lines.append(f"- {link}")
+            lines.append("")
+
+        badges = context.get("badges_earned", [])
+        if badges:
+            lines.append("## 🏆 New Badges Unlocked")
+            for b in badges:
+                lines.append(f"- 🏅 {b}")
+            lines.append("")
+
+        lines.extend([
+            "---",
+            f"[View Full Dashboard]({base_url.rstrip('/')}/dashboard)",
+        ])
+
+        return "\n".join(lines)
+
     @classmethod
     def get_cached_leaderboard(cls):
         from django.core.cache import cache
@@ -127,19 +216,34 @@ class WeeklyDigestService:
             id__in=completed_lesson_ids
         ).order_by("order")[:3]
         recommendation_list = [
-            {"title": lesson.title, "summary": lesson.summary, "slug": lesson.slug}
+            {
+                "title": lesson.title,
+                "summary": lesson.summary,
+                "slug": lesson.slug,
+                "markdown_link": cls.format_markdown_lesson_link(lesson.title, lesson.slug),
+                "url": f"https://atelier.dev/lessons/{urllib.parse.quote(str(lesson.slug), safe='/-')}",
+            }
             for lesson in recommended_lessons
         ]
         recommendations = [r["title"] for r in recommendation_list]
 
         # 9. Newly Released Content
         new_lessons = Lesson.objects.all().order_by("-id")[:4]
+        new_content_details = [
+            {
+                "title": lesson.title,
+                "slug": lesson.slug,
+                "markdown_link": cls.format_markdown_lesson_link(lesson.title, lesson.slug),
+                "url": f"https://atelier.dev/lessons/{urllib.parse.quote(str(lesson.slug), safe='/-')}",
+            }
+            for lesson in new_lessons
+        ]
         new_content = [lesson.title for lesson in new_lessons]
 
         # 10. Advanced Insights
         insights = InsightsEngine.generate_weekly_insights(user)
 
-        return {
+        context_dict = {
             "user": user,
             "username": user.username,
             "xp_earned": xp_earned,
@@ -155,8 +259,12 @@ class WeeklyDigestService:
             "recommendations": recommendations,
             "recommendation_details": recommendation_list,
             "new_content": new_content,
+            "new_content_details": new_content_details,
             "insights": insights,
             "start_date": one_week_ago.strftime("%B %d, %Y"),
             "end_date": now.strftime("%B %d, %Y"),
         }
+
+        context_dict["markdown_summary"] = cls.generate_markdown_summary(context_dict)
+        return context_dict
 
