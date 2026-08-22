@@ -193,8 +193,9 @@ class WebhookDeliveryViewSet(viewsets.ReadOnlyModelViewSet):
         return Response({"failed_ratio": ratio, "total": total, "failed": failed})
 
 
-from rest_framework.views import APIView
 import requests
+from rest_framework.views import APIView
+
 from .tasks import generate_signature
 
 
@@ -249,3 +250,94 @@ class TestWebhookView(APIView):
                 },
                 status=status.HTTP_200_OK,
             )
+
+
+import time
+
+from django.conf import settings
+
+from .security import verify_signature
+
+
+class GitHubWebhookView(APIView):
+    """
+    POST /api/webhooks/github/ or /api/webhooks/github
+    GitHub Webhook Ingestion Endpoint.
+    Validates X-Hub-Signature-256 HMAC header and optional timestamp replay protection.
+    """
+
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
+    def post(self, request, *args, **kwargs):
+        signature = (
+            request.META.get("HTTP_X_HUB_SIGNATURE_256")
+            or request.META.get("HTTP_X_WEBHOOK_SIGNATURE")
+            or request.META.get("HTTP_X_SIGNATURE")
+        )
+        if not signature:
+            return Response(
+                {"error": "Missing X-Hub-Signature-256 header"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        timestamp_str = (
+            request.META.get("HTTP_X_WEBHOOK_TIMESTAMP")
+            or request.META.get("HTTP_X_TIMESTAMP")
+            or request.META.get("HTTP_X_GITHUB_TIMESTAMP")
+        )
+        if timestamp_str:
+            try:
+                timestamp_val = float(timestamp_str)
+                window = getattr(settings, "WEBHOOK_TIMESTAMP_WINDOW_SECONDS", 300)
+                current_time = time.time()
+                if abs(current_time - timestamp_val) > window:
+                    return Response(
+                        {"error": "Webhook timestamp expired / out of window"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid X-Webhook-Timestamp header format"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        payload = request.body
+
+        gh_secret = getattr(settings, "GITHUB_WEBHOOK_SECRET", None) or getattr(
+            settings, "WEBHOOK_SECRET", None
+        )
+        signing_keys = getattr(settings, "WEBHOOK_SIGNING_KEYS", None)
+        secrets = []
+        if signing_keys:
+            for item in signing_keys:
+                sec = (
+                    item[1]
+                    if isinstance(item, (tuple, list)) and len(item) == 2
+                    else item
+                )
+                if sec:
+                    secrets.append(sec)
+        if gh_secret:
+            secrets.append(gh_secret)
+        if not secrets:
+            secrets.append("default-webhook-secret-key-change-in-production")
+
+        if not verify_signature(secrets, payload, signature):
+            return Response(
+                {"error": "Invalid webhook signature"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        event_type = request.META.get("HTTP_X_GITHUB_EVENT", "ping")
+        delivery_id = request.META.get("HTTP_X_GITHUB_DELIVERY", "")
+
+        return Response(
+            {
+                "status": "success",
+                "message": "GitHub webhook received",
+                "event": event_type,
+                "delivery_id": delivery_id,
+            },
+            status=status.HTTP_200_OK,
+        )
