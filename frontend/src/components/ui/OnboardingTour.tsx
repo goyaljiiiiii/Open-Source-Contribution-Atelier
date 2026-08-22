@@ -15,7 +15,7 @@ interface OnboardingTourProps {
   steps?: Step[];
 }
 
-function CustomTooltip({
+export function CustomTooltip({
   index,
   step,
   backProps,
@@ -26,15 +26,73 @@ function CustomTooltip({
   size,
 }: TooltipRenderProps) {
   const progress = ((index + 1) / size) * 100;
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const primaryBtnRef = React.useRef<HTMLButtonElement>(null);
+
+  // Auto-focus primary action or container when navigating between wizard steps
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      if (primaryBtnRef.current) {
+        primaryBtnRef.current.focus();
+      } else if (containerRef.current) {
+        containerRef.current.focus();
+      }
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [index]);
+
+  // Trap focus inside the tooltip modal during keyboard navigation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      e.stopPropagation();
+      closeProps.onClick(e as any);
+      return;
+    }
+
+    if (e.key !== "Tab" || !containerRef.current) return;
+
+    const focusable = containerRef.current.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+    if (focusable.length === 0) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  };
 
   return (
     <motion.div
       {...tooltipProps}
+      ref={(el) => {
+        containerRef.current = el;
+        if (typeof tooltipProps?.ref === "function") {
+          tooltipProps.ref(el);
+        } else if (tooltipProps?.ref && "current" in tooltipProps.ref) {
+          (tooltipProps.ref as any).current = el;
+        }
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-label={step.title ? String(step.title) : `Tour step ${index + 1} of ${size}`}
+      tabIndex={-1}
+      onKeyDown={handleKeyDown}
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
-      className="bg-white dark:bg-[#151411] border-4 border-black dark:border-[#2e2924] rounded-3xl p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] w-[360px] max-w-full relative overflow-hidden"
+      className="bg-white dark:bg-[#151411] border-4 border-black dark:border-[#2e2924] rounded-3xl p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] w-[360px] max-w-full relative overflow-hidden focus:outline-none"
     >
       {/* Top Progress Bar */}
       <div className="absolute top-0 left-0 h-2 bg-surface-low dark:bg-[#1f1c18] w-full">
@@ -56,7 +114,7 @@ function CustomTooltip({
         </div>
         <button
           {...closeProps}
-          className="p-1.5 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30 rounded-xl transition-colors border-2 border-transparent hover:border-red-600 outline-none"
+          className="p-1.5 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30 rounded-xl transition-colors border-2 border-transparent hover:border-red-600 outline-none focus-visible:ring-2 focus-visible:ring-red-500"
           aria-label="Skip Tour"
         >
           <X className="w-4 h-4 text-text dark:text-[#f0ebe2]" />
@@ -75,7 +133,7 @@ function CustomTooltip({
 
       {/* Footer Controls */}
       <div className="flex justify-between items-center mt-auto">
-        <div className="flex gap-1.5">
+        <div className="flex gap-1.5" aria-hidden="true">
           {Array.from({ length: size }).map((_, i) => (
             <div
               key={i}
@@ -92,7 +150,7 @@ function CustomTooltip({
           {index > 0 && (
             <button
               {...backProps}
-              className="flex items-center justify-center p-2.5 rounded-xl border-2 border-black hover:bg-surface-low dark:hover:bg-[#1f1c18] dark:border-[#2e2924] transition-all outline-none"
+              className="flex items-center justify-center p-2.5 rounded-xl border-2 border-black hover:bg-surface-low dark:hover:bg-[#1f1c18] dark:border-[#2e2924] transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary"
               aria-label="Previous step"
             >
               <ChevronLeft className="w-5 h-5 text-text dark:text-[#f0ebe2]" />
@@ -100,7 +158,8 @@ function CustomTooltip({
           )}
           <button
             {...primaryProps}
-            className="flex items-center gap-2 bg-primary text-black font-black px-5 py-2.5 rounded-xl border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none transition-all outline-none"
+            ref={primaryBtnRef}
+            className="flex items-center gap-2 bg-primary text-black font-black px-5 py-2.5 rounded-xl border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             {isLastStep ? "Let's Go!" : "Next"}
             {!isLastStep && <ChevronRight className="w-4 h-4" />}
