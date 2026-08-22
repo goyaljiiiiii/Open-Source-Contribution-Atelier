@@ -38,7 +38,7 @@ class ChallengeViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         from rest_framework import permissions
 
-        from apps.rbac.permissions import HasPermission
+        from apps.core.permissions import HasPermission
 
         if self.action in ["create"]:
             return [permissions.IsAuthenticated(), HasPermission("create_content")]
@@ -172,7 +172,7 @@ class BulkChallengeUploadView(APIView):
     def get_permissions(self):
         from rest_framework import permissions
 
-        from apps.rbac.permissions import HasPermission
+        from apps.core.permissions import HasPermission
 
         return [permissions.IsAuthenticated(), HasPermission("create_content")]
 

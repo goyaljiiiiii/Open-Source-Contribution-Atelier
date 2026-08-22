@@ -35,7 +35,7 @@ from .models import (
     Organization,
     QuizDraft,
 )
-from .permissions import IsLessonUnlocked
+from apps.core.permissions import IsLessonUnlocked
 from .serializers import (
     LearningPathSerializer,
     LessonDraftSerializer,
@@ -66,7 +66,7 @@ class LessonViewSet(viewsets.ModelViewSet):
     pagination_class = SecureCursorPagination
 
     def get_permissions(self):
-        from apps.rbac.permissions import HasPermission
+        from apps.core.permissions import HasPermission
 
         if self.action in ["create"]:
             return [permissions.IsAuthenticated(), HasPermission("create_content")]
