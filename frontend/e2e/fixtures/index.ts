@@ -1,5 +1,5 @@
 import { test as base, Page } from "@playwright/test";
-import { mockLogin, setAuthenticatedState } from "../helpers/auth";
+import { generateUniqueTestUser, mockLogin, setAuthenticatedState } from "../helpers/auth";
 
 // Define custom fixtures
 type MyFixtures = {
@@ -9,13 +9,16 @@ type MyFixtures = {
 // Extend base test
 export const test = base.extend<MyFixtures>({
   authPage: async ({ page }, use) => {
-    // 1. Mock the login API responses
-    await mockLogin(page);
+    // 1. Generate unique user to prevent cross-worker test interference
+    const uniqueUser = generateUniqueTestUser("auth_fixture");
 
-    // 2. Set the token in local storage
-    await setAuthenticatedState(page);
+    // 2. Mock the login API responses with unique credentials
+    await mockLogin(page, uniqueUser);
 
-    // 3. Use the page in the test
+    // 3. Set the unique token in local storage
+    await setAuthenticatedState(page, uniqueUser.token);
+
+    // 4. Use the page in the test
     // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(page);
   },
