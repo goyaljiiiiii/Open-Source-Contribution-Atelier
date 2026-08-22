@@ -38,6 +38,8 @@ import { useOfflineLesson } from "../hooks/useOfflineLesson";
 import { useOfflineReadyLessons } from "../hooks/useOfflineReadyLessons";
 import { useNetworkStatus } from "../context/useNetworkStatus";
 import { fetchApi } from "../lib/api";
+import { eventBus } from "../core/events";
+import { queueQuizSubmission } from "../services/offlineSync";
 import { Lesson, fetchLessonsApiResult } from "../lib/lessons";
 import {
   buildDriftReport,
@@ -333,19 +335,55 @@ useEffect(() => {
         body: JSON.stringify(payload),
       });
     },
-    onError: (err: any) => {
+    onError: (err: any, variables) => {
       // NEW: Intercept 403 Forbidden errors triggered by Replay Attacks
       if (err?.status === 403 || err?.message?.includes("403")) {
         alert(
           "Security Error: Replay attack detected or session expired. Please refresh.",
         );
+        console.error("Failed to submit quiz attempt:", err);
+        return;
       }
+
+      const isNetworkFailure =
+        !navigator.onLine ||
+        err instanceof TypeError ||
+        err?.name === "TypeError" ||
+        err?.name === "AbortError";
+
+      if (isNetworkFailure && variables) {
+        queueQuizSubmission(variables).then((queued) => {
+          if (queued) {
+            toast.success(
+              "You're offline — your answer was saved and will sync automatically.",
+              { icon: "📴" },
+            );
+          }
+        });
+        console.warn(
+          "Quiz attempt queued for background sync:",
+          variables.question_id,
+        );
+        return;
+      }
+
       console.error("Failed to submit quiz attempt:", err);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["userProgress"] });
     },
   });
+
+  useEffect(() => {
+    const onQuizSyncSuccess = () => {
+      queryClient.invalidateQueries({ queryKey: ["userProgress"] });
+      toast.success("Offline quiz answers synced.");
+    };
+    eventBus.on("quiz-sync:success", onQuizSyncSuccess);
+    return () => {
+      eventBus.off("quiz-sync:success", onQuizSyncSuccess);
+    };
+  }, [queryClient]);
 
   // 1. Fetch modules catalog & lessons
   useEffect(() => {

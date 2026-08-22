@@ -54,7 +54,8 @@ registerRoute(
 
 const DB_NAME = "atelier-offline-db";
 const STORE_NAME = "sync-queue";
-const DB_VERSION = 2;
+const QUIZ_STORE_NAME = "pending_quiz_sync";
+const DB_VERSION = 3;
 
 self.addEventListener("install", (event) => {
   console.log("[ServiceWorker] Installed");
@@ -90,6 +91,9 @@ self.addEventListener("sync", (event) => {
   if (event.tag === "sync-progress") {
     event.waitUntil(syncProgressQueue());
   }
+  if (event.tag === "sync-quiz-progress") {
+    event.waitUntil(syncQuizQueue());
+  }
 });
 
 self.addEventListener("message", (event) => {
@@ -98,6 +102,8 @@ self.addEventListener("message", (event) => {
     self.skipWaiting();
   } else if (event.data && event.data.type === "TRIGGER_SYNC") {
     event.waitUntil(syncProgressQueue());
+  } else if (event.data && event.data.type === "TRIGGER_QUIZ_SYNC") {
+    event.waitUntil(syncQuizQueue());
   }
 });
 
@@ -156,6 +162,12 @@ function openDB() {
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME, { keyPath: "id" });
       }
+      if (!db.objectStoreNames.contains(QUIZ_STORE_NAME)) {
+        const quizStore = db.createObjectStore(QUIZ_STORE_NAME, {
+          keyPath: "id",
+        });
+        quizStore.createIndex("queuedAt", "queuedAt", { unique: false });
+      }
     };
     request.onsuccess = (event) => {
       resolve(event.target.result);
@@ -166,10 +178,20 @@ function openDB() {
   });
 }
 
-function deleteFromStore(db, id) {
+function getAllFromStore(db, storeName) {
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, "readwrite");
-    const store = transaction.objectStore(STORE_NAME);
+    const transaction = db.transaction(storeName, "readonly");
+    const store = transaction.objectStore(storeName);
+    const request = store.getAll();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function deleteFromStore(db, storeName, id) {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(storeName, "readwrite");
+    const store = transaction.objectStore(storeName);
     const request = store.delete(id);
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error);
@@ -193,99 +215,171 @@ async function syncProgressQueue() {
     return;
   }
 
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, "readonly");
-    const store = transaction.objectStore(STORE_NAME);
-    const request = store.getAll();
+  let actions;
+  try {
+    actions = await getAllFromStore(db, STORE_NAME);
+  } catch (err) {
+    console.error(
+      "[ServiceWorker] Failed to read IndexedDB store:",
+      err,
+    );
+    return;
+  }
 
-    request.onsuccess = async () => {
-      const actions = request.result;
-      if (!actions || actions.length === 0) {
-        console.log("[ServiceWorker] Queue is empty. Nothing to sync.");
-        resolve();
-        return;
-      }
+  if (!actions || actions.length === 0) {
+    console.log("[ServiceWorker] Queue is empty. Nothing to sync.");
+    return;
+  }
 
+  console.log(
+    `[ServiceWorker] Found ${actions.length} pending actions to sync.`,
+  );
+
+  for (const action of actions) {
+    try {
       console.log(
-        `[ServiceWorker] Found ${actions.length} pending actions to sync.`,
+        `[ServiceWorker] Replaying action: ${action.id} to ${action.url}`,
       );
+      const response = await fetch(action.url, {
+        method: action.method,
+        headers: action.headers,
+        body: action.body,
+      });
 
-      for (const action of actions) {
-        try {
-          console.log(
-            `[ServiceWorker] Replaying action: ${action.id} to ${action.url}`,
-          );
-          const response = await fetch(action.url, {
-            method: action.method,
-            headers: action.headers,
-            body: action.body,
-          });
-
-          // Extract lesson slug if id starts with 'progress-sync-'
-          let lesson_slug = null;
-          if (action.id && action.id.startsWith("progress-sync-")) {
-            lesson_slug = action.id.replace("progress-sync-", "");
-          }
-
-          if (response.ok || response.status === 400) {
-            console.log(
-              `[ServiceWorker] Action ${action.id} synced successfully (Status: ${response.status})`,
-            );
-
-            // Delete from IndexedDB
-            await deleteFromStore(db, action.id);
-
-            // Notify clients
-            await notifyClients({
-              type: "SYNC_SUCCESS",
-              id: action.id,
-              lesson_slug: lesson_slug,
-              entity_type: action.entity_type,
-              entity_id: action.entity_id,
-            });
-          } else if (response.status === 409) {
-            console.warn(
-              `[ServiceWorker] Conflict detected on server for action ${action.id}`,
-            );
-            // On 409 Conflict, notify client of the conflict to open resolution UI, do not delete from store yet
-            const serverData = await response
-              .clone()
-              .json()
-              .catch(() => ({}));
-            let localData = {};
-            try {
-              localData = JSON.parse(action.body);
-            } catch (e) {}
-
-            await notifyClients({
-              type: "SYNC_CONFLICT",
-              id: action.id,
-              lesson_slug: lesson_slug,
-              serverData,
-              localData,
-            });
-          } else {
-            console.warn(
-              `[ServiceWorker] Action ${action.id} sync failed (Status: ${response.status}). Retrying later.`,
-            );
-          }
-        } catch (err) {
-          console.error(
-            `[ServiceWorker] Fetch error for action ${action.id}:`,
-            err,
-          );
-          // Keep in queue and resolve to try again later on network error
-        }
+      // Extract lesson slug if id starts with 'progress-sync-'
+      let lesson_slug = null;
+      if (action.id && action.id.startsWith("progress-sync-")) {
+        lesson_slug = action.id.replace("progress-sync-", "");
       }
-      resolve();
-    };
 
-    request.onerror = () => {
+      if (response.ok || response.status === 400) {
+        console.log(
+          `[ServiceWorker] Action ${action.id} synced successfully (Status: ${response.status})`,
+        );
+
+        // Delete from IndexedDB
+        await deleteFromStore(db, STORE_NAME, action.id);
+
+        // Notify clients
+        await notifyClients({
+          type: "SYNC_SUCCESS",
+          id: action.id,
+          lesson_slug: lesson_slug,
+          entity_type: action.entity_type,
+          entity_id: action.entity_id,
+        });
+      } else if (response.status === 409) {
+        console.warn(
+          `[ServiceWorker] Conflict detected on server for action ${action.id}`,
+        );
+        // On 409 Conflict, notify client of the conflict to open resolution UI, do not delete from store yet
+        const serverData = await response
+          .clone()
+          .json()
+          .catch(() => ({}));
+        let localData = {};
+        try {
+          localData = JSON.parse(action.body);
+        } catch (e) {}
+
+        await notifyClients({
+          type: "SYNC_CONFLICT",
+          id: action.id,
+          lesson_slug: lesson_slug,
+          serverData,
+          localData,
+        });
+      } else {
+        console.warn(
+          `[ServiceWorker] Action ${action.id} sync failed (Status: ${response.status}). Retrying later.`,
+        );
+      }
+    } catch (err) {
       console.error(
-        "[ServiceWorker] Failed to read IndexedDB store:",
-        request.error,
+        `[ServiceWorker] Fetch error for action ${action.id}:`,
+        err,
       );
-      reject(request.error);
-    };
-  });
+      // Keep in queue and resolve to try again later on network error
+    }
+  }
+}
+
+async function syncQuizQueue() {
+  console.log("[ServiceWorker] Starting offline quiz submission sync...");
+  let db;
+  try {
+    db = await openDB();
+  } catch (err) {
+    console.error("[ServiceWorker] Failed to open IndexedDB:", err);
+    return;
+  }
+
+  let submissions;
+  try {
+    submissions = await getAllFromStore(db, QUIZ_STORE_NAME);
+  } catch (err) {
+    console.error("[ServiceWorker] Failed to read quiz submission queue:", err);
+    return;
+  }
+
+  if (!submissions || submissions.length === 0) {
+    console.log(
+      "[ServiceWorker] Quiz submission queue is empty. Nothing to sync.",
+    );
+    return;
+  }
+
+  console.log(
+    `[ServiceWorker] Found ${submissions.length} pending quiz submissions to sync.`,
+  );
+
+  for (const submission of submissions) {
+    try {
+      console.log(
+        `[ServiceWorker] Replaying quiz submission: ${submission.id} to ${submission.url}`,
+      );
+      const response = await fetch(submission.url, {
+        method: submission.method,
+        headers: submission.headers,
+        body: submission.body,
+      });
+
+      if (response.ok) {
+        console.log(
+          `[ServiceWorker] Quiz submission ${submission.id} synced successfully`,
+        );
+        await deleteFromStore(db, QUIZ_STORE_NAME, submission.id);
+        await notifyClients({
+          type: "QUIZ_SYNC_SUCCESS",
+          id: submission.id,
+          question_id: submission.question_id,
+        });
+      } else if (response.status === 401 || response.status >= 500) {
+        // Transient failure (expired token / server trouble): keep queued so a
+        // future sync event can retry it.
+        console.warn(
+          `[ServiceWorker] Quiz submission ${submission.id} failed transiently (Status: ${response.status}). Retrying later.`,
+        );
+      } else {
+        // Permanent rejection (e.g. bad payload or 403 replay-protection from
+        // an expired one-time nonce): drop it and let the client know.
+        console.warn(
+          `[ServiceWorker] Quiz submission ${submission.id} rejected permanently (Status: ${response.status}). Dropping.`,
+        );
+        await deleteFromStore(db, QUIZ_STORE_NAME, submission.id);
+        await notifyClients({
+          type: "QUIZ_SYNC_FAILED",
+          id: submission.id,
+          question_id: submission.question_id,
+          status: response.status,
+        });
+      }
+    } catch (err) {
+      console.error(
+        `[ServiceWorker] Fetch error for quiz submission ${submission.id}:`,
+        err,
+      );
+      // Network still unavailable — leave queued for the next sync event.
+    }
+  }
 }
