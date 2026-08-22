@@ -16,6 +16,7 @@ import {
 import { Link } from "react-router-dom";
 import { FAQAccordion } from "../../components/docs/FAQAccordion";
 import { CARD_FOCUS_RING } from "../../lib/a11yFocus";
+import { useMarkdownWorker } from "../../hooks/useMarkdownWorker";
 
 interface TechComponent {
   name: string;
@@ -103,6 +104,29 @@ const API_ENDPOINTS = [
   { method: "GET", path: "/health/", desc: "Comprehensive system component health checks" },
 ];
 
+const HERO_INTRO_MARKDOWN =
+  "Explore **interactive architecture guides**, `Django REST` API endpoint specs, **Celery** worker queues, `OAuth 2.0` security models, and repository modules.";
+
+const FRONTEND_LAYER_BLURB =
+  "Single-page **React** application powered by `Vite`, Neobrutalist design tokens, i18n localization, and **TanStack Query** state management.";
+
+const BACKEND_LAYER_BLURB =
+  "Modular **Django REST Framework** service providing `JWT` authentication, Domain Audit Ledger, Celery worker orchestration, and OpenAPI docs.";
+
+const ASYNC_LAYER_BLURB =
+  "**PostgreSQL** relational datastore paired with `Redis` for Celery background worker queues and `Django Channels` WebSocket event broadcasts.";
+
+function WorkerMarkdownBlock({
+  content,
+  className,
+}: {
+  content: string;
+  className?: string;
+}) {
+  const { html } = useMarkdownWorker(content);
+  return <div className={className} dangerouslySetInnerHTML={{ __html: html }} />;
+}
+
 export function FullStackDocsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("all");
@@ -138,9 +162,10 @@ export function FullStackDocsPage() {
             Open-Source Atelier Master Docs
           </h1>
           
-          <p className="text-white/90 font-bold text-base sm:text-lg max-w-2xl leading-relaxed">
-            Explore interactive architecture guides, Django REST API endpoint specs, Celery worker queues, OAuth 2.0 security models, and repository modules.
-          </p>
+          <WorkerMarkdownBlock
+            content={HERO_INTRO_MARKDOWN}
+            className="text-white/90 font-bold text-base sm:text-lg max-w-2xl leading-relaxed"
+          />
 
           <div className="pt-2 flex items-center gap-4 flex-wrap">
             <div className="bg-white/95 text-black px-5 py-3 rounded-2xl border-2 border-black shadow-card-sm flex items-center gap-3">
@@ -199,9 +224,10 @@ export function FullStackDocsPage() {
                   Vite + React
                 </span>
               </div>
-              <p className="text-xs font-bold text-gray-600 dark:text-[#c4bbae] leading-relaxed">
-                Single-page React application powered by Vite, Neobrutalist design tokens, i18n localization, and TanStack Query state management.
-              </p>
+              <WorkerMarkdownBlock
+                content={FRONTEND_LAYER_BLURB}
+                className="text-xs font-bold text-gray-600 dark:text-[#c4bbae] leading-relaxed"
+              />
             </div>
             <div className="flex flex-wrap gap-1.5 pt-2">
               <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">React 19</span>
@@ -221,9 +247,10 @@ export function FullStackDocsPage() {
                   Python 3.11
                 </span>
               </div>
-              <p className="text-xs font-bold text-gray-600 dark:text-[#c4bbae] leading-relaxed">
-                Modular Django REST Framework service providing JWT authentication, Domain Audit Ledger, Celery worker orchestration, and OpenAPI docs.
-              </p>
+              <WorkerMarkdownBlock
+                content={BACKEND_LAYER_BLURB}
+                className="text-xs font-bold text-gray-600 dark:text-[#c4bbae] leading-relaxed"
+              />
             </div>
             <div className="flex flex-wrap gap-1.5 pt-2">
               <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">SimpleJWT</span>
@@ -243,9 +270,10 @@ export function FullStackDocsPage() {
                   Celery + Redis
                 </span>
               </div>
-              <p className="text-xs font-bold text-gray-600 dark:text-[#c4bbae] leading-relaxed">
-                PostgreSQL relational datastore paired with Redis for Celery background worker queues and Django Channels WebSocket event broadcasts.
-              </p>
+              <WorkerMarkdownBlock
+                content={ASYNC_LAYER_BLURB}
+                className="text-xs font-bold text-gray-600 dark:text-[#c4bbae] leading-relaxed"
+              />
             </div>
             <div className="flex flex-wrap gap-1.5 pt-2">
               <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">Redis Broker</span>
