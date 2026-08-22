@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { Info, Award, Lock, Unlock } from 'lucide-react';
 
@@ -31,16 +31,28 @@ const BadgeTooltip: React.FC<BadgeTooltipProps> = ({
   side = 'top',
   delayDuration = 300,
 }) => {
+  const [open, setOpen] = useState(false);
+  const tooltipId = React.useId();
+
   return (
     <Tooltip.Provider delayDuration={delayDuration}>
-      <Tooltip.Root>
-        <Tooltip.Trigger asChild>
+      <Tooltip.Root open={open} onOpenChange={setOpen}>
+        <Tooltip.Trigger
+          asChild
+          onFocus={() => setOpen(true)}
+          onBlur={() => setOpen(false)}
+        >
           {children}
         </Tooltip.Trigger>
         <Tooltip.Portal>
           <Tooltip.Content
+            id={tooltipId}
+            role="tooltip"
             side={side}
             sideOffset={8}
+            avoidCollisions={true}
+            collisionPadding={8}
+            tabIndex={-1}
             className="
               z-[999] max-w-xs p-4 rounded-2xl
               bg-white dark:bg-[#1f1c18]
@@ -132,9 +144,30 @@ ${description}
 Unlock: ${unlockCriteria}
   `.trim();
 
+  const tooltipId = React.useId();
+  const [showTooltip, setShowTooltip] = useState(false);
+
   return (
-    <div title={tooltipText} className="inline-block">
+    <div
+      title={tooltipText}
+      aria-describedby={tooltipId}
+      onFocus={() => setShowTooltip(true)}
+      onBlur={() => setShowTooltip(false)}
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+      className="inline-block relative"
+    >
       {children}
+      {showTooltip && (
+        <div
+          id={tooltipId}
+          role="tooltip"
+          tabIndex={-1}
+          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-[999] max-w-xs p-3 rounded-xl bg-white dark:bg-[#1f1c18] border border-black/10 dark:border-white/10 shadow-lg text-xs"
+        >
+          {tooltipText}
+        </div>
+      )}
     </div>
   );
 };
