@@ -454,13 +454,16 @@ const BadgeCard: React.FC<{ badge: Badge }> = ({ badge }) => (
       delayDuration={300}
     >
       <div
+        tabIndex={0}
+        role="button"
+        aria-label={`${badge.name} badge`}
         className={`
           aspect-square rounded-2xl flex flex-col items-center justify-center p-2
           border-2 transition-all duration-300 cursor-help relative
           ${
             badge.earned
-              ? 'bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-emerald-200 dark:border-emerald-800 hover:shadow-[0_0_20px_rgba(16,185,129,0.25)]'
-              : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 opacity-60 grayscale hover:grayscale-0 hover:opacity-80'
+              ? 'bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-emerald-200 dark:border-emerald-800 hover:shadow-[0_0_20px_rgba(16,185,129,0.25)] focus:outline-none focus:ring-2 focus:ring-emerald-500'
+              : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 opacity-60 grayscale hover:grayscale-0 hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-slate-400'
           }
           group-hover:scale-105 active:scale-95
         `}

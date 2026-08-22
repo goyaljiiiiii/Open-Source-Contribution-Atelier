@@ -174,4 +174,11 @@ describe('BadgesCabinet', () => {
 
     expect(screen.getByText('Git Novice')).toBeInTheDocument();
   });
+
+  it('renders badge items as keyboard-focusable elements with accessible labels', () => {
+    render(<BadgesCabinet badges={MOCK_BADGES} pageSize={10} />);
+    const badgeButton = screen.getByRole('button', { name: 'Git Novice badge' });
+    expect(badgeButton).toBeInTheDocument();
+    expect(badgeButton).toHaveAttribute('tabIndex', '0');
+  });
 });
