@@ -413,7 +413,13 @@ export function CodeSandbox() {
               }}
             />
           </div>
-          <div className="flex-1 bg-[#1a1b26] p-4 font-mono text-sm overflow-auto text-[#a9b1d6]">
+          <div
+            role="region"
+            aria-label="Execution Output"
+            aria-live="polite"
+            aria-atomic="false"
+            className="flex-1 bg-[#1a1b26] p-4 font-mono text-sm overflow-auto text-[#a9b1d6]"
+          >
             {output.length === 0 ? (
               <span className="opacity-50">Output will appear here...</span>
             ) : (
