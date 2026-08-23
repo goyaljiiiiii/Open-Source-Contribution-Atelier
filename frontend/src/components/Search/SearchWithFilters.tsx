@@ -8,6 +8,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import CategoryFilterPills from "./CategoryFilterPills";
+import SearchSyntaxHelpPopover from "./SearchSyntaxHelpPopover";
 import "./SearchWithFilters.css";
 
 interface SearchResult {
@@ -131,6 +132,13 @@ export const SearchWithFilters: React.FC<SearchWithFiltersProps> = ({
               ✕
             </button>
           )}
+          <SearchSyntaxHelpPopover
+            onApplySyntax={(syntax) => {
+              const nextQuery = query ? `${query} ${syntax}` : syntax;
+              setQuery(nextQuery);
+              setDebouncedQuery(nextQuery);
+            }}
+          />
           <button type="submit" className="search-submit-btn">
             Search
           </button>
