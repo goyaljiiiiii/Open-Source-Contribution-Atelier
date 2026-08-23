@@ -6,6 +6,8 @@ Welcome to the official **ECSoC 2026** Contributor Leaderboard for **Open-Source
 
 | 1 | @Pratyush-Panda-2006 | 💎 Diamond Contributor ⚡ | 59 | 1475 | 2026-08-23 |
 
+| 1 | @Babin123456 | 💎 Diamond Contributor ⚡ | 36 | 900 | 2026-08-23 |
+
 ---
 
 ## 🎖️ Contributor Tiers & Badging System
