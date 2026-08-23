@@ -8,7 +8,8 @@ from django.db import migrations, models
 class SafeAlterUniqueTogether(migrations.AlterUniqueTogether):
     def database_forwards(self, app_label, schema_editor, from_state, to_state):
         if schema_editor.connection.vendor == "postgresql":
-            model = from_state.apps.get_model(app_label, self.model_name)
+            model_name = getattr(self, "name", getattr(self, "model_name", None))
+            model = from_state.apps.get_model(app_label, model_name)
             table_name = model._meta.db_table
             with schema_editor.connection.cursor() as cursor:
                 constraints = schema_editor.connection.introspection.get_constraints(

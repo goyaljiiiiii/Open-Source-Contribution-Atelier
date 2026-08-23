@@ -2,6 +2,8 @@
 
 Welcome to the official **ECSoC 2026** Contributor Leaderboard for **Open-Source Contribution Atelier**! 🚀
 
+| 1 | @Jidnyasa-P | 💎 Diamond Contributor ⚡ | 27 | 675 | 2026-08-22 |
+
 ---
 
 ## 🎖️ Contributor Tiers & Badging System

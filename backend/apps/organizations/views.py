@@ -3,7 +3,10 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 
 from .models import Organization, OrganizationAuditLog, OrganizationMembership
-from .permissions import IsMembershipOrgAdminOrOwner, IsOrganizationAdminOrOwner
+from apps.core.permissions import (
+    IsMembershipOrgAdminOrOwner,
+    IsOrganizationAdminOrOwner,
+)
 from .serializers import OrganizationMembershipSerializer, OrganizationSerializer
 
 

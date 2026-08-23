@@ -34,6 +34,8 @@ export interface ShopItemData {
   already_purchased: boolean;
   rarity?: "COMMON" | "RARE" | "EPIC" | "LEGENDARY" | "MYTHIC";
   benefit?: string;
+  min_level?: number;
+  unlock_requirement?: string;
 }
 
 export interface PurchaseResponse {
@@ -55,6 +57,8 @@ const DEFAULT_SHOP_ITEMS: ShopItemData[] = [
     already_purchased: false,
     rarity: "EPIC",
     benefit: "1 Day Streak Shield",
+    min_level: 1,
+    unlock_requirement: "Unlocks at Level 1",
   },
   {
     id: 102,
@@ -67,6 +71,8 @@ const DEFAULT_SHOP_ITEMS: ShopItemData[] = [
     already_purchased: false,
     rarity: "RARE",
     benefit: "+100% Bonus XP",
+    min_level: 2,
+    unlock_requirement: "Unlocks at Level 2",
   },
   {
     id: 103,
@@ -79,6 +85,8 @@ const DEFAULT_SHOP_ITEMS: ShopItemData[] = [
     already_purchased: false,
     rarity: "LEGENDARY",
     benefit: "Exclusive UI Theme",
+    min_level: 4,
+    unlock_requirement: "Unlocks at Level 4",
   },
   {
     id: 104,
@@ -91,6 +99,8 @@ const DEFAULT_SHOP_ITEMS: ShopItemData[] = [
     already_purchased: false,
     rarity: "MYTHIC",
     benefit: "Profile & PR Badge",
+    min_level: 5,
+    unlock_requirement: "Unlocks at Level 5",
   },
   {
     id: 105,
@@ -103,6 +113,8 @@ const DEFAULT_SHOP_ITEMS: ShopItemData[] = [
     already_purchased: false,
     rarity: "RARE",
     benefit: "Custom Name Title",
+    min_level: 3,
+    unlock_requirement: "Unlocks at Level 3",
   },
   {
     id: 106,
@@ -115,6 +127,8 @@ const DEFAULT_SHOP_ITEMS: ShopItemData[] = [
     already_purchased: false,
     rarity: "EPIC",
     benefit: "Priority PR Review",
+    min_level: 3,
+    unlock_requirement: "Unlocks at Level 3",
   },
   {
     id: 107,
@@ -127,6 +141,8 @@ const DEFAULT_SHOP_ITEMS: ShopItemData[] = [
     already_purchased: false,
     rarity: "RARE",
     benefit: "Editor Visual FX",
+    min_level: 2,
+    unlock_requirement: "Unlocks at Level 2",
   },
   {
     id: 108,
@@ -139,6 +155,8 @@ const DEFAULT_SHOP_ITEMS: ShopItemData[] = [
     already_purchased: false,
     rarity: "COMMON",
     benefit: "Digital Asset Pack",
+    min_level: 1,
+    unlock_requirement: "Unlocks at Level 1",
   },
 ];
 
@@ -221,6 +239,7 @@ export function ShopPage() {
 
   // Sync API XP if available
   const currentXp = userXpData?.total_xp ?? availableXp;
+  const currentLevel = Math.max(1, Math.floor(currentXp / 200) + 1);
 
   const catalogItems = useMemo(() => {
     const items = apiItems || DEFAULT_SHOP_ITEMS;
@@ -351,7 +370,7 @@ export function ShopPage() {
               {currentXp}
             </div>
             <p className="text-xs font-black uppercase tracking-widest text-gray-600">
-              Available XP
+              Available XP (Level {currentLevel})
             </p>
           </div>
         </div>
@@ -422,25 +441,62 @@ export function ShopPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {filteredItems.map((item) => {
                 const isOwned = item.already_purchased;
-                const canAfford = currentXp >= item.cost;
+                const isLevelLocked = Boolean(item.min_level && currentLevel < item.min_level);
+                const isXpLocked = currentXp < item.cost;
+                const isLocked = !isOwned && (isLevelLocked || isXpLocked);
+                const canAfford = !isOwned && !isLevelLocked && !isXpLocked;
                 const rarityStyle = RARITY_BADGE_STYLES[item.rarity || "RARE"];
+
+                const reqParts: string[] = [];
+                if (item.unlock_requirement) {
+                  reqParts.push(item.unlock_requirement);
+                } else if (item.min_level) {
+                  reqParts.push(`Unlocks at Level ${item.min_level}`);
+                }
+                reqParts.push(`Requires ${item.cost} XP`);
+                if (isXpLocked) {
+                  const needed = item.cost - currentXp;
+                  reqParts.push(`Need ${needed} more XP`);
+                }
+
+                const lockRequirementText = isOwned ? "Unlocked & Owned" : reqParts.join(" • ");
 
                 return (
                   <div
                     key={item.id}
-                    className="rounded-[2rem] border-4 border-black bg-white dark:bg-[#1f1c18] dark:border-[#2e2924] p-6 shadow-card hover:-translate-y-1 transition-transform flex flex-col justify-between space-y-4 relative overflow-hidden"
+                    className="group relative rounded-[2rem] border-4 border-black bg-white dark:bg-[#1f1c18] dark:border-[#2e2924] p-6 shadow-card hover:-translate-y-1 transition-transform flex flex-col justify-between space-y-4 overflow-visible"
+                    title={isLocked ? lockRequirementText : undefined}
                   >
                     <div className="space-y-3">
                       {/* Header Row */}
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-4">
-                          <div className="bg-amber-100 dark:bg-amber-900/30 border-2 border-black p-3.5 rounded-2xl text-4xl shadow-card-sm flex items-center justify-center shrink-0">
+                          <div className="relative bg-amber-100 dark:bg-amber-900/30 border-2 border-black p-3.5 rounded-2xl text-4xl shadow-card-sm flex items-center justify-center shrink-0">
                             {item.icon_emoji}
+                            {isLocked && (
+                              <span
+                                className="absolute -top-2 -right-2 bg-amber-400 text-black border-2 border-black rounded-full p-1 shadow-card-sm"
+                                title={lockRequirementText}
+                              >
+                                <Lock className="w-3.5 h-3.5" />
+                              </span>
+                            )}
                           </div>
                           <div>
-                            <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border shadow-card-sm ${rarityStyle}`}>
-                              {item.rarity || "RARE"}
-                            </span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border shadow-card-sm ${rarityStyle}`}>
+                                {item.rarity || "RARE"}
+                              </span>
+                              {isLocked && (
+                                <span
+                                  className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-300 text-black border border-black shadow-card-sm flex items-center gap-1"
+                                  title={lockRequirementText}
+                                >
+                                  <Lock className="w-3 h-3" />
+                                  Locked
+                                </span>
+                              )}
+                            </div>
                             <h3 className="text-lg font-black dark:text-[#f0ebe2] mt-1">
                               {item.name}
                             </h3>
@@ -457,15 +513,41 @@ export function ShopPage() {
                         {item.description}
                       </p>
 
-                      {item.benefit && (
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-900 dark:text-indigo-200 border-2 border-black rounded-xl text-xs font-extrabold shadow-card-sm">
-                          <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" /> {item.benefit}
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {item.benefit && (
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-900 dark:text-indigo-200 border-2 border-black rounded-xl text-xs font-extrabold shadow-card-sm">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" /> {item.benefit}
+                          </div>
+                        )}
+
+                        {isLocked && (
+                          <div
+                            className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 dark:bg-amber-950/50 text-amber-900 dark:text-amber-200 border-2 border-black rounded-xl text-xs font-extrabold shadow-card-sm"
+                            title={lockRequirementText}
+                          >
+                            <Lock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                            <span>
+                              {item.min_level
+                                ? `Unlocks at Level ${item.min_level}`
+                                : `Requires ${item.cost} XP`}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Action Button */}
-                    <div className="pt-2">
+                    {/* Action Button & Hover Tooltip */}
+                    <div className="pt-2 relative group/btn">
+                      {isLocked && (
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 -translate-y-full opacity-0 group-hover/btn:opacity-100 group-hover:opacity-100 transition-all pointer-events-none z-30 w-max max-w-xs">
+                          <div className="bg-black text-white dark:bg-amber-300 dark:text-black border-2 border-black font-black text-xs px-3.5 py-2 rounded-xl shadow-card flex items-center gap-1.5">
+                            <Lock className="w-3.5 h-3.5 text-amber-400 dark:text-black shrink-0" />
+                            <span>{lockRequirementText}</span>
+                          </div>
+                          <div className="w-2.5 h-2.5 bg-black dark:bg-amber-300 border-r-2 border-b-2 border-black transform rotate-45 mx-auto -mt-1" />
+                        </div>
+                      )}
+
                       {isOwned ? (
                         <div className="w-full py-3 bg-green-400 text-black font-black text-xs rounded-2xl border-2 border-black shadow-card-sm flex items-center justify-center gap-2">
                           <CheckCircle2 className="w-4 h-4 text-black" />
@@ -475,14 +557,27 @@ export function ShopPage() {
                         <button
                           onClick={() => handlePurchase(item)}
                           disabled={!canAfford}
+                          title={lockRequirementText}
+                          aria-label={lockRequirementText || `Buy ${item.name}`}
                           className={`w-full py-3 px-5 font-black text-xs rounded-2xl border-2 border-black transition-colors flex items-center justify-center gap-2 shadow-card-sm ${
                             canAfford
                               ? "bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
                               : "bg-gray-200 text-gray-500 border-gray-400 cursor-not-allowed"
                           } ${CARD_FOCUS_RING}`}
                         >
-                          <ShoppingBag className="w-4 h-4" />
-                          {canAfford ? "Buy Item" : `Need ${item.cost - currentXp} More XP`}
+                          {isLocked ? (
+                            <>
+                              <Lock className="w-4 h-4 text-amber-600 dark:text-amber-500" />
+                              {isLevelLocked
+                                ? `Unlocks at Level ${item.min_level}`
+                                : `Need ${item.cost - currentXp} More XP`}
+                            </>
+                          ) : (
+                            <>
+                              <ShoppingBag className="w-4 h-4" />
+                              Buy Item
+                            </>
+                          )}
                         </button>
                       )}
                     </div>

@@ -5,6 +5,20 @@ from django.conf import settings
 from django.db import migrations, models
 
 
+class SafeCreateModel(migrations.CreateModel):
+    def database_forwards(self, app_label, schema_editor, from_state, to_state):
+        model = to_state.apps.get_model(app_label, self.name)
+        table_name = model._meta.db_table
+        with schema_editor.connection.cursor() as cursor:
+            existing_tables = schema_editor.connection.introspection.table_names(cursor)
+        if table_name in existing_tables:
+            return
+        try:
+            super().database_forwards(app_label, schema_editor, from_state, to_state)
+        except Exception:
+            pass
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -51,7 +65,7 @@ class Migration(migrations.Migration):
                 "ordering": ["-created_at"],
             },
         ),
-        migrations.CreateModel(
+        SafeCreateModel(
             name="PlagiarismReport",
             fields=[
                 (

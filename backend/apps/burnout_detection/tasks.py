@@ -3,11 +3,14 @@ Celery tasks for burnout detection.
 """
 
 import logging
+from datetime import timedelta
 
 from celery import shared_task
+from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 from apps.burnout_detection.models import (
+    BurnoutActivityDay,
     BurnoutSignal,
     ContributorActivity,
     Intervention,
@@ -16,6 +19,78 @@ from apps.burnout_detection.services.burnout_detector import BurnoutDetector
 from apps.burnout_detection.services.sentiment_analyzer import SentimentAnalyzer
 
 logger = logging.getLogger(__name__)
+
+HIGH_ACTIVITY_HOURS = 8.0
+HIGH_ACTIVITY_STREAK_DAYS = 5
+ROLLING_WINDOW_DAYS = 7
+
+
+def _is_high_activity_day(day, weekend_learning_enabled: bool) -> bool:
+    """Return whether a day should count toward the sustained high-activity streak."""
+    if day.date.weekday() >= 5 and not weekend_learning_enabled:
+        return False
+    return day.active_hours >= HIGH_ACTIVITY_HOURS
+
+
+def _has_sustained_high_activity(days, weekend_learning_enabled: bool) -> bool:
+    """Require five consecutive high-activity days before flagging burnout risk."""
+    streak = 0
+    previous_date = None
+
+    for day in sorted(days, key=lambda item: item.date):
+        if not _is_high_activity_day(day, weekend_learning_enabled):
+            streak = 0
+            previous_date = day.date
+            continue
+
+        if previous_date is not None and day.date != previous_date + timedelta(days=1):
+            streak = 0
+
+        streak += 1
+        if streak >= HIGH_ACTIVITY_STREAK_DAYS:
+            return True
+        previous_date = day.date
+
+    return False
+
+
+@shared_task
+def detect_user_burnout_risk():
+    """Flag users with five consecutive high-duration study days in a 7-day window."""
+    User = get_user_model()
+    window_start = timezone.localdate() - timedelta(days=ROLLING_WINDOW_DAYS - 1)
+    flagged_count = 0
+
+    for user in User.objects.select_related("user_profile").all():
+        profile = getattr(user, "user_profile", None)
+        weekend_learning_enabled = bool(
+            profile and getattr(profile, "weekend_learning_enabled", False)
+        )
+        days = BurnoutActivityDay.objects.filter(
+            user=user, date__gte=window_start, date__lte=timezone.localdate()
+        )
+
+        if not _has_sustained_high_activity(days, weekend_learning_enabled):
+            continue
+
+        signal, created = BurnoutSignal.objects.get_or_create(
+            user=user,
+            signal_type="irregular_pattern",
+            is_resolved=False,
+            defaults={
+                "severity": "severe",
+                "description": (
+                    "Sustained high-duration learning activity detected for "
+                    f"at least {HIGH_ACTIVITY_STREAK_DAYS} consecutive days."
+                ),
+            },
+        )
+        if created:
+            flagged_count += 1
+            trigger_intervention.delay(user.id)
+
+    logger.info("Detected %s sustained high-activity burnout cases", flagged_count)
+    return {"flagged": flagged_count}
 
 
 @shared_task
@@ -40,7 +115,6 @@ def detect_burnout():
                 if result["risk_level"] == "critical":
                     critical_count += 1
 
-                # Create signals
                 for signal_data in result["signals"]:
                     BurnoutSignal.objects.create(
                         user=activity.user,
@@ -49,7 +123,6 @@ def detect_burnout():
                         description=signal_data["description"],
                     )
 
-                # Trigger intervention
                 trigger_intervention.delay(activity.user.id)
 
         except Exception as e:
@@ -64,10 +137,7 @@ def trigger_intervention(user_id: int):
     """
     Trigger intervention for a user.
     """
-    from django.contrib.auth import get_user_model
-
     User = get_user_model()
-    from apps.burnout_detection.models import BurnoutSignal, Intervention
 
     try:
         user = User.objects.get(id=user_id)
@@ -76,7 +146,6 @@ def trigger_intervention(user_id: int):
         if not signal:
             return
 
-        # Determine intervention type
         intervention_type = "encouragement"
         message = (
             "We've noticed you've been working hard. Take a break and recharge! 💪"

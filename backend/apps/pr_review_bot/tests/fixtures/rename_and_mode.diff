@@ -1,0 +1,24 @@
+diff --git a/backend/old_service.py b/backend/new_service.py
+similarity index 92%
+rename from backend/old_service.py
+rename to backend/new_service.py
+old mode 100644
+new mode 100755
+index 7f2a1d0..9c4f8b1 100644
+--- a/backend/old_service.py
++++ b/backend/new_service.py
+@@ -10,3 +10,4 @@ def process():
+     result = fetch()
+     return result
++    return normalize(result)
+
+diff --git a/backend/untouched.py b/backend/untouched.py
+old mode 100644
+new mode 100755
+index 1234567..89abcde
+--- a/backend/untouched.py
++++ b/backend/untouched.py
+@@ -1,2 +1,2 @@
+ def main():
+-    return False
++    return True

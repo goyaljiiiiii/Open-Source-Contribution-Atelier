@@ -3,16 +3,12 @@ from rest_framework import generics, permissions, serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.permissions import IsModeratorOrAdmin
 from apps.moderation.models import ContentReport, ModerationAuditEvent
 from apps.moderation.serializers import (
     ContentReportSerializer,
     ModerationActionSerializer,
 )
-
-
-class IsModeratorOrAdmin(permissions.BasePermission):
-    def has_permission(self, request, view):
-        return request.user and (request.user.is_staff or request.user.is_superuser)
 
 
 class ContentReportListCreateView(generics.ListCreateAPIView):

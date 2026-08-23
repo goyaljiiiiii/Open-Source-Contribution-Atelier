@@ -3898,6 +3898,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ml-triage/settings/threshold/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Set the ML triage confidence threshold for administrators. */
+        post: operations["api_ml_triage_settings_threshold_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/moderation/audit/": {
         parameters: {
             query?: never;
@@ -11080,6 +11097,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/api/ml-triage/settings/threshold/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Set the ML triage confidence threshold for administrators. */
+        post: operations["api_v1_api_ml_triage_settings_threshold_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/api/moderation/audit/": {
         parameters: {
             query?: never;
@@ -14499,6 +14533,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/api/webhooks/github": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST /api/webhooks/github/ or /api/webhooks/github
+         *     GitHub Webhook Ingestion Endpoint.
+         *     Validates X-Hub-Signature-256 HMAC header and optional timestamp replay protection.
+         */
+        post: operations["api_v1_api_webhooks_github_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/api/webhooks/github/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST /api/webhooks/github/ or /api/webhooks/github
+         *     GitHub Webhook Ingestion Endpoint.
+         *     Validates X-Hub-Signature-256 HMAC header and optional timestamp replay protection.
+         */
+        post: operations["api_v1_api_webhooks_github_create_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/api/webhooks/test": {
         parameters: {
             query?: never;
@@ -14840,6 +14916,48 @@ export interface paths {
         put?: never;
         /** @description Triggers a test ping webhook event payload to verify endpoint connectivity. */
         post: operations["api_webhooks_endpoints_test_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/webhooks/github": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST /api/webhooks/github/ or /api/webhooks/github
+         *     GitHub Webhook Ingestion Endpoint.
+         *     Validates X-Hub-Signature-256 HMAC header and optional timestamp replay protection.
+         */
+        post: operations["api_webhooks_github_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/webhooks/github/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST /api/webhooks/github/ or /api/webhooks/github
+         *     GitHub Webhook Ingestion Endpoint.
+         *     Validates X-Hub-Signature-256 HMAC header and optional timestamp replay protection.
+         */
+        post: operations["api_webhooks_github_create_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -28163,6 +28281,24 @@ export interface operations {
         };
     };
     api_ml_triage_model_train_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_ml_triage_settings_threshold_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -44513,6 +44649,24 @@ export interface operations {
             };
         };
     };
+    api_v1_api_ml_triage_settings_threshold_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     api_v1_api_moderation_audit_list: {
         parameters: {
             query?: {
@@ -52147,6 +52301,42 @@ export interface operations {
             };
         };
     };
+    api_v1_api_webhooks_github_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_v1_api_webhooks_github_create_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     api_v1_api_webhooks_test_create: {
         parameters: {
             query?: never;
@@ -52784,6 +52974,42 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["WebhookEndpoint"];
                 };
+            };
+        };
+    };
+    api_webhooks_github_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_webhooks_github_create_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

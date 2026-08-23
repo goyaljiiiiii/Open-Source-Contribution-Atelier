@@ -180,6 +180,9 @@ class HeavyOperationThrottle(SlidingWindowThrottle):
 class SlidingWindowScopedThrottle(SlidingWindowThrottle):
     scope_attr = "throttle_scope"
 
+    def __init__(self):
+        pass
+
     def allow_request(self, request, view):
         self.scope = getattr(view, self.scope_attr, None)
         if not self.scope:

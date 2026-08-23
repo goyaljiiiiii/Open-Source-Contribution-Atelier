@@ -23,6 +23,8 @@ from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.permissions import IsMentor
+
 from apps.accounts.models import UserProfile
 from apps.content.models import Lesson
 from apps.content.serializers import LessonSerializer
@@ -888,13 +890,6 @@ class HelpRequestListCreateView(APIView):
 
         serializer = HelpRequestSerializer(help_request)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-
-class IsMentor(BasePermission):
-    message = "You must be a designated mentor to access this resource."
-
-    def has_permission(self, request, view) -> bool:
-        return bool(request.user and hasattr(request.user, "mentor_profile"))
 
 
 class MentorHelpRequestListView(ListAPIView):
