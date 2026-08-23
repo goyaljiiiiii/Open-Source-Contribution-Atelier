@@ -10,6 +10,20 @@ interface CodeDiffViewerProps {
   fileName?: string;
 }
 
+// react-diff-viewer-continued does not re-export its DiffType enum from the
+// package root; these mirror its stable numeric values (see compute-lines.js).
+const DIFF_ADDED = 1;
+const DIFF_REMOVED = 2;
+const DIFF_CHANGED = 3;
+
+// Screen reader prefixes announced before each changed line so added/removed
+// code never relies on color alone (WCAG 1.4.1 - Use of Color).
+const SR_LINE_LABELS: Record<number, string> = {
+  [DIFF_ADDED]: "Addition:",
+  [DIFF_REMOVED]: "Deletion:",
+  [DIFF_CHANGED]: "Modification:",
+};
+
 export function CodeDiffViewer({
   originalCode,
   modifiedCode,
@@ -67,6 +81,14 @@ export function CodeDiffViewer({
           compareMethod={DiffMethod.WORDS}
           leftTitle="Original Code"
           rightTitle="Modified Code"
+          renderGutter={({ type }) => {
+            const label = SR_LINE_LABELS[type];
+            return (
+              <td style={{ padding: 0, border: "none", width: 0 }}>
+                {label ? <span className="sr-only">{label}</span> : null}
+              </td>
+            );
+          }}
           styles={{
             variables: {
               light: {
