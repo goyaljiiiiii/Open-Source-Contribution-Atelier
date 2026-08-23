@@ -21,6 +21,8 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { CARD_FOCUS_RING } from "../lib/a11yFocus";
+import { StreakFlame } from "../components/dashboard/StreakFlame";
+import "../components/dashboard/streakFlame.css";
 
 export interface ContributorRankData {
   rank: number;
@@ -35,6 +37,9 @@ export interface ContributorRankData {
 }
 
 const PAGE_SIZE = 50;
+
+// Rows with at least this many streak days get the animated flame.
+const HIGH_STREAK_DAYS = 7;
 
 function normalizeRows(
   items: any[],
@@ -557,7 +562,11 @@ export function LeaderboardPage() {
                     {/* Streak Days */}
                     <td className="py-4 px-4 text-center font-black text-orange-500">
                       <span className="inline-flex items-center gap-1">
-                        <Flame className="w-4 h-4 fill-orange-500 text-orange-500" />
+                        {row.streak_days >= HIGH_STREAK_DAYS ? (
+                          <StreakFlame animate size={16} />
+                        ) : (
+                          <Flame className="w-4 h-4 fill-orange-500 text-orange-500" />
+                        )}
                         {row.streak_days}d
                       </span>
                     </td>
