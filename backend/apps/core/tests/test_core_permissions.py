@@ -103,8 +103,9 @@ class CorePermissionsTests(TestCase):
         req_user.user = self.user
         self.assertFalse(perm.has_permission(req_user, self.view))
 
-        # Attach dummy mentor profile
-        self.user.mentor_profile = MockObject()
+        mock_user = MockObject()
+        mock_user.mentor_profile = MockObject()
+        req_user.user = mock_user
         self.assertTrue(perm.has_permission(req_user, self.view))
 
     def test_is_moderator_or_admin(self):

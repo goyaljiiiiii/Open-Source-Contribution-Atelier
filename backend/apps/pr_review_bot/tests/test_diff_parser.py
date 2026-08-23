@@ -1,5 +1,5 @@
 from pathlib import Path
-from backend.apps.pr_review_bot.services.diff_parser import GitDiffParser, parse_git_diff
+from apps.pr_review_bot.services.diff_parser import GitDiffParser, parse_git_diff
 
 FIXTURE = Path(__file__).parent / "fixtures" / "rename_and_mode.diff"
 

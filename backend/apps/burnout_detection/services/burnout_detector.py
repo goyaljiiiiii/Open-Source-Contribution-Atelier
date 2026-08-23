@@ -3,7 +3,7 @@ ML-based burnout detection system.
 """
 
 import logging
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 from django.core.cache import cache
