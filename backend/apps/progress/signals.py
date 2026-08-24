@@ -6,9 +6,9 @@ from channels.layers import get_channel_layer
 from django.db import transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.utils import timezone
 
 from .models import ExerciseAttempt, LessonProgress
+from .streak_engine import get_user_local_date
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ def update_user_streak(user):
     """
     from apps.progress.models import StreakProfile
 
-    today = timezone.localdate()
+    today = get_user_local_date(user)
 
     with transaction.atomic():
         profile, created = StreakProfile.objects.select_for_update().get_or_create(
