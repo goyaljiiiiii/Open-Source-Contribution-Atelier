@@ -141,6 +141,19 @@ _frontend_url = os.getenv("FRONTEND_URL", "").strip().rstrip("/")
 if _frontend_url and _frontend_url not in CORS_ALLOWED_ORIGINS:
     CORS_ALLOWED_ORIGINS.append(_frontend_url)
 
+
+def _validate_cors_allowed_origins(origins: list[str]) -> list[str]:
+    """Reject wildcard CORS configuration whenever DEBUG is disabled."""
+    if not DEBUG and "*" in origins:
+        raise ImproperlyConfigured(
+            "CORS_ALLOWED_ORIGINS must not contain '*' when DEBUG=False. "
+            "Set CORS_ALLOWED_ORIGINS to explicit trusted origins for production."
+        )
+    return origins
+
+
+CORS_ALLOWED_ORIGINS = _validate_cors_allowed_origins(CORS_ALLOWED_ORIGINS)
+
 if not DEBUG and not TESTING and not CORS_ALLOWED_ORIGINS:
     from django.core.exceptions import ImproperlyConfigured
 
