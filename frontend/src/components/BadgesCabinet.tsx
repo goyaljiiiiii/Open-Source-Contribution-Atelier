@@ -12,8 +12,10 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import BadgeTooltip from './BadgeTooltip';
+import BadgeUnlockModal from './ui/BadgeUnlockModal';
 
 // Types
+
 export interface Badge {
   id: string | number;
   name: string;
@@ -47,6 +49,8 @@ const BadgesCabinet: React.FC<BadgesCabinetProps> = ({
   const [groupByModule, setGroupByModule] = useState<boolean>(initialGroupByModule);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(pageSize);
+  const [activeModalBadge, setActiveModalBadge] = useState<Badge | null>(null);
+
 
   // Extract unique modules/categories
   const modulesList = useMemo(() => {
@@ -328,7 +332,11 @@ const BadgesCabinet: React.FC<BadgesCabinetProps> = ({
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                       {modBadges.map((badge) => (
-                        <BadgeCard key={badge.id} badge={badge} />
+                        <BadgeCard
+                          key={badge.id}
+                          badge={badge}
+                          onSelect={(b) => setActiveModalBadge(b)}
+                        />
                       ))}
                     </div>
                   </div>
@@ -339,14 +347,26 @@ const BadgesCabinet: React.FC<BadgesCabinetProps> = ({
             /* Flat Grid View */
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {currentBadges.map((badge) => (
-                <BadgeCard key={badge.id} badge={badge} />
+                <BadgeCard
+                  key={badge.id}
+                  badge={badge}
+                  onSelect={(b) => setActiveModalBadge(b)}
+                />
               ))}
             </div>
           )}
         </motion.div>
       </AnimatePresence>
 
+      {/* Badge Unlock Modal with Social Share Image Download */}
+      <BadgeUnlockModal
+        isOpen={!!activeModalBadge}
+        onClose={() => setActiveModalBadge(null)}
+        badge={activeModalBadge}
+      />
+
       {/* Empty State */}
+
       {totalFiltered === 0 && (
         <div className="py-12 text-center border-2 border-dashed border-black/10 dark:border-white/10 rounded-2xl">
           <div className="text-4xl mb-2">🔍</div>
@@ -437,12 +457,16 @@ const BadgesCabinet: React.FC<BadgesCabinetProps> = ({
 };
 
 // Helper Badge Item Card
-const BadgeCard: React.FC<{ badge: Badge }> = ({ badge }) => (
+const BadgeCard: React.FC<{ badge: Badge; onSelect?: (badge: Badge) => void }> = ({
+  badge,
+  onSelect,
+}) => (
   <motion.div
     initial={{ scale: 0.9, opacity: 0 }}
     animate={{ scale: 1, opacity: 1 }}
     transition={{ delay: 0.03 }}
     className="relative group"
+    onClick={() => onSelect?.(badge)}
   >
     <BadgeTooltip
       name={badge.name}
@@ -457,6 +481,7 @@ const BadgeCard: React.FC<{ badge: Badge }> = ({ badge }) => (
         tabIndex={0}
         role="button"
         aria-label={`${badge.name} badge`}
+
         className={`
           aspect-square rounded-2xl flex flex-col items-center justify-center p-2
           border-2 transition-all duration-300 cursor-help relative
