@@ -1,0 +1,12 @@
+[
+  {
+    "model": "gamification.badge",
+    "pk": 1,
+    "fields": {
+      "name": "Bug Hunter",
+      "description": "Awarded for filing 3 verified issue reports.",
+      "icon_url": null,
+      "created_at": "2026-08-24T00:00:00Z"
+    }
+  }
+]

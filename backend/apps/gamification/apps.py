@@ -16,8 +16,14 @@ class GamificationConfig(AppConfig):
         post_migrate.connect(self.setup_initial_data, sender=self)
 
     def setup_initial_data(self, sender, **kwargs):
+        import sys
+
+        if "test" in sys.argv or any("pytest" in arg for arg in sys.argv):
+            return
+
         try:
             from django_q.models import Schedule
+
 
             Schedule.objects.get_or_create(
                 name="assign-daily-quests",
@@ -39,8 +45,22 @@ class GamificationConfig(AppConfig):
         try:
             self.seed_default_quests()
             self.seed_shop_items()
+            self.seed_default_badges()
         except Exception as e:
             logger.warning("Caught exception: %s", e)
+
+    @staticmethod
+    def seed_default_badges():
+        from .models import Badge
+
+        Badge.objects.get_or_create(
+            name="Bug Hunter",
+            defaults={
+                "description": "Awarded for filing 3 verified issue reports.",
+                "icon_url": None,
+            },
+        )
+
 
     @staticmethod
     def seed_default_quests():
