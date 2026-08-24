@@ -148,7 +148,6 @@ class Purchase(models.Model):
 
     class Meta:
         ordering = ["-purchased_at"]
-        unique_together = ("user", "item")
 
     def __str__(self):
         return f"{self.user} bought {self.item.name} ({self.xp_spent} XP)"
