@@ -1,6 +1,4 @@
-"""
-ML-based skill matching for contributors and issues.
-"""
+"""ML-based skill matching for contributors and issues."""
 
 import logging
 from typing import Any, Dict, List, Optional
@@ -19,9 +17,9 @@ logger = logging.getLogger(__name__)
 
 
 class SkillMatcher:
-    """
-    Match contributors with issues based on skills.
-    """
+    """Match contributors with issues based on skills."""
+
+    OPTIONAL_SKILL_WEIGHT = 0.1
 
     def __init__(self):
         self.skill_tagger = SkillTagger()
@@ -29,10 +27,7 @@ class SkillMatcher:
     def match_contributor_to_issues(
         self, contributor: ContributorProfile, limit: int = 10
     ) -> List[Recommendation]:
-        """
-        Match a contributor with suitable issues.
-        """
-        # Get all open GFI issues
+        """Match a contributor with suitable issues."""
         issues = Issue.objects.filter(
             state="open", predicted_category__in=["bug", "feature"]
         )
@@ -42,11 +37,9 @@ class SkillMatcher:
         for issue in issues:
             score = self._calculate_match_score(contributor, issue)
 
-            if score > 0.3:  # Threshold
-                # Get friendliness score
+            if score > 0.3:
                 friendliness = self._get_friendliness_score(issue)
 
-                # Get skills
                 issue_skills = self.skill_tagger.get_required_skills(issue)
                 contributor_skills = contributor.skill_levels
 
@@ -60,7 +53,6 @@ class SkillMatcher:
                     else:
                         missing.append(skill_name)
 
-                # Create recommendation
                 combined_score = score * 0.6 + friendliness * 0.4
 
                 recommendation = Recommendation.objects.create(
@@ -76,10 +68,11 @@ class SkillMatcher:
 
                 recommendations.append(recommendation)
 
-        # Sort by combined score
-        recommendations.sort(key=lambda r: r.combined_score, reverse=True)
+        # Keep the returned recommendations deterministic and ordered by the
+        # actual skill-match percentage.  Combined friendliness is still stored
+        # separately, but it must not change the match-score ranking.
+        recommendations.sort(key=lambda r: r.match_score, reverse=True)
 
-        # Update contributor stats
         contributor.total_recommendations += len(recommendations)
         contributor.save()
 
@@ -88,32 +81,33 @@ class SkillMatcher:
     def _calculate_match_score(
         self, contributor: ContributorProfile, issue: Issue
     ) -> float:
-        """
-        Calculate match score between contributor and issue.
-        """
-        # Get issue skills
+        """Calculate match score between contributor and issue."""
         issue_skills = self.skill_tagger.get_required_skills(issue)
         contributor_skills = contributor.skill_levels
 
         if not issue_skills:
-            return 0.5  # Neutral score
+            return 0.5
 
-        # Calculate skill match
-        matched_skills = 0
-        total_skills = len(issue_skills)
+        # Confidence acts as the skill weight.  A zero-confidence skill is an
+        # optional preference rather than a reason to discard the issue, so it
+        # receives a small effective weight instead of making the candidate
+        # disappear from the matching calculation.
+        weighted_matches = 0.0
+        total_weight = 0.0
 
         for skill_info in issue_skills:
             skill_name = skill_info["skill"]
+            confidence = max(0.0, float(skill_info.get("confidence", 0.0)))
+            weight = confidence if confidence > 0 else self.OPTIONAL_SKILL_WEIGHT
+            total_weight += weight
+
             if skill_name in contributor_skills:
-                # Weight by confidence
-                matched_skills += skill_info["confidence"]
+                weighted_matches += weight
 
-        skill_match = matched_skills / total_skills if total_skills > 0 else 0
+        skill_match = weighted_matches / total_weight if total_weight else 0.5
 
-        # Experience factor
         experience_factor = min(1.0, contributor.years_experience / 3)
 
-        # Interest factor
         interest_factor = 0.5
         if contributor.interests:
             for interest in contributor.interests:
@@ -121,20 +115,16 @@ class SkillMatcher:
                     interest_factor = 0.8
                     break
 
-        # Combine scores
         score = skill_match * 0.5 + experience_factor * 0.2 + interest_factor * 0.3
 
         return min(1.0, score)
 
     def _get_friendliness_score(self, issue: Issue) -> float:
-        """
-        Get or calculate newcomer friendliness score.
-        """
+        """Get or calculate newcomer friendliness score."""
         try:
             friendliness = NewcomerFriendlinessScore.objects.get(issue=issue)
             return friendliness.overall_score / 100
         except NewcomerFriendlinessScore.DoesNotExist:
-            # Calculate friendliness score
             score = self._calculate_friendliness(issue)
             NewcomerFriendlinessScore.objects.create(
                 issue=issue,
@@ -147,26 +137,19 @@ class SkillMatcher:
             return score
 
     def _calculate_friendliness(self, issue: Issue) -> float:
-        """
-        Calculate newcomer friendliness score.
-        """
+        """Calculate newcomer friendliness score."""
         score = 0.5
 
-        # Description quality
         if len(issue.body) > 200:
             score += 0.1
         if len(issue.title) > 20:
             score += 0.05
 
-        # Has good first issue label
-        # (simplified - check labels in your actual implementation)
         score += 0.05
 
-        # Has mentor/assignee
         if issue.assignees:
             score += 0.1
 
-        # Has documentation
         if "docs" in issue.title.lower() or "documentation" in issue.body.lower():
             score += 0.05
 
@@ -175,9 +158,7 @@ class SkillMatcher:
     def _generate_reasoning(
         self, matched: List[str], missing: List[str], score: float
     ) -> str:
-        """
-        Generate reasoning for the recommendation.
-        """
+        """Generate reasoning for the recommendation."""
         parts = []
 
         if matched:
