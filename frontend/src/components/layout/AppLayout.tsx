@@ -5,6 +5,7 @@ import { MobileBottomNav } from "./MobileBottomNav";
 import { BadgeToastNotifier } from "../ui/BadgeToastNotifier";
 import { SessionTracker } from "../ui/SessionTracker";
 import { useAuth } from "../../features/auth/AuthContext";
+import { SkipLink } from "../ui/SkipLink";
 
 export function AppLayout() {
   const location = useLocation();
@@ -22,31 +23,7 @@ export function AppLayout() {
 
   return (
     <>
-      <a
-        href="#main-content"
-        className="
-          sr-only
-          focus:not-sr-only
-          focus:absolute
-          focus:top-4
-          focus:left-4
-          focus:z-[9999]
-          focus:px-4
-          focus:py-2
-          focus:rounded
-          focus:bg-red-600
-          focus:text-white
-        "
-        onClick={(e) => {
-          e.preventDefault();
-          const mainContent = document.getElementById("main-content");
-          mainContent?.focus();
-
-          e.currentTarget.blur();
-        }}
-      >
-        Skip to main content
-      </a>
+      <SkipLink />
 
       <div className="min-h-screen bg-surface text-text dark:bg-[#0a0a0f] dark:text-[#f0ebe2] overflow-x-hidden">
         {!location.pathname.startsWith("/lessons/") && <Navigation />}

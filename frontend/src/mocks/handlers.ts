@@ -73,28 +73,33 @@ export const handlers = [
   }),
 
   http.get(matchUrl("/api/notifications/"), () => {
-    return HttpResponse.json([
-      {
-        id: 1,
-        notif_type: "achievement",
-        title: "Welcome",
-        message: "You joined the Atelier",
-        is_read: false,
-        created_at: "2026-07-18T10:00:00Z",
-        sender_username: null,
-        meta: {},
-      },
-      {
-        id: 2,
-        notif_type: "comment",
-        title: "New comment",
-        message: "Someone replied to your PR",
-        is_read: true,
-        created_at: "2026-07-17T10:00:00Z",
-        sender_username: "mentor",
-        meta: {},
-      },
-    ]);
+    return HttpResponse.json({
+      count: 2,
+      next: null,
+      previous: null,
+      results: [
+        {
+          id: 1,
+          notif_type: "achievement",
+          title: "Welcome",
+          message: "You joined the Atelier",
+          is_read: false,
+          created_at: "2026-07-18T10:00:00Z",
+          sender_username: null,
+          meta: {},
+        },
+        {
+          id: 2,
+          notif_type: "comment",
+          title: "New comment",
+          message: "Someone replied to your PR",
+          is_read: true,
+          created_at: "2026-07-17T10:00:00Z",
+          sender_username: "mentor",
+          meta: {},
+        },
+      ],
+    });
   }),
 
   http.post(matchUrl("/api/notifications/1/read/"), () => {

@@ -12,7 +12,11 @@ export interface RebaseCommit {
 
 interface RebaseCommitGraphProps {
   commits: RebaseCommit[];
-  onCommitActionChange: (index: number, action: RebaseCommit["action"], newMessage?: string) => void;
+  onCommitActionChange: (
+    index: number,
+    action: RebaseCommit["action"],
+    newMessage?: string,
+  ) => void;
   onMoveCommit: (fromIndex: number, toIndex: number) => void;
   readOnly?: boolean;
 }
@@ -39,19 +43,40 @@ export const RebaseCommitGraph: React.FC<RebaseCommitGraphProps> = ({
   const getActionBadge = (action: RebaseCommit["action"] = "pick") => {
     switch (action) {
       case "pick":
-        return { label: "pick", bg: "bg-emerald-400 text-black border-2 border-black font-black" };
+        return {
+          label: "pick",
+          bg: "bg-emerald-400 text-black border-2 border-black font-black",
+        };
       case "reword":
-        return { label: "reword", bg: "bg-cyan-300 text-black border-2 border-black font-black" };
+        return {
+          label: "reword",
+          bg: "bg-cyan-300 text-black border-2 border-black font-black",
+        };
       case "edit":
-        return { label: "edit", bg: "bg-amber-300 text-black border-2 border-black font-black" };
+        return {
+          label: "edit",
+          bg: "bg-amber-300 text-black border-2 border-black font-black",
+        };
       case "squash":
-        return { label: "squash", bg: "bg-purple-300 text-black border-2 border-black font-black" };
+        return {
+          label: "squash",
+          bg: "bg-purple-300 text-black border-2 border-black font-black",
+        };
       case "fixup":
-        return { label: "fixup", bg: "bg-indigo-300 text-black border-2 border-black font-black" };
+        return {
+          label: "fixup",
+          bg: "bg-indigo-300 text-black border-2 border-black font-black",
+        };
       case "drop":
-        return { label: "drop", bg: "bg-rose-400 text-black border-2 border-black font-black line-through opacity-75" };
+        return {
+          label: "drop",
+          bg: "bg-rose-400 text-black border-2 border-black font-black line-through opacity-75",
+        };
       default:
-        return { label: "pick", bg: "bg-gray-200 text-black border-2 border-black font-black" };
+        return {
+          label: "pick",
+          bg: "bg-gray-200 text-black border-2 border-black font-black",
+        };
     }
   };
 
@@ -63,7 +88,10 @@ export const RebaseCommitGraph: React.FC<RebaseCommitGraphProps> = ({
         const isEditing = editingIndex === idx;
 
         return (
-          <div key={commit.hash || idx} className="relative flex items-start gap-3 sm:gap-4">
+          <div
+            key={commit.hash || idx}
+            className="relative flex items-start gap-3 sm:gap-4"
+          >
             {/* Vertical Connecting DAG Line */}
             {idx < commits.length - 1 && (
               <div className="absolute left-4 sm:left-5 top-10 bottom-0 w-1 bg-black dark:bg-[#2e2924] z-0" />
@@ -75,8 +103,8 @@ export const RebaseCommitGraph: React.FC<RebaseCommitGraphProps> = ({
                 currentAction === "drop"
                   ? "bg-slate-200 dark:bg-black text-slate-500"
                   : currentAction === "squash"
-                  ? "bg-[#C3C0FF] text-black"
-                  : "bg-white dark:bg-[#151411] text-black dark:text-white shadow-card-sm"
+                    ? "bg-[#C3C0FF] text-black"
+                    : "bg-white dark:bg-[#151411] text-black dark:text-white shadow-card-sm"
               }`}
             >
               <GitCommit className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -88,8 +116,8 @@ export const RebaseCommitGraph: React.FC<RebaseCommitGraphProps> = ({
                 currentAction === "drop"
                   ? "opacity-60 bg-slate-100 dark:bg-black/40"
                   : currentAction === "squash"
-                  ? "bg-purple-500/5 dark:bg-purple-950/20"
-                  : ""
+                    ? "bg-purple-500/5 dark:bg-purple-950/20"
+                    : ""
               }`}
             >
               {/* Row 1: Badges & Info */}
@@ -99,7 +127,9 @@ export const RebaseCommitGraph: React.FC<RebaseCommitGraphProps> = ({
                     {commit.hash.substring(0, 7)}
                   </span>
 
-                  <span className={`text-[11px] font-mono uppercase px-2 py-0.5 rounded ${badge.bg}`}>
+                  <span
+                    className={`text-[11px] font-mono uppercase px-2 py-0.5 rounded ${badge.bg}`}
+                  >
                     {badge.label}
                   </span>
 
@@ -155,25 +185,30 @@ export const RebaseCommitGraph: React.FC<RebaseCommitGraphProps> = ({
                 <div className="pt-2 border-t-2 border-black/10 dark:border-[#2e2924] flex flex-wrap items-center justify-between gap-2">
                   {/* Action Selector Buttons */}
                   <div className="flex flex-wrap items-center gap-1.5">
-                    {(["pick", "reword", "squash", "drop"] as const).map((act) => (
-                      <button
-                        key={act}
-                        onClick={() => {
-                          if (act === "reword") {
-                            handleStartReword(idx, commit.new_message || commit.message);
-                          } else {
-                            onCommitActionChange(idx, act);
-                          }
-                        }}
-                        className={`px-2.5 py-1 text-[11px] font-mono font-black uppercase rounded-lg border-2 border-black transition-all ${
-                          currentAction === act
-                            ? "bg-black text-white shadow-xs"
-                            : "bg-white dark:bg-[#0f0e0c] text-black dark:text-white hover:bg-gray-100 dark:hover:bg-[#1f1c18]"
-                        }`}
-                      >
-                        {act}
-                      </button>
-                    ))}
+                    {(["pick", "reword", "squash", "drop"] as const).map(
+                      (act) => (
+                        <button
+                          key={act}
+                          onClick={() => {
+                            if (act === "reword") {
+                              handleStartReword(
+                                idx,
+                                commit.new_message || commit.message,
+                              );
+                            } else {
+                              onCommitActionChange(idx, act);
+                            }
+                          }}
+                          className={`px-2.5 py-1 text-[11px] font-mono font-black uppercase rounded-lg border-2 border-black transition-all ${
+                            currentAction === act
+                              ? "bg-black text-white shadow-xs"
+                              : "bg-white dark:bg-[#0f0e0c] text-black dark:text-white hover:bg-gray-100 dark:hover:bg-[#1f1c18]"
+                          }`}
+                        >
+                          {act}
+                        </button>
+                      ),
+                    )}
                   </div>
 
                   {/* Move Up / Down Buttons */}

@@ -34,7 +34,6 @@ describe("NotesWidget", () => {
   });
 
   it("renders the widget toggle button initially", () => {
-     
     (fetchApi as any).mockResolvedValueOnce([]);
     renderWithProviders(<NotesWidget />);
     expect(
@@ -43,7 +42,6 @@ describe("NotesWidget", () => {
   });
 
   it("opens the widget and shows empty state", async () => {
-     
     (fetchApi as any).mockResolvedValueOnce([]);
     renderWithProviders(<NotesWidget />);
 
@@ -64,7 +62,7 @@ describe("NotesWidget", () => {
         updated_at: "",
       },
     ];
-     
+
     (fetchApi as any).mockResolvedValueOnce(mockNotes);
 
     renderWithProviders(<NotesWidget />);
@@ -76,9 +74,8 @@ describe("NotesWidget", () => {
   });
 
   it("saves a new encrypted note", async () => {
-     
     (fetchApi as any).mockResolvedValueOnce([]); // initial load
-     
+
     (fetchApi as any).mockResolvedValueOnce({ id: 2 }); // save response
 
     renderWithProviders(<NotesWidget />);

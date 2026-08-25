@@ -28,7 +28,9 @@ export function CertificateModal({
     setIsExporting(true);
     try {
       const node = certificateRef.current;
-      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      const isSafari = /^((?!chrome|android).)*safari/i.test(
+        navigator.userAgent,
+      );
       const width = node.offsetWidth || 800;
       const height = node.offsetHeight || 600;
 
@@ -135,7 +137,7 @@ export function CertificateModal({
               <span className="font-mono text-xs font-black block">
                 {certificateData?.certificate?.issued_at
                   ? new Date(
-                      certificateData.certificate.issued_at
+                      certificateData.certificate.issued_at,
                     ).toLocaleDateString()
                   : new Date().toLocaleDateString()}
               </span>

@@ -7,7 +7,7 @@ const renderBreadcrumb = (items: BreadcrumbItem[]) => {
   return render(
     <BrowserRouter>
       <Breadcrumb items={items} />
-    </BrowserRouter>
+    </BrowserRouter>,
   );
 };
 
@@ -31,11 +31,13 @@ describe("Breadcrumb Navigation Component", () => {
 
     renderBreadcrumb(items);
 
-    expect(screen.getByRole("navigation", { name: "Breadcrumb" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("navigation", { name: "Breadcrumb" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
     expect(screen.getByText("Pathway")).toBeInTheDocument();
     expect(screen.getByText("Git Foundations")).toBeInTheDocument();
-    
+
     const currentItem = screen.getByText("Intro to Git");
     expect(currentItem).toBeInTheDocument();
     expect(currentItem).toHaveAttribute("aria-current", "page");
@@ -50,5 +52,4 @@ describe("Breadcrumb Navigation Component", () => {
     renderBreadcrumb(items);
     expect(screen.getByTestId("home-icon")).toBeInTheDocument();
   });
-
 });

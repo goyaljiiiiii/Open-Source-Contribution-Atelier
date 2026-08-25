@@ -22,7 +22,7 @@ export function RecommendationsList() {
     queryFn: () => fetchApi("/recommendations/", { suppressErrorToast: true }),
   });
 
-  const items = Array.isArray(data) ? data : data?.results ?? [];
+  const items = Array.isArray(data) ? data : (data?.results ?? []);
 
   const dismissMutation = useMutation({
     mutationFn: (id: number) =>

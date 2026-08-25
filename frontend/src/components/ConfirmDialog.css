@@ -17,7 +17,7 @@
   padding: 24px 32px;
   max-width: 420px;
   width: 90%;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 .dark .confirm-dialog {
@@ -81,12 +81,12 @@
 }
 
 .confirm-btn.warning {
-  background: #FF9800;
+  background: #ff9800;
   color: white;
 }
 
 .confirm-btn.info {
-  background: #2196F3;
+  background: #2196f3;
   color: white;
 }
 

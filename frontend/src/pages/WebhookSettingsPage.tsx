@@ -15,7 +15,10 @@ import {
   Globe,
   Radio,
 } from "lucide-react";
-import { DeliveryLogTable, WebhookDelivery } from "../components/webhooks/DeliveryLogTable";
+import {
+  DeliveryLogTable,
+  WebhookDelivery,
+} from "../components/webhooks/DeliveryLogTable";
 
 export interface WebhookEndpoint {
   id: number;
@@ -28,24 +31,50 @@ export interface WebhookEndpoint {
 }
 
 const AVAILABLE_EVENTS = [
-  { id: "pr.merged", label: "PR Merged", desc: "Triggered when a contributor's pull request is merged" },
-  { id: "challenge.completed", label: "Challenge Completed", desc: "Triggered when a code challenge is solved" },
-  { id: "badge.earned", label: "Badge Earned", desc: "Triggered when a new achievement badge is unlocked" },
-  { id: "certificate.issued", label: "Certificate Issued", desc: "Triggered when an A4 verified certificate is generated" },
-  { id: "user.signup", label: "User Signup", desc: "Triggered when a new learner joins the Atelier cohort" },
+  {
+    id: "pr.merged",
+    label: "PR Merged",
+    desc: "Triggered when a contributor's pull request is merged",
+  },
+  {
+    id: "challenge.completed",
+    label: "Challenge Completed",
+    desc: "Triggered when a code challenge is solved",
+  },
+  {
+    id: "badge.earned",
+    label: "Badge Earned",
+    desc: "Triggered when a new achievement badge is unlocked",
+  },
+  {
+    id: "certificate.issued",
+    label: "Certificate Issued",
+    desc: "Triggered when an A4 verified certificate is generated",
+  },
+  {
+    id: "user.signup",
+    label: "User Signup",
+    desc: "Triggered when a new learner joins the Atelier cohort",
+  },
 ];
 
 export const WebhookSettingsPage: React.FC = () => {
   const [endpoints, setEndpoints] = useState<WebhookEndpoint[]>([]);
   const [deliveries, setDeliveries] = useState<WebhookDelivery[]>([]);
   const [targetUrl, setTargetUrl] = useState<string>("");
-  const [selectedEvents, setSelectedEvents] = useState<string[]>(["pr.merged", "challenge.completed"]);
+  const [selectedEvents, setSelectedEvents] = useState<string[]>([
+    "pr.merged",
+    "challenge.completed",
+  ]);
   const [copiedSecretId, setCopiedSecretId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isTestingId, setIsTestingId] = useState<number | null>(null);
   const [isReplayingId, setIsReplayingId] = useState<number | null>(null);
-  const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [notification, setNotification] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const fetchEndpointsAndDeliveries = async () => {
     setIsLoading(true);
@@ -57,11 +86,19 @@ export const WebhookSettingsPage: React.FC = () => {
 
       if (resEndpoints.ok) {
         const dataEndpoints = await resEndpoints.json();
-        setEndpoints(Array.isArray(dataEndpoints) ? dataEndpoints : dataEndpoints.results || []);
+        setEndpoints(
+          Array.isArray(dataEndpoints)
+            ? dataEndpoints
+            : dataEndpoints.results || [],
+        );
       }
       if (resDeliveries.ok) {
         const dataDeliveries = await resDeliveries.json();
-        setDeliveries(Array.isArray(dataDeliveries) ? dataDeliveries : dataDeliveries.results || []);
+        setDeliveries(
+          Array.isArray(dataDeliveries)
+            ? dataDeliveries
+            : dataDeliveries.results || [],
+        );
       }
     } catch {
       // Offline fallback state for demonstration / local dev
@@ -71,7 +108,11 @@ export const WebhookSettingsPage: React.FC = () => {
           target_url: "https://discord.com/api/webhooks/123456789/sample-token",
           is_active: true,
           events: ["pr.merged", "challenge.completed", "badge.earned"],
-          secret: "whsec_" + Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join(""),
+          secret:
+            "whsec_" +
+            Array.from({ length: 32 }, () =>
+              Math.floor(Math.random() * 16).toString(16),
+            ).join(""),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -80,7 +121,11 @@ export const WebhookSettingsPage: React.FC = () => {
         {
           id: 101,
           event_type: "pr.merged",
-          payload: { pr_id: 2322, title: "Outgoing Webhook Delivery Engine", author: "suman20041" },
+          payload: {
+            pr_id: 2322,
+            title: "Outgoing Webhook Delivery Engine",
+            author: "suman20041",
+          },
           status: "success",
           status_code: 200,
           response_body: '{"ok": true, "message": "Webhook received"}',
@@ -98,7 +143,9 @@ export const WebhookSettingsPage: React.FC = () => {
 
   const handleToggleEvent = (eventId: string) => {
     setSelectedEvents((prev) =>
-      prev.includes(eventId) ? prev.filter((e) => e !== eventId) : [...prev, eventId]
+      prev.includes(eventId)
+        ? prev.filter((e) => e !== eventId)
+        : [...prev, eventId],
     );
   };
 
@@ -122,7 +169,10 @@ export const WebhookSettingsPage: React.FC = () => {
         const newEp = await res.json();
         setEndpoints((prev) => [newEp, ...prev]);
         setTargetUrl("");
-        setNotification({ type: "success", message: "Webhook endpoint registered successfully!" });
+        setNotification({
+          type: "success",
+          message: "Webhook endpoint registered successfully!",
+        });
       } else {
         throw new Error("Failed to register endpoint.");
       }
@@ -139,7 +189,10 @@ export const WebhookSettingsPage: React.FC = () => {
       };
       setEndpoints((prev) => [mockEp, ...prev]);
       setTargetUrl("");
-      setNotification({ type: "success", message: "Webhook endpoint registered (Demo Mode)!" });
+      setNotification({
+        type: "success",
+        message: "Webhook endpoint registered (Demo Mode)!",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -148,13 +201,18 @@ export const WebhookSettingsPage: React.FC = () => {
   const handleTestEndpoint = async (id: number) => {
     setIsTestingId(id);
     try {
-      const res = await fetch(`/api/webhooks/endpoints/${id}/test/`, { method: "POST" });
+      const res = await fetch(`/api/webhooks/endpoints/${id}/test/`, {
+        method: "POST",
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.delivery) {
           setDeliveries((prev) => [data.delivery, ...prev]);
         }
-        setNotification({ type: "success", message: `Test ping delivered to endpoint #${id}!` });
+        setNotification({
+          type: "success",
+          message: `Test ping delivered to endpoint #${id}!`,
+        });
       }
     } catch {
       // Mock test ping delivery
@@ -168,7 +226,10 @@ export const WebhookSettingsPage: React.FC = () => {
         created_at: new Date().toISOString(),
       };
       setDeliveries((prev) => [mockDelivery, ...prev]);
-      setNotification({ type: "success", message: "Test ping sent (Demo Mode)!" });
+      setNotification({
+        type: "success",
+        message: "Test ping sent (Demo Mode)!",
+      });
     } finally {
       setIsTestingId(null);
     }
@@ -176,16 +237,26 @@ export const WebhookSettingsPage: React.FC = () => {
 
   const handleRotateSecret = async (id: number) => {
     try {
-      const res = await fetch(`/api/webhooks/endpoints/${id}/rotate/`, { method: "POST" });
+      const res = await fetch(`/api/webhooks/endpoints/${id}/rotate/`, {
+        method: "POST",
+      });
       if (res.ok) {
         const data = await res.json();
         setEndpoints((prev) =>
-          prev.map((ep) => (ep.id === id ? { ...ep, secret: data.secret } : ep))
+          prev.map((ep) =>
+            ep.id === id ? { ...ep, secret: data.secret } : ep,
+          ),
         );
-        setNotification({ type: "success", message: "Secret key rotated! Old key expires in 24h." });
+        setNotification({
+          type: "success",
+          message: "Secret key rotated! Old key expires in 24h.",
+        });
       }
     } catch {
-      setNotification({ type: "success", message: "Secret key rotated (Demo Mode)!" });
+      setNotification({
+        type: "success",
+        message: "Secret key rotated (Demo Mode)!",
+      });
     }
   };
 
@@ -202,16 +273,25 @@ export const WebhookSettingsPage: React.FC = () => {
   const handleReplayDelivery = async (deliveryId: number) => {
     setIsReplayingId(deliveryId);
     try {
-      const res = await fetch(`/api/webhooks/deliveries/${deliveryId}/replay/`, { method: "POST" });
+      const res = await fetch(
+        `/api/webhooks/deliveries/${deliveryId}/replay/`,
+        { method: "POST" },
+      );
       if (res.ok) {
         const data = await res.json();
         setDeliveries((prev) =>
-          prev.map((d) => (d.id === deliveryId ? data.delivery : d))
+          prev.map((d) => (d.id === deliveryId ? data.delivery : d)),
         );
-        setNotification({ type: "success", message: `Delivery #${deliveryId} replayed successfully!` });
+        setNotification({
+          type: "success",
+          message: `Delivery #${deliveryId} replayed successfully!`,
+        });
       }
     } catch {
-      setNotification({ type: "success", message: `Replayed delivery #${deliveryId}!` });
+      setNotification({
+        type: "success",
+        message: `Replayed delivery #${deliveryId}!`,
+      });
     } finally {
       setIsReplayingId(null);
     }
@@ -224,7 +304,10 @@ export const WebhookSettingsPage: React.FC = () => {
   };
 
   return (
-    <main id="main-content" className="min-h-screen bg-slate-900 text-slate-100 p-4 sm:p-6 lg:p-8">
+    <main
+      id="main-content"
+      className="min-h-screen bg-slate-900 text-slate-100 p-4 sm:p-6 lg:p-8"
+    >
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header Banner */}
         <div className="relative p-6 sm:p-8 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
@@ -232,15 +315,19 @@ export const WebhookSettingsPage: React.FC = () => {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <span className="px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-bold rounded-full uppercase tracking-wider flex items-center gap-1.5">
-                  <Webhook className="w-3.5 h-3.5 text-indigo-400" /> Outgoing Webhooks Engine
+                  <Webhook className="w-3.5 h-3.5 text-indigo-400" /> Outgoing
+                  Webhooks Engine
                 </span>
-                <span className="text-xs text-slate-400">HMAC SHA-256 & Celery Retry Policy</span>
+                <span className="text-xs text-slate-400">
+                  HMAC SHA-256 & Celery Retry Policy
+                </span>
               </div>
               <h1 className="text-3xl font-black text-white tracking-tight">
                 Webhook Event Subscriptions
               </h1>
               <p className="mt-2 text-sm text-slate-300 max-w-2xl">
-                Configure HTTP endpoint URLs to receive real-time JSON payloads signed with HMAC SHA-256 signatures whenever events occur.
+                Configure HTTP endpoint URLs to receive real-time JSON payloads
+                signed with HMAC SHA-256 signatures whenever events occur.
               </p>
             </div>
 
@@ -254,7 +341,8 @@ export const WebhookSettingsPage: React.FC = () => {
                   Engine Delivery Status
                 </span>
                 <p className="text-sm font-bold text-white flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> 99.8% Success Rate
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />{" "}
+                  99.8% Success Rate
                 </p>
               </div>
             </div>
@@ -271,9 +359,13 @@ export const WebhookSettingsPage: React.FC = () => {
             }`}
           >
             <div className="flex items-center gap-2 text-xs font-semibold">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" /> {notification.message}
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />{" "}
+              {notification.message}
             </div>
-            <button onClick={() => setNotification(null)} className="text-xs text-slate-400 hover:text-white">
+            <button
+              onClick={() => setNotification(null)}
+              className="text-xs text-slate-400 hover:text-white"
+            >
               Dismiss
             </button>
           </div>
@@ -283,7 +375,9 @@ export const WebhookSettingsPage: React.FC = () => {
         <div className="p-6 bg-slate-900/90 border border-slate-800 rounded-2xl space-y-6 shadow-xl">
           <div className="flex items-center gap-2 border-b border-slate-800 pb-4">
             <Plus className="w-5 h-5 text-indigo-400" />
-            <h2 className="text-lg font-bold text-white">Register New Target Endpoint</h2>
+            <h2 className="text-lg font-bold text-white">
+              Register New Target Endpoint
+            </h2>
           </div>
 
           <form onSubmit={handleCreateEndpoint} className="space-y-6">
@@ -324,16 +418,22 @@ export const WebhookSettingsPage: React.FC = () => {
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-200">{ev.label}</span>
+                        <span className="text-xs font-bold text-slate-200">
+                          {ev.label}
+                        </span>
                         <span
                           className={`w-4 h-4 rounded border flex items-center justify-center ${
-                            isChecked ? "bg-indigo-600 border-indigo-500 text-white" : "border-slate-700"
+                            isChecked
+                              ? "bg-indigo-600 border-indigo-500 text-white"
+                              : "border-slate-700"
                           }`}
                         >
                           {isChecked && <Check className="w-3 h-3" />}
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-1 leading-snug">{ev.desc}</p>
+                      <p className="text-[11px] text-slate-400 mt-1 leading-snug">
+                        {ev.desc}
+                      </p>
                     </div>
                   );
                 })}
@@ -354,7 +454,8 @@ export const WebhookSettingsPage: React.FC = () => {
         {/* Existing Endpoints List */}
         <div className="space-y-4">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <Radio className="w-5 h-5 text-indigo-400" /> Active Webhook Subscriptions ({endpoints.length})
+            <Radio className="w-5 h-5 text-indigo-400" /> Active Webhook
+            Subscriptions ({endpoints.length})
           </h2>
 
           <div className="space-y-4">
@@ -366,7 +467,9 @@ export const WebhookSettingsPage: React.FC = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-bold text-sm text-white font-mono">{ep.target_url}</span>
+                      <span className="font-bold text-sm text-white font-mono">
+                        {ep.target_url}
+                      </span>
                       <span className="px-2 py-0.5 text-[10px] font-bold text-emerald-400 bg-emerald-950/50 border border-emerald-800/40 rounded-full">
                         ACTIVE
                       </span>
@@ -390,7 +493,9 @@ export const WebhookSettingsPage: React.FC = () => {
                       disabled={isTestingId === ep.id}
                       className="px-3 py-1.5 text-xs font-semibold text-indigo-300 hover:text-white bg-indigo-950/60 hover:bg-indigo-900 border border-indigo-800/60 rounded-xl transition-all flex items-center gap-1.5"
                     >
-                      <Send className={`w-3.5 h-3.5 ${isTestingId === ep.id ? "animate-pulse" : ""}`} />
+                      <Send
+                        className={`w-3.5 h-3.5 ${isTestingId === ep.id ? "animate-pulse" : ""}`}
+                      />
                       {isTestingId === ep.id ? "Sending Ping..." : "Test Ping"}
                     </button>
 
@@ -417,8 +522,12 @@ export const WebhookSettingsPage: React.FC = () => {
                   <div className="p-3 bg-slate-950 border border-slate-800/80 rounded-xl flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2 overflow-hidden">
                       <Key className="w-4 h-4 text-amber-400 shrink-0" />
-                      <span className="text-xs text-slate-400 font-mono">HMAC Secret:</span>
-                      <code className="text-xs text-slate-200 font-mono truncate">{ep.secret}</code>
+                      <span className="text-xs text-slate-400 font-mono">
+                        HMAC Secret:
+                      </span>
+                      <code className="text-xs text-slate-200 font-mono truncate">
+                        {ep.secret}
+                      </code>
                     </div>
                     <button
                       onClick={() => copyToClipboard(ep.secret!, ep.id)}
@@ -441,7 +550,8 @@ export const WebhookSettingsPage: React.FC = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <Shield className="w-5 h-5 text-indigo-400" /> Delivery Audit Logs & Manual Replay
+              <Shield className="w-5 h-5 text-indigo-400" /> Delivery Audit Logs
+              & Manual Replay
             </h2>
             <button
               onClick={fetchEndpointsAndDeliveries}

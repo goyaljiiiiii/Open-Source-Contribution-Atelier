@@ -10,7 +10,7 @@ export class HeartbeatManager {
     sendPing: () => void,
     onTimeout: () => void,
     interval: number = 30000,
-    timeout: number = 5000
+    timeout: number = 5000,
   ) {
     this.sendPing = sendPing;
     this.onTimeout = onTimeout;
@@ -22,7 +22,7 @@ export class HeartbeatManager {
     this.stop();
     this.pingTimer = setInterval(() => {
       this.sendPing();
-      
+
       // Expect a pong within timeout
       this.pongTimer = setTimeout(() => {
         console.warn("WebSocket: Heartbeat timeout. Closing connection...");

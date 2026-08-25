@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 
-export type MascotState = "idle" | "focus-username" | "focus-password" | "loading" | "error";
+export type MascotState =
+  | "idle"
+  | "focus-username"
+  | "focus-password"
+  | "loading"
+  | "error";
 
 interface MascotBuddyProps {
   state: MascotState;
@@ -30,7 +35,9 @@ export function MascotBuddy({ state, className = "" }: MascotBuddyProps) {
   };
 
   return (
-    <div className={`relative flex flex-col items-center select-none ${className}`}>
+    <div
+      className={`relative flex flex-col items-center select-none ${className}`}
+    >
       {/* Playful Speech Bubble */}
       {speechBubble && (
         <div className="absolute -top-12 z-20 bg-black text-white dark:bg-white dark:text-black font-black text-xs px-3 py-1.5 rounded-2xl shadow-card border-2 border-black dark:border-white animate-bounce text-center whitespace-nowrap">
@@ -46,7 +53,9 @@ export function MascotBuddy({ state, className = "" }: MascotBuddyProps) {
         title="Click me for some motivation! ✨"
         className="group relative cursor-pointer outline-none focus:scale-105 transition-transform duration-300"
       >
-        <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-[#FFD93D] border-4 border-black shadow-card flex items-center justify-center relative overflow-hidden transition-all duration-300 ${state === 'error' ? 'animate-bounce bg-[#FF6B6B]' : ''} ${state === 'loading' ? 'animate-pulse' : ''} group-hover:rotate-3`}>
+        <div
+          className={`w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-[#FFD93D] border-4 border-black shadow-card flex items-center justify-center relative overflow-hidden transition-all duration-300 ${state === "error" ? "animate-bounce bg-[#FF6B6B]" : ""} ${state === "loading" ? "animate-pulse" : ""} group-hover:rotate-3`}
+        >
           {/* Subtle Background Pattern */}
           <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#000_2px,transparent_2px)] [background-size:8px_8px]" />
 
@@ -71,13 +80,17 @@ export function MascotBuddy({ state, className = "" }: MascotBuddyProps) {
               </div>
               {/* Cute Secret Smile */}
               <div className="w-4 h-1.5 border-b-3 border-black rounded-full mt-2" />
-              <span className="text-[9px] font-black text-black uppercase tracking-tighter mt-0.5">Top Secret 🙈</span>
+              <span className="text-[9px] font-black text-black uppercase tracking-tighter mt-0.5">
+                Top Secret 🙈
+              </span>
             </div>
           ) : state === "loading" ? (
             /* 2. LOADING STATE: Focus Glasses & Gear */
             <div className="flex flex-col items-center justify-center z-10">
               <div className="text-2xl animate-spin">⚡</div>
-              <span className="text-[10px] font-black uppercase text-black tracking-wider mt-1">Verifying</span>
+              <span className="text-[10px] font-black uppercase text-black tracking-wider mt-1">
+                Verifying
+              </span>
             </div>
           ) : state === "error" ? (
             /* 3. ERROR STATE: Surprised 😯 */
@@ -91,7 +104,9 @@ export function MascotBuddy({ state, className = "" }: MascotBuddyProps) {
                 </div>
               </div>
               <div className="w-4 h-4 rounded-full border-3 border-black bg-white" />
-              <span className="text-[10px] font-black text-white uppercase tracking-wider mt-1">Ouch!</span>
+              <span className="text-[10px] font-black text-white uppercase tracking-wider mt-1">
+                Ouch!
+              </span>
             </div>
           ) : state === "focus-username" ? (
             /* 4. USERNAME FOCUS: Curious Eyes 👀 */

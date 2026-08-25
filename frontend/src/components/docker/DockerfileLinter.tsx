@@ -69,8 +69,12 @@ README.md
 
 export function DockerfileLinter() {
   const [dockerfileText, setDockerfileText] = useState(SAMPLE_DOCKERFILE);
-  const [activeTab, setActiveTab] = useState<"editor" | "dockerignore">("editor");
-  const [dockerignoreText, setDockerignoreText] = useState(RECOMMENDED_DOCKERIGNORE);
+  const [activeTab, setActiveTab] = useState<"editor" | "dockerignore">(
+    "editor",
+  );
+  const [dockerignoreText, setDockerignoreText] = useState(
+    RECOMMENDED_DOCKERIGNORE,
+  );
   const [copied, setCopied] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
@@ -98,16 +102,21 @@ export function DockerfileLinter() {
       // Rule DL3006: Unpinned Base Image
       if (trimmed.startsWith("FROM ")) {
         const imageTag = trimmed.split("FROM ")[1]?.trim();
-        if (imageTag && (imageTag.includes(":latest") || !imageTag.includes(":"))) {
+        if (
+          imageTag &&
+          (imageTag.includes(":latest") || !imageTag.includes(":"))
+        ) {
           issues.push({
             id: `DL3006-${lineNo}`,
             code: "DL3006",
             severity: "critical",
             line: lineNo,
             message: `Unpinned base image '${imageTag}'. Using ':latest' causes non-deterministic production builds.`,
-            suggestion: "Pin image to a specific version or slim tag like 'node:20-alpine'.",
+            suggestion:
+              "Pin image to a specific version or slim tag like 'node:20-alpine'.",
             autoFixable: true,
-            fixAction: (text) => text.replace(line, line.replace(imageTag, "node:20-alpine")),
+            fixAction: (text) =>
+              text.replace(line, line.replace(imageTag, "node:20-alpine")),
           });
         }
       }
@@ -119,10 +128,13 @@ export function DockerfileLinter() {
           code: "DL3020",
           severity: "warning",
           line: lineNo,
-          message: "Use 'COPY' instead of 'ADD' for local files and directories.",
-          suggestion: "Replace 'ADD' with 'COPY' to prevent unintended archive extraction.",
+          message:
+            "Use 'COPY' instead of 'ADD' for local files and directories.",
+          suggestion:
+            "Replace 'ADD' with 'COPY' to prevent unintended archive extraction.",
           autoFixable: true,
-          fixAction: (text) => text.replace(line, line.replace("ADD ", "COPY ")),
+          fixAction: (text) =>
+            text.replace(line, line.replace("ADD ", "COPY ")),
         });
       }
 
@@ -134,10 +146,13 @@ export function DockerfileLinter() {
             code: "DL3009",
             severity: "optimization",
             line: lineNo,
-            message: "'apt-get install' leaves temporary package cache in image layer.",
-            suggestion: "Append '&& rm -rf /var/lib/apt/lists/*' to reduce layer size.",
+            message:
+              "'apt-get install' leaves temporary package cache in image layer.",
+            suggestion:
+              "Append '&& rm -rf /var/lib/apt/lists/*' to reduce layer size.",
             autoFixable: true,
-            fixAction: (text) => text.replace(line, `${line} && rm -rf /var/lib/apt/lists/*`),
+            fixAction: (text) =>
+              text.replace(line, `${line} && rm -rf /var/lib/apt/lists/*`),
           });
         }
       }
@@ -152,7 +167,8 @@ export function DockerfileLinter() {
           message: "'apk add' without '--no-cache' bloats image size.",
           suggestion: "Use 'apk add --no-cache <package>'.",
           autoFixable: true,
-          fixAction: (text) => text.replace(line, line.replace("apk add ", "apk add --no-cache ")),
+          fixAction: (text) =>
+            text.replace(line, line.replace("apk add ", "apk add --no-cache ")),
         });
       }
 
@@ -163,7 +179,8 @@ export function DockerfileLinter() {
           code: "DL3025",
           severity: "warning",
           line: lineNo,
-          message: "Use JSON array notation for CMD to ensure proper SIGTERM signal handling.",
+          message:
+            "Use JSON array notation for CMD to ensure proper SIGTERM signal handling.",
           suggestion: "Convert 'CMD npm start' to 'CMD [\"npm\", \"start\"]'.",
           autoFixable: true,
           fixAction: (text) => {
@@ -182,14 +199,19 @@ export function DockerfileLinter() {
         code: "DL3002",
         severity: "critical",
         line: 1,
-        message: "Container runs as root user. If compromised, attackers gain host-level privilege.",
+        message:
+          "Container runs as root user. If compromised, attackers gain host-level privilege.",
         suggestion: "Add 'RUN useradd -m appuser && USER appuser' before CMD.",
         autoFixable: true,
         fixAction: (text) => {
           const lines = text.split("\n");
           const cmdIndex = lines.findIndex((l) => l.trim().startsWith("CMD"));
           if (cmdIndex !== -1) {
-            lines.splice(cmdIndex, 0, "\n# Create non-root user for security\nRUN useradd -m appuser\nUSER appuser\n");
+            lines.splice(
+              cmdIndex,
+              0,
+              "\n# Create non-root user for security\nRUN useradd -m appuser\nUSER appuser\n",
+            );
             return lines.join("\n");
           }
           return text + "\nRUN useradd -m appuser\nUSER appuser\n";
@@ -217,10 +239,16 @@ export function DockerfileLinter() {
         else if (trimmed.includes("slim")) size = 180;
         else size = 950; // default node:latest / ubuntu
         desc = "Base operating system & runtime image";
-      } else if (trimmed.startsWith("RUN apt-get") || trimmed.startsWith("RUN apk")) {
+      } else if (
+        trimmed.startsWith("RUN apt-get") ||
+        trimmed.startsWith("RUN apk")
+      ) {
         size = 85;
         desc = "Installed system packages & dependencies";
-      } else if (trimmed.startsWith("RUN npm install") || trimmed.startsWith("RUN npm ci")) {
+      } else if (
+        trimmed.startsWith("RUN npm install") ||
+        trimmed.startsWith("RUN npm ci")
+      ) {
         size = 140;
         desc = "Node module dependencies layer";
       } else if (trimmed.startsWith("COPY .") || trimmed.startsWith("ADD .")) {
@@ -234,7 +262,8 @@ export function DockerfileLinter() {
       if (size > 0) {
         layers.push({
           lineNo: idx + 1,
-          instruction: trimmed.length > 35 ? trimmed.substring(0, 35) + "..." : trimmed,
+          instruction:
+            trimmed.length > 35 ? trimmed.substring(0, 35) + "..." : trimmed,
           sizeMb: size,
           description: desc,
         });
@@ -310,7 +339,9 @@ export function DockerfileLinter() {
             Web Dockerfile Security Linter & Layer Size Calculator
           </h1>
           <p className="mt-1 text-sm font-bold text-muted dark:text-[#c4bbae] max-w-2xl">
-            Real-time Hadolint AST security auditing, root-privilege vulnerability detection, auto-fix recommendations, and image layer size calculation.
+            Real-time Hadolint AST security auditing, root-privilege
+            vulnerability detection, auto-fix recommendations, and image layer
+            size calculation.
           </p>
         </div>
 
@@ -326,19 +357,21 @@ export function DockerfileLinter() {
             <HardDrive className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-xs font-black uppercase text-muted tracking-wider">Estimated Image Size</div>
-            <div className="text-xl font-black text-text dark:text-[#f0ebe2]">{totalImageSize} MB</div>
+            <div className="text-xs font-black uppercase text-muted tracking-wider">
+              Estimated Image Size
+            </div>
+            <div className="text-xl font-black text-text dark:text-[#f0ebe2]">
+              {totalImageSize} MB
+            </div>
           </div>
         </div>
       </div>
 
       {/* Main Grid: Code Editor & Hadolint Security Auditor (7 + 5 cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
         {/* Left Column: Interactive Dockerfile Code Editor (7 cols) */}
         <div className="lg:col-span-7 space-y-6 flex flex-col">
           <div className="bg-white dark:bg-[#1f1c18] border-4 border-black dark:border-[#2e2924] rounded-2xl shadow-card p-5 flex-1 flex flex-col min-h-[550px]">
-            
             {/* Toolbar Header */}
             <div className="flex items-center justify-between pb-3 border-b-2 border-black/10 dark:border-[#2e2924] mb-4">
               <div className="flex items-center gap-2">
@@ -370,14 +403,19 @@ export function DockerfileLinter() {
                   disabled={lintIssues.length === 0}
                   className="bg-accent hover:bg-accent/90 text-black border-2 border-black text-xs font-black px-3 py-1.5 rounded-xl shadow-card-sm disabled:opacity-50 transition-all flex items-center gap-1"
                 >
-                  <Wand2 className="w-3.5 h-3.5" /> Auto-Fix ({lintIssues.length})
+                  <Wand2 className="w-3.5 h-3.5" /> Auto-Fix (
+                  {lintIssues.length})
                 </button>
                 <button
                   onClick={handleCopy}
                   className="p-1.5 rounded-lg border-2 border-black dark:border-[#2e2924] bg-surface dark:bg-[#151411] hover:bg-black/5 dark:hover:bg-white/5 transition-all text-text dark:text-[#f0ebe2]"
                   title="Copy Dockerfile"
                 >
-                  {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                  {copied ? (
+                    <Check className="w-4 h-4 text-emerald-500" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </div>
@@ -387,7 +425,9 @@ export function DockerfileLinter() {
               <div className="flex-1 bg-[#1e1e1e] text-emerald-400 font-mono text-xs p-4 rounded-xl border-2 border-black overflow-hidden flex flex-col">
                 <div className="text-gray-400 pb-2 border-b border-gray-700 mb-2 font-bold flex items-center justify-between">
                   <span>🐳 Dockerfile Instructions</span>
-                  <span className="text-[10px] text-gray-500">Hadolint AST Analyzer Active</span>
+                  <span className="text-[10px] text-gray-500">
+                    Hadolint AST Analyzer Active
+                  </span>
                 </div>
                 <textarea
                   value={dockerfileText}
@@ -403,7 +443,9 @@ export function DockerfileLinter() {
                 <div className="text-gray-400 pb-2 border-b border-gray-700 mb-2 font-bold flex items-center justify-between">
                   <span>📄 Recommended .dockerignore</span>
                   <button
-                    onClick={() => handleDownload(dockerignoreText, ".dockerignore")}
+                    onClick={() =>
+                      handleDownload(dockerignoreText, ".dockerignore")
+                    }
                     className="text-xs text-primary underline font-bold"
                   >
                     Download .dockerignore
@@ -437,12 +479,12 @@ export function DockerfileLinter() {
 
         {/* Right Column: Hadolint Security Alerts & Layer Calculator (5 cols) */}
         <div className="lg:col-span-5 space-y-6 flex flex-col">
-          
           {/* Security Lint Alerts Card */}
           <div className="bg-white dark:bg-[#1f1c18] border-4 border-black dark:border-[#2e2924] rounded-2xl shadow-card p-5 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b-2 border-black/10 dark:border-[#2e2924]">
               <h2 className="text-lg font-black text-text dark:text-[#f0ebe2] flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-primary" /> Security Lint Audit
+                <ShieldCheck className="w-5 h-5 text-primary" /> Security Lint
+                Audit
               </h2>
               <span className="text-xs font-mono font-black bg-black/10 dark:bg-white/10 px-2 py-0.5 rounded">
                 {lintIssues.length} issue(s)
@@ -455,7 +497,9 @@ export function DockerfileLinter() {
                 <div className="p-6 text-center border-2 border-dashed border-emerald-500/40 bg-emerald-500/10 rounded-xl text-emerald-600 dark:text-emerald-400 text-xs font-bold space-y-1">
                   <CheckCircle2 className="w-8 h-8 mx-auto" />
                   <p className="font-black text-sm">Clean Dockerfile!</p>
-                  <p>No Hadolint security violations or bloat issues detected.</p>
+                  <p>
+                    No Hadolint security violations or bloat issues detected.
+                  </p>
                 </div>
               ) : (
                 lintIssues.map((issue) => (
@@ -465,8 +509,8 @@ export function DockerfileLinter() {
                       issue.severity === "critical"
                         ? "border-rose-500 bg-rose-500/10 text-rose-700 dark:text-rose-300"
                         : issue.severity === "warning"
-                        ? "border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-                        : "border-blue-500 bg-blue-500/10 text-blue-700 dark:text-blue-300"
+                          ? "border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                          : "border-blue-500 bg-blue-500/10 text-blue-700 dark:text-blue-300"
                     }`}
                   >
                     <div className="flex items-center justify-between font-mono font-black">
@@ -476,7 +520,9 @@ export function DockerfileLinter() {
                         ) : (
                           <AlertTriangle className="w-4 h-4 text-amber-500" />
                         )}
-                        <span>{issue.code} (Line {issue.line})</span>
+                        <span>
+                          {issue.code} (Line {issue.line})
+                        </span>
                       </span>
                       <span className="uppercase text-[10px] px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10">
                         {issue.severity}
@@ -511,16 +557,30 @@ export function DockerfileLinter() {
           <div className="bg-white dark:bg-[#1f1c18] border-4 border-black dark:border-[#2e2924] rounded-2xl shadow-card p-5 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b-2 border-black/10 dark:border-[#2e2924]">
               <h2 className="text-lg font-black text-text dark:text-[#f0ebe2] flex items-center gap-2">
-                <Layers className="w-5 h-5 text-primary" /> Image Layer Size Breakdown
+                <Layers className="w-5 h-5 text-primary" /> Image Layer Size
+                Breakdown
               </h2>
-              <span className="font-mono text-xs font-black text-muted">{totalImageSize} MB Total</span>
+              <span className="font-mono text-xs font-black text-muted">
+                {totalImageSize} MB Total
+              </span>
             </div>
 
             {/* Visual Layer Stacked Bar */}
             <div className="w-full h-4 bg-surface-low dark:bg-[#12110e] border-2 border-black rounded-lg overflow-hidden flex">
               {layerBreakdown.map((layer, idx) => {
-                const percent = Math.max(Math.round((layer.sizeMb / Math.max(totalImageSize, 1)) * 100), 4);
-                const colors = ["bg-yellow-400", "bg-emerald-400", "bg-indigo-400", "bg-rose-400", "bg-sky-400"];
+                const percent = Math.max(
+                  Math.round(
+                    (layer.sizeMb / Math.max(totalImageSize, 1)) * 100,
+                  ),
+                  4,
+                );
+                const colors = [
+                  "bg-yellow-400",
+                  "bg-emerald-400",
+                  "bg-indigo-400",
+                  "bg-rose-400",
+                  "bg-sky-400",
+                ];
                 return (
                   <div
                     key={idx}
@@ -540,15 +600,18 @@ export function DockerfileLinter() {
                   className="p-2 rounded-lg border border-black/10 dark:border-[#2e2924] bg-surface-low dark:bg-[#151411] flex items-center justify-between text-xs font-mono"
                 >
                   <div className="truncate max-w-[220px]">
-                    <span className="font-bold text-text dark:text-[#f0ebe2]">Line {layer.lineNo}:</span>{" "}
+                    <span className="font-bold text-text dark:text-[#f0ebe2]">
+                      Line {layer.lineNo}:
+                    </span>{" "}
                     <span className="text-muted">{layer.instruction}</span>
                   </div>
-                  <span className="font-black text-primary shrink-0">{layer.sizeMb} MB</span>
+                  <span className="font-black text-primary shrink-0">
+                    {layer.sizeMb} MB
+                  </span>
                 </div>
               ))}
             </div>
           </div>
-
         </div>
       </div>
     </div>

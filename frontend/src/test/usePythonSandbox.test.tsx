@@ -3,7 +3,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { usePythonSandbox } from "../hooks/usePythonSandbox";
 
 describe("usePythonSandbox", () => {
-   
   let mockWorker: any;
 
   beforeEach(() => {
@@ -39,7 +38,6 @@ describe("usePythonSandbox", () => {
   it("handles successful code execution", async () => {
     const { result } = renderHook(() => usePythonSandbox());
 
-     
     let promise: any;
 
     act(() => {
@@ -55,7 +53,6 @@ describe("usePythonSandbox", () => {
 
     // Simulate worker responding
     const messageHandler = mockWorker.addEventListener.mock.calls.find(
-       
       (call: any[]) => call[0] === "message",
     )[1];
 
@@ -83,7 +80,6 @@ describe("usePythonSandbox", () => {
     vi.useFakeTimers();
     const { result } = renderHook(() => usePythonSandbox());
 
-     
     let promise: any;
 
     act(() => {

@@ -39,6 +39,8 @@ function summarizeStatusMessage(
   endpoint?: string,
 ): string {
   switch (status) {
+    case 400:
+      return "Invalid request. Please check the submitted information and try again.";
     case 401:
       return isAuthEndpoint(endpoint)
         ? "Sign-in failed. Please check your credentials and try again."
@@ -75,14 +77,53 @@ export function createApiError(params: {
   retryable?: boolean;
   authExpired?: boolean;
 }): ApiError {
-  const message = summarizeStatusMessage(params.status, params.endpoint);
+  let bodyMessage: string | null = null;
+  let detailsStr: string | null = null;
+
+  if (params.body && typeof params.body === "object") {
+    const b = params.body as Record<string, unknown>;
+    if (typeof b.detail === "string" && b.detail.trim()) {
+      bodyMessage = b.detail.trim();
+    } else if (typeof b.error === "string" && b.error.trim()) {
+      bodyMessage = b.error.trim();
+    } else if (typeof b.message === "string" && b.message.trim()) {
+      bodyMessage = b.message.trim();
+    } else if (
+      Array.isArray(b.non_field_errors) &&
+      b.non_field_errors.length > 0
+    ) {
+      bodyMessage = String(b.non_field_errors[0]);
+    } else {
+      const firstKey = Object.keys(b)[0];
+      if (firstKey) {
+        const val = b[firstKey];
+        if (Array.isArray(val) && val.length > 0) {
+          bodyMessage = `${firstKey}: ${val[0]}`;
+        } else if (typeof val === "string" && val.trim()) {
+          bodyMessage = `${firstKey}: ${val.trim()}`;
+        }
+      }
+    }
+    try {
+      detailsStr = JSON.stringify(params.body);
+    } catch {
+      detailsStr = String(params.body);
+    }
+  } else if (typeof params.body === "string" && params.body.trim()) {
+    bodyMessage = params.body.trim();
+    detailsStr = bodyMessage;
+  }
+
+  const message =
+    bodyMessage || summarizeStatusMessage(params.status, params.endpoint);
+
   return new ApiError(message, {
     status: params.status,
     endpoint: params.endpoint,
     requestId: params.requestId,
     retryable: params.retryable,
     authExpired: params.authExpired,
-    details: null,
+    details: detailsStr,
   });
 }
 

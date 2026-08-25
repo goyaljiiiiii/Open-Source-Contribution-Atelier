@@ -1,4 +1,7 @@
-export function interpolateString(template: string, values?: Record<string, any>): string {
+export function interpolateString(
+  template: string,
+  values?: Record<string, any>,
+): string {
   if (!values) return template;
   return template.replace(/\{(\w+)\}/g, (match, key) => {
     return values[key] !== undefined ? String(values[key]) : match;
@@ -17,9 +20,9 @@ export function parseAst(text: string) {
       parts.push(text.substring(lastIndex, match.index));
     }
     parts.push({
-      type: 'tag',
+      type: "tag",
       name: match[1],
-      content: match[2]
+      content: match[2],
     });
     lastIndex = regex.lastIndex;
   }

@@ -15,7 +15,9 @@ export function EditorSplitPane({
   lesson,
   onChangeContent,
 }: EditorSplitPaneProps) {
-  const [viewMode, setViewMode] = useState<"split" | "editor" | "preview">("split");
+  const [viewMode, setViewMode] = useState<"split" | "editor" | "preview">(
+    "split",
+  );
 
   const mdeOptions = useMemo(
     () => ({

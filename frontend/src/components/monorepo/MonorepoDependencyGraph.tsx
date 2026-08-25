@@ -47,17 +47,56 @@ const PRESET_CONFIGS: ManifestPreset[] = [
         name: "open-source-contribution-atelier",
         workspaces: ["apps/*", "packages/*", "services/*"],
         packages: [
-          { name: "@atelier/frontend", type: "app", version: "1.0.0", dependencies: ["@atelier/ui-core", "@atelier/auth-sdk", "@atelier/utils"] },
-          { name: "@atelier/backend-api", type: "app", version: "1.0.0", dependencies: ["@atelier/auth-sdk", "@atelier/db-schema"] },
-          { name: "@atelier/auth-sdk", type: "service", version: "2.1.0", dependencies: ["@atelier/utils", "@atelier/db-schema"] },
-          { name: "@atelier/ui-core", type: "package", version: "3.0.0", dependencies: ["@atelier/utils", "@atelier/icons"] },
-          { name: "@atelier/icons", type: "package", version: "1.2.0", dependencies: ["@atelier/utils"] },
-          { name: "@atelier/db-schema", type: "service", version: "1.5.0", dependencies: ["@atelier/utils"] },
-          { name: "@atelier/utils", type: "utility", version: "4.1.0", dependencies: [] },
+          {
+            name: "@atelier/frontend",
+            type: "app",
+            version: "1.0.0",
+            dependencies: [
+              "@atelier/ui-core",
+              "@atelier/auth-sdk",
+              "@atelier/utils",
+            ],
+          },
+          {
+            name: "@atelier/backend-api",
+            type: "app",
+            version: "1.0.0",
+            dependencies: ["@atelier/auth-sdk", "@atelier/db-schema"],
+          },
+          {
+            name: "@atelier/auth-sdk",
+            type: "service",
+            version: "2.1.0",
+            dependencies: ["@atelier/utils", "@atelier/db-schema"],
+          },
+          {
+            name: "@atelier/ui-core",
+            type: "package",
+            version: "3.0.0",
+            dependencies: ["@atelier/utils", "@atelier/icons"],
+          },
+          {
+            name: "@atelier/icons",
+            type: "package",
+            version: "1.2.0",
+            dependencies: ["@atelier/utils"],
+          },
+          {
+            name: "@atelier/db-schema",
+            type: "service",
+            version: "1.5.0",
+            dependencies: ["@atelier/utils"],
+          },
+          {
+            name: "@atelier/utils",
+            type: "utility",
+            version: "4.1.0",
+            dependencies: [],
+          },
         ],
       },
       null,
-      2
+      2,
     ),
   },
   {
@@ -69,23 +108,57 @@ const PRESET_CONFIGS: ManifestPreset[] = [
         name: "turborepo-ecommerce-app",
         workspaces: ["apps/*", "packages/*"],
         packages: [
-          { name: "@shop/web", type: "app", version: "2.0.0", dependencies: ["@shop/auth", "@shop/checkout"] },
-          { name: "@shop/checkout", type: "package", version: "1.1.0", dependencies: ["@shop/billing", "@shop/ui"] },
-          { name: "@shop/billing", type: "service", version: "1.0.0", dependencies: ["@shop/auth"] },
-          { name: "@shop/auth", type: "service", version: "2.1.0", dependencies: ["@shop/checkout"] }, // Circular: auth -> checkout -> billing -> auth
-          { name: "@shop/ui", type: "package", version: "1.0.0", dependencies: ["@shop/utils"] },
-          { name: "@shop/utils", type: "utility", version: "1.0.0", dependencies: [] },
+          {
+            name: "@shop/web",
+            type: "app",
+            version: "2.0.0",
+            dependencies: ["@shop/auth", "@shop/checkout"],
+          },
+          {
+            name: "@shop/checkout",
+            type: "package",
+            version: "1.1.0",
+            dependencies: ["@shop/billing", "@shop/ui"],
+          },
+          {
+            name: "@shop/billing",
+            type: "service",
+            version: "1.0.0",
+            dependencies: ["@shop/auth"],
+          },
+          {
+            name: "@shop/auth",
+            type: "service",
+            version: "2.1.0",
+            dependencies: ["@shop/checkout"],
+          }, // Circular: auth -> checkout -> billing -> auth
+          {
+            name: "@shop/ui",
+            type: "package",
+            version: "1.0.0",
+            dependencies: ["@shop/utils"],
+          },
+          {
+            name: "@shop/utils",
+            type: "utility",
+            version: "1.0.0",
+            dependencies: [],
+          },
         ],
       },
       null,
-      2
+      2,
     ),
   },
 ];
 
 export function MonorepoDependencyGraph() {
-  const [activePreset, setActivePreset] = useState<ManifestPreset>(PRESET_CONFIGS[0]);
-  const [jsonInput, setJsonInput] = useState<string>(PRESET_CONFIGS[0].configJson);
+  const [activePreset, setActivePreset] = useState<ManifestPreset>(
+    PRESET_CONFIGS[0],
+  );
+  const [jsonInput, setJsonInput] = useState<string>(
+    PRESET_CONFIGS[0].configJson,
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -177,7 +250,9 @@ export function MonorepoDependencyGraph() {
     if (!searchQuery.trim()) return parsedPackages;
     const q = searchQuery.toLowerCase();
     return parsedPackages.filter(
-      (node) => node.name.toLowerCase().includes(q) || node.type.toLowerCase().includes(q)
+      (node) =>
+        node.name.toLowerCase().includes(q) ||
+        node.type.toLowerCase().includes(q),
     );
   }, [parsedPackages, searchQuery]);
 
@@ -232,7 +307,9 @@ export function MonorepoDependencyGraph() {
             Monorepo Workspace Dependency Graph Visualizer
           </h1>
           <p className="mt-1 text-sm font-bold text-muted dark:text-[#c4bbae] max-w-2xl">
-            Parse monorepo workspace manifests (`package.json`, Turborepo, Pnpm), visualize internal package relationships in 2D, and detect circular dependency loops.
+            Parse monorepo workspace manifests (`package.json`, Turborepo,
+            Pnpm), visualize internal package relationships in 2D, and detect
+            circular dependency loops.
           </p>
         </div>
 
@@ -240,15 +317,25 @@ export function MonorepoDependencyGraph() {
         <div className="flex items-center gap-3 bg-white dark:bg-[#1f1c18] border-2 border-black dark:border-[#2e2924] p-3 rounded-xl shadow-card-sm self-start md:self-auto">
           <div
             className={`p-2.5 rounded-lg border border-black font-black ${
-              circularCycles.length > 0 ? "bg-rose-500 text-white animate-bounce" : "bg-emerald-400 text-black"
+              circularCycles.length > 0
+                ? "bg-rose-500 text-white animate-bounce"
+                : "bg-emerald-400 text-black"
             }`}
           >
-            {circularCycles.length > 0 ? <AlertTriangle className="w-6 h-6" /> : <CheckCircle2 className="w-6 h-6" />}
+            {circularCycles.length > 0 ? (
+              <AlertTriangle className="w-6 h-6" />
+            ) : (
+              <CheckCircle2 className="w-6 h-6" />
+            )}
           </div>
           <div>
-            <div className="text-xs font-black uppercase text-muted tracking-wider">Health Status</div>
+            <div className="text-xs font-black uppercase text-muted tracking-wider">
+              Health Status
+            </div>
             <div className="text-sm font-black text-text dark:text-[#f0ebe2]">
-              {circularCycles.length > 0 ? `${circularCycles.length} Circular Loop(s)` : "Clean Architecture"}
+              {circularCycles.length > 0
+                ? `${circularCycles.length} Circular Loop(s)`
+                : "Clean Architecture"}
             </div>
           </div>
         </div>
@@ -269,7 +356,8 @@ export function MonorepoDependencyGraph() {
                 Circular Dependency Loop Detected!
               </h3>
               <p className="text-xs font-bold text-text dark:text-[#f0ebe2] mt-1">
-                The internal package dependencies contain a circular reference loop which causes infinite build recursion in Turborepo / Lerna.
+                The internal package dependencies contain a circular reference
+                loop which causes infinite build recursion in Turborepo / Lerna.
               </p>
               <div className="mt-2 space-y-1">
                 {circularCycles.map((cycle, idx) => (
@@ -280,8 +368,12 @@ export function MonorepoDependencyGraph() {
                     <span>Loop #{idx + 1}:</span>
                     {cycle.map((node, nIdx) => (
                       <React.Fragment key={nIdx}>
-                        <span className="bg-black/10 dark:bg-white/10 px-1.5 py-0.5 rounded">{node}</span>
-                        {nIdx < cycle.length - 1 && <ArrowRight className="w-3 h-3 shrink-0" />}
+                        <span className="bg-black/10 dark:bg-white/10 px-1.5 py-0.5 rounded">
+                          {node}
+                        </span>
+                        {nIdx < cycle.length - 1 && (
+                          <ArrowRight className="w-3 h-3 shrink-0" />
+                        )}
                       </React.Fragment>
                     ))}
                   </div>
@@ -294,14 +386,11 @@ export function MonorepoDependencyGraph() {
 
       {/* Main Container: Graph Visualizer & Code Manifest Editor */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
         {/* Left Column: 2D Graph Visualizer Canvas (8 cols) */}
         <div className="lg:col-span-8 space-y-6 flex flex-col">
           <div className="bg-white dark:bg-[#1f1c18] border-4 border-black dark:border-[#2e2924] rounded-2xl shadow-card p-5 flex-1 flex flex-col min-h-[550px]">
-            
             {/* Toolbar Controls */}
             <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b-2 border-black/10 dark:border-[#2e2924] mb-4">
-              
               {/* Presets & Tabs */}
               <div className="flex items-center gap-2">
                 <button
@@ -328,11 +417,15 @@ export function MonorepoDependencyGraph() {
 
               {/* Presets Dropdown */}
               <div className="flex items-center gap-2">
-                <span className="text-xs font-black text-muted hidden sm:inline">Presets:</span>
+                <span className="text-xs font-black text-muted hidden sm:inline">
+                  Presets:
+                </span>
                 <select
                   value={activePreset.id}
                   onChange={(e) => {
-                    const found = PRESET_CONFIGS.find((p) => p.id === e.target.value);
+                    const found = PRESET_CONFIGS.find(
+                      (p) => p.id === e.target.value,
+                    );
                     if (found) handlePresetSelect(found);
                   }}
                   className="bg-surface-low dark:bg-[#12110e] border-2 border-black dark:border-[#2e2924] rounded-xl px-2.5 py-1.5 text-xs font-bold text-text dark:text-[#f0ebe2] focus:outline-none"
@@ -357,7 +450,6 @@ export function MonorepoDependencyGraph() {
             {/* TAB 1: 2D Graph Interactive SVG Canvas */}
             {activeTab === "graph" && (
               <div className="relative flex-1 bg-surface-low dark:bg-[#12110e] border-2 border-black/20 dark:border-[#2e2924] rounded-xl overflow-hidden p-4 flex flex-col justify-center items-center">
-                
                 {/* Search & Zoom Floating Overlay Bar */}
                 <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between gap-2 pointer-events-none">
                   <div className="relative pointer-events-auto max-w-xs">
@@ -373,14 +465,20 @@ export function MonorepoDependencyGraph() {
 
                   <div className="flex items-center gap-1 bg-white dark:bg-[#1f1c18] border-2 border-black dark:border-[#2e2924] rounded-xl p-1 shadow-card-sm pointer-events-auto">
                     <button
-                      onClick={() => setZoomLevel((z) => Math.min(z + 0.15, 1.6))}
+                      onClick={() =>
+                        setZoomLevel((z) => Math.min(z + 0.15, 1.6))
+                      }
                       className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded text-text dark:text-[#f0ebe2]"
                     >
                       <ZoomIn className="w-4 h-4" />
                     </button>
-                    <span className="text-[10px] font-mono font-bold px-1">{Math.round(zoomLevel * 100)}%</span>
+                    <span className="text-[10px] font-mono font-bold px-1">
+                      {Math.round(zoomLevel * 100)}%
+                    </span>
                     <button
-                      onClick={() => setZoomLevel((z) => Math.max(z - 0.15, 0.6))}
+                      onClick={() =>
+                        setZoomLevel((z) => Math.max(z - 0.15, 0.6))
+                      }
                       className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded text-text dark:text-[#f0ebe2]"
                     >
                       <ZoomOut className="w-4 h-4" />
@@ -430,10 +528,15 @@ export function MonorepoDependencyGraph() {
                       {/* Render Dependency Edges */}
                       {filteredNodes.map((sourceNode) =>
                         sourceNode.dependencies.map((depName) => {
-                          const targetNode = parsedPackages.find((n) => n.id === depName);
+                          const targetNode = parsedPackages.find(
+                            (n) => n.id === depName,
+                          );
                           if (!targetNode) return null;
 
-                          const isLoop = isCircularEdge(sourceNode.id, targetNode.id);
+                          const isLoop = isCircularEdge(
+                            sourceNode.id,
+                            targetNode.id,
+                          );
 
                           return (
                             <line
@@ -445,16 +548,20 @@ export function MonorepoDependencyGraph() {
                               stroke={isLoop ? "#ef4444" : "#9ca3af"}
                               strokeWidth={isLoop ? 3.5 : 1.8}
                               strokeDasharray={isLoop ? "6,4" : "none"}
-                              markerEnd={isLoop ? "url(#arrow-circular)" : "url(#arrow)"}
+                              markerEnd={
+                                isLoop ? "url(#arrow-circular)" : "url(#arrow)"
+                              }
                             />
                           );
-                        })
+                        }),
                       )}
 
                       {/* Render Package Nodes */}
                       {filteredNodes.map((node) => {
                         const isSelected = selectedNodeId === node.id;
-                        const isInLoop = circularCycles.some((c) => c.includes(node.id));
+                        const isInLoop = circularCycles.some((c) =>
+                          c.includes(node.id),
+                        );
 
                         return (
                           <g
@@ -473,13 +580,21 @@ export function MonorepoDependencyGraph() {
                                 isInLoop
                                   ? "#fee2e2"
                                   : node.type === "app"
-                                  ? "#fef08a"
-                                  : node.type === "service"
-                                  ? "#e0e7ff"
-                                  : "#ffffff"
+                                    ? "#fef08a"
+                                    : node.type === "service"
+                                      ? "#e0e7ff"
+                                      : "#ffffff"
                               }
-                              stroke={isInLoop ? "#ef4444" : isSelected ? "#3b82f6" : "#000"}
-                              strokeWidth={isSelected ? 3.5 : isInLoop ? 2.5 : 2}
+                              stroke={
+                                isInLoop
+                                  ? "#ef4444"
+                                  : isSelected
+                                    ? "#3b82f6"
+                                    : "#000"
+                              }
+                              strokeWidth={
+                                isSelected ? 3.5 : isInLoop ? 2.5 : 2
+                              }
                             />
                             <text
                               x="0"
@@ -489,7 +604,9 @@ export function MonorepoDependencyGraph() {
                               fontSize="11"
                               fill="#111827"
                             >
-                              {node.name.length > 16 ? node.name.substring(0, 14) + ".." : node.name}
+                              {node.name.length > 16
+                                ? node.name.substring(0, 14) + ".."
+                                : node.name}
                             </text>
                             <text
                               x="0"
@@ -512,16 +629,20 @@ export function MonorepoDependencyGraph() {
                 <div className="w-full pt-3 border-t border-black/10 dark:border-[#2e2924] flex flex-wrap items-center justify-between text-[11px] font-bold text-muted gap-2">
                   <div className="flex items-center gap-3">
                     <span className="flex items-center gap-1">
-                      <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 border border-black inline-block" /> App
+                      <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 border border-black inline-block" />{" "}
+                      App
                     </span>
                     <span className="flex items-center gap-1">
-                      <span className="w-2.5 h-2.5 rounded-full bg-indigo-300 border border-black inline-block" /> Service
+                      <span className="w-2.5 h-2.5 rounded-full bg-indigo-300 border border-black inline-block" />{" "}
+                      Service
                     </span>
                     <span className="flex items-center gap-1">
-                      <span className="w-2.5 h-2.5 rounded-full bg-white border border-black inline-block" /> Package
+                      <span className="w-2.5 h-2.5 rounded-full bg-white border border-black inline-block" />{" "}
+                      Package
                     </span>
                     <span className="flex items-center gap-1">
-                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block" /> Circular Edge
+                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block" />{" "}
+                      Circular Edge
                     </span>
                   </div>
                   <span>Click node to view dependency details</span>
@@ -534,7 +655,9 @@ export function MonorepoDependencyGraph() {
               <div className="flex-1 bg-[#1e1e1e] text-emerald-400 font-mono text-xs p-4 rounded-xl border-2 border-black overflow-hidden flex flex-col">
                 <div className="text-gray-400 pb-2 border-b border-gray-700 mb-2 font-bold flex items-center justify-between">
                   <span>📄 package.json / pnpm-workspace.yaml Manifest</span>
-                  <span className="text-[10px] text-gray-500">Edit JSON to update live graph</span>
+                  <span className="text-[10px] text-gray-500">
+                    Edit JSON to update live graph
+                  </span>
                 </div>
                 <textarea
                   value={jsonInput}
@@ -548,7 +671,6 @@ export function MonorepoDependencyGraph() {
 
         {/* Right Column: Node Inspector & Monorepo Analytics (4 cols) */}
         <div className="lg:col-span-4 space-y-6 flex flex-col">
-          
           {/* Node Details Inspector */}
           <div className="bg-white dark:bg-[#1f1c18] border-4 border-black dark:border-[#2e2924] rounded-2xl shadow-card p-5">
             <h2 className="text-lg font-black text-text dark:text-[#f0ebe2] pb-3 border-b-2 border-black/10 dark:border-[#2e2924] mb-4 flex items-center gap-2">
@@ -562,7 +684,11 @@ export function MonorepoDependencyGraph() {
                     {selectedNode.name}
                   </div>
                   <div className="text-xs font-bold text-muted mt-0.5">
-                    Type: <span className="uppercase text-primary">{selectedNode.type}</span> • Version: v{selectedNode.version}
+                    Type:{" "}
+                    <span className="uppercase text-primary">
+                      {selectedNode.type}
+                    </span>{" "}
+                    • Version: v{selectedNode.version}
                   </div>
                 </div>
 
@@ -572,7 +698,9 @@ export function MonorepoDependencyGraph() {
                     Internal Dependencies ({selectedNode.dependencies.length})
                   </div>
                   {selectedNode.dependencies.length === 0 ? (
-                    <div className="text-xs font-bold text-muted italic">No internal monorepo dependencies.</div>
+                    <div className="text-xs font-bold text-muted italic">
+                      No internal monorepo dependencies.
+                    </div>
                   ) : (
                     <div className="space-y-1.5">
                       {selectedNode.dependencies.map((dep) => (
@@ -581,7 +709,9 @@ export function MonorepoDependencyGraph() {
                           onClick={() => setSelectedNodeId(dep)}
                           className="p-2 rounded-lg border-2 border-black/10 dark:border-[#2e2924] bg-surface dark:bg-[#12110e] text-xs font-mono font-bold flex items-center justify-between cursor-pointer hover:border-black transition-all"
                         >
-                          <span className="text-text dark:text-[#f0ebe2]">{dep}</span>
+                          <span className="text-text dark:text-[#f0ebe2]">
+                            {dep}
+                          </span>
                           <ArrowRight className="w-3.5 h-3.5 text-muted" />
                         </div>
                       ))}
@@ -594,8 +724,12 @@ export function MonorepoDependencyGraph() {
                   <div className="text-xs font-black uppercase text-muted tracking-wider mb-2">
                     Required By (Dependents)
                   </div>
-                  {parsedPackages.filter((p) => p.dependencies.includes(selectedNode.id)).length === 0 ? (
-                    <div className="text-xs font-bold text-muted italic">Top-level root package (not imported).</div>
+                  {parsedPackages.filter((p) =>
+                    p.dependencies.includes(selectedNode.id),
+                  ).length === 0 ? (
+                    <div className="text-xs font-bold text-muted italic">
+                      Top-level root package (not imported).
+                    </div>
                   ) : (
                     <div className="space-y-1.5">
                       {parsedPackages
@@ -606,7 +740,9 @@ export function MonorepoDependencyGraph() {
                             onClick={() => setSelectedNodeId(dep.id)}
                             className="p-2 rounded-lg border-2 border-black/10 dark:border-[#2e2924] bg-surface dark:bg-[#12110e] text-xs font-mono font-bold flex items-center justify-between cursor-pointer hover:border-black transition-all"
                           >
-                            <span className="text-text dark:text-[#f0ebe2]">{dep.name}</span>
+                            <span className="text-text dark:text-[#f0ebe2]">
+                              {dep.name}
+                            </span>
                             <ArrowRight className="w-3.5 h-3.5 text-muted" />
                           </div>
                         ))}
@@ -616,7 +752,8 @@ export function MonorepoDependencyGraph() {
               </div>
             ) : (
               <div className="p-6 text-center border-2 border-dashed border-black/20 dark:border-[#2e2924] rounded-xl text-muted text-xs font-bold">
-                Select a package node from the 2D graph to inspect its dependency linkage.
+                Select a package node from the 2D graph to inspect its
+                dependency linkage.
               </div>
             )}
           </div>
@@ -628,18 +765,26 @@ export function MonorepoDependencyGraph() {
             </h3>
             <div className="grid grid-cols-2 gap-3 text-center">
               <div className="bg-white dark:bg-[#1f1c18] border-2 border-black dark:border-[#2e2924] p-3 rounded-xl">
-                <div className="text-2xl font-black text-text dark:text-[#f0ebe2]">{parsedPackages.length}</div>
-                <div className="text-[10px] font-bold text-muted uppercase">Packages</div>
+                <div className="text-2xl font-black text-text dark:text-[#f0ebe2]">
+                  {parsedPackages.length}
+                </div>
+                <div className="text-[10px] font-bold text-muted uppercase">
+                  Packages
+                </div>
               </div>
               <div className="bg-white dark:bg-[#1f1c18] border-2 border-black dark:border-[#2e2924] p-3 rounded-xl">
                 <div className="text-2xl font-black text-text dark:text-[#f0ebe2]">
-                  {parsedPackages.reduce((acc, p) => acc + p.dependencies.length, 0)}
+                  {parsedPackages.reduce(
+                    (acc, p) => acc + p.dependencies.length,
+                    0,
+                  )}
                 </div>
-                <div className="text-[10px] font-bold text-muted uppercase">Edges (Linkages)</div>
+                <div className="text-[10px] font-bold text-muted uppercase">
+                  Edges (Linkages)
+                </div>
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </div>

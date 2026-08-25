@@ -1,0 +1,75 @@
+name: Curriculum Slug Drift Check
+
+on:
+  pull_request:
+    paths:
+      - 'frontend/public/content/curriculum.json'
+      - 'backend/apps/content/**'
+      - 'backend/apps/content/management/commands/check_curriculum_slugs.py'
+      - '.github/workflows/curriculum-slug-drift.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/public/content/curriculum.json'
+      - 'backend/apps/content/**'
+  workflow_dispatch:
+
+jobs:
+  check-slug-drift:
+    name: Check Curriculum Slug Drift
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: 'backend/requirements.txt'
+
+      - name: Install Backend Dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Migrations and Seed Lessons
+        env:
+          DJANGO_ENV: test
+          SECRET_KEY: test-secret-key-for-ci-slug-drift
+          DEBUG: "True"
+        run: |
+          cd backend
+          python manage.py migrate --noinput
+          python manage.py seed_lessons || true
+
+      - name: Verify Curriculum Slugs Against Seeded Lessons
+        id: slug_check
+        env:
+          DJANGO_ENV: test
+          SECRET_KEY: test-secret-key-for-ci-slug-drift
+          DEBUG: "True"
+        run: |
+          cd backend
+          python manage.py check_curriculum_slugs --fail-on-drift
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run Frontend Curriculum Slug Drift Tests
+        run: |
+          cd frontend
+          npx vitest run src/test/curriculumSlugDrift.test.ts

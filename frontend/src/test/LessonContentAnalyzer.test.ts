@@ -19,7 +19,9 @@ Git is a distributed version control system. It records changes to files over ti
 ![image](https://example.com/flow.png)
 `;
     const report = analyzeLessonMarkdown(markdown);
-    const missingAltSuggestions = report.suggestions.filter((s) => s.type === "missing_alt");
+    const missingAltSuggestions = report.suggestions.filter(
+      (s) => s.type === "missing_alt",
+    );
     expect(missingAltSuggestions.length).toBeGreaterThan(0);
   });
 
@@ -36,7 +38,9 @@ Git rebase allows you to linearize your commit history.
   it("suggests internal links when curriculum keywords are mentioned", () => {
     const markdown = `In this lesson we will learn how to handle a merge conflict in Git.`;
     const report = analyzeLessonMarkdown(markdown);
-    const linkSuggestions = report.suggestions.filter((s) => s.type === "internal_link");
+    const linkSuggestions = report.suggestions.filter(
+      (s) => s.type === "internal_link",
+    );
     expect(linkSuggestions.length).toBeGreaterThan(0);
   });
 });

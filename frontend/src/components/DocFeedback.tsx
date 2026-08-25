@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import './DocFeedback.css';
+import React, { useState, useEffect } from "react";
+import "./DocFeedback.css";
 
-const STORAGE_KEY = 'doc_feedback';
+const STORAGE_KEY = "doc_feedback";
 
 interface DocFeedbackProps {
   pageId: string;
@@ -15,7 +15,7 @@ export function DocFeedback({ pageId }: DocFeedbackProps) {
   }>({
     voted: false,
     helpful: null,
-    comment: ''
+    comment: "",
   });
 
   const [showComment, setShowComment] = useState(false);
@@ -52,7 +52,7 @@ export function DocFeedback({ pageId }: DocFeedbackProps) {
     const newData = {
       voted: true,
       helpful,
-      comment: feedback.comment
+      comment: feedback.comment,
     };
 
     saveFeedback(newData);
@@ -92,7 +92,9 @@ export function DocFeedback({ pageId }: DocFeedbackProps) {
   if (submitted && feedback.helpful === false) {
     return (
       <div className="doc-feedback submitted">
-        <span className="feedback-thanks">✅ Thanks! We'll work on improving this page.</span>
+        <span className="feedback-thanks">
+          ✅ Thanks! We'll work on improving this page.
+        </span>
       </div>
     );
   }
@@ -100,7 +102,7 @@ export function DocFeedback({ pageId }: DocFeedbackProps) {
   return (
     <div className="doc-feedback">
       <p className="feedback-question">Was this page helpful?</p>
-      
+
       <div className="feedback-buttons">
         <button
           className="feedback-btn yes"
@@ -123,7 +125,9 @@ export function DocFeedback({ pageId }: DocFeedbackProps) {
           <textarea
             placeholder="What could we improve?"
             value={feedback.comment}
-            onChange={(e) => setFeedback({ ...feedback, comment: e.target.value })}
+            onChange={(e) =>
+              setFeedback({ ...feedback, comment: e.target.value })
+            }
             rows={3}
           />
           <button

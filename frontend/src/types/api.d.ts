@@ -4237,7 +4237,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_notifications_digest_retrieve"];
+        get: operations["api_notifications_digest_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -11436,7 +11436,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_api_notifications_digest_retrieve"];
+        get: operations["api_v1_api_notifications_digest_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -17108,6 +17108,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Note"][];
+        };
+        PaginatedNotificationList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["Notification"][];
         };
         PaginatedRecommendationList: {
             /** @example 123 */
@@ -28711,7 +28726,12 @@ export interface operations {
     };
     api_notifications_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -28723,7 +28743,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Notification"][];
+                    "application/json": components["schemas"]["PaginatedNotificationList"];
                 };
             };
         };
@@ -28858,21 +28878,27 @@ export interface operations {
             };
         };
     };
-    api_notifications_digest_retrieve: {
+    api_notifications_digest_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PaginatedNotificationList"];
+                };
             };
         };
     };
@@ -45062,7 +45088,12 @@ export interface operations {
     };
     api_v1_api_notifications_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -45074,7 +45105,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Notification"][];
+                    "application/json": components["schemas"]["PaginatedNotificationList"];
                 };
             };
         };
@@ -45209,21 +45240,27 @@ export interface operations {
             };
         };
     };
-    api_v1_api_notifications_digest_retrieve: {
+    api_v1_api_notifications_digest_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PaginatedNotificationList"];
+                };
             };
         };
     };

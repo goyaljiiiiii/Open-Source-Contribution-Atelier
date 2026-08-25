@@ -31,29 +31,190 @@ export interface CommitItem {
 }
 
 const GENERATED_COMMITS: CommitItem[] = [
-  { id: 1, hash: "a1b2c01", author: "suman20041", message: "initial project setup & config", timestamp: "5 days ago", codeSnippet: "export const API_URL = '/api/v1';", testPasses: true },
-  { id: 2, hash: "a1b2c02", author: "nandini", message: "add user auth service interface", timestamp: "5 days ago", codeSnippet: "export interface User { id: string; email: string; }", testPasses: true },
-  { id: 3, hash: "a1b2c03", author: "alex_dev", message: "setup routing and main layout", timestamp: "4 days ago", codeSnippet: "export function App() { return <Layout />; }", testPasses: true },
-  { id: 4, hash: "a1b2c04", author: "suman20041", message: "add tailwind CSS tokens", timestamp: "4 days ago", codeSnippet: "module.exports = { theme: { extend: {} } };", testPasses: true },
-  { id: 5, hash: "a1b2c05", author: "dev_bot", message: "bump typescript to v5.3", timestamp: "4 days ago", codeSnippet: "{\"devDependencies\": {\"typescript\": \"^5.3.0\"}}", testPasses: true },
-  { id: 6, hash: "a1b2c06", author: "nandini", message: "implement navbar and footer", timestamp: "3 days ago", codeSnippet: "export function Navbar() { return <nav>Atelier</nav>; }", testPasses: true },
-  { id: 7, hash: "a1b2c07", author: "suman20041", message: "add redux toolkit store setup", timestamp: "3 days ago", codeSnippet: "export const store = configureStore({ reducer: {} });", testPasses: true },
-  { id: 8, hash: "a1b2c08", author: "alex_dev", message: "integrate tanstack query provider", timestamp: "3 days ago", codeSnippet: "const queryClient = new QueryClient();", testPasses: true },
-  { id: 9, hash: "a1b2c09", author: "suman20041", message: "add JWT token interceptor", timestamp: "2 days ago", codeSnippet: "api.interceptors.request.use((cfg) => attachJWT(cfg));", testPasses: true },
-  { id: 10, hash: "a1b2c10", author: "nandini", message: "add user profile card component", timestamp: "2 days ago", codeSnippet: "export function ProfileCard() { return <div>User</div>; }", testPasses: true },
-  { id: 11, hash: "a1b2c11", author: "dev_bot", message: "update linting rules in eslint", timestamp: "2 days ago", codeSnippet: "{\"rules\": {\"no-console\": \"warn\"}}", testPasses: true },
-  
+  {
+    id: 1,
+    hash: "a1b2c01",
+    author: "suman20041",
+    message: "initial project setup & config",
+    timestamp: "5 days ago",
+    codeSnippet: "export const API_URL = '/api/v1';",
+    testPasses: true,
+  },
+  {
+    id: 2,
+    hash: "a1b2c02",
+    author: "nandini",
+    message: "add user auth service interface",
+    timestamp: "5 days ago",
+    codeSnippet: "export interface User { id: string; email: string; }",
+    testPasses: true,
+  },
+  {
+    id: 3,
+    hash: "a1b2c03",
+    author: "alex_dev",
+    message: "setup routing and main layout",
+    timestamp: "4 days ago",
+    codeSnippet: "export function App() { return <Layout />; }",
+    testPasses: true,
+  },
+  {
+    id: 4,
+    hash: "a1b2c04",
+    author: "suman20041",
+    message: "add tailwind CSS tokens",
+    timestamp: "4 days ago",
+    codeSnippet: "module.exports = { theme: { extend: {} } };",
+    testPasses: true,
+  },
+  {
+    id: 5,
+    hash: "a1b2c05",
+    author: "dev_bot",
+    message: "bump typescript to v5.3",
+    timestamp: "4 days ago",
+    codeSnippet: '{"devDependencies": {"typescript": "^5.3.0"}}',
+    testPasses: true,
+  },
+  {
+    id: 6,
+    hash: "a1b2c06",
+    author: "nandini",
+    message: "implement navbar and footer",
+    timestamp: "3 days ago",
+    codeSnippet: "export function Navbar() { return <nav>Atelier</nav>; }",
+    testPasses: true,
+  },
+  {
+    id: 7,
+    hash: "a1b2c07",
+    author: "suman20041",
+    message: "add redux toolkit store setup",
+    timestamp: "3 days ago",
+    codeSnippet: "export const store = configureStore({ reducer: {} });",
+    testPasses: true,
+  },
+  {
+    id: 8,
+    hash: "a1b2c08",
+    author: "alex_dev",
+    message: "integrate tanstack query provider",
+    timestamp: "3 days ago",
+    codeSnippet: "const queryClient = new QueryClient();",
+    testPasses: true,
+  },
+  {
+    id: 9,
+    hash: "a1b2c09",
+    author: "suman20041",
+    message: "add JWT token interceptor",
+    timestamp: "2 days ago",
+    codeSnippet: "api.interceptors.request.use((cfg) => attachJWT(cfg));",
+    testPasses: true,
+  },
+  {
+    id: 10,
+    hash: "a1b2c10",
+    author: "nandini",
+    message: "add user profile card component",
+    timestamp: "2 days ago",
+    codeSnippet: "export function ProfileCard() { return <div>User</div>; }",
+    testPasses: true,
+  },
+  {
+    id: 11,
+    hash: "a1b2c11",
+    author: "dev_bot",
+    message: "update linting rules in eslint",
+    timestamp: "2 days ago",
+    codeSnippet: '{"rules": {"no-console": "warn"}}',
+    testPasses: true,
+  },
+
   // REGRESSION BUG INTRODUCED IN COMMIT 12
-  { id: 12, hash: "a1b2c12", author: "unknown_contrib", message: "refactor auth token verification logic", timestamp: "1 day ago", codeSnippet: "// BUG: Bypasses signature validation!\nfunction verifyToken(token) { return jwt.decode(token); }", testPasses: false },
-  
-  { id: 13, hash: "a1b2c13", author: "suman20041", message: "add interactive quiz module", timestamp: "1 day ago", codeSnippet: "export function QuizEngine() { return <div>Quiz</div>; }", testPasses: false },
-  { id: 14, hash: "a1b2c14", author: "nandini", message: "add badges cabinet showcase", timestamp: "18 hours ago", codeSnippet: "export function BadgesCabinet() { return <Grid />; }", testPasses: false },
-  { id: 15, hash: "a1b2c15", author: "alex_dev", message: "add certificate SVG exporter", timestamp: "15 hours ago", codeSnippet: "export function Certificate() { return <svg />; }", testPasses: false },
-  { id: 16, hash: "a1b2c16", author: "suman20041", message: "add leaderboard streak stats", timestamp: "12 hours ago", codeSnippet: "export function Leaderboard() { return <div>Rank</div>; }", testPasses: false },
-  { id: 17, hash: "a1b2c17", author: "nandini", message: "add real-time websocket chat room", timestamp: "8 hours ago", codeSnippet: "const ws = new WebSocket(CHAT_URL);", testPasses: false },
-  { id: 18, hash: "a1b2c18", author: "dev_bot", message: "add vitest unit test harness", timestamp: "5 hours ago", codeSnippet: "describe('Auth', () => { it('works', () => {}); });", testPasses: false },
-  { id: 19, hash: "a1b2c19", author: "suman20041", message: "add git terminal emulator sandbox", timestamp: "2 hours ago", codeSnippet: "export function GitTerminal() { return <CLI />; }", testPasses: false },
-  { id: 20, hash: "a1b2c20", author: "alex_dev", message: "update README quickstart docs", timestamp: "1 hour ago", codeSnippet: "# Atelier Documentation", testPasses: false },
+  {
+    id: 12,
+    hash: "a1b2c12",
+    author: "unknown_contrib",
+    message: "refactor auth token verification logic",
+    timestamp: "1 day ago",
+    codeSnippet:
+      "// BUG: Bypasses signature validation!\nfunction verifyToken(token) { return jwt.decode(token); }",
+    testPasses: false,
+  },
+
+  {
+    id: 13,
+    hash: "a1b2c13",
+    author: "suman20041",
+    message: "add interactive quiz module",
+    timestamp: "1 day ago",
+    codeSnippet: "export function QuizEngine() { return <div>Quiz</div>; }",
+    testPasses: false,
+  },
+  {
+    id: 14,
+    hash: "a1b2c14",
+    author: "nandini",
+    message: "add badges cabinet showcase",
+    timestamp: "18 hours ago",
+    codeSnippet: "export function BadgesCabinet() { return <Grid />; }",
+    testPasses: false,
+  },
+  {
+    id: 15,
+    hash: "a1b2c15",
+    author: "alex_dev",
+    message: "add certificate SVG exporter",
+    timestamp: "15 hours ago",
+    codeSnippet: "export function Certificate() { return <svg />; }",
+    testPasses: false,
+  },
+  {
+    id: 16,
+    hash: "a1b2c16",
+    author: "suman20041",
+    message: "add leaderboard streak stats",
+    timestamp: "12 hours ago",
+    codeSnippet: "export function Leaderboard() { return <div>Rank</div>; }",
+    testPasses: false,
+  },
+  {
+    id: 17,
+    hash: "a1b2c17",
+    author: "nandini",
+    message: "add real-time websocket chat room",
+    timestamp: "8 hours ago",
+    codeSnippet: "const ws = new WebSocket(CHAT_URL);",
+    testPasses: false,
+  },
+  {
+    id: 18,
+    hash: "a1b2c18",
+    author: "dev_bot",
+    message: "add vitest unit test harness",
+    timestamp: "5 hours ago",
+    codeSnippet: "describe('Auth', () => { it('works', () => {}); });",
+    testPasses: false,
+  },
+  {
+    id: 19,
+    hash: "a1b2c19",
+    author: "suman20041",
+    message: "add git terminal emulator sandbox",
+    timestamp: "2 hours ago",
+    codeSnippet: "export function GitTerminal() { return <CLI />; }",
+    testPasses: false,
+  },
+  {
+    id: 20,
+    hash: "a1b2c20",
+    author: "alex_dev",
+    message: "update README quickstart docs",
+    timestamp: "1 hour ago",
+    codeSnippet: "# Atelier Documentation",
+    testPasses: false,
+  },
 ];
 
 export function GitBisectGame() {
@@ -97,8 +258,12 @@ export function GitBisectGame() {
     setCurrentCheckedOutIdx(initialMid);
 
     addLog("Bisecting: a merge base must be tested");
-    addLog(`[a1b2c${initialMid + 1 < 10 ? "0" + (initialMid + 1) : initialMid + 1}] ${commits[initialMid].message}`);
-    addLog(`Checked out commit ${initialMid + 1}/20. Run test suite or mark good/bad.`);
+    addLog(
+      `[a1b2c${initialMid + 1 < 10 ? "0" + (initialMid + 1) : initialMid + 1}] ${commits[initialMid].message}`,
+    );
+    addLog(
+      `Checked out commit ${initialMid + 1}/20. Run test suite or mark good/bad.`,
+    );
   };
 
   // Mark Good Commit (low moves up)
@@ -129,8 +294,12 @@ export function GitBisectGame() {
     } else {
       setCurrentCheckedOutIdx(newMid);
       setTestResult(null);
-      addLog(`Bisecting: ${highBound - newLow + 1} revisions left to test after this.`);
-      addLog(`Checked out [${commits[newMid].hash}] ${commits[newMid].message}`);
+      addLog(
+        `Bisecting: ${highBound - newLow + 1} revisions left to test after this.`,
+      );
+      addLog(
+        `Checked out [${commits[newMid].hash}] ${commits[newMid].message}`,
+      );
     }
   };
 
@@ -161,8 +330,12 @@ export function GitBisectGame() {
     } else {
       setCurrentCheckedOutIdx(newMid);
       setTestResult(null);
-      addLog(`Bisecting: ${newHigh - lowBound + 1} revisions left to test after this.`);
-      addLog(`Checked out [${commits[newMid].hash}] ${commits[newMid].message}`);
+      addLog(
+        `Bisecting: ${newHigh - lowBound + 1} revisions left to test after this.`,
+      );
+      addLog(
+        `Checked out [${commits[newMid].hash}] ${commits[newMid].message}`,
+      );
     }
   };
 
@@ -186,10 +359,14 @@ export function GitBisectGame() {
     const xpEarned = Math.max(200 - stepsCount * 15, 100);
     setTotalXP((prev) => prev + xpEarned);
 
-    addLog("--------------------------------------------------------------------------------");
+    addLog(
+      "--------------------------------------------------------------------------------",
+    );
     addLog(`🎉 ${badCommit.hash} is the first bad commit!`);
     addLog(`Commit Message: "${badCommit.message}" by ${badCommit.author}`);
-    addLog(`⭐ Earned +${xpEarned} XP in ${stepsCount + 1} binary search steps!`);
+    addLog(
+      `⭐ Earned +${xpEarned} XP in ${stepsCount + 1} binary search steps!`,
+    );
   };
 
   // Reset Game
@@ -221,7 +398,9 @@ export function GitBisectGame() {
       addLog("💡 Git Bisect Commands:");
       addLog("  git bisect start [bad] [good] - Start binary search session");
       addLog("  git bisect good                - Mark current commit as clean");
-      addLog("  git bisect bad                 - Mark current commit as broken");
+      addLog(
+        "  git bisect bad                 - Mark current commit as broken",
+      );
       addLog("  git bisect reset               - Exit bisect & return to HEAD");
       addLog("  test                           - Run automated test suite");
       return;
@@ -237,7 +416,9 @@ export function GitBisectGame() {
     } else if (lower === "test" || lower === "npm test") {
       handleRunTest();
     } else {
-      addLog(`❌ Command not recognized: '${cmd}'. Try 'git bisect start', 'good', 'bad', or 'test'.`);
+      addLog(
+        `❌ Command not recognized: '${cmd}'. Try 'git bisect start', 'good', 'bad', or 'test'.`,
+      );
     }
   };
 
@@ -260,7 +441,9 @@ export function GitBisectGame() {
             `git bisect` Automated Binary Search Debugger Game
           </h1>
           <p className="mt-1 text-sm font-bold text-muted dark:text-[#c4bbae] max-w-2xl">
-            Isolate regression bugs in a 20-commit tree using Git binary search (`git bisect start`, `good`, `bad`). Narrow down commits in log time $O(\\log N)$.
+            Isolate regression bugs in a 20-commit tree using Git binary search
+            (`git bisect start`, `good`, `bad`). Narrow down commits in log time
+            $O(\\log N)$.
           </p>
         </div>
 
@@ -270,19 +453,21 @@ export function GitBisectGame() {
             <Trophy className="w-6 h-6 animate-bounce" />
           </div>
           <div>
-            <div className="text-xs font-black uppercase text-muted tracking-wider">Debugger XP</div>
-            <div className="text-xl font-black text-text dark:text-[#f0ebe2]">{totalXP} XP</div>
+            <div className="text-xs font-black uppercase text-muted tracking-wider">
+              Debugger XP
+            </div>
+            <div className="text-xl font-black text-text dark:text-[#f0ebe2]">
+              {totalXP} XP
+            </div>
           </div>
         </div>
       </div>
 
       {/* Main Grid: Visual 20-Commit Tree & Terminal Debugger (7 + 5 cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
         {/* Left Column: Visual Commit History Binary Search Tree (7 cols) */}
         <div className="lg:col-span-7 space-y-6 flex flex-col">
           <div className="bg-white dark:bg-[#1f1c18] border-4 border-black dark:border-[#2e2924] rounded-2xl shadow-card p-5 flex-1 flex flex-col">
-            
             {/* Header & Controls */}
             <div className="flex items-center justify-between pb-3 border-b-2 border-black/10 dark:border-[#2e2924] mb-4">
               <div className="flex items-center gap-2 font-black text-sm text-text dark:text-[#f0ebe2]">
@@ -332,10 +517,10 @@ export function GitBisectGame() {
                       isFoundBad
                         ? "border-rose-500 bg-rose-500/20 shadow-card-sm animate-pulse"
                         : isCheckedOut
-                        ? "border-black bg-primary/20 shadow-card-sm scale-[1.01]"
-                        : inRange
-                        ? "border-black/20 dark:border-[#2e2924] bg-surface-low dark:bg-[#151411]"
-                        : "border-black/10 dark:border-white/5 bg-black/5 dark:bg-white/5 opacity-40 grayscale"
+                          ? "border-black bg-primary/20 shadow-card-sm scale-[1.01]"
+                          : inRange
+                            ? "border-black/20 dark:border-[#2e2924] bg-surface-low dark:bg-[#151411]"
+                            : "border-black/10 dark:border-white/5 bg-black/5 dark:bg-white/5 opacity-40 grayscale"
                     }`}
                   >
                     {/* Commit Info */}
@@ -345,10 +530,10 @@ export function GitBisectGame() {
                           isFoundBad
                             ? "bg-rose-500 text-white"
                             : isCheckedOut
-                            ? "bg-primary text-black"
-                            : inRange
-                            ? "bg-white dark:bg-[#1f1c18] text-text dark:text-[#f0ebe2]"
-                            : "bg-gray-400 text-gray-700"
+                              ? "bg-primary text-black"
+                              : inRange
+                                ? "bg-white dark:bg-[#1f1c18] text-text dark:text-[#f0ebe2]"
+                                : "bg-gray-400 text-gray-700"
                         }`}
                       >
                         #{commit.id}
@@ -390,14 +575,16 @@ export function GitBisectGame() {
 
         {/* Right Column: Code Inspection, Test Suite & Terminal (5 cols) */}
         <div className="lg:col-span-5 space-y-6 flex flex-col">
-          
           {/* Checked Out Commit Code Inspection Card */}
           <div className="bg-white dark:bg-[#1f1c18] border-4 border-black dark:border-[#2e2924] rounded-2xl shadow-card p-5 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b-2 border-black/10 dark:border-[#2e2924]">
               <h2 className="text-sm font-black text-text dark:text-[#f0ebe2] flex items-center gap-2">
-                <FileCode className="w-4 h-4 text-primary" /> Code State (Commit #{activeCommit.id})
+                <FileCode className="w-4 h-4 text-primary" /> Code State (Commit
+                #{activeCommit.id})
               </h2>
-              <span className="font-mono text-xs font-bold text-muted">[{activeCommit.hash}]</span>
+              <span className="font-mono text-xs font-bold text-muted">
+                [{activeCommit.hash}]
+              </span>
             </div>
 
             {/* Code Snippet Box */}
@@ -405,7 +592,9 @@ export function GitBisectGame() {
               <div className="text-gray-500 pb-1 border-b border-gray-800 text-[10px] font-bold">
                 // Checked out diff preview
               </div>
-              <pre className="whitespace-pre-wrap">{activeCommit.codeSnippet}</pre>
+              <pre className="whitespace-pre-wrap">
+                {activeCommit.codeSnippet}
+              </pre>
             </div>
 
             {/* Test Harness Controls */}
@@ -453,7 +642,9 @@ export function GitBisectGame() {
                 ) : (
                   <>
                     <XCircle className="w-4 h-4 text-rose-500 shrink-0" />
-                    <span>FAILED: Regression detected at Commit #{activeCommit.id}.</span>
+                    <span>
+                      FAILED: Regression detected at Commit #{activeCommit.id}.
+                    </span>
                   </>
                 )}
               </div>
@@ -484,10 +675,10 @@ export function GitBisectGame() {
                     log.startsWith("$")
                       ? "text-yellow-400 font-bold"
                       : log.includes("🎉") || log.includes("⭐")
-                      ? "text-emerald-400 font-black"
-                      : log.includes("❌")
-                      ? "text-rose-400 font-semibold"
-                      : "text-gray-300"
+                        ? "text-emerald-400 font-black"
+                        : log.includes("❌")
+                          ? "text-rose-400 font-semibold"
+                          : "text-gray-300"
                   }
                 >
                   {log}
@@ -496,8 +687,13 @@ export function GitBisectGame() {
             </div>
 
             {/* Input Form */}
-            <form onSubmit={handleCommand} className="p-3 bg-[#202020] border-t border-gray-800 flex items-center gap-2">
-              <span className="text-emerald-400 font-mono font-bold text-xs">$</span>
+            <form
+              onSubmit={handleCommand}
+              className="p-3 bg-[#202020] border-t border-gray-800 flex items-center gap-2"
+            >
+              <span className="text-emerald-400 font-mono font-bold text-xs">
+                $
+              </span>
               <input
                 type="text"
                 value={terminalInput}
@@ -513,7 +709,6 @@ export function GitBisectGame() {
               </button>
             </form>
           </div>
-
         </div>
       </div>
 
@@ -534,7 +729,12 @@ export function GitBisectGame() {
                 Regression Bug Isolated! 🎉
               </h3>
               <p className="text-xs font-bold text-muted dark:text-[#c4bbae]">
-                You successfully used `git bisect` binary search to pinpoint commit <span className="font-mono text-rose-500">[{foundBadCommit.hash}]</span> in {stepsCount + 1} steps!
+                You successfully used `git bisect` binary search to pinpoint
+                commit{" "}
+                <span className="font-mono text-rose-500">
+                  [{foundBadCommit.hash}]
+                </span>{" "}
+                in {stepsCount + 1} steps!
               </p>
               <div className="bg-surface-low dark:bg-[#12110e] border-2 border-black p-3 rounded-xl text-xs font-mono font-bold text-left space-y-1">
                 <div>Message: "{foundBadCommit.message}"</div>

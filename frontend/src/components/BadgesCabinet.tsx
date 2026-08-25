@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   X,
@@ -10,10 +10,12 @@ import {
   CheckCircle2,
   Lock,
   RotateCcw,
-} from 'lucide-react';
-import BadgeTooltip from './BadgeTooltip';
+} from "lucide-react";
+import BadgeTooltip from "./BadgeTooltip";
+import BadgeUnlockModal from "./ui/BadgeUnlockModal";
 
 // Types
+
 export interface Badge {
   id: string | number;
   name: string;
@@ -37,16 +39,20 @@ export interface BadgesCabinetProps {
 const BadgesCabinet: React.FC<BadgesCabinetProps> = ({
   badges = [],
   loading = false,
-  className = '',
+  className = "",
   pageSize = 12,
   initialGroupByModule = false,
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'earned' | 'locked'>('all');
-  const [selectedModule, setSelectedModule] = useState<string>('all');
-  const [groupByModule, setGroupByModule] = useState<boolean>(initialGroupByModule);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState<
+    "all" | "earned" | "locked"
+  >("all");
+  const [selectedModule, setSelectedModule] = useState<string>("all");
+  const [groupByModule, setGroupByModule] =
+    useState<boolean>(initialGroupByModule);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(pageSize);
+  const [activeModalBadge, setActiveModalBadge] = useState<Badge | null>(null);
 
   // Extract unique modules/categories
   const modulesList = useMemo(() => {
@@ -66,21 +72,28 @@ const BadgesCabinet: React.FC<BadgesCabinetProps> = ({
   const filteredBadges = useMemo(() => {
     return badges.filter((badge) => {
       // 1. Status Filter
-      if (selectedFilter === 'earned' && !badge.earned) return false;
-      if (selectedFilter === 'locked' && badge.earned) return false;
+      if (selectedFilter === "earned" && !badge.earned) return false;
+      if (selectedFilter === "locked" && badge.earned) return false;
 
       // 2. Module Filter
-      const badgeMod = badge.module || badge.category || 'General';
-      if (selectedModule !== 'all' && badgeMod !== selectedModule) return false;
+      const badgeMod = badge.module || badge.category || "General";
+      if (selectedModule !== "all" && badgeMod !== selectedModule) return false;
 
       // 3. Search Query Filter
-      if (searchQuery.trim() !== '') {
+      if (searchQuery.trim() !== "") {
         const query = searchQuery.toLowerCase().trim();
         const matchesName = badge.name.toLowerCase().includes(query);
         const matchesDesc = badge.description.toLowerCase().includes(query);
-        const matchesCriteria = badge.unlockCriteria.toLowerCase().includes(query);
+        const matchesCriteria = badge.unlockCriteria
+          .toLowerCase()
+          .includes(query);
         const matchesModule = badgeMod.toLowerCase().includes(query);
-        if (!matchesName && !matchesDesc && !matchesCriteria && !matchesModule) {
+        if (
+          !matchesName &&
+          !matchesDesc &&
+          !matchesCriteria &&
+          !matchesModule
+        ) {
           return false;
         }
       }
@@ -90,7 +103,7 @@ const BadgesCabinet: React.FC<BadgesCabinetProps> = ({
   }, [badges, selectedFilter, selectedModule, searchQuery]);
 
   // Reset pagination when filters change
-  const handleFilterChange = (filter: 'all' | 'earned' | 'locked') => {
+  const handleFilterChange = (filter: "all" | "earned" | "locked") => {
     setSelectedFilter(filter);
     setCurrentPage(1);
   };
@@ -116,9 +129,9 @@ const BadgesCabinet: React.FC<BadgesCabinetProps> = ({
   };
 
   const resetFilters = () => {
-    setSearchQuery('');
-    setSelectedFilter('all');
-    setSelectedModule('all');
+    setSearchQuery("");
+    setSelectedFilter("all");
+    setSelectedModule("all");
     setCurrentPage(1);
   };
 
@@ -134,7 +147,7 @@ const BadgesCabinet: React.FC<BadgesCabinetProps> = ({
     if (!groupByModule) return null;
     const map: Record<string, Badge[]> = {};
     currentBadges.forEach((badge) => {
-      const groupName = badge.module || badge.category || 'General';
+      const groupName = badge.module || badge.category || "General";
       if (!map[groupName]) map[groupName] = [];
       map[groupName].push(badge);
     });
@@ -181,24 +194,25 @@ const BadgesCabinet: React.FC<BadgesCabinetProps> = ({
             </span>
           </h3>
           <p className="text-xs font-medium text-muted dark:text-[#8a8377] mt-0.5">
-            Search, filter, and track earned achievements across learning modules
+            Search, filter, and track earned achievements across learning
+            modules
           </p>
         </div>
 
         {/* Filter Buttons */}
         <div className="flex gap-1.5 p-1 bg-black/5 dark:bg-white/5 rounded-xl">
           {[
-            { id: 'all', label: 'All' },
-            { id: 'earned', label: `✅ Earned (${earnedCount})` },
-            { id: 'locked', label: `🔒 Locked (${totalCount - earnedCount})` },
+            { id: "all", label: "All" },
+            { id: "earned", label: `✅ Earned (${earnedCount})` },
+            { id: "locked", label: `🔒 Locked (${totalCount - earnedCount})` },
           ].map((filter) => (
             <button
               key={filter.id}
               onClick={() => handleFilterChange(filter.id as any)}
               className={`px-3 py-1.5 text-xs font-black rounded-lg transition-all ${
                 selectedFilter === filter.id
-                  ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30'
-                  : 'text-muted dark:text-[#8a8377] hover:bg-black/5 dark:hover:bg-white/5'
+                  ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/30"
+                  : "text-muted dark:text-[#8a8377] hover:bg-black/5 dark:hover:bg-white/5"
               }`}
             >
               {filter.label}
@@ -221,7 +235,7 @@ const BadgesCabinet: React.FC<BadgesCabinetProps> = ({
           />
           {searchQuery && (
             <button
-              onClick={() => handleSearchChange('')}
+              onClick={() => handleSearchChange("")}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-black dark:hover:text-white"
               aria-label="Clear search query"
             >
@@ -252,8 +266,8 @@ const BadgesCabinet: React.FC<BadgesCabinetProps> = ({
             onClick={handleGroupByModuleToggle}
             className={`px-3 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${
               groupByModule
-                ? 'bg-indigo-500 text-white shadow-md'
-                : 'bg-black/5 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-black/10 dark:hover:bg-white/10'
+                ? "bg-indigo-500 text-white shadow-md"
+                : "bg-black/5 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-black/10 dark:hover:bg-white/10"
             }`}
             title="Toggle grouping by module"
           >
@@ -309,44 +323,62 @@ const BadgesCabinet: React.FC<BadgesCabinetProps> = ({
           {groupByModule && groupedCurrentBadges ? (
             /* Grouped View */
             <div className="space-y-6">
-              {Object.entries(groupedCurrentBadges).map(([modName, modBadges]) => {
-                const modEarned = modBadges.filter((b) => b.earned).length;
-                return (
-                  <div
-                    key={modName}
-                    className="p-4 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5"
-                  >
-                    <div className="flex items-center justify-between mb-3 border-b border-black/5 dark:border-white/5 pb-2">
-                      <h4 className="text-xs font-black uppercase tracking-wider text-black dark:text-white flex items-center gap-2">
-                        <span>📌</span>
-                        <span>{modName}</span>
-                      </h4>
-                      <span className="text-[11px] font-bold text-slate-500 dark:text-[#8a8377]">
-                        {modEarned}/{modBadges.length} earned
-                      </span>
-                    </div>
+              {Object.entries(groupedCurrentBadges).map(
+                ([modName, modBadges]) => {
+                  const modEarned = modBadges.filter((b) => b.earned).length;
+                  return (
+                    <div
+                      key={modName}
+                      className="p-4 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5"
+                    >
+                      <div className="flex items-center justify-between mb-3 border-b border-black/5 dark:border-white/5 pb-2">
+                        <h4 className="text-xs font-black uppercase tracking-wider text-black dark:text-white flex items-center gap-2">
+                          <span>📌</span>
+                          <span>{modName}</span>
+                        </h4>
+                        <span className="text-[11px] font-bold text-slate-500 dark:text-[#8a8377]">
+                          {modEarned}/{modBadges.length} earned
+                        </span>
+                      </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                      {modBadges.map((badge) => (
-                        <BadgeCard key={badge.id} badge={badge} />
-                      ))}
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                        {modBadges.map((badge) => (
+                          <BadgeCard
+                            key={badge.id}
+                            badge={badge}
+                            onSelect={(b) => setActiveModalBadge(b)}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                },
+              )}
             </div>
           ) : (
             /* Flat Grid View */
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {currentBadges.map((badge) => (
-                <BadgeCard key={badge.id} badge={badge} />
+                <BadgeCard
+                  key={badge.id}
+                  badge={badge}
+                  onSelect={(b) => setActiveModalBadge(b)}
+                />
               ))}
             </div>
           )}
         </motion.div>
       </AnimatePresence>
 
+      {/* Badge Unlock Modal with Social Share Image Download */}
+      <BadgeUnlockModal
+        isOpen={!!activeModalBadge}
+        onClose={() => setActiveModalBadge(null)}
+        badge={activeModalBadge}
+      />
+
       {/* Empty State */}
+
       {totalFiltered === 0 && (
         <div className="py-12 text-center border-2 border-dashed border-black/10 dark:border-white/10 rounded-2xl">
           <div className="text-4xl mb-2">🔍</div>
@@ -370,18 +402,32 @@ const BadgesCabinet: React.FC<BadgesCabinetProps> = ({
       {totalFiltered > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-4 mt-6 pt-4 border-t border-black/10 dark:border-white/10">
           <div className="text-xs font-medium text-slate-500 dark:text-[#8a8377]">
-            Showing <span className="font-bold text-black dark:text-white">{startIndex + 1}</span> to{' '}
-            <span className="font-bold text-black dark:text-white">{endIndex}</span> of{' '}
-            <span className="font-bold text-black dark:text-white">{totalFiltered}</span> badges
+            Showing{" "}
+            <span className="font-bold text-black dark:text-white">
+              {startIndex + 1}
+            </span>{" "}
+            to{" "}
+            <span className="font-bold text-black dark:text-white">
+              {endIndex}
+            </span>{" "}
+            of{" "}
+            <span className="font-bold text-black dark:text-white">
+              {totalFiltered}
+            </span>{" "}
+            badges
           </div>
 
           <div className="flex items-center gap-3">
             {/* Page Size Selector */}
             <select
-              value={itemsPerPage === Number.MAX_SAFE_INTEGER ? 'all' : itemsPerPage}
+              value={
+                itemsPerPage === Number.MAX_SAFE_INTEGER ? "all" : itemsPerPage
+              }
               onChange={(e) =>
                 handleItemsPerPageChange(
-                  e.target.value === 'all' ? Number.MAX_SAFE_INTEGER : Number(e.target.value)
+                  e.target.value === "all"
+                    ? Number.MAX_SAFE_INTEGER
+                    : Number(e.target.value),
                 )
               }
               aria-label="Items per page"
@@ -405,23 +451,27 @@ const BadgesCabinet: React.FC<BadgesCabinetProps> = ({
                   <ChevronLeft className="w-4 h-4" />
                 </button>
 
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`w-7 h-7 text-xs font-bold rounded-lg transition-all ${
-                      currentPage === page
-                        ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/30'
-                        : 'hover:bg-black/5 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-7 h-7 text-xs font-bold rounded-lg transition-all ${
+                        currentPage === page
+                          ? "bg-indigo-500 text-white shadow-md shadow-indigo-500/30"
+                          : "hover:bg-black/5 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ),
+                )}
 
                 <button
                   disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
                   className="p-1.5 rounded-lg border border-black/10 dark:border-white/10 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-black/5 dark:hover:bg-white/5 text-black dark:text-white"
                   aria-label="Next page"
                 >
@@ -437,12 +487,16 @@ const BadgesCabinet: React.FC<BadgesCabinetProps> = ({
 };
 
 // Helper Badge Item Card
-const BadgeCard: React.FC<{ badge: Badge }> = ({ badge }) => (
+const BadgeCard: React.FC<{
+  badge: Badge;
+  onSelect?: (badge: Badge) => void;
+}> = ({ badge, onSelect }) => (
   <motion.div
     initial={{ scale: 0.9, opacity: 0 }}
     animate={{ scale: 1, opacity: 1 }}
     transition={{ delay: 0.03 }}
     className="relative group"
+    onClick={() => onSelect?.(badge)}
   >
     <BadgeTooltip
       name={badge.name}
@@ -462,13 +516,15 @@ const BadgeCard: React.FC<{ badge: Badge }> = ({ badge }) => (
           border-2 transition-all duration-300 cursor-help relative
           ${
             badge.earned
-              ? 'bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-emerald-200 dark:border-emerald-800 hover:shadow-[0_0_20px_rgba(16,185,129,0.25)] focus:outline-none focus:ring-2 focus:ring-emerald-500'
-              : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 opacity-60 grayscale hover:grayscale-0 hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-slate-400'
+              ? "bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-emerald-200 dark:border-emerald-800 hover:shadow-[0_0_20px_rgba(16,185,129,0.25)] focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              : "bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 opacity-60 grayscale hover:grayscale-0 hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-slate-400"
           }
           group-hover:scale-105 active:scale-95
         `}
       >
-        <span className="text-3xl sm:text-4xl mb-1 select-none">{badge.icon}</span>
+        <span className="text-3xl sm:text-4xl mb-1 select-none">
+          {badge.icon}
+        </span>
         <span className="text-[10px] font-bold text-center leading-tight dark:text-white line-clamp-2">
           {badge.name}
         </span>
@@ -487,4 +543,4 @@ const BadgeCard: React.FC<{ badge: Badge }> = ({ badge }) => (
   </motion.div>
 );
 
-export default BadgesCabinet;
+export default BadgesCabinet;
