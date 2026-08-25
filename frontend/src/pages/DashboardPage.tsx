@@ -16,6 +16,7 @@ import { useCurriculumLessons } from "../hooks/useCurriculum";
 import { BADGES } from "../constants/badges";
 
 import { DailyChallengeQuizCard } from "../components/ui/DailyChallengeQuizCard";
+import { StreakMilestoneProgressBar } from "../components/dashboard/StreakMilestoneProgressBar";
 
 import { ContinueLearning } from "../components/ContinueLearning";
 import {
@@ -250,6 +251,14 @@ export function DashboardPage() {
             Best: {stats.longestStreak} days
           </p>
         </div>
+      </section>
+
+      {/* Streak Milestone Progress Bar Widget */}
+      <section>
+        <StreakMilestoneProgressBar
+          currentStreak={stats.streakDays}
+          longestStreak={stats.longestStreak}
+        />
       </section>
 
       {/* Concept / Tip of the Day */}
