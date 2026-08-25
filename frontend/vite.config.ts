@@ -94,7 +94,7 @@ export default defineConfig({
       strategies: "injectManifest",
       srcDir: "src",
       filename: "sw.js",
-      registerType: "prompt",
+      registerType: "autoUpdate",
       injectManifest: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,json,md}"],
         maximumFileSizeToCacheInBytes: 7 * 1024 * 1024,

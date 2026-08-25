@@ -59,31 +59,12 @@ const DB_VERSION = 3;
 
 self.addEventListener("install", (event) => {
   console.log("[ServiceWorker] Installed");
+  self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   console.log("[ServiceWorker] Activated");
-  event.waitUntil(
-    (async () => {
-      const windowClients = await self.clients.matchAll({ type: "window" });
-      const hasActiveSession = windowClients.some((client) => {
-        return (
-          client.url.includes("/sandbox") ||
-          client.url.includes("/lessons") ||
-          client.url.includes("/challenges") ||
-          client.url.includes("/chat")
-        );
-      });
-
-      if (hasActiveSession) {
-        console.log(
-          "[ServiceWorker] Active session detected, delaying client claim...",
-        );
-        await new Promise((resolve) => setTimeout(resolve, 60000));
-      }
-      await self.clients.claim();
-    })(),
-  );
+  event.waitUntil(self.clients.claim());
 });
 
 self.addEventListener("sync", (event) => {
