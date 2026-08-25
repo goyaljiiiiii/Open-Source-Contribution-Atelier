@@ -1,4 +1,11 @@
-import { render, screen, cleanup, fireEvent, act, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  cleanup,
+  fireEvent,
+  act,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { WebhookInspector } from "../components/docs/WebhookInspector";
@@ -119,7 +126,9 @@ describe("WebhookInspector", () => {
     fireEvent.click(headersToggleButton);
 
     // Headers toggled
-    const headersToggleButton2 = screen.getByRole("button", { name: "Headers" });
+    const headersToggleButton2 = screen.getByRole("button", {
+      name: "Headers",
+    });
     expect(headersToggleButton2).toHaveAttribute("aria-pressed", "false");
   });
 

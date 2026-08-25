@@ -81,3 +81,67 @@ def test_second_purchase_rejected_when_balance_insufficient():
     res2 = client.post("/api/gamification/shop/purchase/", {"item_id": item.id}, format="json")
     assert res2.status_code == status.HTTP_400_BAD_REQUEST
     assert "Not enough XP" in res2.data["error"]
+
+
+@pytest.mark.django_db
+def test_non_limited_item_can_be_purchased_twice():
+    """Non-limited (stackable) shop items allow repeat purchases."""
+    user = User.objects.create_user(username="buyer4", password="password")
+
+    XPEvent.objects.create(
+        user=user, source_type="bonus", source_id=1,
+        base_points=1000, multiplier=1.0, xp_delta=1000,
+    )
+
+    item = ShopItem.objects.create(
+        name="XP Boost",
+        description="Stackable boost",
+        item_type="xp_boost",
+        cost=100,
+        is_active=True,
+        is_limited=False,
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+
+    res1 = client.post("/api/gamification/shop/purchase/", {"item_id": item.id}, format="json")
+    assert res1.status_code == status.HTTP_200_OK
+
+    res2 = client.post("/api/gamification/shop/purchase/", {"item_id": item.id}, format="json")
+    assert res2.status_code == status.HTTP_200_OK
+    assert Purchase.objects.filter(user=user, item=item).count() == 2
+
+    total_xp = XPEvent.objects.filter(user=user).aggregate(total=Sum("xp_delta"))["total"]
+    assert total_xp == 800
+
+
+@pytest.mark.django_db
+def test_limited_item_second_purchase_returns_400():
+    """Limited shop items reject a duplicate purchase with a clear error."""
+    user = User.objects.create_user(username="buyer5", password="password")
+
+    XPEvent.objects.create(
+        user=user, source_type="bonus", source_id=1,
+        base_points=500, multiplier=1.0, xp_delta=500,
+    )
+
+    item = ShopItem.objects.create(
+        name="Streak Freeze",
+        description="One per user",
+        item_type="streak_freeze",
+        cost=100,
+        is_active=True,
+        is_limited=True,
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+
+    res1 = client.post("/api/gamification/shop/purchase/", {"item_id": item.id}, format="json")
+    assert res1.status_code == status.HTTP_200_OK
+
+    res2 = client.post("/api/gamification/shop/purchase/", {"item_id": item.id}, format="json")
+    assert res2.status_code == status.HTTP_400_BAD_REQUEST
+    assert res2.data["error"] == "You already own this item"
+    assert Purchase.objects.filter(user=user, item=item).count() == 1

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import * as Tooltip from '@radix-ui/react-tooltip';
-import { Info, Award, Lock, Unlock } from 'lucide-react';
+import React, { useState } from "react";
+import * as Tooltip from "@radix-ui/react-tooltip";
+import { Info, Award, Lock, Unlock } from "lucide-react";
 
 interface BadgeTooltipProps {
   /** Child element to wrap with tooltip */
@@ -16,7 +16,7 @@ interface BadgeTooltipProps {
   /** Icon for the badge */
   icon?: string;
   /** Position of tooltip */
-  side?: 'top' | 'bottom' | 'left' | 'right';
+  side?: "top" | "bottom" | "left" | "right";
   /** Delay before showing tooltip (ms) */
   delayDuration?: number;
 }
@@ -27,8 +27,8 @@ const BadgeTooltip: React.FC<BadgeTooltipProps> = ({
   description,
   unlockCriteria,
   isEarned = false,
-  icon = '🏅',
-  side = 'top',
+  icon = "🏅",
+  side = "top",
   delayDuration = 300,
 }) => {
   const [open, setOpen] = useState(false);
@@ -103,7 +103,7 @@ const BadgeTooltip: React.FC<BadgeTooltipProps> = ({
                   <Lock className="w-3.5 h-3.5 text-slate-400" />
                 )}
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-[#8a8377]">
-                  {isEarned ? 'Earned by' : 'How to Unlock'}
+                  {isEarned ? "Earned by" : "How to Unlock"}
                 </span>
               </div>
               <p className="text-xs font-medium text-black dark:text-[#e8e0d6] leading-relaxed">
@@ -139,7 +139,7 @@ export const SimpleBadgeTooltip: React.FC<BadgeTooltipProps> = ({
 }) => {
   const tooltipText = `
 ${name}
-${isEarned ? '✅ Earned' : '🔒 Locked'}
+${isEarned ? "✅ Earned" : "🔒 Locked"}
 ${description}
 Unlock: ${unlockCriteria}
   `.trim();

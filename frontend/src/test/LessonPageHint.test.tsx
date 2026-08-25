@@ -109,7 +109,6 @@ describe("LessonPage Gamified Hint Module", () => {
       syncProgress: mockSyncProgress,
       isLessonCompleted: () => false,
       isLoading: false,
-       
     } as any);
 
     vi.spyOn(lessonsModule, "fetchLessonsApiResult").mockResolvedValue({

@@ -50,7 +50,8 @@ const DEFAULT_SHOP_ITEMS: ShopItemData[] = [
   {
     id: 101,
     name: "Flame Saver (Streak Freeze)",
-    description: "Protects your daily activity streak from breaking if you miss 1 day of contributing.",
+    description:
+      "Protects your daily activity streak from breaking if you miss 1 day of contributing.",
     item_type: "streak_freeze",
     cost: 150,
     icon_emoji: "🔥",
@@ -64,7 +65,8 @@ const DEFAULT_SHOP_ITEMS: ShopItemData[] = [
   {
     id: 102,
     name: "2x XP Multiplier Boost (24 Hours)",
-    description: "Doubles all XP earned from completing lessons, quizzes, and pull requests for 24 hours.",
+    description:
+      "Doubles all XP earned from completing lessons, quizzes, and pull requests for 24 hours.",
     item_type: "xp_boost",
     cost: 300,
     icon_emoji: "⚡",
@@ -78,7 +80,8 @@ const DEFAULT_SHOP_ITEMS: ShopItemData[] = [
   {
     id: 103,
     name: "Neobrutalist Cyberpunk Theme",
-    description: "Unlocks an exclusive high-contrast Cyberpunk neon dark theme across your entire Atelier UI.",
+    description:
+      "Unlocks an exclusive high-contrast Cyberpunk neon dark theme across your entire Atelier UI.",
     item_type: "profile_theme",
     cost: 500,
     icon_emoji: "🎨",
@@ -92,7 +95,8 @@ const DEFAULT_SHOP_ITEMS: ShopItemData[] = [
   {
     id: 104,
     name: "ECSoC '26 Diamond Contributor Badge",
-    description: "Showcase an official ECSoC 2026 Diamond Contributor badge on your profile and PR certificate comments.",
+    description:
+      "Showcase an official ECSoC 2026 Diamond Contributor badge on your profile and PR certificate comments.",
     item_type: "badge_unlock",
     cost: 750,
     icon_emoji: "💎",
@@ -106,7 +110,8 @@ const DEFAULT_SHOP_ITEMS: ShopItemData[] = [
   {
     id: 105,
     name: "Title: Master Architect 🛠️",
-    description: "Equip a custom title string next to your username on global leaderboards and forum comments.",
+    description:
+      "Equip a custom title string next to your username on global leaderboards and forum comments.",
     item_type: "custom_title",
     cost: 250,
     icon_emoji: "👑",
@@ -120,7 +125,8 @@ const DEFAULT_SHOP_ITEMS: ShopItemData[] = [
   {
     id: 106,
     name: "Fast-Track PR Review Ticket 🚀",
-    description: "Grants priority maintainer review queue placement for your open ECSoC Pull Request.",
+    description:
+      "Grants priority maintainer review queue placement for your open ECSoC Pull Request.",
     item_type: "perk",
     cost: 400,
     icon_emoji: "🚀",
@@ -134,7 +140,8 @@ const DEFAULT_SHOP_ITEMS: ShopItemData[] = [
   {
     id: 107,
     name: "Golden Terminal Cursor Glow ✨",
-    description: "Adds an animated glowing golden cursor effect inside the Contributor Sandbox code editor.",
+    description:
+      "Adds an animated glowing golden cursor effect inside the Contributor Sandbox code editor.",
     item_type: "cosmetic",
     cost: 350,
     icon_emoji: "✨",
@@ -148,7 +155,8 @@ const DEFAULT_SHOP_ITEMS: ShopItemData[] = [
   {
     id: 108,
     name: "Official Contributor Sticker Pack 📦",
-    description: "Unlocks high-resolution SVG sticker assets for your GitHub README and developer portfolio.",
+    description:
+      "Unlocks high-resolution SVG sticker assets for your GitHub README and developer portfolio.",
     item_type: "perk",
     cost: 200,
     icon_emoji: "📦",
@@ -235,7 +243,7 @@ export function ShopPage() {
 
   const [availableXp, setAvailableXp] = useState<number>(() => {
     const savedXp = localStorage.getItem("user_custom_xp");
-    return savedXp ? parseInt(savedXp, 10) : userXpData?.total_xp ?? 1250;
+    return savedXp ? parseInt(savedXp, 10) : (userXpData?.total_xp ?? 1250);
   });
 
   // Sync API XP if available
@@ -246,7 +254,8 @@ export function ShopPage() {
     const items = apiItems || DEFAULT_SHOP_ITEMS;
     return items.map((item) => ({
       ...item,
-      already_purchased: item.already_purchased || localInventory.includes(item.id),
+      already_purchased:
+        item.already_purchased || localInventory.includes(item.id),
       rarity: item.rarity || "RARE",
     }));
   }, [apiItems, localInventory]);
@@ -273,7 +282,9 @@ export function ShopPage() {
         const target = catalogItems.find((i) => i.id === itemId);
         if (!target) throw new Error("Item not found");
         if (currentXp < target.cost) {
-          throw new Error(`Insufficient XP! You need ${target.cost - currentXp} more XP to purchase this item.`);
+          throw new Error(
+            `Insufficient XP! You need ${target.cost - currentXp} more XP to purchase this item.`,
+          );
         }
         return {
           success: true,
@@ -297,7 +308,9 @@ export function ShopPage() {
       queryClient.invalidateQueries({ queryKey: ["myTotalXp"] });
       queryClient.invalidateQueries({ queryKey: ["contributorStats"] });
 
-      toast.success(`🎉 Unlocked ${data.item || target?.name}! Added to your inventory vault.`);
+      toast.success(
+        `🎉 Unlocked ${data.item || target?.name}! Added to your inventory vault.`,
+      );
       setConfirmItem(null);
     },
     onError: (err: Error) => {
@@ -308,7 +321,9 @@ export function ShopPage() {
 
   const handlePurchase = (item: ShopItemData) => {
     if (currentXp < item.cost) {
-      toast.error(`Insufficient XP! You need ${item.cost - currentXp} more XP.`);
+      toast.error(
+        `Insufficient XP! You need ${item.cost - currentXp} more XP.`,
+      );
       return;
     }
     setConfirmItem(item);
@@ -360,7 +375,9 @@ export function ShopPage() {
               XP Rewards Store
             </h1>
             <p className="text-white/90 font-bold text-base sm:text-lg leading-relaxed">
-              Earn XP by contributing to issues and completing learning challenges, then redeem your points for power-ups, badges, and cosmetics!
+              Earn XP by contributing to issues and completing learning
+              challenges, then redeem your points for power-ups, badges, and
+              cosmetics!
             </p>
           </div>
 
@@ -460,14 +477,20 @@ export function ShopPage() {
           ) : filteredItems.length === 0 ? (
             <div className="rounded-[2rem] border-4 border-black bg-white dark:bg-[#1f1c18] dark:border-[#2e2924] p-12 text-center shadow-card space-y-3">
               <Gift className="w-12 h-12 mx-auto text-gray-400" />
-              <h3 className="text-xl font-black dark:text-[#f0ebe2]">No items found</h3>
-              <p className="text-xs font-bold text-gray-500">Try switching categories or check back later!</p>
+              <h3 className="text-xl font-black dark:text-[#f0ebe2]">
+                No items found
+              </h3>
+              <p className="text-xs font-bold text-gray-500">
+                Try switching categories or check back later!
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {filteredItems.map((item) => {
                 const isOwned = item.already_purchased;
-                const isLevelLocked = Boolean(item.min_level && currentLevel < item.min_level);
+                const isLevelLocked = Boolean(
+                  item.min_level && currentLevel < item.min_level,
+                );
                 const isXpLocked = currentXp < item.cost;
                 const isLocked = !isOwned && (isLevelLocked || isXpLocked);
                 const canAfford = !isOwned && !isLevelLocked && !isXpLocked;
@@ -485,7 +508,9 @@ export function ShopPage() {
                   reqParts.push(`Need ${needed} more XP`);
                 }
 
-                const lockRequirementText = isOwned ? "Unlocked & Owned" : reqParts.join(" • ");
+                const lockRequirementText = isOwned
+                  ? "Unlocked & Owned"
+                  : reqParts.join(" • ");
 
                 return (
                   <div
@@ -510,7 +535,9 @@ export function ShopPage() {
                           </div>
                           <div>
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border shadow-card-sm ${rarityStyle}`}>
+                              <span
+                                className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border shadow-card-sm ${rarityStyle}`}
+                              >
                                 {item.rarity || "RARE"}
                               </span>
                               {isLocked && (
@@ -542,7 +569,8 @@ export function ShopPage() {
                       <div className="flex items-center gap-2 flex-wrap">
                         {item.benefit && (
                           <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-900 dark:text-indigo-200 border-2 border-black rounded-xl text-xs font-extrabold shadow-card-sm">
-                            <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" /> {item.benefit}
+                            <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />{" "}
+                            {item.benefit}
                           </div>
                         )}
 
@@ -621,8 +649,12 @@ export function ShopPage() {
           {ownedItems.length === 0 ? (
             <div className="rounded-[2rem] border-4 border-black bg-white dark:bg-[#1f1c18] dark:border-[#2e2924] p-12 text-center shadow-card space-y-3">
               <Package className="w-12 h-12 mx-auto text-gray-400" />
-              <h3 className="text-xl font-black dark:text-[#f0ebe2]">Your Vault is empty</h3>
-              <p className="text-xs font-bold text-gray-500">Purchase items from the store to add them to your inventory!</p>
+              <h3 className="text-xl font-black dark:text-[#f0ebe2]">
+                Your Vault is empty
+              </h3>
+              <p className="text-xs font-bold text-gray-500">
+                Purchase items from the store to add them to your inventory!
+              </p>
               <button
                 onClick={() => setActiveTab("store")}
                 className="mt-3 inline-flex items-center gap-2 px-5 py-2.5 bg-black text-white dark:bg-white dark:text-black font-black text-xs rounded-full border-2 border-black shadow-card-sm"
@@ -674,7 +706,11 @@ export function ShopPage() {
                           : "bg-amber-300 text-black hover:bg-amber-400"
                       }`}
                     >
-                      {isEquipped ? <Check className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+                      {isEquipped ? (
+                        <Check className="w-4 h-4" />
+                      ) : (
+                        <Sparkles className="w-4 h-4" />
+                      )}
                       {isEquipped ? "Unequip Item" : "Equip to Profile"}
                     </button>
                   </div>
@@ -697,7 +733,11 @@ export function ShopPage() {
                 Unlock {confirmItem.name}?
               </h3>
               <p className="text-xs font-bold text-gray-600 dark:text-[#c4bbae]">
-                This will deduct <span className="font-black text-amber-600 dark:text-amber-400">{confirmItem.cost} XP</span> from your balance.
+                This will deduct{" "}
+                <span className="font-black text-amber-600 dark:text-amber-400">
+                  {confirmItem.cost} XP
+                </span>{" "}
+                from your balance.
               </p>
             </div>
 

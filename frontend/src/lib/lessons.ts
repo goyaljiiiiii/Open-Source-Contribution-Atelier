@@ -105,9 +105,7 @@ export type LessonsFetchResult = {
 };
 
 function mapApiLessons(data: unknown[]): Lesson[] {
-   
   return (data as any[]).map((les, index: number) => {
-     
     const firstExercise = (les.exercises as any[] | undefined)?.[0];
     return {
       id: Number(les.id ?? 0),

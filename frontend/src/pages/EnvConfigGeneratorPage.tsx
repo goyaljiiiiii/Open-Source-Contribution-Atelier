@@ -93,8 +93,7 @@ const DEFAULT_CONFIG: ConfigState = {
   redisUrl: "redis://localhost:6379/0",
 
   enableGoogleAuth: false,
-  googleClientId:
-    "27042928964-example.apps.googleusercontent.com",
+  googleClientId: "27042928964-example.apps.googleusercontent.com",
   googleClientSecret: "GOCSPX-your_google_client_secret_here",
 
   enableGithubAuth: true,
@@ -137,7 +136,7 @@ export function EnvConfigGeneratorPage() {
 
   const generateRandomSecretKey = () => {
     const chars =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)" ;
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)";
     let result = "";
     for (let i = 0; i < 48; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -319,11 +318,12 @@ export function EnvConfigGeneratorPage() {
   const warnings = useMemo(() => {
     const w: string[] = [];
     const isPlaceholder = (val: string) =>
-      !val ||
-      /change-me|your_|example|secret_key|here/i.test(val);
+      !val || /change-me|your_|example|secret_key|here/i.test(val);
 
     if (isPlaceholder(config.secretKey)) {
-      w.push("SECRET_KEY uses a default example value. Click 'Generate Secure Key' for production.");
+      w.push(
+        "SECRET_KEY uses a default example value. Click 'Generate Secure Key' for production.",
+      );
     }
     if (config.enableGithubAuth && isPlaceholder(config.githubClientId)) {
       w.push("GitHub OAuth Client ID contains a placeholder value.");
@@ -394,7 +394,9 @@ export function EnvConfigGeneratorPage() {
                 Environment Config Generator
               </h1>
               <p className="text-sm font-medium text-muted dark:text-[#c4bbae] mt-1">
-                Interactive setup wizard to configure services (Database, OAuth, Redis, AI) and generate ready-to-use <code className="font-mono text-accent">.env</code> files.
+                Interactive setup wizard to configure services (Database, OAuth,
+                Redis, AI) and generate ready-to-use{" "}
+                <code className="font-mono text-accent">.env</code> files.
               </p>
             </div>
           </div>
@@ -417,12 +419,15 @@ export function EnvConfigGeneratorPage() {
           {/* Section 1: Core Django Application */}
           <div className="p-5 bg-white dark:bg-[#151411] border-2 border-black/10 dark:border-[#2e2924] rounded-2xl flex flex-col gap-4 shadow-sm">
             <h3 className="text-base font-bold text-text dark:text-[#f0ebe2] flex items-center gap-2">
-              <Server className="w-5 h-5 text-blue-500" /> 1. Core Application & Environment
+              <Server className="w-5 h-5 text-blue-500" /> 1. Core Application &
+              Environment
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div className="flex flex-col gap-1.5">
-                <label className="font-bold text-muted uppercase">Environment Mode</label>
+                <label className="font-bold text-muted uppercase">
+                  Environment Mode
+                </label>
                 <select
                   value={config.djangoEnv}
                   onChange={(e) =>
@@ -436,7 +441,9 @@ export function EnvConfigGeneratorPage() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="font-bold text-muted uppercase">Debug Mode</label>
+                <label className="font-bold text-muted uppercase">
+                  Debug Mode
+                </label>
                 <button
                   type="button"
                   onClick={() => updateConfig("debug", !config.debug)}
@@ -455,7 +462,9 @@ export function EnvConfigGeneratorPage() {
 
               <div className="md:col-span-2 flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="font-bold text-muted uppercase">Django SECRET_KEY</label>
+                  <label className="font-bold text-muted uppercase">
+                    Django SECRET_KEY
+                  </label>
                   <button
                     onClick={generateRandomSecretKey}
                     className="text-[11px] font-extrabold text-accent hover:underline flex items-center gap-1"
@@ -476,14 +485,23 @@ export function EnvConfigGeneratorPage() {
           {/* Section 2: Database Configuration */}
           <div className="p-5 bg-white dark:bg-[#151411] border-2 border-black/10 dark:border-[#2e2924] rounded-2xl flex flex-col gap-4 shadow-sm">
             <h3 className="text-base font-bold text-text dark:text-[#f0ebe2] flex items-center gap-2">
-              <Database className="w-5 h-5 text-emerald-500" /> 2. Primary Database Engine
+              <Database className="w-5 h-5 text-emerald-500" /> 2. Primary
+              Database Engine
             </h3>
 
             <div className="grid grid-cols-3 gap-3">
               {[
                 { id: "sqlite", label: "SQLite", desc: "Local Zero-Config" },
-                { id: "postgres", label: "PostgreSQL", desc: "Docker / Standard" },
-                { id: "neon", label: "Neon Postgres", desc: "Serverless Cloud" },
+                {
+                  id: "postgres",
+                  label: "PostgreSQL",
+                  desc: "Docker / Standard",
+                },
+                {
+                  id: "neon",
+                  label: "Neon Postgres",
+                  desc: "Serverless Cloud",
+                },
               ].map((item) => (
                 <button
                   key={item.id}
@@ -503,7 +521,9 @@ export function EnvConfigGeneratorPage() {
             {config.dbEngine === "postgres" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs pt-2">
                 <div className="flex flex-col gap-1">
-                  <label className="font-bold text-muted uppercase">DB User</label>
+                  <label className="font-bold text-muted uppercase">
+                    DB User
+                  </label>
                   <input
                     type="text"
                     value={config.dbUser}
@@ -512,7 +532,9 @@ export function EnvConfigGeneratorPage() {
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="font-bold text-muted uppercase">DB Password</label>
+                  <label className="font-bold text-muted uppercase">
+                    DB Password
+                  </label>
                   <input
                     type="password"
                     value={config.dbPassword}
@@ -525,7 +547,9 @@ export function EnvConfigGeneratorPage() {
 
             {config.dbEngine === "neon" && (
               <div className="flex flex-col gap-1 text-xs pt-2">
-                <label className="font-bold text-muted uppercase">Neon Connection String (DATABASE_URL)</label>
+                <label className="font-bold text-muted uppercase">
+                  Neon Connection String (DATABASE_URL)
+                </label>
                 <input
                   type="text"
                   value={config.databaseUrl}
@@ -539,14 +563,27 @@ export function EnvConfigGeneratorPage() {
           {/* Section 3: Cache & Real-Time Channels (Redis) */}
           <div className="p-5 bg-white dark:bg-[#151411] border-2 border-black/10 dark:border-[#2e2924] rounded-2xl flex flex-col gap-4 shadow-sm">
             <h3 className="text-base font-bold text-text dark:text-[#f0ebe2] flex items-center gap-2">
-              <Layers className="w-5 h-5 text-purple-500" /> 3. Redis Cache & WebSockets Layer
+              <Layers className="w-5 h-5 text-purple-500" /> 3. Redis Cache &
+              WebSockets Layer
             </h3>
 
             <div className="grid grid-cols-3 gap-3">
               {[
-                { id: "disabled", label: "In-Memory", desc: "No Redis Required" },
-                { id: "redis", label: "Local Redis", desc: "redis://localhost:6379" },
-                { id: "upstash", label: "Upstash Redis", desc: "Cloud Serverless Redis" },
+                {
+                  id: "disabled",
+                  label: "In-Memory",
+                  desc: "No Redis Required",
+                },
+                {
+                  id: "redis",
+                  label: "Local Redis",
+                  desc: "redis://localhost:6379",
+                },
+                {
+                  id: "upstash",
+                  label: "Upstash Redis",
+                  desc: "Cloud Serverless Redis",
+                },
               ].map((item) => (
                 <button
                   key={item.id}
@@ -565,7 +602,9 @@ export function EnvConfigGeneratorPage() {
 
             {config.redisMode !== "disabled" && (
               <div className="flex flex-col gap-1 text-xs pt-2">
-                <label className="font-bold text-muted uppercase">REDIS_URL</label>
+                <label className="font-bold text-muted uppercase">
+                  REDIS_URL
+                </label>
                 <input
                   type="text"
                   value={config.redisUrl}
@@ -579,19 +618,23 @@ export function EnvConfigGeneratorPage() {
           {/* Section 4: OAuth & Authentication */}
           <div className="p-5 bg-white dark:bg-[#151411] border-2 border-black/10 dark:border-[#2e2924] rounded-2xl flex flex-col gap-4 shadow-sm">
             <h3 className="text-base font-bold text-text dark:text-[#f0ebe2] flex items-center gap-2">
-              <Key className="w-5 h-5 text-amber-500" /> 4. OAuth & Identity Providers
+              <Key className="w-5 h-5 text-amber-500" /> 4. OAuth & Identity
+              Providers
             </h3>
 
             {/* GitHub OAuth */}
             <div className="p-4 bg-surface-low dark:bg-[#1a1714] rounded-xl border border-black/10 dark:border-[#2e2924] flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-text dark:text-[#f0ebe2] flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-accent" /> GitHub OAuth Authentication
+                  <Globe className="w-4 h-4 text-accent" /> GitHub OAuth
+                  Authentication
                 </span>
                 <input
                   type="checkbox"
                   checked={config.enableGithubAuth}
-                  onChange={(e) => updateConfig("enableGithubAuth", e.target.checked)}
+                  onChange={(e) =>
+                    updateConfig("enableGithubAuth", e.target.checked)
+                  }
                   className="w-4 h-4 rounded border-gray-700 bg-gray-900 text-accent focus:ring-accent"
                 />
               </div>
@@ -599,20 +642,28 @@ export function EnvConfigGeneratorPage() {
               {config.enableGithubAuth && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs pt-1">
                   <div className="flex flex-col gap-1">
-                    <label className="font-bold text-muted uppercase">GITHUB_CLIENT_ID</label>
+                    <label className="font-bold text-muted uppercase">
+                      GITHUB_CLIENT_ID
+                    </label>
                     <input
                       type="text"
                       value={config.githubClientId}
-                      onChange={(e) => updateConfig("githubClientId", e.target.value)}
+                      onChange={(e) =>
+                        updateConfig("githubClientId", e.target.value)
+                      }
                       className="px-3 py-2 bg-surface dark:bg-[#12100e] border border-black/20 dark:border-[#2e2924] rounded-lg font-mono"
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="font-bold text-muted uppercase">GITHUB_CLIENT_SECRET</label>
+                    <label className="font-bold text-muted uppercase">
+                      GITHUB_CLIENT_SECRET
+                    </label>
                     <input
                       type="password"
                       value={config.githubClientSecret}
-                      onChange={(e) => updateConfig("githubClientSecret", e.target.value)}
+                      onChange={(e) =>
+                        updateConfig("githubClientSecret", e.target.value)
+                      }
                       className="px-3 py-2 bg-surface dark:bg-[#12100e] border border-black/20 dark:border-[#2e2924] rounded-lg font-mono"
                     />
                   </div>
@@ -624,12 +675,15 @@ export function EnvConfigGeneratorPage() {
             <div className="p-4 bg-surface-low dark:bg-[#1a1714] rounded-xl border border-black/10 dark:border-[#2e2924] flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-text dark:text-[#f0ebe2] flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-red-500" /> Google OAuth SSO
+                  <ShieldCheck className="w-4 h-4 text-red-500" /> Google OAuth
+                  SSO
                 </span>
                 <input
                   type="checkbox"
                   checked={config.enableGoogleAuth}
-                  onChange={(e) => updateConfig("enableGoogleAuth", e.target.checked)}
+                  onChange={(e) =>
+                    updateConfig("enableGoogleAuth", e.target.checked)
+                  }
                   className="w-4 h-4 rounded border-gray-700 bg-gray-900 text-accent focus:ring-accent"
                 />
               </div>
@@ -637,20 +691,28 @@ export function EnvConfigGeneratorPage() {
               {config.enableGoogleAuth && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs pt-1">
                   <div className="flex flex-col gap-1">
-                    <label className="font-bold text-muted uppercase">GOOGLE_CLIENT_ID</label>
+                    <label className="font-bold text-muted uppercase">
+                      GOOGLE_CLIENT_ID
+                    </label>
                     <input
                       type="text"
                       value={config.googleClientId}
-                      onChange={(e) => updateConfig("googleClientId", e.target.value)}
+                      onChange={(e) =>
+                        updateConfig("googleClientId", e.target.value)
+                      }
                       className="px-3 py-2 bg-surface dark:bg-[#12100e] border border-black/20 dark:border-[#2e2924] rounded-lg font-mono"
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="font-bold text-muted uppercase">GOOGLE_CLIENT_SECRET</label>
+                    <label className="font-bold text-muted uppercase">
+                      GOOGLE_CLIENT_SECRET
+                    </label>
                     <input
                       type="password"
                       value={config.googleClientSecret}
-                      onChange={(e) => updateConfig("googleClientSecret", e.target.value)}
+                      onChange={(e) =>
+                        updateConfig("googleClientSecret", e.target.value)
+                      }
                       className="px-3 py-2 bg-surface dark:bg-[#12100e] border border-black/20 dark:border-[#2e2924] rounded-lg font-mono"
                     />
                   </div>
@@ -662,7 +724,8 @@ export function EnvConfigGeneratorPage() {
           {/* Section 5: AI & Machine Learning */}
           <div className="p-5 bg-white dark:bg-[#151411] border-2 border-black/10 dark:border-[#2e2924] rounded-2xl flex flex-col gap-4 shadow-sm">
             <h3 className="text-base font-bold text-text dark:text-[#f0ebe2] flex items-center gap-2">
-              <Cpu className="w-5 h-5 text-sky-500" /> 5. AI Tutor & Machine Learning Providers
+              <Cpu className="w-5 h-5 text-sky-500" /> 5. AI Tutor & Machine
+              Learning Providers
             </h3>
 
             {/* OpenAI */}
@@ -674,7 +737,9 @@ export function EnvConfigGeneratorPage() {
                 <input
                   type="checkbox"
                   checked={config.enableOpenAi}
-                  onChange={(e) => updateConfig("enableOpenAi", e.target.checked)}
+                  onChange={(e) =>
+                    updateConfig("enableOpenAi", e.target.checked)
+                  }
                   className="w-4 h-4 rounded border-gray-700 bg-gray-900 text-accent focus:ring-accent"
                 />
               </div>
@@ -682,22 +747,30 @@ export function EnvConfigGeneratorPage() {
               {config.enableOpenAi && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs pt-1">
                   <div className="flex flex-col gap-1">
-                    <label className="font-bold text-muted uppercase">OPENAI_API_KEY</label>
+                    <label className="font-bold text-muted uppercase">
+                      OPENAI_API_KEY
+                    </label>
                     <input
                       type="password"
                       value={config.openaiApiKey}
-                      onChange={(e) => updateConfig("openaiApiKey", e.target.value)}
+                      onChange={(e) =>
+                        updateConfig("openaiApiKey", e.target.value)
+                      }
                       className="px-3 py-2 bg-surface dark:bg-[#12100e] border border-black/20 dark:border-[#2e2924] rounded-lg font-mono"
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="font-bold text-muted uppercase">LLM_MODEL</label>
+                    <label className="font-bold text-muted uppercase">
+                      LLM_MODEL
+                    </label>
                     <select
                       value={config.llmModel}
                       onChange={(e) => updateConfig("llmModel", e.target.value)}
                       className="px-3 py-2 bg-surface dark:bg-[#12100e] border border-black/20 dark:border-[#2e2924] rounded-lg font-bold"
                     >
-                      <option value="gpt-4o-mini">gpt-4o-mini (Fast & Budget)</option>
+                      <option value="gpt-4o-mini">
+                        gpt-4o-mini (Fast & Budget)
+                      </option>
                       <option value="gpt-4o">gpt-4o (High Performance)</option>
                       <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
                     </select>
@@ -788,14 +861,16 @@ export function EnvConfigGeneratorPage() {
                 onClick={() => handleCopy(activeTab)}
                 className="flex items-center justify-center gap-2 py-2 px-3 bg-surface-low dark:bg-[#1a1714] border border-black/10 dark:border-[#2e2924] rounded-xl text-xs font-bold text-text dark:text-[#f0ebe2] hover:border-accent transition-all"
               >
-                <Copy className="w-3.5 h-3.5" /> Copy {activeTab === "backend" ? "Backend" : "Frontend"}
+                <Copy className="w-3.5 h-3.5" /> Copy{" "}
+                {activeTab === "backend" ? "Backend" : "Frontend"}
               </button>
 
               <button
                 onClick={() => handleDownload(activeTab)}
                 className="flex items-center justify-center gap-2 py-2 px-3 bg-accent text-white rounded-xl text-xs font-bold hover:bg-accent/90 transition-all shadow-card-sm"
               >
-                <Download className="w-3.5 h-3.5" /> Download {activeTab === "backend" ? "backend.env" : "frontend.env"}
+                <Download className="w-3.5 h-3.5" /> Download{" "}
+                {activeTab === "backend" ? "backend.env" : "frontend.env"}
               </button>
             </div>
           </div>

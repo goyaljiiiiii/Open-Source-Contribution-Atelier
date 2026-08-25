@@ -85,7 +85,9 @@ export function CustomTooltip({
       }}
       role="dialog"
       aria-modal="true"
-      aria-label={step.title ? String(step.title) : `Tour step ${index + 1} of ${size}`}
+      aria-label={
+        step.title ? String(step.title) : `Tour step ${index + 1} of ${size}`
+      }
       tabIndex={-1}
       onKeyDown={handleKeyDown}
       initial={{ opacity: 0, y: 20, scale: 0.95 }}

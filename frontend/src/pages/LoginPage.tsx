@@ -10,7 +10,19 @@ import { DemoLoginButton } from "../features/auth/DemoLoginButton";
 import { formatGoogleOAuthError } from "../lib/googleOAuth";
 import { PasswordInput } from "../components/PasswordInput";
 import { MascotBuddy, MascotState } from "../components/ui/MascotBuddy";
-import { User, KeyRound, Sparkles, AlertCircle, ArrowRight, Shield } from "lucide-react";
+import {
+  User,
+  KeyRound,
+  Sparkles,
+  AlertCircle,
+  ArrowRight,
+  Shield,
+  CheckCircle2,
+  Lock,
+  Zap,
+  Flame,
+  X,
+} from "lucide-react";
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
@@ -90,7 +102,6 @@ export function LoginPage() {
     navigate("/dashboard");
   };
 
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -111,7 +122,7 @@ export function LoginPage() {
 
       login(tokens);
 
-      toast.success("Welcome back! 🎉", {
+      toast.success("Welcome back, builder! 🎉", {
         duration: 3000,
         position: "bottom-center",
       });
@@ -122,12 +133,20 @@ export function LoginPage() {
       navigate(redirect);
     } catch (err: any) {
       setMascotState("error");
-      if (err?.requires_2fa || err?.code === "2fa_required" || (err?.message && err.message.includes("Two-factor"))) {
+      if (
+        err?.requires_2fa ||
+        err?.code === "2fa_required" ||
+        (err?.message && err.message.includes("Two-factor"))
+      ) {
         setRequires2FA(true);
         toast.error("2FA code required. Enter code from authenticator app.");
       } else {
         setError(getErrorMessage(err, "Failed to login"));
-        toast.error(requires2FA ? "Invalid 2FA code or backup code." : "Login failed. Please try again.");
+        toast.error(
+          requires2FA
+            ? "Invalid 2FA code or backup code."
+            : "Login failed. Please check your credentials.",
+        );
       }
     } finally {
       setIsLoading(false);
@@ -138,67 +157,81 @@ export function LoginPage() {
     <AuthPageShell
       mode="login"
       title="Welcome Back"
-      subtitle="Sign in to access your dashboard, complete challenges, and track your progress."
+      subtitle="Sign in to access your dashboard, level up your contribution skills, and ship code."
     >
-      {/* Interactive Mascot Buddy Top Header (Compact) */}
-      <div className="flex flex-col items-center mb-3">
-        <MascotBuddy state={mascotState} className="mb-2 scale-90 sm:scale-100" />
-        <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
-          Welcome Back!
+      {/* Interactive Mascot & Level Header */}
+      <div className="flex flex-col items-center mb-3 text-center">
+        <MascotBuddy
+          state={mascotState}
+          className="mb-1.5 scale-90 sm:scale-100 transition-all duration-300 hover:scale-105"
+        />
+
+        <div className="inline-flex items-center gap-1.5 bg-[#EEF2FF] dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full mb-1">
+          <Flame size={12} className="text-amber-500 animate-pulse" />
+          <span>Ready to Contribute?</span>
+        </div>
+
+        <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+          Welcome Back, Builder! 👋
         </h2>
         <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
-          Enter credentials to access your account
+          Enter your account details to jump back into code
         </p>
       </div>
 
       <form className="space-y-3" onSubmit={handleSubmit}>
-        {/* Error Alert Box */}
+        {/* Animated Error Alert Notification */}
         {error && (
           <div
             role="alert"
-            className="flex flex-col gap-1.5 text-red-700 bg-red-100/80 dark:bg-red-950/40 dark:text-red-400 p-2.5 rounded-xl border-2 border-red-400 dark:border-red-900/50 text-xs font-bold shadow-card-sm animate-shake"
+            className="flex flex-col gap-1.5 text-rose-800 bg-rose-50 dark:bg-rose-950/40 dark:text-rose-300 p-2.5 rounded-2xl border-2 border-rose-400 dark:border-rose-800 text-xs font-bold shadow-[2px_2px_0px_0px_rgba(244,63,94,0.4)] animate-shake"
           >
-            <div className="flex items-center gap-2">
-              <AlertCircle size={15} className="shrink-0 text-red-600" />
-              <div className="flex-1 text-[11px] leading-tight">{error}</div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <AlertCircle size={16} className="shrink-0 text-rose-600 dark:text-rose-400" />
+                <span className="text-[11px] leading-tight font-extrabold">{error}</span>
+              </div>
               <button
                 type="button"
                 onClick={() => setError("")}
-                className="text-red-500 hover:text-red-700 dark:hover:text-red-300 text-xs font-black ml-1 cursor-pointer"
+                className="text-rose-500 hover:text-rose-800 dark:hover:text-rose-200 text-xs font-black p-0.5 rounded-md hover:bg-rose-100 dark:hover:bg-rose-900/50 cursor-pointer transition-colors"
+                aria-label="Dismiss error"
               >
-                ✕
+                <X size={14} />
               </button>
             </div>
             {error.includes("Google") && (
               <button
                 type="button"
                 onClick={handleGoogleDevFallback}
-                className="w-full mt-1 bg-black text-white dark:bg-white dark:text-black py-1.5 px-3 rounded-lg text-[10px] font-black uppercase tracking-wider hover:opacity-80 transition-all cursor-pointer flex items-center justify-center gap-1"
+                className="w-full mt-1 bg-slate-900 text-white dark:bg-white dark:text-slate-900 py-1.5 px-3 rounded-xl text-[10px] font-black uppercase tracking-wider hover:opacity-90 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
               >
-                <span>⚡ Use Local Google Dev Login</span>
+                <Zap size={12} className="text-amber-400 fill-amber-400" />
+                <span>Use Local Google Dev Login</span>
               </button>
             )}
           </div>
         )}
 
-
         {!requires2FA ? (
           <>
-            {/* Username / Email Input */}
+            {/* Username or Email Input */}
             <div className="space-y-1">
-              <label className="flex items-center gap-1 font-black text-slate-700 dark:text-slate-300 ml-1 text-[10px] uppercase tracking-wider">
-                <User size={12} className="text-slate-500" />
+              <label className="flex items-center gap-1.5 font-black text-slate-700 dark:text-slate-300 ml-1 text-[10px] uppercase tracking-wider">
+                <User size={12} className="text-indigo-500" />
                 <span>Username or Email</span>
               </label>
-              <input
-                className="w-full rounded-xl border-2 border-black bg-white dark:bg-[#12121a] px-3.5 py-2 text-slate-900 dark:text-white font-bold outline-none placeholder:text-slate-400 focus:shadow-[2px_2px_0px_0px_#000] focus:border-black transition-all text-xs sm:text-sm"
-                placeholder="the_smartest@kid.com"
-                value={username}
-                onFocus={() => setMascotState("focus-username")}
-                onBlur={() => setMascotState("idle")}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-              />
+              <div className="relative">
+                <input
+                  className="w-full rounded-2xl border-2 border-black dark:border-white/20 bg-white dark:bg-[#12100e] px-3.5 py-2 text-slate-900 dark:text-white font-bold outline-none placeholder:text-slate-400 focus:border-indigo-600 dark:focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:shadow-[2px_2px_0px_0px_rgba(99,102,241,1)] transition-all text-xs sm:text-sm"
+                  placeholder="developer@atelier.com"
+                  value={username}
+                  onFocus={() => setMascotState("focus-username")}
+                  onBlur={() => setMascotState("idle")}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                />
+              </div>
             </div>
 
             {/* Password Input */}
@@ -206,21 +239,21 @@ export function LoginPage() {
               <div className="flex items-center justify-between ml-1">
                 <label
                   htmlFor="login-password"
-                  className="flex items-center gap-1 font-black text-slate-700 dark:text-slate-300 text-[10px] uppercase tracking-wider"
+                  className="flex items-center gap-1.5 font-black text-slate-700 dark:text-slate-300 text-[10px] uppercase tracking-wider"
                 >
-                  <KeyRound size={12} className="text-slate-500" />
+                  <KeyRound size={12} className="text-indigo-500" />
                   <span>Password</span>
                 </label>
                 <a
                   href="/reset-password"
-                  className="text-[10px] font-bold text-slate-500 hover:text-black dark:text-slate-400 dark:hover:text-white hover:underline"
+                  className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 hover:underline transition-colors"
                 >
                   Forgot password?
                 </a>
               </div>
               <PasswordInput
                 id="login-password"
-                className="w-full rounded-xl border-2 border-black bg-white dark:bg-[#12121a] px-3.5 py-2 text-slate-900 dark:text-white font-bold outline-none placeholder:text-slate-400 focus:shadow-[2px_2px_0px_0px_#000] focus:border-black transition-all text-xs sm:text-sm"
+                className="w-full rounded-2xl border-2 border-black dark:border-white/20 bg-white dark:bg-[#12100e] px-3.5 py-2 text-slate-900 dark:text-white font-bold outline-none placeholder:text-slate-400 focus:border-indigo-600 dark:focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:shadow-[2px_2px_0px_0px_rgba(99,102,241,1)] transition-all text-xs sm:text-sm"
                 placeholder="••••••••"
                 value={password}
                 onFocus={() => setMascotState("focus-password")}
@@ -231,24 +264,24 @@ export function LoginPage() {
             </div>
           </>
         ) : (
-          /* 2FA Step */
-          <div className="space-y-2.5 p-3 rounded-xl border-2 border-blue-500 bg-blue-50/70 dark:bg-blue-950/30">
+          /* 2FA Verification Step */
+          <div className="space-y-2.5 p-3.5 rounded-2xl border-2 border-indigo-500 bg-indigo-50/80 dark:bg-indigo-950/40">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-black uppercase text-blue-700 dark:text-blue-400 flex items-center gap-1">
-                <Shield size={14} /> 2FA Code Required
+              <span className="text-[11px] font-black uppercase text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5">
+                <Shield size={14} className="text-indigo-600" /> 2FA Verification Required
               </span>
               <button
                 type="button"
                 onClick={() => setRequires2FA(false)}
-                className="text-[10px] font-bold text-slate-500 hover:text-black dark:hover:text-white underline"
+                className="text-[10px] font-bold text-slate-500 hover:text-black dark:hover:text-white underline cursor-pointer"
               >
                 Back
               </button>
             </div>
 
             <div className="space-y-1">
-              <label className="font-black text-slate-600 dark:text-slate-300 ml-1 text-[10px] uppercase tracking-wider">
-                {useBackupCode ? "Backup Code" : "Authenticator Code"}
+              <label className="font-black text-slate-700 dark:text-slate-300 ml-1 text-[10px] uppercase tracking-wider">
+                {useBackupCode ? "Backup Code" : "Authenticator Code (6 digits)"}
               </label>
               <input
                 type="text"
@@ -257,7 +290,7 @@ export function LoginPage() {
                 placeholder={useBackupCode ? "a1b2-c3d4" : "123456"}
                 value={totpCode}
                 onChange={(e) => setTotpCode(e.target.value)}
-                className="w-full rounded-xl border-2 border-black bg-white dark:bg-[#12121a] px-3 py-2 text-center text-base font-mono font-bold text-slate-900 dark:text-white outline-none placeholder:text-slate-400 tracking-widest focus:shadow-[2px_2px_0px_0px_#000] transition-all"
+                className="w-full rounded-2xl border-2 border-black dark:border-white/20 bg-white dark:bg-[#12100e] px-3 py-2 text-center text-base font-mono font-bold text-slate-900 dark:text-white outline-none placeholder:text-slate-400 tracking-widest focus:ring-2 focus:ring-indigo-500 transition-all"
                 required
               />
             </div>
@@ -268,9 +301,11 @@ export function LoginPage() {
                 setUseBackupCode(!useBackupCode);
                 setTotpCode("");
               }}
-              className="text-[11px] font-bold text-blue-600 hover:underline block text-center w-full"
+              className="text-[11px] font-bold text-indigo-600 hover:underline block text-center w-full cursor-pointer"
             >
-              {useBackupCode ? "Use Authenticator 6-digit code" : "Use a backup code"}
+              {useBackupCode
+                ? "Use Authenticator 6-digit code"
+                : "Use a backup code"}
             </button>
           </div>
         )}
@@ -282,29 +317,40 @@ export function LoginPage() {
               type="checkbox"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
-              className="w-3.5 h-3.5 rounded border-2 border-black accent-[#C3C0FF] cursor-pointer"
+              className="w-4 h-4 rounded-lg border-2 border-black dark:border-white/30 accent-indigo-600 cursor-pointer"
             />
             <span>Remember me for 30 days</span>
           </label>
         </div>
 
-        {/* Primary Submit Button */}
+        {/* Primary Action Submit Button */}
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full rounded-xl border-2 border-black bg-[#C3C0FF] dark:bg-[#C3C0FF] px-4 py-2.5 font-black text-black text-xs shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all cursor-pointer uppercase flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed group"
+          className="w-full rounded-2xl border-2 border-black bg-[#6366F1] hover:bg-[#4F46E5] text-white px-4 py-2.5 font-black text-xs sm:text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all cursor-pointer uppercase flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed group"
         >
-          <span>{isLoading ? "Verifying..." : requires2FA ? "Verify & Log In 🛡️" : "Let Me In!"}</span>
-          {!isLoading && <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />}
+          <span>
+            {isLoading
+              ? "Authenticating..."
+              : requires2FA
+                ? "Verify & Continue 🛡️"
+                : "Let's Build! 🚀"}
+          </span>
+          {!isLoading && (
+            <ArrowRight
+              size={16}
+              className="group-hover:translate-x-1 transition-transform"
+            />
+          )}
         </button>
 
-        {/* Single Clean Divider */}
+        {/* Divider */}
         <div className="flex items-center gap-2 py-1">
-          <div className="h-[1.5px] flex-1 bg-black/15 dark:bg-white/15"></div>
+          <div className="h-[1.5px] flex-1 bg-slate-200 dark:bg-slate-800"></div>
           <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-            OR CONTINUE WITH
+            OR CONNECT WITH
           </span>
-          <div className="h-[1.5px] flex-1 bg-black/15 dark:bg-white/15"></div>
+          <div className="h-[1.5px] flex-1 bg-slate-200 dark:bg-slate-800"></div>
         </div>
 
         {/* Secondary Actions Grid: Google Sign-In & Demo Mode */}
@@ -312,9 +358,9 @@ export function LoginPage() {
           <button
             type="button"
             onClick={() => googleLogin()}
-            className="flex items-center justify-center gap-1.5 w-full px-2.5 py-2 border-2 border-black rounded-xl font-black text-[11px] uppercase tracking-wider text-slate-800 dark:text-slate-200 bg-white dark:bg-[#12121a] shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all cursor-pointer"
+            className="flex items-center justify-center gap-2 w-full px-3 py-2 border-2 border-black dark:border-white/20 rounded-2xl font-black text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200 bg-white dark:bg-[#12100e] shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] dark:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.15)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all cursor-pointer"
           >
-            <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
               <path
                 fill="#4285F4"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
@@ -337,42 +383,63 @@ export function LoginPage() {
 
           <DemoLoginButton
             label="⚡ Demo Mode"
-            className="w-full rounded-xl border-2 border-black bg-[#6BCB77] text-black px-2.5 py-2 font-black text-[11px] shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer uppercase flex items-center justify-center gap-1"
+            className="w-full rounded-2xl border-2 border-black dark:border-white/20 bg-[#10B981] hover:bg-[#059669] text-white px-3 py-2 font-black text-xs shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] dark:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.15)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all cursor-pointer uppercase flex items-center justify-center gap-1.5"
           />
         </div>
 
-        {/* Playful Sticker Vault Toggle */}
+        {/* Playful Sticker Vault Interactive Toggle */}
         <div className="pt-1 flex flex-col items-center relative">
           <button
             type="button"
             onClick={() => setShowStickers(!showStickers)}
-            className="text-[10px] font-black text-slate-500 hover:text-black dark:text-slate-400 dark:hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+            className="text-[11px] font-black text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white flex items-center gap-1.5 cursor-pointer transition-colors"
           >
-            <Sparkles size={11} className="text-[#FFD93D]" />
-            <span>{showStickers ? "Hide Stickers 🎨" : "Playful Stickers 🎨"}</span>
+            <Sparkles size={12} className="text-amber-400 animate-spin-slow" />
+            <span>
+              {showStickers ? "Hide Playful Badges 🎨" : "Playful Badges 🎨"}
+            </span>
           </button>
 
           {showStickers && (
-            <div className="absolute bottom-6 bg-white dark:bg-[#1a1714] p-2.5 rounded-xl border-2 border-black shadow-card z-50 flex flex-wrap justify-center gap-1.5 animate-scale-up w-64">
-              <DraggableSticker initialX={0} initialY={0} className="bg-[#FF6B6B] text-white text-[10px] px-2 py-0.5">
+            <div className="absolute bottom-7 bg-white dark:bg-[#1c1917] p-3 rounded-2xl border-2 border-black dark:border-white/30 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(99,102,241,0.5)] z-50 flex flex-wrap justify-center gap-2 animate-scale-up w-72">
+              <DraggableSticker
+                initialX={0}
+                initialY={0}
+                className="bg-rose-500 text-white text-[10px] font-black px-2.5 py-1 rounded-xl shadow-sm border border-black"
+              >
                 Bug Hunter 🐛
               </DraggableSticker>
-              <DraggableSticker initialX={0} initialY={0} className="bg-[#4D96FF] text-white text-[10px] px-2 py-0.5">
+              <DraggableSticker
+                initialX={0}
+                initialY={0}
+                className="bg-indigo-500 text-white text-[10px] font-black px-2.5 py-1 rounded-xl shadow-sm border border-black"
+              >
                 git commit 🚀
               </DraggableSticker>
-              <DraggableSticker initialX={0} initialY={0} className="bg-[#6BCB77] text-black text-[10px] px-2 py-0.5">
+              <DraggableSticker
+                initialX={0}
+                initialY={0}
+                className="bg-emerald-500 text-white text-[10px] font-black px-2.5 py-1 rounded-xl shadow-sm border border-black"
+              >
                 100% Merged ✅
+              </DraggableSticker>
+              <DraggableSticker
+                initialX={0}
+                initialY={0}
+                className="bg-amber-400 text-black text-[10px] font-black px-2.5 py-1 rounded-xl shadow-sm border border-black"
+              >
+                Code Ninja 🥷
               </DraggableSticker>
             </div>
           )}
         </div>
 
-        {/* Footer Link */}
+        {/* Navigation Link to Signup */}
         <p className="text-center text-[11px] font-bold text-slate-500 dark:text-slate-400 pt-1">
-          New here?{" "}
+          New to Atelier?{" "}
           <Link
             to="/signup"
-            className="text-black dark:text-white hover:underline font-black ml-0.5 underline"
+            className="text-indigo-600 dark:text-indigo-400 font-black hover:underline ml-1 underline"
           >
             Create an account
           </Link>

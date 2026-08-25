@@ -62,6 +62,10 @@ export function WASMTerminal() {
       <div
         className="flex-1 overflow-y-auto p-3 space-y-1"
         onClick={() => inputRef.current?.focus()}
+        role="log"
+        aria-label="Terminal output"
+        aria-live="polite"
+        aria-atomic="false"
       >
         {lines.map((line) => (
           <div

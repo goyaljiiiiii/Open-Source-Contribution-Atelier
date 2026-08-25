@@ -12,7 +12,7 @@ export function TableSkeleton() {
           <Skeleton className="h-6 w-1/4 rounded mr-4" />
           <Skeleton className="h-6 w-1/4 rounded" />
         </div>
-        
+
         {/* 8 Body Rows */}
         <div className="space-y-4">
           {Array.from({ length: 8 }).map((_, i) => (

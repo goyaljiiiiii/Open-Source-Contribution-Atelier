@@ -13,7 +13,7 @@ export function SandboxSkeleton() {
           ))}
         </div>
       </div>
-      
+
       {/* Main Panel */}
       <div className="flex-1 flex flex-col gap-2">
         {/* Editor */}
@@ -26,7 +26,7 @@ export function SandboxSkeleton() {
             <Skeleton className="h-4 w-5/6 rounded" />
           </div>
         </div>
-        
+
         {/* Terminal */}
         <div className="h-64 rounded-xl border-4 border-black bg-black p-4">
           <Skeleton className="h-6 w-32 rounded bg-surface-high mb-4" />

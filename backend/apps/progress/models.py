@@ -771,3 +771,27 @@ class WeeklyDigestLog(models.Model):
     def __str__(self):
         return f"Digest for {self.user.username} — week of {self.week_start}"
 
+
+class LeaderboardArchive(models.Model):
+    """Stores historical monthly leaderboard snapshots per user."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="leaderboard_archives",
+    )
+    year = models.PositiveIntegerField()
+    month = models.PositiveIntegerField()
+    month_key = models.CharField(max_length=20, db_index=True)
+    rank = models.PositiveIntegerField()
+    monthly_xp = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-year", "-month", "rank"]
+        unique_together = ("user", "year", "month")
+
+    def __str__(self):
+        return f"LeaderboardArchive(user={self.user.username}, period={self.month_key}, rank={self.rank}, xp={self.monthly_xp})"
+
+

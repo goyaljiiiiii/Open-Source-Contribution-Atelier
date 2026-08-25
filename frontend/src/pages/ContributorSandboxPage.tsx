@@ -192,7 +192,6 @@ export function ContributorSandboxPage() {
               className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 bg-rose-400 text-black font-black text-xs rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all"
             >
               <Target className="w-4 h-4" /> `git bisect` Game →
-
             </Link>
           </div>
         </div>

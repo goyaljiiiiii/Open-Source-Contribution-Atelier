@@ -9,7 +9,7 @@ describe("DataStateWrapper Component", () => {
     render(
       <DataStateWrapper loading={true} loadingMessage="Loading test data...">
         <div>Data Loaded</div>
-      </DataStateWrapper>
+      </DataStateWrapper>,
     );
 
     expect(screen.getByText("Loading test data...")).toBeInTheDocument();
@@ -23,7 +23,7 @@ describe("DataStateWrapper Component", () => {
         skeleton={<div data-testid="custom-skeleton">Skeleton Loading...</div>}
       >
         <div>Data Loaded</div>
-      </DataStateWrapper>
+      </DataStateWrapper>,
     );
 
     expect(screen.getByTestId("custom-skeleton")).toBeInTheDocument();
@@ -39,7 +39,7 @@ describe("DataStateWrapper Component", () => {
         >
           <div>Data Loaded</div>
         </DataStateWrapper>
-      </BrowserRouter>
+      </BrowserRouter>,
     );
 
     expect(screen.getByText("API Connection Error")).toBeInTheDocument();
@@ -57,7 +57,7 @@ describe("DataStateWrapper Component", () => {
           onRetry={handleRetry}
           retryLabel="Try Again Now"
         />
-      </BrowserRouter>
+      </BrowserRouter>,
     );
 
     const retryBtn = screen.getByText("Try Again Now");
@@ -75,11 +75,13 @@ describe("DataStateWrapper Component", () => {
         emptyDescription="Your search returned 0 items."
       >
         <div>Data Loaded</div>
-      </DataStateWrapper>
+      </DataStateWrapper>,
     );
 
     expect(screen.getByText("No Items Found")).toBeInTheDocument();
-    expect(screen.getByText("Your search returned 0 items.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Your search returned 0 items."),
+    ).toBeInTheDocument();
     expect(screen.queryByText("Data Loaded")).not.toBeInTheDocument();
   });
 
@@ -87,7 +89,7 @@ describe("DataStateWrapper Component", () => {
     render(
       <DataStateWrapper loading={false}>
         <div data-testid="content">Actual Data Content</div>
-      </DataStateWrapper>
+      </DataStateWrapper>,
     );
 
     expect(screen.getByTestId("content")).toBeInTheDocument();

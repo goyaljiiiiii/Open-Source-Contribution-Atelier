@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 interface PasswordInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   id: string;
@@ -8,7 +8,7 @@ interface PasswordInputProps extends React.InputHTMLAttributes<HTMLInputElement>
 export const PasswordInput: React.FC<PasswordInputProps> = ({
   id,
   label,
-  className = '',
+  className = "",
   ...props
 }) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -24,13 +24,13 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
         <input
           {...props}
           id={id}
-          type={showPassword ? 'text' : 'password'}
+          type={showPassword ? "text" : "password"}
           className={`w-full pr-10 pl-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`}
         />
         <button
           type="button"
           onClick={() => setShowPassword((prev) => !prev)}
-          aria-label={showPassword ? 'Hide password' : 'Show password'}
+          aria-label={showPassword ? "Hide password" : "Show password"}
           aria-pressed={showPassword}
           className="absolute right-2 p-1 text-gray-500 hover:text-gray-700 focus:outline-none"
         >

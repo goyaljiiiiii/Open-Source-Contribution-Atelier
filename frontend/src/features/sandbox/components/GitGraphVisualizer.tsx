@@ -19,7 +19,11 @@ export function GitGraphVisualizer({
   height = 320,
 }: GitGraphVisualizerProps) {
   const layout = useMemo(() => {
-    if (nodes.length === 0) return { positions: new Map<string, { x: number; y: number }>(), edges: [] as Array<[string, string]> };
+    if (nodes.length === 0)
+      return {
+        positions: new Map<string, { x: number; y: number }>(),
+        edges: [] as Array<[string, string]>,
+      };
 
     const oidSet = new Set(nodes.map((n) => n.oid));
     const depth = new Map<string, number>();

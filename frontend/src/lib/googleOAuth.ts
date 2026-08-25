@@ -40,7 +40,7 @@ export function formatGoogleOAuthError(
     );
   }
 
-  if (/401|403|invalid|token/i.test(message)) {
+  if (/401|403|invalid|token|verify|credentials/i.test(message)) {
     return (
       "Google token was rejected by the server. " +
       "Verify GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET match the frontend client ID."

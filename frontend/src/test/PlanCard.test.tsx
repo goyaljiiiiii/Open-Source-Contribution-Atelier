@@ -20,7 +20,7 @@ describe("PlanCard", () => {
         isLoading={false}
         isCurrent={false}
         isLoggedIn={true}
-      />
+      />,
     );
 
     expect(getByText("Pro Plan")).toBeInTheDocument();
@@ -41,7 +41,7 @@ describe("PlanCard", () => {
         isLoading={false}
         isCurrent={false}
         isLoggedIn={true}
-      />
+      />,
     );
 
     expect(getByText("Fallback Plan")).toBeInTheDocument();

@@ -1,4 +1,10 @@
-import { render, screen, fireEvent, cleanup, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  cleanup,
+  waitFor,
+} from "@testing-library/react";
 import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import { CustomTooltip } from "../components/ui/OnboardingTour";
 import { TooltipRenderProps } from "react-joyride";
@@ -13,7 +19,9 @@ describe("OnboardingTour CustomTooltip focus trap and keyboard accessibility", (
     cleanup();
   });
 
-  const createProps = (overrides: Partial<TooltipRenderProps> = {}): TooltipRenderProps => {
+  const createProps = (
+    overrides: Partial<TooltipRenderProps> = {},
+  ): TooltipRenderProps => {
     return {
       index: 0,
       size: 3,

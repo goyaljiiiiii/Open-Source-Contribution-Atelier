@@ -74,7 +74,11 @@ export function useTypingIndicator({
         }
         return [
           ...prev,
-          { username: username || `user_${userId}`, user_id: userId, lastTypedAt: now },
+          {
+            username: username || `user_${userId}`,
+            user_id: userId,
+            lastTypedAt: now,
+          },
         ];
       });
 
@@ -161,4 +165,3 @@ export function useTypingIndicator({
     onInputSubmit,
   };
 }
-

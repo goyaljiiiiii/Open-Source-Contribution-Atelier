@@ -155,9 +155,24 @@ def _validate_cors_allowed_origins(origins: list[str]) -> list[str]:
 CORS_ALLOWED_ORIGINS = _validate_cors_allowed_origins(CORS_ALLOWED_ORIGINS)
 
 if not DEBUG and not TESTING and not CORS_ALLOWED_ORIGINS:
+if not DEBUG and not TESTING:
+    import urllib.parse
     from django.core.exceptions import ImproperlyConfigured
 
-    raise ImproperlyConfigured("CORS_ALLOWED_ORIGINS cannot be empty in production.")
+    if not CORS_ALLOWED_ORIGINS:
+        raise ImproperlyConfigured("CORS_ALLOWED_ORIGINS cannot be empty in production.")
+
+    for origin in CORS_ALLOWED_ORIGINS:
+        if "*" in origin:
+            raise ImproperlyConfigured(
+                f"Insecure CORS origin '{origin}': Wildcard origins are not permitted when DEBUG=False."
+            )
+        parsed = urllib.parse.urlparse(origin)
+        if parsed.scheme not in ("http", "https") or not parsed.netloc:
+            raise ImproperlyConfigured(
+                f"Invalid CORS origin '{origin}': Every origin in CORS_ALLOWED_ORIGINS "
+                "must include a valid scheme ('http://' or 'https://') and domain name."
+            )
 
 CORS_ALLOW_CREDENTIALS = True
 if DEBUG:
@@ -174,7 +189,8 @@ if DEBUG:
             "DJANGO_ENV to something other than 'production') to continue."
         )
     CORS_ALLOW_ALL_ORIGINS = True
-# CORS_ALLOW_ALL_ORIGINS defaults to False; rely on CORS_ALLOWED_ORIGINS allowlist.
+else:
+    CORS_ALLOW_ALL_ORIGINS = False
 
 INSTALLED_APPS = [
     # "daphne",
@@ -594,6 +610,8 @@ REST_FRAMEWORK = {
         "chat_message": "30/minute",
         # ── Events ───────────────────────────────────────────────────────────
         "events_list": os.getenv("RATE_EVENTS_LIST", "60/minute"),
+        # AI Tutor
+        "ai_tutor": os.getenv("RATE_AI_TUTOR", "10/minute"),
     },
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -1017,3 +1035,16 @@ SILENCED_SYSTEM_CHECKS = ["perf.E001", "fields.E336"]
 if TESTING:
     CELERY_TASK_ALWAYS_EAGER = True
     CELERY_TASK_EAGER_PROPAGATES = True
+
+# ──────────────────────────────────────────
+# Celery Beat Schedule Configuration
+# ──────────────────────────────────────────
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    "archive-monthly-leaderboard": {
+        "task": "apps.progress.tasks.archive_monthly_leaderboard",
+        "schedule": crontab(minute=0, hour=0, day_of_month="1"),
+    },
+}
+

@@ -56,12 +56,16 @@ export const MultiplayerEditor: React.FC<MultiplayerEditorProps> = ({
     const selectedText = value.substring(start, end);
     const replacement = `${prefix}${selectedText || "text"}${suffix}`;
 
-    const newValue = value.substring(0, start) + replacement + value.substring(end);
+    const newValue =
+      value.substring(0, start) + replacement + value.substring(end);
     onChange(newValue);
 
     setTimeout(() => {
       el.focus();
-      el.setSelectionRange(start + prefix.length, start + prefix.length + (selectedText.length || 4));
+      el.setSelectionRange(
+        start + prefix.length,
+        start + prefix.length + (selectedText.length || 4),
+      );
     }, 50);
   };
 
@@ -132,7 +136,8 @@ export const MultiplayerEditor: React.FC<MultiplayerEditorProps> = ({
               style={{ backgroundColor: peer.color }}
             >
               <Zap className="w-2.5 h-2.5 animate-pulse" />
-              {peer.username} ({peer.cursor?.line || 1}:{peer.cursor?.column || 1})
+              {peer.username} ({peer.cursor?.line || 1}:
+              {peer.cursor?.column || 1})
             </span>
           ))}
         </div>

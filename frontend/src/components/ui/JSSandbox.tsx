@@ -198,7 +198,11 @@ export function JSSandbox({ exercise, onSuccess }: JSSandboxProps) {
           )}
 
           {error && (
-            <div role="alert" aria-live="assertive" className="mt-4 pt-4 border-t border-red-900/50">
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="mt-4 pt-4 border-t border-red-900/50"
+            >
               <div className="flex items-center gap-2 text-red-400 font-bold mb-2">
                 <XCircle className="w-4 h-4" /> Runtime Error
               </div>
@@ -212,7 +216,11 @@ export function JSSandbox({ exercise, onSuccess }: JSSandboxProps) {
           )}
 
           {isSuccess && (
-            <div role="status" aria-live="polite" className="mt-4 pt-4 border-t border-green-900/50">
+            <div
+              role="status"
+              aria-live="polite"
+              className="mt-4 pt-4 border-t border-green-900/50"
+            >
               <div className="flex items-center gap-2 text-green-400 font-bold">
                 <CheckCircle2 className="w-5 h-5" /> Execution completed! You
                 earned points.

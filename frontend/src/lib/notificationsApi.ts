@@ -1,4 +1,4 @@
-﻿/**
+/**
  * REST helpers for the notification inbox (list / mark-read / prefs).
  * Kept separate from Redux so Vitest + MSW can cover them cleanly.
  */
@@ -34,8 +34,13 @@ export async function updateNotificationPrefs(
 
 export async function listNotifications(): Promise<AppNotification[]> {
   const res = await api.get("/notifications/");
-  const data = res.data;
-  return Array.isArray(data) ? (data as AppNotification[]) : [];
+  const data = res.data as
+    | AppNotification[]
+    | { results?: AppNotification[] }
+    | undefined;
+
+  if (Array.isArray(data)) return data;
+  return Array.isArray(data?.results) ? data.results : [];
 }
 
 export async function markNotificationRead(

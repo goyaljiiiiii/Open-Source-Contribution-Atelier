@@ -37,8 +37,7 @@ const PUSH_EVENT_PAYLOAD = {
       avatar_url: "https://avatars.githubusercontent.com/u/1?v=4",
       type: "User",
     },
-    html_url:
-      "https://github.com/octocat/open-source-contribution-atelier",
+    html_url: "https://github.com/octocat/open-source-contribution-atelier",
     description: "An interactive open-source learning platform",
     fork: false,
     created_at: "2024-01-15T08:30:00Z",
@@ -363,10 +362,10 @@ function JsonNode({
   const isArray = Array.isArray(value);
   const isExpandable = isObject || isArray;
 
-  const descendantMatches = isExpandable && hasDescendantMatch(value, searchTerm);
+  const descendantMatches =
+    isExpandable && hasDescendantMatch(value, searchTerm);
   const shouldAutoExpand =
-    defaultExpanded ||
-    (searchTerm !== "" && descendantMatches);
+    defaultExpanded || (searchTerm !== "" && descendantMatches);
 
   const [isExpanded, setIsExpanded] = useState(shouldAutoExpand);
 
@@ -394,9 +393,7 @@ function JsonNode({
     return (
       <div
         className={`flex items-baseline gap-1 py-0.5 font-mono text-[13px] leading-relaxed transition-colors ${
-          highlighted
-            ? "rounded bg-amber-400/20 ring-1 ring-amber-400/40"
-            : ""
+          highlighted ? "rounded bg-amber-400/20 ring-1 ring-amber-400/40" : ""
         }`}
         style={{ paddingLeft: `${depth * 20}px` }}
       >
@@ -425,20 +422,14 @@ function JsonNode({
         type="button"
         onClick={() => setIsExpanded((prev) => !prev)}
         className={`flex w-full cursor-pointer items-baseline gap-1 rounded py-0.5 text-left font-mono text-[13px] leading-relaxed transition-all hover:bg-white/5 ${
-          highlighted
-            ? "bg-amber-400/20 ring-1 ring-amber-400/40"
-            : ""
+          highlighted ? "bg-amber-400/20 ring-1 ring-amber-400/40" : ""
         }`}
         style={{ paddingLeft: `${depth * 20}px` }}
         aria-expanded={isExpanded}
         aria-label={`${isExpanded ? "Collapse" : "Expand"} ${keyName ?? (isArray ? "array" : "object")}`}
       >
         <span className="inline-flex w-4 shrink-0 items-center justify-center text-slate-400">
-          {isExpanded ? (
-            <ChevronDown size={12} />
-          ) : (
-            <ChevronRight size={12} />
-          )}
+          {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
         </span>
         {keyName !== null && (
           <>
@@ -583,9 +574,7 @@ function HeaderValidation({ event }: { event: WebhookEvent }) {
 /* ------------------------------------------------------------------ */
 
 export function WebhookInspector() {
-  const [selectedEventId, setSelectedEventId] = useState(
-    WEBHOOK_EVENTS[0].id,
-  );
+  const [selectedEventId, setSelectedEventId] = useState(WEBHOOK_EVENTS[0].id);
   const [searchTerm, setSearchTerm] = useState("");
   const [copied, setCopied] = useState(false);
   const [showHeaders, setShowHeaders] = useState(true);
@@ -623,14 +612,11 @@ export function WebhookInspector() {
     }
   }, [payloadString]);
 
-  const handleEventChange = useCallback(
-    (eventId: string) => {
-      setSelectedEventId(eventId);
-      setSearchTerm("");
-      setCopied(false);
-    },
-    [],
-  );
+  const handleEventChange = useCallback((eventId: string) => {
+    setSelectedEventId(eventId);
+    setSearchTerm("");
+    setCopied(false);
+  }, []);
 
   return (
     <section
@@ -653,8 +639,8 @@ export function WebhookInspector() {
               Webhook Event Payload Inspector
             </h2>
             <p className="text-sm text-slate-400">
-              Explore simulated GitHub webhook payloads with an interactive
-              JSON tree viewer.
+              Explore simulated GitHub webhook payloads with an interactive JSON
+              tree viewer.
             </p>
           </div>
         </div>
@@ -784,10 +770,7 @@ export function WebhookInspector() {
           <span className="font-semibold text-violet-300">
             {selectedEvent.name}
           </span>
-          <span className="text-slate-400">
-            {" "}
-            — {selectedEvent.description}
-          </span>
+          <span className="text-slate-400"> — {selectedEvent.description}</span>
         </div>
       </motion.div>
 
@@ -803,9 +786,7 @@ export function WebhookInspector() {
             </div>
             <div className="ml-2 flex items-center gap-1.5 text-xs text-slate-500">
               <FileJson size={12} />
-              <span>
-                {selectedEvent.headerEvent}.json
-              </span>
+              <span>{selectedEvent.headerEvent}.json</span>
             </div>
           </div>
 

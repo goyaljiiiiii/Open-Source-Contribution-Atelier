@@ -1,7 +1,19 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Search, X, BookOpen, Code, FileText, ArrowRight, CornerDownLeft } from "lucide-react";
+import {
+  Search,
+  X,
+  BookOpen,
+  Code,
+  FileText,
+  ArrowRight,
+  CornerDownLeft,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useLessonSearch, SearchResultItem, highlightText } from "../../hooks/useLessonSearch";
+import {
+  useLessonSearch,
+  SearchResultItem,
+  highlightText,
+} from "../../hooks/useLessonSearch";
 
 interface LessonSearchModalProps {
   isOpen: boolean;
@@ -28,7 +40,10 @@ export function LessonSearchModal({ isOpen, onClose }: LessonSearchModalProps) {
       setSelectedIndex(0);
     } else {
       setQuery("");
-      if (previousFocusRef.current && typeof previousFocusRef.current.focus === "function") {
+      if (
+        previousFocusRef.current &&
+        typeof previousFocusRef.current.focus === "function"
+      ) {
         previousFocusRef.current.focus();
       }
     }
@@ -90,10 +105,14 @@ export function LessonSearchModal({ isOpen, onClose }: LessonSearchModalProps) {
       onClose();
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
-      setSelectedIndex((prev) => (results.length > 0 ? (prev + 1) % results.length : 0));
+      setSelectedIndex((prev) =>
+        results.length > 0 ? (prev + 1) % results.length : 0,
+      );
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setSelectedIndex((prev) => (results.length > 0 ? (prev - 1 + results.length) % results.length : 0));
+      setSelectedIndex((prev) =>
+        results.length > 0 ? (prev - 1 + results.length) % results.length : 0,
+      );
     } else if (e.key === "Enter" && results.length > 0) {
       e.preventDefault();
       const selected = results[selectedIndex];
@@ -122,7 +141,11 @@ export function LessonSearchModal({ isOpen, onClose }: LessonSearchModalProps) {
       >
         {/* Search Input Bar */}
         <div className="flex items-center gap-3 p-4 border-b-4 border-black dark:border-[#2e2924]">
-          <Search size={20} className="text-slate-400 shrink-0" aria-hidden="true" />
+          <Search
+            size={20}
+            className="text-slate-400 shrink-0"
+            aria-hidden="true"
+          />
           <input
             ref={inputRef}
             type="text"
@@ -130,7 +153,9 @@ export function LessonSearchModal({ isOpen, onClose }: LessonSearchModalProps) {
             aria-autocomplete="list"
             aria-expanded={results.length > 0}
             aria-controls="lesson-search-listbox"
-            aria-activedescendant={results.length > 0 ? `lesson-option-${selectedIndex}` : undefined}
+            aria-activedescendant={
+              results.length > 0 ? `lesson-option-${selectedIndex}` : undefined
+            }
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -161,7 +186,10 @@ export function LessonSearchModal({ isOpen, onClose }: LessonSearchModalProps) {
           className="flex-1 overflow-y-auto p-4 space-y-2"
         >
           {loading && (
-            <p className="text-sm text-slate-500 animate-pulse py-8 text-center" aria-live="polite">
+            <p
+              className="text-sm text-slate-500 animate-pulse py-8 text-center"
+              aria-live="polite"
+            >
               Indexing curriculum content...
             </p>
           )}
@@ -169,16 +197,21 @@ export function LessonSearchModal({ isOpen, onClose }: LessonSearchModalProps) {
           {!loading && query.trim() && results.length === 0 && (
             <div className="text-center py-12" aria-live="polite">
               <BookOpen size={36} className="mx-auto text-slate-400 mb-2" />
-              <p className="font-bold text-base text-black dark:text-[#f0ebe2]">No matching lessons found</p>
+              <p className="font-bold text-base text-black dark:text-[#f0ebe2]">
+                No matching lessons found
+              </p>
               <p className="text-xs text-slate-500 mt-1">
-                Try searching for concepts like "git rebase", "pull request", or "merge conflict".
+                Try searching for concepts like "git rebase", "pull request", or
+                "merge conflict".
               </p>
             </div>
           )}
 
           {!loading && !query.trim() && (
             <div className="py-8 text-center text-slate-400">
-              <p className="text-xs font-mono uppercase tracking-widest font-bold">Quick Search Tips</p>
+              <p className="text-xs font-mono uppercase tracking-widest font-bold">
+                Quick Search Tips
+              </p>
               <div className="mt-3 flex flex-wrap justify-center gap-2 text-xs">
                 <span className="bg-slate-100 dark:bg-[#1f1c18] px-2.5 py-1 rounded-full border border-slate-200 dark:border-[#2e2924] text-slate-600 dark:text-slate-300">
                   Type any concept or code snippet
@@ -227,7 +260,12 @@ export function LessonSearchModal({ isOpen, onClose }: LessonSearchModalProps) {
                       <span className="text-[10px] font-mono uppercase font-bold text-slate-500 bg-slate-100 dark:bg-[#2e2924] px-1.5 py-0.5 rounded">
                         Score: {item.relevanceScore}
                       </span>
-                      {isSelected && <CornerDownLeft size={14} className="text-indigo-600 dark:text-indigo-400" />}
+                      {isSelected && (
+                        <CornerDownLeft
+                          size={14}
+                          className="text-indigo-600 dark:text-indigo-400"
+                        />
+                      )}
                     </div>
                   </div>
 

@@ -39,7 +39,11 @@ function randomHex(byteCount: number): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-function formatTraceparent(traceId: string, spanId: string, sampled = true): string {
+function formatTraceparent(
+  traceId: string,
+  spanId: string,
+  sampled = true,
+): string {
   const flags = sampled ? "01" : "00";
   return `00-${traceId}-${spanId}-${flags}`;
 }
@@ -102,8 +106,7 @@ function readNavigationTiming(): NavigationTimingMetrics | null {
       nav.domContentLoadedEventEnd > 0
         ? nav.domContentLoadedEventEnd - nav.startTime
         : null,
-    loadEventMs:
-      nav.loadEventEnd > 0 ? nav.loadEventEnd - nav.startTime : null,
+    loadEventMs: nav.loadEventEnd > 0 ? nav.loadEventEnd - nav.startTime : null,
     dnsMs: nav.domainLookupEnd - nav.domainLookupStart,
     tcpMs: nav.connectEnd - nav.connectStart,
     transferMs: nav.responseEnd - nav.responseStart,
@@ -125,7 +128,10 @@ export function logNavigationTiming(): void {
   const tracer = trace.getTracer("rum.navigation");
   const span = tracer.startSpan("page.navigation_timing");
   span.setAttribute("rum.ttfb_ms", metrics.ttfbMs ?? -1);
-  span.setAttribute("rum.dom_content_loaded_ms", metrics.domContentLoadedMs ?? -1);
+  span.setAttribute(
+    "rum.dom_content_loaded_ms",
+    metrics.domContentLoadedMs ?? -1,
+  );
   span.setAttribute("rum.load_event_ms", metrics.loadEventMs ?? -1);
   span.setAttribute("rum.dns_ms", metrics.dnsMs ?? -1);
   span.setAttribute("rum.tcp_ms", metrics.tcpMs ?? -1);

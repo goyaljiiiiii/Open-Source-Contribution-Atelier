@@ -44,7 +44,7 @@ function renderWithClient(ui: React.ReactElement) {
     defaultOptions: { queries: { retry: false } },
   });
   return render(
-    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
   );
 }
 
@@ -72,7 +72,9 @@ describe("DailyChallengeQuizCard", () => {
     expect(screen.getByText("What is Git?")).toBeInTheDocument();
     expect(screen.getByText("A VCS")).toBeInTheDocument();
     expect(screen.getByText("A browser")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Submit Answer" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Submit Answer" }),
+    ).toBeDisabled();
   });
 
   it("allows selecting an option and submitting answer for immediate feedback and XP reward", async () => {
@@ -86,9 +88,13 @@ describe("DailyChallengeQuizCard", () => {
     fireEvent.click(submitBtn);
 
     expect(await screen.findByText(/Correct! Well done!/i)).toBeInTheDocument();
-    expect(screen.getByText("Git is a distributed version control system.")).toBeInTheDocument();
     expect(
-      screen.getByText("You've completed today's challenge! Come back tomorrow for a new question.")
+      screen.getByText("Git is a distributed version control system."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "You've completed today's challenge! Come back tomorrow for a new question.",
+      ),
     ).toBeInTheDocument();
 
     const stored = JSON.parse(localStorage.getItem(storageKey) || "{}");
@@ -104,14 +110,16 @@ describe("DailyChallengeQuizCard", () => {
         selectedOption: 0,
         earnedXp: 15,
         date: todayStr,
-      })
+      }),
     );
 
     renderWithClient(<DailyChallengeQuizCard />);
 
     expect(screen.getByText("Done for today")).toBeInTheDocument();
     expect(
-      screen.getByText("You've completed today's challenge! Come back tomorrow for a new question.")
+      screen.getByText(
+        "You've completed today's challenge! Come back tomorrow for a new question.",
+      ),
     ).toBeInTheDocument();
   });
 });

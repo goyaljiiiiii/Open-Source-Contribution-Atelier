@@ -21,7 +21,10 @@ import {
   Copy,
 } from "lucide-react";
 import { MultiplayerEditor } from "../components/notes/MultiplayerEditor";
-import { PeerCursorOverlay, PeerUser } from "../components/notes/PeerCursorOverlay";
+import {
+  PeerCursorOverlay,
+  PeerUser,
+} from "../components/notes/PeerCursorOverlay";
 import { fetchApi } from "../lib/api";
 import { toast } from "react-hot-toast";
 
@@ -48,17 +51,31 @@ export const CollabNotesPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [roomId, setRoomId] = useState<string>(urlRoomId || "general-jam");
-  const [title, setTitle] = useState<string>("Open Source Collaboration Workspace");
+  const [title, setTitle] = useState<string>(
+    "Open Source Collaboration Workspace",
+  );
   const [content, setContent] = useState<string>(
-    "# Real-time Collaborative Vibe Workspace 🚀\n\nWelcome to pair-programming & live collaboration notes!\n\n```typescript\nfunction solveChallenge(input: string) {\n  console.log('Live collaborative editing enabled!');\n}\n```"
+    "# Real-time Collaborative Vibe Workspace 🚀\n\nWelcome to pair-programming & live collaboration notes!\n\n```typescript\nfunction solveChallenge(input: string) {\n  console.log('Live collaborative editing enabled!');\n}\n```",
   );
 
   const [peers, setPeers] = useState<PeerUser[]>([
-    { user_id: "u1", username: "You", color: "#3B82F6", cursor: { line: 3, column: 12 } },
-    { user_id: "u2", username: "CodeNinja", color: "#10B981", cursor: { line: 7, column: 4 } },
+    {
+      user_id: "u1",
+      username: "You",
+      color: "#3B82F6",
+      cursor: { line: 3, column: 12 },
+    },
+    {
+      user_id: "u2",
+      username: "CodeNinja",
+      color: "#10B981",
+      cursor: { line: 7, column: 4 },
+    },
   ]);
 
-  const [viewMode, setViewMode] = useState<"edit" | "split" | "preview">("split");
+  const [viewMode, setViewMode] = useState<"edit" | "split" | "preview">(
+    "split",
+  );
   const [zenMode, setZenMode] = useState<boolean>(false);
   const [simulatingPeers, setSimulatingPeers] = useState<boolean>(true);
   const [isConnected, setIsConnected] = useState<boolean>(true);
@@ -118,11 +135,17 @@ export const CollabNotesPage: React.FC = () => {
           return {
             ...peer,
             cursor: {
-              line: Math.max(1, (peer.cursor?.line || 1) + (Math.random() > 0.5 ? 1 : -1)),
-              column: Math.max(1, (peer.cursor?.column || 1) + Math.floor(Math.random() * 5)),
+              line: Math.max(
+                1,
+                (peer.cursor?.line || 1) + (Math.random() > 0.5 ? 1 : -1),
+              ),
+              column: Math.max(
+                1,
+                (peer.cursor?.column || 1) + Math.floor(Math.random() * 5),
+              ),
             },
           };
-        })
+        }),
       );
     }, 3000);
     return () => clearInterval(interval);
@@ -135,7 +158,7 @@ export const CollabNotesPage: React.FC = () => {
         JSON.stringify({
           action: "content_change",
           content: newContent,
-        })
+        }),
       );
     }
   };
@@ -146,7 +169,7 @@ export const CollabNotesPage: React.FC = () => {
         JSON.stringify({
           action: "cursor_move",
           cursor,
-        })
+        }),
       );
     }
   };
@@ -192,14 +215,17 @@ export const CollabNotesPage: React.FC = () => {
     }
   };
 
-  const applyTemplate = (template: typeof VIBE_TEMPLATES[0]) => {
+  const applyTemplate = (template: (typeof VIBE_TEMPLATES)[0]) => {
     setTitle(template.title);
     setContent(template.content);
     toast.success(`Applied template "${template.name}"!`);
   };
 
   return (
-    <main id="main-content" className="min-h-screen bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
+    <main
+      id="main-content"
+      className="min-h-screen bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 p-4 sm:p-6 lg:p-8 flex flex-col gap-6"
+    >
       <div className="max-w-7xl mx-auto w-full space-y-6">
         {/* Workspace Top Navigation */}
         <div className="p-4 sm:p-6 bg-slate-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-800 rounded-3xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
@@ -222,7 +248,9 @@ export const CollabNotesPage: React.FC = () => {
                     value={roomId}
                     onChange={(e) => {
                       setRoomId(e.target.value);
-                      navigate(`/collab-notes/${e.target.value}`, { replace: true });
+                      navigate(`/collab-notes/${e.target.value}`, {
+                        replace: true,
+                      });
                     }}
                     className="bg-transparent font-bold text-blue-600 dark:text-blue-400 focus:outline-none w-24"
                   />
@@ -256,9 +284,13 @@ export const CollabNotesPage: React.FC = () => {
               defaultValue=""
               className="px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-bold text-gray-700 dark:text-gray-200 focus:outline-none"
             >
-              <option value="" disabled>✨ Load Vibe Template</option>
+              <option value="" disabled>
+                ✨ Load Vibe Template
+              </option>
               {VIBE_TEMPLATES.map((tmpl, idx) => (
-                <option key={idx} value={idx}>{tmpl.name}</option>
+                <option key={idx} value={idx}>
+                  {tmpl.name}
+                </option>
               ))}
             </select>
 
@@ -267,7 +299,9 @@ export const CollabNotesPage: React.FC = () => {
               <button
                 onClick={() => setViewMode("edit")}
                 className={`px-2.5 py-1.5 font-bold rounded-lg transition-all flex items-center gap-1 ${
-                  viewMode === "edit" ? "bg-blue-600 text-white shadow-sm" : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  viewMode === "edit"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 }`}
               >
                 <Edit3 className="w-3.5 h-3.5" /> Edit
@@ -275,7 +309,9 @@ export const CollabNotesPage: React.FC = () => {
               <button
                 onClick={() => setViewMode("split")}
                 className={`px-2.5 py-1.5 font-bold rounded-lg transition-all flex items-center gap-1 ${
-                  viewMode === "split" ? "bg-blue-600 text-white shadow-sm" : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  viewMode === "split"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 }`}
               >
                 <Columns className="w-3.5 h-3.5" /> Split
@@ -283,7 +319,9 @@ export const CollabNotesPage: React.FC = () => {
               <button
                 onClick={() => setViewMode("preview")}
                 className={`px-2.5 py-1.5 font-bold rounded-lg transition-all flex items-center gap-1 ${
-                  viewMode === "preview" ? "bg-blue-600 text-white shadow-sm" : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  viewMode === "preview"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 }`}
               >
                 <Eye className="w-3.5 h-3.5" /> Preview
@@ -295,7 +333,11 @@ export const CollabNotesPage: React.FC = () => {
               className="px-3 py-2 text-xs font-bold text-gray-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
               title="Copy Live Share Link"
             >
-              {isCopied ? <Check className="w-4 h-4 text-emerald-500" /> : <Share2 className="w-4 h-4 text-blue-500" />}
+              {isCopied ? (
+                <Check className="w-4 h-4 text-emerald-500" />
+              ) : (
+                <Share2 className="w-4 h-4 text-blue-500" />
+              )}
               {isCopied ? "Copied!" : "Share Room"}
             </button>
 
@@ -321,15 +363,23 @@ export const CollabNotesPage: React.FC = () => {
               className="p-2 text-gray-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl transition-colors"
               title={zenMode ? "Exit Zen Mode" : "Fullscreen Zen Mode"}
             >
-              {zenMode ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              {zenMode ? (
+                <Minimize2 className="w-4 h-4" />
+              ) : (
+                <Maximize2 className="w-4 h-4" />
+              )}
             </button>
           </div>
         </div>
 
         {/* Workspace Canvas (Split / Edit / Preview) */}
-        <div className={`w-full ${zenMode ? "h-[85vh]" : "h-[650px]"} grid grid-cols-1 lg:grid-cols-2 gap-6 transition-all`}>
+        <div
+          className={`w-full ${zenMode ? "h-[85vh]" : "h-[650px]"} grid grid-cols-1 lg:grid-cols-2 gap-6 transition-all`}
+        >
           {(viewMode === "edit" || viewMode === "split") && (
-            <div className={`h-full ${viewMode === "edit" ? "lg:col-span-2" : ""}`}>
+            <div
+              className={`h-full ${viewMode === "edit" ? "lg:col-span-2" : ""}`}
+            >
               <MultiplayerEditor
                 value={content}
                 onChange={handleContentChange}
@@ -341,10 +391,13 @@ export const CollabNotesPage: React.FC = () => {
           )}
 
           {(viewMode === "preview" || viewMode === "split") && (
-            <div className={`h-full bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-6 overflow-y-auto custom-scrollbar shadow-sm ${viewMode === "preview" ? "lg:col-span-2" : ""}`}>
+            <div
+              className={`h-full bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-6 overflow-y-auto custom-scrollbar shadow-sm ${viewMode === "preview" ? "lg:col-span-2" : ""}`}
+            >
               <div className="flex items-center justify-between border-b border-gray-200 dark:border-slate-800 pb-3 mb-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 <span className="flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-blue-500" /> Rendered Markdown & Code Preview
+                  <Layers className="w-4 h-4 text-blue-500" /> Rendered Markdown
+                  & Code Preview
                 </span>
                 <Sparkles className="w-4 h-4 text-blue-500 animate-pulse" />
               </div>

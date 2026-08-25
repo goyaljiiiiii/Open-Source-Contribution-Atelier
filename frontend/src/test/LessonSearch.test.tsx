@@ -11,14 +11,16 @@ const mockCurriculum = {
         {
           slug: "git-commit-basics",
           title: "Mastering Git Commit",
-          description: "Learn how to record snapshots of your working directory with git commit.",
+          description:
+            "Learn how to record snapshots of your working directory with git commit.",
           expected: "git commit -m 'feat: initial commit'",
           hint: "Use git commit with a message",
         },
         {
           slug: "git-rebase-flow",
           title: "Interactive Git Rebase",
-          description: "Reapply commits on top of another base tip for clean commit history.",
+          description:
+            "Reapply commits on top of another base tip for clean commit history.",
           expected: "git rebase -i main",
           hint: "Pick and squash commits",
         },
@@ -71,7 +73,8 @@ describe("Lesson Full-Text Search Engine", () => {
   });
 
   it("highlights matching search query in snippets", () => {
-    const text = "Learn how to record snapshots of your working directory with git commit.";
+    const text =
+      "Learn how to record snapshots of your working directory with git commit.";
     const highlighted = highlightText(text, "snapshots");
     expect(highlighted).toContain("snapshots");
   });

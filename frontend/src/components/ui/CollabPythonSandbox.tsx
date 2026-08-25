@@ -298,7 +298,13 @@ export function CollabPythonSandbox({
         )}
       </div>
 
-      <div className="p-4 border-t-4 border-black dark:border-[#2e2924] bg-[#1e1e1e] text-white min-h-[120px] max-h-[300px] overflow-y-auto font-mono text-sm">
+      <div
+        role="region"
+        aria-label="Console Output"
+        aria-live="polite"
+        aria-atomic="false"
+        className="p-4 border-t-4 border-black dark:border-[#2e2924] bg-[#1e1e1e] text-white min-h-[120px] max-h-[300px] overflow-y-auto font-mono text-sm"
+      >
         <div className="text-gray-400 mb-2 text-xs uppercase font-bold tracking-wider">
           Console Output
         </div>

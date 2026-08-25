@@ -27,7 +27,12 @@ export interface SubmoduleNode {
   commitHash: string;
   remoteHash: string;
   branch: string;
-  status: "uninitialized" | "clean" | "detached_head" | "ahead_behind" | "modified";
+  status:
+    | "uninitialized"
+    | "clean"
+    | "detached_head"
+    | "ahead_behind"
+    | "modified";
   initialized: boolean;
   parentId?: string;
   children?: SubmoduleNode[];
@@ -110,7 +115,8 @@ const INITIAL_EXERCISES: Exercise[] = [
   {
     id: 2,
     title: "Initialize Registered Submodules",
-    description: "Initialize the submodules recorded in your `.gitmodules` file.",
+    description:
+      "Initialize the submodules recorded in your `.gitmodules` file.",
     hint: "Type: git submodule init",
     requiredCmdPrefix: "git submodule init",
     completed: false,
@@ -119,7 +125,8 @@ const INITIAL_EXERCISES: Exercise[] = [
   {
     id: 3,
     title: "Update & Fetch Submodule Contents",
-    description: "Fetch and checkout the commits specified in the parent repository.",
+    description:
+      "Fetch and checkout the commits specified in the parent repository.",
     hint: "Type: git submodule update",
     requiredCmdPrefix: "git submodule update",
     completed: false,
@@ -137,7 +144,8 @@ const INITIAL_EXERCISES: Exercise[] = [
   {
     id: 5,
     title: "Perform a Recursive Clone",
-    description: "Simulate cloning a project along with all nested submodules in one step.",
+    description:
+      "Simulate cloning a project along with all nested submodules in one step.",
     hint: "Type: git clone --recursive https://github.com/atelier/parent-app.git",
     requiredCmdPrefix: "git clone --recursive",
     completed: false,
@@ -153,7 +161,9 @@ export function GitSubmoduleSimulator() {
     "Type 'help' for available commands or follow the guided exercise tasks below.",
     "--------------------------------------------------------------------------------",
   ]);
-  const [selectedNode, setSelectedNode] = useState<SubmoduleNode | null>(INITIAL_TREE);
+  const [selectedNode, setSelectedNode] = useState<SubmoduleNode | null>(
+    INITIAL_TREE,
+  );
   const [activeTab, setActiveTab] = useState<"tree" | "gitmodules">("tree");
   const [exercises, setExercises] = useState<Exercise[]>(INITIAL_EXERCISES);
   const [currentExerciseIdx, setCurrentExerciseIdx] = useState(0);
@@ -167,14 +177,14 @@ export function GitSubmoduleSimulator() {
   // Helper to traverse and update nodes recursively
   const updateNodeRecursively = (
     current: SubmoduleNode,
-    updater: (node: SubmoduleNode) => SubmoduleNode
+    updater: (node: SubmoduleNode) => SubmoduleNode,
   ): SubmoduleNode => {
     const updatedCurrent = updater(current);
     if (updatedCurrent.children) {
       return {
         ...updatedCurrent,
         children: updatedCurrent.children.map((child) =>
-          updateNodeRecursively(child, updater)
+          updateNodeRecursively(child, updater),
         ),
       };
     }
@@ -200,13 +210,27 @@ export function GitSubmoduleSimulator() {
 
     if (cmd === "help") {
       addLog("💡 Available Git Submodule Commands:");
-      addLog("  git submodule add <url> [path]   - Add a repository as a submodule");
-      addLog("  git submodule init [path]        - Initialize submodules in .git/config");
-      addLog("  git submodule update [--remote]  - Fetch & checkout submodules");
-      addLog("  git submodule status             - View status & HEAD commit hashes");
-      addLog("  git clone --recursive <url>      - Clone repo and all submodules recursively");
-      addLog("  git status                       - View parent repository status");
-      addLog("  reset                            - Reset simulator to initial state");
+      addLog(
+        "  git submodule add <url> [path]   - Add a repository as a submodule",
+      );
+      addLog(
+        "  git submodule init [path]        - Initialize submodules in .git/config",
+      );
+      addLog(
+        "  git submodule update [--remote]  - Fetch & checkout submodules",
+      );
+      addLog(
+        "  git submodule status             - View status & HEAD commit hashes",
+      );
+      addLog(
+        "  git clone --recursive <url>      - Clone repo and all submodules recursively",
+      );
+      addLog(
+        "  git status                       - View parent repository status",
+      );
+      addLog(
+        "  reset                            - Reset simulator to initial state",
+      );
       addLog("  clear                            - Clear terminal screen");
       return;
     }
@@ -244,7 +268,9 @@ export function GitSubmoduleSimulator() {
         addLog(`  Initialized submodules: ${cleanCount}`);
         addLog(`  Uninitialized submodules: ${uninitCount}`);
         if (uninitCount > 0) {
-          addLog("  (use 'git submodule init' and 'git submodule update' to fetch them)");
+          addLog(
+            "  (use 'git submodule init' and 'git submodule update' to fetch them)",
+          );
         }
       } else if (subCmd === "submodule") {
         const action = parts[2]?.toLowerCase();
@@ -256,19 +282,29 @@ export function GitSubmoduleSimulator() {
               const symbol = !node.initialized
                 ? "-"
                 : node.status === "detached_head"
-                ? "+"
-                : " ";
-              addLog(`${symbol}${node.commitHash} ${node.path} (${node.branch})`);
+                  ? "+"
+                  : " ";
+              addLog(
+                `${symbol}${node.commitHash} ${node.path} (${node.branch})`,
+              );
             }
-            node.children?.forEach((child) => printStatus(child, prefix + "  "));
+            node.children?.forEach((child) =>
+              printStatus(child, prefix + "  "),
+            );
           };
           printStatus(tree);
         } else if (action === "add") {
           const url = parts[3];
-          const path = parts[4] || (url ? url.split("/").pop()?.replace(".git", "") : "libs/new-module");
+          const path =
+            parts[4] ||
+            (url
+              ? url.split("/").pop()?.replace(".git", "")
+              : "libs/new-module");
 
           if (!url) {
-            addLog("❌ Error: Missing repository URL. Usage: git submodule add <url> [path]");
+            addLog(
+              "❌ Error: Missing repository URL. Usage: git submodule add <url> [path]",
+            );
             return;
           }
 
@@ -301,17 +337,21 @@ export function GitSubmoduleSimulator() {
                 return { ...node, initialized: true, status: "detached_head" };
               }
               return node;
-            })
+            }),
           );
           addLog("Submodule register success:");
           const logInits = (n: SubmoduleNode) => {
             if (n.id !== "root") {
-              addLog(`Submodule '${n.name}' (${n.url}) registered for path '${n.path}'`);
+              addLog(
+                `Submodule '${n.name}' (${n.url}) registered for path '${n.path}'`,
+              );
             }
             n.children?.forEach(logInits);
           };
           logInits(tree);
-          addLog("✅ Registered submodules in .git/config. Next run 'git submodule update'.");
+          addLog(
+            "✅ Registered submodules in .git/config. Next run 'git submodule update'.",
+          );
           checkExerciseCompletion("git submodule init");
         } else if (action === "update") {
           const isRemote = parts.includes("--remote");
@@ -329,7 +369,7 @@ export function GitSubmoduleSimulator() {
                 };
               }
               return node;
-            })
+            }),
           );
 
           if (isRemote) {
@@ -339,11 +379,15 @@ export function GitSubmoduleSimulator() {
             checkExerciseCompletion("git submodule update --remote");
           } else {
             addLog("Submodule checkout complete:");
-            addLog("Submodules checked out to commit hashes listed in parent repository.");
+            addLog(
+              "Submodules checked out to commit hashes listed in parent repository.",
+            );
             checkExerciseCompletion("git submodule update");
           }
         } else {
-          addLog(`❌ Unknown submodule action '${action}'. Try 'add', 'init', 'update', or 'status'.`);
+          addLog(
+            `❌ Unknown submodule action '${action}'. Try 'add', 'init', 'update', or 'status'.`,
+          );
         }
       } else if (subCmd === "clone" && parts.includes("--recursive")) {
         const url = parts[parts.length - 1];
@@ -358,19 +402,27 @@ export function GitSubmoduleSimulator() {
               };
             }
             return node;
-          })
+          }),
         );
         addLog(`Cloning into 'parent-app' from ${url}...`);
         addLog("Submodule 'services/auth-sdk' registered and cloned.");
         addLog("Submodule 'libs/ui-components' registered and cloned.");
-        addLog("Submodule 'libs/ui-components/icons' (nested) registered and cloned.");
-        addLog("✅ Recursive clone complete! Parent and all submodules are fully initialized.");
+        addLog(
+          "Submodule 'libs/ui-components/icons' (nested) registered and cloned.",
+        );
+        addLog(
+          "✅ Recursive clone complete! Parent and all submodules are fully initialized.",
+        );
         checkExerciseCompletion("git clone --recursive");
       } else {
-        addLog(`❌ Command not recognized: '${cmd}'. Type 'help' for command list.`);
+        addLog(
+          `❌ Command not recognized: '${cmd}'. Type 'help' for command list.`,
+        );
       }
     } else {
-      addLog(`❌ Command not recognized: '${cmd}'. Type 'help' for command list.`);
+      addLog(
+        `❌ Command not recognized: '${cmd}'. Type 'help' for command list.`,
+      );
     }
   };
 
@@ -379,13 +431,19 @@ export function GitSubmoduleSimulator() {
     const currentEx = exercises[currentExerciseIdx];
     if (!currentEx || currentEx.completed) return;
 
-    if (cmdPrefix.toLowerCase().startsWith(currentEx.requiredCmdPrefix.toLowerCase())) {
+    if (
+      cmdPrefix
+        .toLowerCase()
+        .startsWith(currentEx.requiredCmdPrefix.toLowerCase())
+    ) {
       const updatedExs = [...exercises];
       updatedExs[currentExerciseIdx].completed = true;
       setExercises(updatedExs);
       setTotalXP((prev) => prev + currentEx.xp);
 
-      addLog(`🎉 EXERCISE COMPLETE! +${currentEx.xp} XP unlocked: "${currentEx.title}"`);
+      addLog(
+        `🎉 EXERCISE COMPLETE! +${currentEx.xp} XP unlocked: "${currentEx.title}"`,
+      );
 
       if (currentExerciseIdx + 1 < exercises.length) {
         setCurrentExerciseIdx((prev) => prev + 1);
@@ -409,7 +467,9 @@ export function GitSubmoduleSimulator() {
       n.children?.forEach(traverse);
     };
     traverse(node);
-    return lines.length ? lines.join("\n") : "# No submodules registered yet.\n# Use 'git submodule add <url> <path>' to register one.";
+    return lines.length
+      ? lines.join("\n")
+      : "# No submodules registered yet.\n# Use 'git submodule add <url> <path>' to register one.";
   };
 
   return (
@@ -429,7 +489,9 @@ export function GitSubmoduleSimulator() {
             Git Submodule Manager & Visual Tree Simulator
           </h1>
           <p className="mt-1 text-sm font-bold text-muted dark:text-[#c4bbae] max-w-2xl">
-            Master multi-repository Git architectures. Practice adding, updating, initializing, and recursively cloning nested submodules with real-time SVG tree feedback.
+            Master multi-repository Git architectures. Practice adding,
+            updating, initializing, and recursively cloning nested submodules
+            with real-time SVG tree feedback.
           </p>
         </div>
 
@@ -439,18 +501,20 @@ export function GitSubmoduleSimulator() {
             <Sparkles className="w-6 h-6 animate-pulse" />
           </div>
           <div>
-            <div className="text-xs font-black uppercase text-muted tracking-wider">Skill XP</div>
-            <div className="text-xl font-black text-text dark:text-[#f0ebe2]">{totalXP} XP</div>
+            <div className="text-xs font-black uppercase text-muted tracking-wider">
+              Skill XP
+            </div>
+            <div className="text-xl font-black text-text dark:text-[#f0ebe2]">
+              {totalXP} XP
+            </div>
           </div>
         </div>
       </div>
 
       {/* Main Grid: Tree / Visualizer & Exercises / Terminal */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
         {/* Left Column: Visual SVG Graph & Gitmodules Editor (7 cols) */}
         <div className="lg:col-span-7 space-y-6 flex flex-col">
-          
           {/* Visual Graph Header Controls */}
           <div className="bg-white dark:bg-[#1f1c18] border-4 border-black dark:border-[#2e2924] rounded-2xl shadow-card p-4 flex-1 flex flex-col min-h-[480px]">
             <div className="flex items-center justify-between pb-3 border-b-2 border-black/10 dark:border-[#2e2924] mb-4">
@@ -498,16 +562,30 @@ export function GitSubmoduleSimulator() {
             {/* TAB 1: SVG Graph Render */}
             {activeTab === "tree" && (
               <div className="relative flex-1 bg-surface-low dark:bg-[#12110e] border-2 border-black/20 dark:border-[#2e2924] rounded-xl overflow-hidden p-4 flex flex-col justify-center items-center">
-                
                 {/* SVG Visual Canvas */}
                 <div className="w-full h-[380px] relative overflow-auto flex items-center justify-center">
-                  <svg className="w-full h-full min-w-[500px] min-h-[350px]" viewBox="0 0 700 350">
+                  <svg
+                    className="w-full h-full min-w-[500px] min-h-[350px]"
+                    viewBox="0 0 700 350"
+                  >
                     <defs>
-                      <linearGradient id="parentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <linearGradient
+                        id="parentGrad"
+                        x1="0%"
+                        y1="0%"
+                        x2="100%"
+                        y2="100%"
+                      >
                         <stop offset="0%" stopColor="#FFD700" />
                         <stop offset="100%" stopColor="#FFA500" />
                       </linearGradient>
-                      <linearGradient id="nodeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <linearGradient
+                        id="nodeGrad"
+                        x1="0%"
+                        y1="0%"
+                        x2="100%"
+                        y2="100%"
+                      >
                         <stop offset="0%" stopColor="#ffffff" />
                         <stop offset="100%" stopColor="#f3f4f6" />
                       </linearGradient>
@@ -520,7 +598,9 @@ export function GitSubmoduleSimulator() {
                       fill="none"
                       stroke="#4b5563"
                       strokeWidth="3"
-                      strokeDasharray={tree.children?.[0]?.initialized ? "none" : "6,6"}
+                      strokeDasharray={
+                        tree.children?.[0]?.initialized ? "none" : "6,6"
+                      }
                     />
                     {/* Root to ui-components */}
                     <path
@@ -528,7 +608,9 @@ export function GitSubmoduleSimulator() {
                       fill="none"
                       stroke="#4b5563"
                       strokeWidth="3"
-                      strokeDasharray={tree.children?.[1]?.initialized ? "none" : "6,6"}
+                      strokeDasharray={
+                        tree.children?.[1]?.initialized ? "none" : "6,6"
+                      }
                     />
                     {/* ui-components to icons-pack */}
                     {tree.children?.[1]?.children?.[0] && (
@@ -537,7 +619,11 @@ export function GitSubmoduleSimulator() {
                         fill="none"
                         stroke="#6b7280"
                         strokeWidth="2.5"
-                        strokeDasharray={tree.children[1].children[0].initialized ? "none" : "5,5"}
+                        strokeDasharray={
+                          tree.children[1].children[0].initialized
+                            ? "none"
+                            : "5,5"
+                        }
                       />
                     )}
 
@@ -555,10 +641,24 @@ export function GitSubmoduleSimulator() {
                         stroke="#000"
                         strokeWidth="3"
                       />
-                      <text x="100" y="24" textAnchor="middle" fontWeight="900" fontSize="13" fill="#000">
+                      <text
+                        x="100"
+                        y="24"
+                        textAnchor="middle"
+                        fontWeight="900"
+                        fontSize="13"
+                        fill="#000"
+                      >
                         📦 parent-app (Root Repo)
                       </text>
-                      <text x="100" y="40" textAnchor="middle" fontWeight="700" fontSize="10" fill="#333">
+                      <text
+                        x="100"
+                        y="40"
+                        textAnchor="middle"
+                        fontWeight="700"
+                        fontSize="10"
+                        fill="#333"
+                      >
                         HEAD: {tree.commitHash} • main
                       </text>
                     </g>
@@ -574,17 +674,45 @@ export function GitSubmoduleSimulator() {
                           width="200"
                           height="60"
                           rx="10"
-                          fill={tree.children[0].initialized ? "#ffffff" : "#fef2f2"}
-                          stroke={selectedNode?.id === tree.children[0].id ? "#3b82f6" : "#000"}
-                          strokeWidth={selectedNode?.id === tree.children[0].id ? "4" : "2.5"}
+                          fill={
+                            tree.children[0].initialized ? "#ffffff" : "#fef2f2"
+                          }
+                          stroke={
+                            selectedNode?.id === tree.children[0].id
+                              ? "#3b82f6"
+                              : "#000"
+                          }
+                          strokeWidth={
+                            selectedNode?.id === tree.children[0].id
+                              ? "4"
+                              : "2.5"
+                          }
                         />
-                        <text x="15" y="22" fontWeight="800" fontSize="12" fill="#111827">
+                        <text
+                          x="15"
+                          y="22"
+                          fontWeight="800"
+                          fontSize="12"
+                          fill="#111827"
+                        >
                           📁 {tree.children[0].name}
                         </text>
-                        <text x="15" y="38" fontWeight="600" fontSize="10" fill="#6b7280">
+                        <text
+                          x="15"
+                          y="38"
+                          fontWeight="600"
+                          fontSize="10"
+                          fill="#6b7280"
+                        >
                           {tree.children[0].path}
                         </text>
-                        <text x="15" y="52" fontWeight="700" fontSize="10" fill="#3b82f6">
+                        <text
+                          x="15"
+                          y="52"
+                          fontWeight="700"
+                          fontSize="10"
+                          fill="#3b82f6"
+                        >
                           SHA: {tree.children[0].commitHash}
                         </text>
                         {/* Status Pill */}
@@ -598,12 +726,21 @@ export function GitSubmoduleSimulator() {
                             !tree.children[0].initialized
                               ? "#ef4444"
                               : tree.children[0].status === "detached_head"
-                              ? "#f59e0b"
-                              : "#10b981"
+                                ? "#f59e0b"
+                                : "#10b981"
                           }
                         />
-                        <text x="157" y="22" textAnchor="middle" fontWeight="800" fontSize="8" fill="#fff">
-                          {!tree.children[0].initialized ? "UNINIT" : tree.children[0].status.toUpperCase()}
+                        <text
+                          x="157"
+                          y="22"
+                          textAnchor="middle"
+                          fontWeight="800"
+                          fontSize="8"
+                          fill="#fff"
+                        >
+                          {!tree.children[0].initialized
+                            ? "UNINIT"
+                            : tree.children[0].status.toUpperCase()}
                         </text>
                       </g>
                     )}
@@ -619,17 +756,45 @@ export function GitSubmoduleSimulator() {
                           width="200"
                           height="60"
                           rx="10"
-                          fill={tree.children[1].initialized ? "#ffffff" : "#fef2f2"}
-                          stroke={selectedNode?.id === tree.children[1].id ? "#3b82f6" : "#000"}
-                          strokeWidth={selectedNode?.id === tree.children[1].id ? "4" : "2.5"}
+                          fill={
+                            tree.children[1].initialized ? "#ffffff" : "#fef2f2"
+                          }
+                          stroke={
+                            selectedNode?.id === tree.children[1].id
+                              ? "#3b82f6"
+                              : "#000"
+                          }
+                          strokeWidth={
+                            selectedNode?.id === tree.children[1].id
+                              ? "4"
+                              : "2.5"
+                          }
                         />
-                        <text x="15" y="22" fontWeight="800" fontSize="12" fill="#111827">
+                        <text
+                          x="15"
+                          y="22"
+                          fontWeight="800"
+                          fontSize="12"
+                          fill="#111827"
+                        >
                           📁 {tree.children[1].name}
                         </text>
-                        <text x="15" y="38" fontWeight="600" fontSize="10" fill="#6b7280">
+                        <text
+                          x="15"
+                          y="38"
+                          fontWeight="600"
+                          fontSize="10"
+                          fill="#6b7280"
+                        >
                           {tree.children[1].path}
                         </text>
-                        <text x="15" y="52" fontWeight="700" fontSize="10" fill="#3b82f6">
+                        <text
+                          x="15"
+                          y="52"
+                          fontWeight="700"
+                          fontSize="10"
+                          fill="#3b82f6"
+                        >
                           SHA: {tree.children[1].commitHash}
                         </text>
                         {/* Status Pill */}
@@ -643,12 +808,21 @@ export function GitSubmoduleSimulator() {
                             !tree.children[1].initialized
                               ? "#ef4444"
                               : tree.children[1].status === "detached_head"
-                              ? "#f59e0b"
-                              : "#10b981"
+                                ? "#f59e0b"
+                                : "#10b981"
                           }
                         />
-                        <text x="157" y="22" textAnchor="middle" fontWeight="800" fontSize="8" fill="#fff">
-                          {!tree.children[1].initialized ? "UNINIT" : tree.children[1].status.toUpperCase()}
+                        <text
+                          x="157"
+                          y="22"
+                          textAnchor="middle"
+                          fontWeight="800"
+                          fontSize="8"
+                          fill="#fff"
+                        >
+                          {!tree.children[1].initialized
+                            ? "UNINIT"
+                            : tree.children[1].status.toUpperCase()}
                         </text>
                       </g>
                     )}
@@ -658,20 +832,38 @@ export function GitSubmoduleSimulator() {
                       <g
                         transform="translate(435, 275)"
                         className="cursor-pointer transition-transform hover:scale-105"
-                        onClick={() => setSelectedNode(tree.children![1].children![0])}
+                        onClick={() =>
+                          setSelectedNode(tree.children![1].children![0])
+                        }
                       >
                         <rect
                           width="170"
                           height="50"
                           rx="8"
-                          fill={tree.children[1].children[0].initialized ? "#f0fdf4" : "#fff1f2"}
+                          fill={
+                            tree.children[1].children[0].initialized
+                              ? "#f0fdf4"
+                              : "#fff1f2"
+                          }
                           stroke="#000"
                           strokeWidth="2"
                         />
-                        <text x="10" y="20" fontWeight="800" fontSize="11" fill="#111827">
+                        <text
+                          x="10"
+                          y="20"
+                          fontWeight="800"
+                          fontSize="11"
+                          fill="#111827"
+                        >
                           ⚡ {tree.children[1].children[0].name} (Nested)
                         </text>
-                        <text x="10" y="36" fontWeight="700" fontSize="9" fill="#10b981">
+                        <text
+                          x="10"
+                          y="36"
+                          fontWeight="700"
+                          fontSize="9"
+                          fill="#10b981"
+                        >
                           SHA: {tree.children[1].children[0].commitHash}
                         </text>
                       </g>
@@ -683,13 +875,16 @@ export function GitSubmoduleSimulator() {
                 <div className="w-full pt-2 border-t border-black/10 dark:border-[#2e2924] flex flex-wrap items-center justify-between text-[11px] font-bold text-muted gap-2">
                   <div className="flex items-center gap-3">
                     <span className="flex items-center gap-1">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" /> Clean / Synced
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />{" "}
+                      Clean / Synced
                     </span>
                     <span className="flex items-center gap-1">
-                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" /> Detached HEAD
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />{" "}
+                      Detached HEAD
                     </span>
                     <span className="flex items-center gap-1">
-                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block" /> Uninitialized
+                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block" />{" "}
+                      Uninitialized
                     </span>
                   </div>
                   <span>Dashed Lines = Pointer Registered only</span>
@@ -704,7 +899,9 @@ export function GitSubmoduleSimulator() {
                   <span>📄 .gitmodules Configuration File</span>
                   <span>Read-Only Preview</span>
                 </div>
-                <pre className="whitespace-pre-wrap">{generateGitModulesText(tree)}</pre>
+                <pre className="whitespace-pre-wrap">
+                  {generateGitModulesText(tree)}
+                </pre>
               </div>
             )}
 
@@ -728,11 +925,13 @@ export function GitSubmoduleSimulator() {
                       !selectedNode.initialized
                         ? "bg-rose-500"
                         : selectedNode.status === "detached_head"
-                        ? "bg-amber-500"
-                        : "bg-emerald-500"
+                          ? "bg-amber-500"
+                          : "bg-emerald-500"
                     }`}
                   >
-                    {selectedNode.initialized ? selectedNode.status.toUpperCase() : "UNINITIALIZED"}
+                    {selectedNode.initialized
+                      ? selectedNode.status.toUpperCase()
+                      : "UNINITIALIZED"}
                   </span>
                 </div>
               </div>
@@ -742,12 +941,12 @@ export function GitSubmoduleSimulator() {
 
         {/* Right Column: Guided Exercises & Simulated Terminal (5 cols) */}
         <div className="lg:col-span-5 space-y-6 flex flex-col">
-          
           {/* Guided Exercises Card */}
           <div className="bg-white dark:bg-[#1f1c18] border-4 border-black dark:border-[#2e2924] rounded-2xl shadow-card p-5">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-black text-text dark:text-[#f0ebe2] flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-primary" /> Guided Exercises
+                <ShieldCheck className="w-5 h-5 text-primary" /> Guided
+                Exercises
               </h2>
               <span className="text-xs font-bold text-muted">
                 Step {currentExerciseIdx + 1} of {exercises.length}
@@ -784,8 +983,8 @@ export function GitSubmoduleSimulator() {
                     idx === currentExerciseIdx
                       ? "border-black bg-primary/20 text-text dark:text-[#f0ebe2]"
                       : ex.completed
-                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                      : "border-black/10 dark:border-[#2e2924] text-muted opacity-70"
+                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                        : "border-black/10 dark:border-[#2e2924] text-muted opacity-70"
                   }`}
                 >
                   <div className="flex items-center gap-2">
@@ -830,10 +1029,10 @@ export function GitSubmoduleSimulator() {
                     log.startsWith("$")
                       ? "text-yellow-400 font-bold"
                       : log.includes("✅")
-                      ? "text-emerald-400 font-semibold"
-                      : log.includes("❌")
-                      ? "text-rose-400"
-                      : "text-gray-300"
+                        ? "text-emerald-400 font-semibold"
+                        : log.includes("❌")
+                          ? "text-rose-400"
+                          : "text-gray-300"
                   }
                 >
                   {log}
@@ -842,8 +1041,13 @@ export function GitSubmoduleSimulator() {
             </div>
 
             {/* Input Line */}
-            <form onSubmit={handleCommand} className="p-3 bg-[#202020] border-t border-gray-800 flex items-center gap-2">
-              <span className="text-emerald-400 font-mono font-bold text-xs">$</span>
+            <form
+              onSubmit={handleCommand}
+              className="p-3 bg-[#202020] border-t border-gray-800 flex items-center gap-2"
+            >
+              <span className="text-emerald-400 font-mono font-bold text-xs">
+                $
+              </span>
               <input
                 type="text"
                 value={terminalInput}
@@ -859,7 +1063,6 @@ export function GitSubmoduleSimulator() {
               </button>
             </form>
           </div>
-
         </div>
       </div>
 
@@ -880,7 +1083,9 @@ export function GitSubmoduleSimulator() {
                 Submodule Master Badge Unlocked! 🎉
               </h3>
               <p className="text-xs font-bold text-muted dark:text-[#c4bbae]">
-                Congratulations! You successfully mastered Git submodules, initialized child repositories, updated remote commit pointers, and performed recursive clones.
+                Congratulations! You successfully mastered Git submodules,
+                initialized child repositories, updated remote commit pointers,
+                and performed recursive clones.
               </p>
               <div className="bg-primary/20 border-2 border-black p-3 rounded-xl font-black text-sm text-text dark:text-[#f0ebe2]">
                 Total XP Earned: +{totalXP} XP

@@ -1,5 +1,9 @@
 import { test as base, Page } from "@playwright/test";
-import { generateUniqueTestUser, mockLogin, setAuthenticatedState } from "../helpers/auth";
+import {
+  generateUniqueTestUser,
+  mockLogin,
+  setAuthenticatedState,
+} from "../helpers/auth";
 
 // Define custom fixtures
 type MyFixtures = {
