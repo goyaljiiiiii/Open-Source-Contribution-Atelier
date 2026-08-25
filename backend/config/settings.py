@@ -146,7 +146,9 @@ if not DEBUG and not TESTING:
     from django.core.exceptions import ImproperlyConfigured
 
     if not CORS_ALLOWED_ORIGINS:
-        raise ImproperlyConfigured("CORS_ALLOWED_ORIGINS cannot be empty in production.")
+        raise ImproperlyConfigured(
+            "CORS_ALLOWED_ORIGINS cannot be empty in production."
+        )
 
     for origin in CORS_ALLOWED_ORIGINS:
         if "*" in origin:
@@ -734,6 +736,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 # Cache timeout for Search API (in seconds) - Default: 1 hour
 SEARCH_CACHE_TIMEOUT = 60 * 60
 
+# DB query execution time threshold (ms) for slow search query logging.
+SLOW_QUERY_THRESHOLD_MS = int(os.getenv("SLOW_QUERY_THRESHOLD_MS", "200"))
+
 # ──────────────────────────────────────────
 # Django-Q Configuration
 # ──────────────────────────────────────────
@@ -1033,4 +1038,3 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute=0, hour=0, day_of_month="1"),
     },
 }
-
