@@ -95,7 +95,9 @@ describe("useGitShell hook", () => {
       result.current.runCmd("git status");
     });
     expect(
-      result.current.lines.some((l) => l.text.includes("Untracked files:") || l.text.includes("a.txt")),
+      result.current.lines.some(
+        (l) => l.text.includes("Untracked files:") || l.text.includes("a.txt"),
+      ),
     ).toBe(true);
 
     // git add a.txt

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useWebSocket } from '../hooks/useWebSocket';
+import React, { useState } from "react";
+import { useWebSocket } from "../hooks/useWebSocket";
 
 interface SuggestionBlockProps {
   suggestion: {
@@ -15,15 +15,19 @@ interface SuggestionBlockProps {
   onReject: (id: string, reason: string) => void;
 }
 
-export function SuggestionBlock({ suggestion, onAccept, onReject }: SuggestionBlockProps) {
-  const [reason, setReason] = useState('');
+export function SuggestionBlock({
+  suggestion,
+  onAccept,
+  onReject,
+}: SuggestionBlockProps) {
+  const [reason, setReason] = useState("");
   const [showReason, setShowReason] = useState(false);
 
-  if (suggestion.status === 'accepted') {
+  if (suggestion.status === "accepted") {
     return <div className="suggestion-accepted">✅ Suggestion accepted</div>;
   }
 
-  if (suggestion.status === 'rejected') {
+  if (suggestion.status === "rejected") {
     return <div className="suggestion-rejected">❌ Suggestion rejected</div>;
   }
 
@@ -31,7 +35,9 @@ export function SuggestionBlock({ suggestion, onAccept, onReject }: SuggestionBl
     <div className="suggestion-block">
       <div className="suggestion-header">
         <span className="suggestion-file">{suggestion.file_path}</span>
-        <span className="suggestion-lines">Lines {suggestion.line_start}-{suggestion.line_end}</span>
+        <span className="suggestion-lines">
+          Lines {suggestion.line_start}-{suggestion.line_end}
+        </span>
       </div>
 
       <div className="diff-view">
@@ -46,17 +52,11 @@ export function SuggestionBlock({ suggestion, onAccept, onReject }: SuggestionBl
       </div>
 
       <div className="suggestion-actions">
-        <button 
-          className="btn-accept"
-          onClick={() => onAccept(suggestion.id)}
-        >
+        <button className="btn-accept" onClick={() => onAccept(suggestion.id)}>
           ✅ Accept
         </button>
-        
-        <button 
-          className="btn-reject"
-          onClick={() => setShowReason(true)}
-        >
+
+        <button className="btn-reject" onClick={() => setShowReason(true)}>
           ❌ Reject
         </button>
 

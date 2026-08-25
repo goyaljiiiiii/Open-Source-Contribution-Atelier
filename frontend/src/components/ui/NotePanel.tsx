@@ -133,7 +133,11 @@ export function NotePanel({ lessonSlug, onClose }: NotePanelProps) {
             />
           ) : (
             <div className="w-full h-full min-h-[300px] bg-white dark:bg-[#151411] border-4 border-black dark:border-[#2e2924] rounded-lg p-4 text-sm dark:text-[#f0ebe2] whitespace-pre-wrap font-sans">
-              {content || <span className="italic text-muted">No note content to preview.</span>}
+              {content || (
+                <span className="italic text-muted">
+                  No note content to preview.
+                </span>
+              )}
             </div>
           )}
         </div>

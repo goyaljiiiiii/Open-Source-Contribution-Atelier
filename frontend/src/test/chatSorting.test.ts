@@ -15,7 +15,9 @@ describe("Chat Message Deduplication & Sorting", () => {
       timestamp: "10:00:00 AM",
       created_at: "2026-08-04T10:00:00.000Z",
     };
-    expect(parseMessageTime(msg)).toBe(new Date("2026-08-04T10:00:00.000Z").getTime());
+    expect(parseMessageTime(msg)).toBe(
+      new Date("2026-08-04T10:00:00.000Z").getTime(),
+    );
   });
 
   it("places optimistic messages at the end when sorting", () => {

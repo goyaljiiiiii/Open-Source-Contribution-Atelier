@@ -102,9 +102,7 @@ export function useTerminalAutocomplete(
       (words.length === 2 && !isTrailingSpace && words[0] === "git");
     const gitCommand = words[0] === "git" ? words[1] : undefined;
     const isFlagContext =
-      gitCommand !== undefined &&
-      lastWord.startsWith("-") &&
-      !isTrailingSpace;
+      gitCommand !== undefined && lastWord.startsWith("-") && !isTrailingSpace;
     const isSubcommandContext =
       gitCommand !== undefined &&
       Object.prototype.hasOwnProperty.call(GIT_SUBCOMMANDS, gitCommand) &&
@@ -149,9 +147,7 @@ export function useTerminalAutocomplete(
           results.push({
             text: flag,
             completionText:
-              inputVal.slice(0, inputVal.length - lastWord.length) +
-              flag +
-              " ",
+              inputVal.slice(0, inputVal.length - lastWord.length) + flag + " ",
             type: "git-command",
             description: `${gitCommand} flag`,
           });
@@ -179,9 +175,7 @@ export function useTerminalAutocomplete(
           results.push({
             text: name,
             completionText:
-              inputVal.slice(0, inputVal.length - lastWord.length) +
-              name +
-              " ",
+              inputVal.slice(0, inputVal.length - lastWord.length) + name + " ",
             type: "branch",
             description: "Branch",
           });

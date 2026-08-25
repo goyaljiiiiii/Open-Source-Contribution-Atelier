@@ -19,7 +19,11 @@ export function WeeklyGoalTracker() {
   const queryClient = useQueryClient();
   const [isEditOpen, setIsEditOpen] = useState(false);
 
-  const { data: goalData, isLoading, error } = useQuery<WeeklyGoalData>({
+  const {
+    data: goalData,
+    isLoading,
+    error,
+  } = useQuery<WeeklyGoalData>({
     queryKey: ["weeklyGoal"],
     queryFn: () => fetchApi("/progress/weekly-goal/"),
   });
@@ -229,8 +233,8 @@ export function WeeklyGoalTracker() {
                 day.is_today
                   ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/40"
                   : day.is_active
-                  ? "border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/40 dark:bg-emerald-950/30"
-                  : "border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/20"
+                    ? "border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/40 dark:bg-emerald-950/30"
+                    : "border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/20"
               }`}
             >
               <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
@@ -258,7 +262,8 @@ export function WeeklyGoalTracker() {
           <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Target className="h-5 w-5 text-indigo-500" /> Adjust Weekly Goal
+                <Target className="h-5 w-5 text-indigo-500" /> Adjust Weekly
+                Goal
               </h3>
               <button
                 onClick={() => setIsEditOpen(false)}
@@ -281,7 +286,10 @@ export function WeeklyGoalTracker() {
                   onChange={(e) =>
                     setFormValues((prev) => ({
                       ...prev,
-                      target_lessons: Math.max(1, parseInt(e.target.value) || 1),
+                      target_lessons: Math.max(
+                        1,
+                        parseInt(e.target.value) || 1,
+                      ),
                     }))
                   }
                   className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-sm text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none"
@@ -321,7 +329,10 @@ export function WeeklyGoalTracker() {
                   onChange={(e) =>
                     setFormValues((prev) => ({
                       ...prev,
-                      target_minutes: Math.max(15, parseInt(e.target.value) || 15),
+                      target_minutes: Math.max(
+                        15,
+                        parseInt(e.target.value) || 15,
+                      ),
                     }))
                   }
                   className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-sm text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none"

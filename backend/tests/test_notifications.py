@@ -45,9 +45,60 @@ def test_list_shows_only_own_notifications(user_a, user_b, notif_for_a, notif_fo
     client = auth_client(user_a)
     response = client.get("/api/notifications/")
     assert response.status_code == 200
-    ids = [n["id"] for n in response.data]
+    payload = response.data
+    assert "results" in payload
+    ids = [n["id"] for n in payload["results"]]
     assert notif_for_a.id in ids
     assert notif_for_b.id not in ids
+
+
+def test_list_is_paginated_and_sender_is_selected(user_a, db):
+    sender = User.objects.create_user(username="notification_sender", password="pass")
+    Notification.objects.bulk_create(
+        [
+            Notification(
+                recipient=user_a,
+                sender=sender,
+                notif_type="comment",
+                title=f"Notification {index}",
+                message="Paginated notification",
+            )
+            for index in range(25)
+        ]
+    )
+
+    client = auth_client(user_a)
+    response = client.get("/api/notifications/")
+
+    assert response.status_code == 200
+    assert response.data["count"] == 25
+    assert len(response.data["results"]) == 20
+    assert response.data["next"] is not None
+    assert all(item["sender_username"] == "notification_sender" for item in response.data["results"])
+
+
+def test_digest_is_paginated_and_includes_unread_count(user_a, db):
+    Notification.objects.bulk_create(
+        [
+            Notification(
+                recipient=user_a,
+                notif_type="achievement",
+                title=f"Unread {index}",
+                message="Unread digest item",
+                is_read=False,
+            )
+            for index in range(25)
+        ]
+    )
+
+    client = auth_client(user_a)
+    response = client.get("/api/notifications/digest/")
+
+    assert response.status_code == 200
+    assert response.data["count"] == 25
+    assert response.data["unread_count"] == 25
+    assert len(response.data["results"]) == 20
+    assert response.data["next"] is not None
 
 
 def test_list_requires_auth(db):

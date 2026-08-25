@@ -1,5 +1,5 @@
-import React from 'react';
-import './ConfirmDialog.css';
+import React from "react";
+import "./ConfirmDialog.css";
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -9,18 +9,18 @@ interface ConfirmDialogProps {
   cancelText?: string;
   onConfirm: () => void;
   onCancel: () => void;
-  type?: 'danger' | 'warning' | 'info';
+  type?: "danger" | "warning" | "info";
 }
 
 export function ConfirmDialog({
   isOpen,
   title,
   message,
-  confirmText = 'Confirm',
-  cancelText = 'Cancel',
+  confirmText = "Confirm",
+  cancelText = "Cancel",
   onConfirm,
   onCancel,
-  type = 'danger',
+  type = "danger",
 }: ConfirmDialogProps) {
   if (!isOpen) return null;
 
@@ -33,10 +33,7 @@ export function ConfirmDialog({
           <button className="confirm-btn cancel" onClick={onCancel}>
             {cancelText}
           </button>
-          <button 
-            className={`confirm-btn ${type}`}
-            onClick={onConfirm}
-          >
+          <button className={`confirm-btn ${type}`} onClick={onConfirm}>
             {confirmText}
           </button>
         </div>

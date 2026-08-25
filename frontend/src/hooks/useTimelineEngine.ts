@@ -4,7 +4,7 @@ export interface TraceEvent {
   step: number;
   line: number;
   event: string;
-   
+
   locals: Record<string, any>;
   stdout: string;
   error?: string;

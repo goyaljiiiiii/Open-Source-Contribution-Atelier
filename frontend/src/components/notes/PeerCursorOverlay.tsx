@@ -39,7 +39,8 @@ export const PeerCursorOverlay: React.FC<PeerCursorOverlayProps> = ({
 
       <span className="text-xs font-semibold text-slate-400 flex items-center gap-1.5 ml-1">
         <Users className="w-3.5 h-3.5 text-indigo-400" />
-        {peers.length} {peers.length === 1 ? "Contributor" : "Contributors"} Online
+        {peers.length} {peers.length === 1 ? "Contributor" : "Contributors"}{" "}
+        Online
       </span>
     </div>
   );

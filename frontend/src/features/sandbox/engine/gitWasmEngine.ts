@@ -214,7 +214,9 @@ export class GitWasmEngine {
     } else if (this.state.commits[ref]) {
       this.state.head = ref;
     } else {
-      throw new Error(`pathspec '${ref}' did not match any file(s) known to git`);
+      throw new Error(
+        `pathspec '${ref}' did not match any file(s) known to git`,
+      );
     }
     if (this.state.head && this.state.commits[this.state.head]) {
       const tree = this.state.commits[this.state.head].tree;
@@ -279,8 +281,7 @@ export class GitWasmEngine {
   async merge(ref: string): Promise<string> {
     await this.ready;
     const targetOid =
-      this.state.branches[ref] ??
-      (this.state.commits[ref] ? ref : null);
+      this.state.branches[ref] ?? (this.state.commits[ref] ? ref : null);
     if (!targetOid) throw new Error(`merge: ref '${ref}' not found`);
     const ours = this.state.head;
     if (!ours) throw new Error("merge: no HEAD commit");
@@ -356,8 +357,7 @@ export class GitWasmEngine {
   async rebase(onto: string): Promise<void> {
     await this.ready;
     const ontoOid =
-      this.state.branches[onto] ??
-      (this.state.commits[onto] ? onto : null);
+      this.state.branches[onto] ?? (this.state.commits[onto] ? onto : null);
     if (!ontoOid) throw new Error(`rebase: onto '${onto}' not found`);
 
     const commits: GitCommit[] = [];
@@ -522,7 +522,9 @@ export class GitWasmEngine {
           const onto = ontoIdx >= 0 ? rest[ontoIdx + 1] : rest[rest.length - 1];
           if (!onto) return ["fatal: no onto branch specified"];
           await this.rebase(onto);
-          return [`Successfully rebased and updated refs/heads/${this.state.branch}.`];
+          return [
+            `Successfully rebased and updated refs/heads/${this.state.branch}.`,
+          ];
         }
         default:
           return [`git: '${sub}' is not a git command.`];

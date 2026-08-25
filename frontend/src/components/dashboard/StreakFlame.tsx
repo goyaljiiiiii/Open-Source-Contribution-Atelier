@@ -3,38 +3,43 @@ import React from "react";
 interface StreakFlameProps {
   animate?: boolean;
   className?: string;
+  /** Rendered width/height in px. Defaults to 54 (the original dashboard size). */
+  size?: number;
 }
 
 export function StreakFlame({
   animate = false,
   className = "",
+  size = 54,
 }: StreakFlameProps) {
+  const dimensionStyle = { width: size, height: size };
+
   return (
     <div
       className={[
         "relative inline-flex items-center justify-center",
         className,
       ].join(" ")}
+      style={dimensionStyle}
       aria-hidden="true"
     >
       {/* Glow layer (kept small + uses opacity/transform only) */}
       <div
         className={
           animate
-            ? "streak-flame-glow"
+            ? "streak-flame-glow streak-flame-glow--anim"
             : "streak-flame-glow streak-flame-glow--static"
         }
+        style={dimensionStyle}
       />
 
       {/* SVG flame */}
       <svg
-        width="54"
-        height="54"
         viewBox="0 0 64 64"
         className={animate ? "streak-flame streak-flame--anim" : "streak-flame"}
         role="img"
         focusable="false"
-        style={{ color: "var(--flame-fg, #ff7a18)" }}
+        style={{ color: "var(--flame-fg, #ff7a18)", ...dimensionStyle }}
       >
         <defs>
           <linearGradient id="streakFlameGrad" x1="0" y1="0" x2="0" y2="1">

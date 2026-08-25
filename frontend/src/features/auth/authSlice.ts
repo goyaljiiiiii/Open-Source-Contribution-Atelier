@@ -77,34 +77,37 @@ export const checkUser = createAsyncThunk(
   },
 );
 
-export const logoutAction = createAsyncThunk("auth/logout", async (_, { dispatch }) => {
-  try {
-    if ("serviceWorker" in navigator && "PushManager" in window) {
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
-      if (sub) {
-        const endpoint = sub.endpoint;
-        await sub.unsubscribe();
-        try {
-          await fetchApi("/notifications/push/unsubscribe/", {
-            method: "POST",
-            requireAuth: true,
-            body: JSON.stringify({ endpoint }),
-          });
-        } catch (e) {
-          console.error("Failed to notify backend of push unsubscribe", e);
+export const logoutAction = createAsyncThunk(
+  "auth/logout",
+  async (_, { dispatch }) => {
+    try {
+      if ("serviceWorker" in navigator && "PushManager" in window) {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          const endpoint = sub.endpoint;
+          await sub.unsubscribe();
+          try {
+            await fetchApi("/notifications/push/unsubscribe/", {
+              method: "POST",
+              requireAuth: true,
+              body: JSON.stringify({ endpoint }),
+            });
+          } catch (e) {
+            console.error("Failed to notify backend of push unsubscribe", e);
+          }
         }
       }
+    } catch (e) {
+      console.error("Error unsubscribing push on logout", e);
     }
-  } catch (e) {
-    console.error("Error unsubscribing push on logout", e);
-  }
 
-  dispatch({ type: "persist/PURGE" });
+    dispatch({ type: "persist/PURGE" });
 
-  clearAccessToken();
-  safeRemoveItem("refreshToken");
-});
+    clearAccessToken();
+    safeRemoveItem("refreshToken");
+  },
+);
 
 export const authSlice = createSlice({
   name: "auth",

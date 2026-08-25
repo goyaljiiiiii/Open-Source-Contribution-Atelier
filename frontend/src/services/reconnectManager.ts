@@ -10,7 +10,7 @@ export class ReconnectManager {
     callback: () => void,
     baseDelay: number = 1000,
     maxDelay: number = 30000,
-    maxAttempts: number = 10
+    maxAttempts: number = 10,
   ) {
     this.callback = callback;
     this.baseDelay = baseDelay;
@@ -27,11 +27,13 @@ export class ReconnectManager {
 
     const delay = Math.min(
       this.baseDelay * Math.pow(2, this.attempt),
-      this.maxDelay
+      this.maxDelay,
     );
 
     this.attempt++;
-    console.log(`WebSocket: reconnecting in ${delay}ms... (attempt ${this.attempt})`);
+    console.log(
+      `WebSocket: reconnecting in ${delay}ms... (attempt ${this.attempt})`,
+    );
     this.timer = setTimeout(() => {
       this.callback();
     }, delay);

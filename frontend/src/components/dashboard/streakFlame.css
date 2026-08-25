@@ -24,6 +24,13 @@
   animation: streakFlameGlow 1.25s ease-in-out infinite;
 }
 
+/* Compositor-only properties keep the loop off the main thread so scrolling
+   stays smooth on mobile GPUs even with many flames on screen. */
+.streak-flame--anim,
+.streak-flame-glow--anim {
+  will-change: transform, opacity;
+}
+
 .streak-flame {
   width: 54px;
   height: 54px;

@@ -26,7 +26,12 @@ export interface CodeHunk {
   id: string;
   file: string;
   startLine: number;
-  lines: { type: "add" | "delete" | "context"; content: string; oldLineNo?: number; newLineNo?: number }[];
+  lines: {
+    type: "add" | "delete" | "context";
+    content: string;
+    oldLineNo?: number;
+    newLineNo?: number;
+  }[];
   stashed: boolean;
 }
 
@@ -46,11 +51,35 @@ const INITIAL_WORKING_TREE_HUNKS: CodeHunk[] = [
     startLine: 14,
     stashed: false,
     lines: [
-      { type: "context", content: "export async function verifyToken(token: string) {", oldLineNo: 14, newLineNo: 14 },
-      { type: "delete", content: "-   const decoded = jwt.decode(token);", oldLineNo: 15 },
-      { type: "add", content: "+   const decoded = jwt.verify(token, process.env.JWT_SECRET!);", newLineNo: 15 },
-      { type: "add", content: "+   logger.info('Token verification successful for user', decoded.sub);", newLineNo: 16 },
-      { type: "context", content: "    return decoded;", oldLineNo: 16, newLineNo: 17 },
+      {
+        type: "context",
+        content: "export async function verifyToken(token: string) {",
+        oldLineNo: 14,
+        newLineNo: 14,
+      },
+      {
+        type: "delete",
+        content: "-   const decoded = jwt.decode(token);",
+        oldLineNo: 15,
+      },
+      {
+        type: "add",
+        content:
+          "+   const decoded = jwt.verify(token, process.env.JWT_SECRET!);",
+        newLineNo: 15,
+      },
+      {
+        type: "add",
+        content:
+          "+   logger.info('Token verification successful for user', decoded.sub);",
+        newLineNo: 16,
+      },
+      {
+        type: "context",
+        content: "    return decoded;",
+        oldLineNo: 16,
+        newLineNo: 17,
+      },
     ],
   },
   {
@@ -59,10 +88,24 @@ const INITIAL_WORKING_TREE_HUNKS: CodeHunk[] = [
     startLine: 42,
     stashed: false,
     lines: [
-      { type: "context", content: "export function handleApiError(error: unknown) {", oldLineNo: 42, newLineNo: 42 },
+      {
+        type: "context",
+        content: "export function handleApiError(error: unknown) {",
+        oldLineNo: 42,
+        newLineNo: 42,
+      },
       { type: "delete", content: "-   console.log(error);", oldLineNo: 43 },
-      { type: "add", content: "+   Sentry.captureException(error);", newLineNo: 43 },
-      { type: "add", content: "+   return { success: false, error: 'Internal Server Error' };", newLineNo: 44 },
+      {
+        type: "add",
+        content: "+   Sentry.captureException(error);",
+        newLineNo: 43,
+      },
+      {
+        type: "add",
+        content:
+          "+   return { success: false, error: 'Internal Server Error' };",
+        newLineNo: 44,
+      },
     ],
   },
   {
@@ -71,9 +114,19 @@ const INITIAL_WORKING_TREE_HUNKS: CodeHunk[] = [
     startLine: 8,
     stashed: false,
     lines: [
-      { type: "context", content: "export function Navbar() {", oldLineNo: 8, newLineNo: 8 },
+      {
+        type: "context",
+        content: "export function Navbar() {",
+        oldLineNo: 8,
+        newLineNo: 8,
+      },
       { type: "add", content: "+   const { user } = useAuth();", newLineNo: 9 },
-      { type: "add", content: "+   return <header className='bg-primary p-4'>Welcome {user.name}</header>;", newLineNo: 10 },
+      {
+        type: "add",
+        content:
+          "+   return <header className='bg-primary p-4'>Welcome {user.name}</header>;",
+        newLineNo: 10,
+      },
       { type: "context", content: "}", oldLineNo: 9, newLineNo: 11 },
     ],
   },
@@ -93,8 +146,18 @@ const INITIAL_STASH_STACK: StashEntry[] = [
         startLine: 1,
         stashed: true,
         lines: [
-          { type: "add", content: "+ export const googleAuthClient = new OAuth2Client(CLIENT_ID);", newLineNo: 1 },
-          { type: "add", content: "+ export async function handleGoogleCallback(code: string) { ... }", newLineNo: 2 },
+          {
+            type: "add",
+            content:
+              "+ export const googleAuthClient = new OAuth2Client(CLIENT_ID);",
+            newLineNo: 1,
+          },
+          {
+            type: "add",
+            content:
+              "+ export async function handleGoogleCallback(code: string) { ... }",
+            newLineNo: 2,
+          },
         ],
       },
     ],
@@ -112,8 +175,16 @@ const INITIAL_STASH_STACK: StashEntry[] = [
         startLine: 1,
         stashed: true,
         lines: [
-          { type: "add", content: "+ --bg-surface-dark: #12110e;", newLineNo: 1 },
-          { type: "add", content: "+ --accent-primary: #FFD700;", newLineNo: 2 },
+          {
+            type: "add",
+            content: "+ --bg-surface-dark: #12110e;",
+            newLineNo: 1,
+          },
+          {
+            type: "add",
+            content: "+ --accent-primary: #FFD700;",
+            newLineNo: 2,
+          },
         ],
       },
     ],
@@ -121,12 +192,21 @@ const INITIAL_STASH_STACK: StashEntry[] = [
 ];
 
 export function GitStashManager() {
-  const [stashStack, setStashStack] = useState<StashEntry[]>(INITIAL_STASH_STACK);
-  const [workingHunks, setWorkingHunks] = useState<CodeHunk[]>(INITIAL_WORKING_TREE_HUNKS);
-  const [selectedStash, setSelectedStash] = useState<StashEntry | null>(INITIAL_STASH_STACK[0]);
+  const [stashStack, setStashStack] =
+    useState<StashEntry[]>(INITIAL_STASH_STACK);
+  const [workingHunks, setWorkingHunks] = useState<CodeHunk[]>(
+    INITIAL_WORKING_TREE_HUNKS,
+  );
+  const [selectedStash, setSelectedStash] = useState<StashEntry | null>(
+    INITIAL_STASH_STACK[0],
+  );
   const [customStashMsg, setCustomStashMsg] = useState("");
-  const [activeTab, setActiveTab] = useState<"working" | "patch" | "stack">("working");
-  const [diffViewMode, setDiffViewMode] = useState<"split" | "unified">("unified");
+  const [activeTab, setActiveTab] = useState<"working" | "patch" | "stack">(
+    "working",
+  );
+  const [diffViewMode, setDiffViewMode] = useState<"split" | "unified">(
+    "unified",
+  );
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [showDirtyWarning, setShowDirtyWarning] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
@@ -151,7 +231,8 @@ export function GitStashManager() {
       return;
     }
 
-    const msg = customStashMsg.trim() || `WIP on main: ${Date.now().toString(36)}`;
+    const msg =
+      customStashMsg.trim() || `WIP on main: ${Date.now().toString(36)}`;
     const newStash: StashEntry = {
       id: `stash@{0}`,
       branch: "main",
@@ -187,7 +268,9 @@ export function GitStashManager() {
 
     setStashStack((prev) => reindexStack([newEntry, ...prev]));
     setWorkingHunks(remainingHunks);
-    showNotification(`📦 Stashed hunk from '${targetHunk.file}' into stash@{0}`);
+    showNotification(
+      `📦 Stashed hunk from '${targetHunk.file}' into stash@{0}`,
+    );
   };
 
   // Pop Stash (apply and remove from stack)
@@ -211,7 +294,9 @@ export function GitStashManager() {
     const reindexed = reindexStack(updatedStack);
     setStashStack(reindexed);
     setSelectedStash(reindexed[0] || null);
-    showNotification(`⚡ Popped ${stashId} and restored changes to working directory.`);
+    showNotification(
+      `⚡ Popped ${stashId} and restored changes to working directory.`,
+    );
   };
 
   // Apply Stash (apply without dropping)
@@ -219,7 +304,11 @@ export function GitStashManager() {
     const target = stashStack.find((s) => s.id === stashId);
     if (!target) return;
 
-    const restoredHunks = target.hunks.map((h) => ({ ...h, id: `hunk-${Date.now()}`, stashed: false }));
+    const restoredHunks = target.hunks.map((h) => ({
+      ...h,
+      id: `hunk-${Date.now()}`,
+      stashed: false,
+    }));
     setWorkingHunks((prev) => [...prev, ...restoredHunks]);
     showNotification(`📋 Applied ${stashId} to working directory.`);
   };
@@ -274,7 +363,9 @@ export function GitStashManager() {
             Git Stash Stack & Interactive Patch Stashing (`git stash -p`)
           </h1>
           <p className="mt-1 text-sm font-bold text-muted dark:text-[#c4bbae] max-w-2xl">
-            Visually manage your Git stash stack (`stash@{0}`), selectively stash code hunks (`git stash -p`), and preview side-by-side diffs safely before applying.
+            Visually manage your Git stash stack (`stash@{0}`), selectively
+            stash code hunks (`git stash -p`), and preview side-by-side diffs
+            safely before applying.
           </p>
         </div>
 
@@ -284,19 +375,21 @@ export function GitStashManager() {
             <Layers className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-xs font-black uppercase text-muted tracking-wider">Stash Stack</div>
-            <div className="text-xl font-black text-text dark:text-[#f0ebe2]">{stashStack.length} items</div>
+            <div className="text-xs font-black uppercase text-muted tracking-wider">
+              Stash Stack
+            </div>
+            <div className="text-xl font-black text-text dark:text-[#f0ebe2]">
+              {stashStack.length} items
+            </div>
           </div>
         </div>
       </div>
 
       {/* Main Grid: Working Tree & Stash Stack Manager */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
         {/* Left Column: Interactive Working Tree & Patch Stashing (6 cols) */}
         <div className="lg:col-span-6 space-y-6 flex flex-col">
           <div className="bg-white dark:bg-[#1f1c18] border-4 border-black dark:border-[#2e2924] rounded-2xl shadow-card p-5 flex-1 flex flex-col">
-            
             {/* Header Controls */}
             <div className="flex items-center justify-between pb-3 border-b-2 border-black/10 dark:border-[#2e2924] mb-4">
               <div className="flex items-center gap-2">
@@ -308,7 +401,8 @@ export function GitStashManager() {
                       : "bg-surface-low dark:bg-[#151411] text-muted border-black/20 dark:border-[#2e2924]"
                   }`}
                 >
-                  <FileCode className="w-4 h-4" /> Working Tree ({workingHunks.length} hunks)
+                  <FileCode className="w-4 h-4" /> Working Tree (
+                  {workingHunks.length} hunks)
                 </button>
                 <button
                   onClick={() => setActiveTab("patch")}
@@ -358,7 +452,10 @@ export function GitStashManager() {
               {workingHunks.length === 0 ? (
                 <div className="p-8 text-center border-2 border-dashed border-black/20 dark:border-[#2e2924] rounded-xl text-muted text-xs font-bold space-y-2">
                   <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
-                  <p>Working tree is clean! All changes are either stashed or committed.</p>
+                  <p>
+                    Working tree is clean! All changes are either stashed or
+                    committed.
+                  </p>
                   <button
                     onClick={() => setWorkingHunks(INITIAL_WORKING_TREE_HUNKS)}
                     className="text-primary underline text-xs font-black"
@@ -377,7 +474,9 @@ export function GitStashManager() {
                       <div className="flex items-center gap-2 font-bold text-text dark:text-[#f0ebe2]">
                         <FileCode className="w-3.5 h-3.5 text-primary" />
                         <span>{hunk.file}</span>
-                        <span className="text-muted text-[11px]">@@ line {hunk.startLine} @@</span>
+                        <span className="text-muted text-[11px]">
+                          @@ line {hunk.startLine} @@
+                        </span>
                       </div>
 
                       <button
@@ -398,14 +497,16 @@ export function GitStashManager() {
                             line.type === "add"
                               ? "bg-emerald-950/60 text-emerald-300 font-semibold"
                               : line.type === "delete"
-                              ? "bg-rose-950/60 text-rose-300 line-through opacity-80"
-                              : "text-gray-400"
+                                ? "bg-rose-950/60 text-rose-300 line-through opacity-80"
+                                : "text-gray-400"
                           }`}
                         >
                           <span className="w-8 shrink-0 text-gray-500 select-none">
                             {line.oldLineNo || line.newLineNo || ""}
                           </span>
-                          <span className="whitespace-pre-wrap">{line.content}</span>
+                          <span className="whitespace-pre-wrap">
+                            {line.content}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -419,7 +520,6 @@ export function GitStashManager() {
         {/* Right Column: Stash Stack Inspector & Diff Viewer (6 cols) */}
         <div className="lg:col-span-6 space-y-6 flex flex-col">
           <div className="bg-white dark:bg-[#1f1c18] border-4 border-black dark:border-[#2e2924] rounded-2xl shadow-card p-5 flex-1 flex flex-col">
-            
             {/* Stash Stack Controls & Title */}
             <div className="flex items-center justify-between pb-3 border-b-2 border-black/10 dark:border-[#2e2924] mb-4">
               <div className="flex items-center gap-2">
@@ -443,7 +543,8 @@ export function GitStashManager() {
             <div className="space-y-3 mb-6 max-h-[220px] overflow-y-auto">
               {stashStack.length === 0 ? (
                 <div className="p-6 text-center border-2 border-dashed border-black/20 dark:border-[#2e2924] rounded-xl text-muted text-xs font-bold">
-                  No items in stash stack. Stash your changes from the left panel.
+                  No items in stash stack. Stash your changes from the left
+                  panel.
                 </div>
               ) : (
                 stashStack.map((entry) => {
@@ -469,7 +570,8 @@ export function GitStashManager() {
                         </div>
                         <div className="text-[11px] font-bold text-muted flex items-center gap-2">
                           <span className="flex items-center gap-1">
-                            <GitBranch className="w-3 h-3 text-primary" /> {entry.branch}
+                            <GitBranch className="w-3 h-3 text-primary" />{" "}
+                            {entry.branch}
                           </span>
                           <span>• {entry.timestamp}</span>
                           <span>• {entry.filesChangedCount} files changed</span>
@@ -520,13 +622,16 @@ export function GitStashManager() {
               <div className="border-2 border-black dark:border-[#2e2924] rounded-xl p-4 bg-surface-low dark:bg-[#12110e] flex-1 flex flex-col">
                 <div className="flex items-center justify-between pb-2 border-b border-black/10 dark:border-[#2e2924] mb-3 text-xs font-bold">
                   <span className="font-mono text-text dark:text-[#f0ebe2] flex items-center gap-1.5">
-                    <Eye className="w-4 h-4 text-primary" /> Visual Diff Inspector: {selectedStash.id}
+                    <Eye className="w-4 h-4 text-primary" /> Visual Diff
+                    Inspector: {selectedStash.id}
                   </span>
                   <div className="flex items-center gap-1 bg-black/10 dark:bg-white/10 p-0.5 rounded-lg text-[10px]">
                     <button
                       onClick={() => setDiffViewMode("unified")}
                       className={`px-2 py-0.5 rounded font-black ${
-                        diffViewMode === "unified" ? "bg-primary text-black" : "text-muted"
+                        diffViewMode === "unified"
+                          ? "bg-primary text-black"
+                          : "text-muted"
                       }`}
                     >
                       Unified
@@ -534,7 +639,9 @@ export function GitStashManager() {
                     <button
                       onClick={() => setDiffViewMode("split")}
                       className={`px-2 py-0.5 rounded font-black ${
-                        diffViewMode === "split" ? "bg-primary text-black" : "text-muted"
+                        diffViewMode === "split"
+                          ? "bg-primary text-black"
+                          : "text-muted"
                       }`}
                     >
                       Split
@@ -545,7 +652,10 @@ export function GitStashManager() {
                 {/* Stashed Hunks Render */}
                 <div className="space-y-3 font-mono text-xs overflow-y-auto max-h-[220px]">
                   {selectedStash.hunks.map((hunk, idx) => (
-                    <div key={idx} className="bg-[#1e1e1e] text-gray-200 rounded-lg p-3 border border-gray-700">
+                    <div
+                      key={idx}
+                      className="bg-[#1e1e1e] text-gray-200 rounded-lg p-3 border border-gray-700"
+                    >
                       <div className="text-[11px] text-gray-400 font-bold mb-2 pb-1 border-b border-gray-800">
                         📄 {hunk.file} (lines starting at {hunk.startLine})
                       </div>
@@ -557,8 +667,8 @@ export function GitStashManager() {
                               line.type === "add"
                                 ? "bg-emerald-950/80 text-emerald-300"
                                 : line.type === "delete"
-                                ? "bg-rose-950/80 text-rose-300 line-through opacity-80"
-                                : "text-gray-400"
+                                  ? "bg-rose-950/80 text-rose-300 line-through opacity-80"
+                                  : "text-gray-400"
                             }`}
                           >
                             {line.content}
@@ -576,7 +686,6 @@ export function GitStashManager() {
             )}
           </div>
         </div>
-
       </div>
 
       {/* Dirty Tree Warning Modal */}
@@ -596,7 +705,9 @@ export function GitStashManager() {
                 </h3>
               </div>
               <p className="text-xs font-bold text-muted dark:text-[#c4bbae]">
-                You have uncommitted changes in your working tree. Popping or applying a stash may result in merge conflicts or overwrite uncommitted files.
+                You have uncommitted changes in your working tree. Popping or
+                applying a stash may result in merge conflicts or overwrite
+                uncommitted files.
               </p>
               <div className="flex items-center justify-end gap-2 pt-2">
                 <button

@@ -368,7 +368,6 @@ export function ContributorDashboard() {
         <DailyChallengeQuizCard />
       </section>
 
-
       {/* 2. Personalized Next Step */}
       {learningPathData?.next_step && (
         <section className="rounded-[24px] border border-black/5 bg-white p-6 shadow-sm dark:bg-[#1f1c18] dark:border-white/5 space-y-5">

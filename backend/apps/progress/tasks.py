@@ -1,9 +1,11 @@
 import logging
 from datetime import timedelta
 
+from celery import shared_task
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django_q.tasks import async_task
+
 
 from apps.progress.models import Badge, ExerciseAttempt, LessonProgress, UserBadge
 
@@ -404,4 +406,17 @@ def award_badge_to_users(user_ids, badge_id):
             results["skipped"] += 1
 
     return results
+
+
+@shared_task
+def archive_monthly_leaderboard():
+    """
+    Monthly Celery beat task running on the 1st of each month.
+    Snapshots monthly XP ranks into LeaderboardArchive and resets monthly user XP counters
+    while leaving lifetime XP unchanged.
+    """
+    from apps.progress.services.leaderboard_service import LeaderboardService
+
+    return LeaderboardService.archive_and_reset_monthly_leaderboard()
+
 

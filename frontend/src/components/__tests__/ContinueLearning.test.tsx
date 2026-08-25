@@ -24,7 +24,7 @@ describe("ContinueLearning Component", () => {
     const { container } = render(
       <BrowserRouter>
         <ContinueLearning lessons={[]} />
-      </BrowserRouter>
+      </BrowserRouter>,
     );
     expect(container.firstChild).toBeNull();
   });
@@ -33,7 +33,7 @@ describe("ContinueLearning Component", () => {
     render(
       <BrowserRouter>
         <ContinueLearning lessons={mockLessons} />
-      </BrowserRouter>
+      </BrowserRouter>,
     );
 
     expect(screen.getByText("Continue Learning")).toBeInTheDocument();
@@ -54,7 +54,7 @@ describe("ContinueLearning Component", () => {
     render(
       <BrowserRouter>
         <ContinueLearning lessons={fourLessons} />
-      </BrowserRouter>
+      </BrowserRouter>,
     );
 
     expect(screen.getByText("Lesson 1")).toBeInTheDocument();

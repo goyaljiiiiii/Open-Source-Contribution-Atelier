@@ -18,13 +18,7 @@ import {
 } from "recharts";
 import { fetchApi } from "../../lib/api";
 import { useTheme } from "../../context/ThemeContext";
-import {
-  Activity,
-  Users,
-  BookOpen,
-  TrendingUp,
-  Globe,
-} from "lucide-react";
+import { Activity, Users, BookOpen, TrendingUp, Globe } from "lucide-react";
 
 interface UsageAnalyticsData {
   daily_active_users: { date: string; count: number }[];
@@ -47,8 +41,16 @@ interface UsageAnalyticsData {
 }
 
 const COLORS = [
-  "#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8",
-  "#82ca9d", "#ff6b6b", "#4ecdc4", "#45b7d1", "#f39c12",
+  "#0088FE",
+  "#00C49F",
+  "#FFBB28",
+  "#FF8042",
+  "#8884d8",
+  "#82ca9d",
+  "#ff6b6b",
+  "#4ecdc4",
+  "#45b7d1",
+  "#f39c12",
 ];
 
 export default function UsageAnalyticsPage() {
@@ -92,7 +94,10 @@ export default function UsageAnalyticsPage() {
     name: g.timezone.split("/").pop() || g.timezone,
     value: g.count,
   }));
-  const totalRegionValue = regionData.reduce((acc, curr) => acc + curr.value, 0);
+  const totalRegionValue = regionData.reduce(
+    (acc, curr) => acc + curr.value,
+    0,
+  );
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-12">
@@ -116,8 +121,12 @@ export default function UsageAnalyticsPage() {
           <div className="flex items-center gap-3">
             <Users className="text-blue-500" size={24} />
             <div>
-              <p className="text-xs uppercase tracking-widest text-muted font-bold">Avg Session</p>
-              <p className="text-2xl font-black">{data.average_session_duration_minutes || 0}m</p>
+              <p className="text-xs uppercase tracking-widest text-muted font-bold">
+                Avg Session
+              </p>
+              <p className="text-2xl font-black">
+                {data.average_session_duration_minutes || 0}m
+              </p>
             </div>
           </div>
         </div>
@@ -125,10 +134,13 @@ export default function UsageAnalyticsPage() {
           <div className="flex items-center gap-3">
             <TrendingUp className="text-green-500" size={24} />
             <div>
-              <p className="text-xs uppercase tracking-widest text-muted font-bold">DAU (today)</p>
+              <p className="text-xs uppercase tracking-widest text-muted font-bold">
+                DAU (today)
+              </p>
               <p className="text-2xl font-black">
                 {data.daily_active_users && data.daily_active_users.length > 0
-                  ? data.daily_active_users[data.daily_active_users.length - 1].count
+                  ? data.daily_active_users[data.daily_active_users.length - 1]
+                      .count
                   : 0}
               </p>
             </div>
@@ -138,7 +150,9 @@ export default function UsageAnalyticsPage() {
           <div className="flex items-center gap-3">
             <BookOpen className="text-purple-500" size={24} />
             <div>
-              <p className="text-xs uppercase tracking-widest text-muted font-bold">Popular Lesson</p>
+              <p className="text-xs uppercase tracking-widest text-muted font-bold">
+                Popular Lesson
+              </p>
               <p className="text-2xl font-black truncate max-w-[120px]">
                 {data.popular_lessons && data.popular_lessons.length > 0
                   ? data.popular_lessons[0].lesson__title
@@ -151,8 +165,12 @@ export default function UsageAnalyticsPage() {
           <div className="flex items-center gap-3">
             <Globe className="text-orange-500" size={24} />
             <div>
-              <p className="text-xs uppercase tracking-widest text-muted font-bold">Regions</p>
-              <p className="text-2xl font-black">{(data.geo_distribution || []).length}</p>
+              <p className="text-xs uppercase tracking-widest text-muted font-bold">
+                Regions
+              </p>
+              <p className="text-2xl font-black">
+                {(data.geo_distribution || []).length}
+              </p>
             </div>
           </div>
         </div>
@@ -174,15 +192,38 @@ export default function UsageAnalyticsPage() {
                       <stop offset="95%" stopColor="#0088FE" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"} />
-                  <XAxis dataKey="date" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"}
+                  />
+                  <XAxis
+                    dataKey="date"
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
                   <Tooltip {...chartProps} />
-                  <Area type="monotone" dataKey="count" stroke="#0088FE" fillOpacity={1} fill="url(#colorDAU)" />
+                  <Area
+                    type="monotone"
+                    dataKey="count"
+                    stroke="#0088FE"
+                    fillOpacity={1}
+                    fill="url(#colorDAU)"
+                  />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <p className="font-bold text-muted dark:text-[#c4bbae]">No data for the selected period</p>
+              <p className="font-bold text-muted dark:text-[#c4bbae]">
+                No data for the selected period
+              </p>
             )}
           </div>
         </div>
@@ -193,18 +234,36 @@ export default function UsageAnalyticsPage() {
             <Users className="text-green-500" /> Monthly Active Users
           </h2>
           <div className="h-80 w-full flex items-center justify-center">
-            {data.monthly_active_users && data.monthly_active_users.length > 0 ? (
+            {data.monthly_active_users &&
+            data.monthly_active_users.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data.monthly_active_users}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"} />
-                  <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"}
+                  />
+                  <XAxis
+                    dataKey="month"
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
                   <Tooltip {...chartProps} />
                   <Bar dataKey="count" fill="#00C49F" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <p className="font-bold text-muted dark:text-[#c4bbae]">No data for the selected period</p>
+              <p className="font-bold text-muted dark:text-[#c4bbae]">
+                No data for the selected period
+              </p>
             )}
           </div>
         </div>
@@ -218,8 +277,18 @@ export default function UsageAnalyticsPage() {
             {data.popular_lessons && data.popular_lessons.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data.popular_lessons} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"} />
-                  <XAxis type="number" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    horizontal={false}
+                    stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"}
+                  />
+                  <XAxis
+                    type="number"
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
                   <YAxis
                     type="category"
                     dataKey="lesson__title"
@@ -234,7 +303,9 @@ export default function UsageAnalyticsPage() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <p className="font-bold text-muted dark:text-[#c4bbae]">No data for the selected period</p>
+              <p className="font-bold text-muted dark:text-[#c4bbae]">
+                No data for the selected period
+              </p>
             )}
           </div>
         </div>
@@ -245,11 +316,26 @@ export default function UsageAnalyticsPage() {
             <TrendingUp className="text-orange-500" /> Lesson Completion Rates
           </h2>
           <div className="h-80 w-full flex items-center justify-center">
-            {data.lesson_completion_rates && data.lesson_completion_rates.length > 0 ? (
+            {data.lesson_completion_rates &&
+            data.lesson_completion_rates.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.lesson_completion_rates.slice(0, 10)} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"} />
-                  <XAxis type="number" domain={[0, 100]} stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                <BarChart
+                  data={data.lesson_completion_rates.slice(0, 10)}
+                  layout="vertical"
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    horizontal={false}
+                    stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"}
+                  />
+                  <XAxis
+                    type="number"
+                    domain={[0, 100]}
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
                   <YAxis
                     type="category"
                     dataKey="title"
@@ -259,12 +345,21 @@ export default function UsageAnalyticsPage() {
                     axisLine={false}
                     width={150}
                   />
-                  <Tooltip {...chartProps} formatter={(value: number) => `${value}%`} />
-                  <Bar dataKey="completion_rate" fill="#FF8042" radius={[0, 4, 4, 0]} />
+                  <Tooltip
+                    {...chartProps}
+                    formatter={(value: number) => `${value}%`}
+                  />
+                  <Bar
+                    dataKey="completion_rate"
+                    fill="#FF8042"
+                    radius={[0, 4, 4, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <p className="font-bold text-muted dark:text-[#c4bbae]">No data for the selected period</p>
+              <p className="font-bold text-muted dark:text-[#c4bbae]">
+                No data for the selected period
+              </p>
             )}
           </div>
         </div>
@@ -278,15 +373,38 @@ export default function UsageAnalyticsPage() {
             {data.signup_trend && data.signup_trend.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data.signup_trend}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"} />
-                  <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"}
+                  />
+                  <XAxis
+                    dataKey="month"
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
                   <Tooltip {...chartProps} />
-                  <Line type="monotone" dataKey="count" stroke="#8884d8" strokeWidth={3} dot={{ r: 4 }} />
+                  <Line
+                    type="monotone"
+                    dataKey="count"
+                    stroke="#8884d8"
+                    strokeWidth={3}
+                    dot={{ r: 4 }}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <p className="font-bold text-muted dark:text-[#c4bbae]">No data for the selected period</p>
+              <p className="font-bold text-muted dark:text-[#c4bbae]">
+                No data for the selected period
+              </p>
             )}
           </div>
         </div>
@@ -309,7 +427,8 @@ export default function UsageAnalyticsPage() {
                     paddingAngle={3}
                     dataKey="value"
                     label={({ name, percent }: any) => {
-                      const pct = percent && !isNaN(percent) ? percent * 100 : 0;
+                      const pct =
+                        percent && !isNaN(percent) ? percent * 100 : 0;
                       return `${name} ${pct.toFixed(0)}%`;
                     }}
                     labelLine={false}
@@ -324,11 +443,16 @@ export default function UsageAnalyticsPage() {
                     ))}
                   </Pie>
                   <Tooltip {...chartProps} />
-                  <Legend iconType="circle" wrapperStyle={{ fontWeight: "bold", fontSize: "10px" }} />
+                  <Legend
+                    iconType="circle"
+                    wrapperStyle={{ fontWeight: "bold", fontSize: "10px" }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <p className="font-bold text-muted dark:text-[#c4bbae]">No data for the selected period</p>
+              <p className="font-bold text-muted dark:text-[#c4bbae]">
+                No data for the selected period
+              </p>
             )}
           </div>
         </div>

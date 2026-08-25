@@ -56,14 +56,19 @@ export const ConnectionStatusIndicator: React.FC<
       aria-label={`Connection status: ${statusText}`}
       aria-expanded={showTooltip}
       aria-haspopup="true"
-      aria-describedby={showTooltip && metrics ? "connection-metrics-tooltip" : undefined}
+      aria-describedby={
+        showTooltip && metrics ? "connection-metrics-tooltip" : undefined
+      }
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
       onFocus={() => setShowTooltip(true)}
       onBlur={() => setShowTooltip(false)}
       onKeyDown={handleKeyDown}
     >
-      <span className={`h-2.5 w-2.5 rounded-full ${colorClass}`} aria-hidden="true" />
+      <span
+        className={`h-2.5 w-2.5 rounded-full ${colorClass}`}
+        aria-hidden="true"
+      />
       <span className="text-[11px] font-bold text-slate-400 dark:text-[#a0a0ab] uppercase tracking-wider">
         {statusText}
       </span>

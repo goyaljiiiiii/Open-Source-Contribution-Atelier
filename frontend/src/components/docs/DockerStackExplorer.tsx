@@ -9,10 +9,20 @@ import {
   useEdgesState,
   Node,
   Edge,
-  NodeProps
+  NodeProps,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { Database, Server, AppWindow, HardDrive, Terminal, X, Play, Copy, Check } from "lucide-react";
+import {
+  Database,
+  Server,
+  AppWindow,
+  HardDrive,
+  Terminal,
+  X,
+  Play,
+  Copy,
+  Check,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 type ServiceData = {
@@ -73,20 +83,36 @@ const ICONS = {
 
 function ServiceNode({ data, selected }: NodeProps<Node<ServiceData>>) {
   const Icon = ICONS[data.type];
-  
+
   return (
-    <div className={`px-4 py-3 shadow-md rounded-xl border-2 bg-surface dark:bg-[#12121a] transition-colors ${selected ? "border-primary" : "border-black/10 dark:border-white/10"}`}>
-      {data.id !== "frontend" && <Handle type="target" position={Position.Top} className="w-3 h-3 bg-primary" />}
+    <div
+      className={`px-4 py-3 shadow-md rounded-xl border-2 bg-surface dark:bg-[#12121a] transition-colors ${selected ? "border-primary" : "border-black/10 dark:border-white/10"}`}
+    >
+      {data.id !== "frontend" && (
+        <Handle
+          type="target"
+          position={Position.Top}
+          className="w-3 h-3 bg-primary"
+        />
+      )}
       <div className="flex items-center gap-3">
         <div className="p-2 rounded-lg bg-black/5 dark:bg-white/10 text-primary">
           <Icon size={20} />
         </div>
         <div>
           <div className="font-bold text-sm">{data.name}</div>
-          <div className="text-xs text-muted dark:text-[#c4bbae]">:{data.port}</div>
+          <div className="text-xs text-muted dark:text-[#c4bbae]">
+            :{data.port}
+          </div>
         </div>
       </div>
-      {data.id !== "db" && data.id !== "redis" && <Handle type="source" position={Position.Bottom} className="w-3 h-3 bg-primary" />}
+      {data.id !== "db" && data.id !== "redis" && (
+        <Handle
+          type="source"
+          position={Position.Bottom}
+          className="w-3 h-3 bg-primary"
+        />
+      )}
     </div>
   );
 }
@@ -94,22 +120,62 @@ function ServiceNode({ data, selected }: NodeProps<Node<ServiceData>>) {
 const nodeTypes = { service: ServiceNode };
 
 const initialNodes: Node<ServiceData>[] = [
-  { id: "frontend", type: "service", position: { x: 250, y: 50 }, data: SERVICES.frontend },
-  { id: "backend", type: "service", position: { x: 250, y: 200 }, data: SERVICES.backend },
-  { id: "db", type: "service", position: { x: 100, y: 350 }, data: SERVICES.db },
-  { id: "redis", type: "service", position: { x: 400, y: 350 }, data: SERVICES.redis },
+  {
+    id: "frontend",
+    type: "service",
+    position: { x: 250, y: 50 },
+    data: SERVICES.frontend,
+  },
+  {
+    id: "backend",
+    type: "service",
+    position: { x: 250, y: 200 },
+    data: SERVICES.backend,
+  },
+  {
+    id: "db",
+    type: "service",
+    position: { x: 100, y: 350 },
+    data: SERVICES.db,
+  },
+  {
+    id: "redis",
+    type: "service",
+    position: { x: 400, y: 350 },
+    data: SERVICES.redis,
+  },
 ];
 
 const initialEdges: Edge[] = [
-  { id: "e1", source: "frontend", target: "backend", animated: true, style: { stroke: "#888" } },
-  { id: "e2", source: "backend", target: "db", animated: true, style: { stroke: "#888" } },
-  { id: "e3", source: "backend", target: "redis", animated: true, style: { stroke: "#888" } },
+  {
+    id: "e1",
+    source: "frontend",
+    target: "backend",
+    animated: true,
+    style: { stroke: "#888" },
+  },
+  {
+    id: "e2",
+    source: "backend",
+    target: "db",
+    animated: true,
+    style: { stroke: "#888" },
+  },
+  {
+    id: "e3",
+    source: "backend",
+    target: "redis",
+    animated: true,
+    style: { stroke: "#888" },
+  },
 ];
 
 export function DockerStackExplorer() {
   const [nodes, , onNodesChange] = useNodesState(initialNodes);
   const [edges, , onEdgesChange] = useEdgesState(initialEdges);
-  const [selectedService, setSelectedService] = useState<ServiceData | null>(null);
+  const [selectedService, setSelectedService] = useState<ServiceData | null>(
+    null,
+  );
 
   const [cmdAction, setCmdAction] = useState<"up" | "exec" | "logs">("up");
   const [cmdTarget, setCmdTarget] = useState<string>("backend");
@@ -145,7 +211,6 @@ export function DockerStackExplorer() {
   return (
     <div className="flex flex-col gap-6">
       <div className="rounded-xl border border-black/10 bg-surface shadow-sm dark:border-white/10 dark:bg-[#12121a] overflow-hidden flex flex-col md:flex-row h-[600px]">
-        
         {/* Diagram Area */}
         <div className="flex-1 relative h-full bg-slate-50 dark:bg-black/50">
           <ReactFlow
@@ -166,7 +231,7 @@ export function DockerStackExplorer() {
         {/* Drawer Area */}
         <AnimatePresence>
           {selectedService && (
-            <motion.div 
+            <motion.div
               initial={{ width: 0, opacity: 0 }}
               animate={{ width: 320, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
@@ -177,48 +242,68 @@ export function DockerStackExplorer() {
                   <h3 className="font-bold flex items-center gap-2">
                     <Terminal size={18} /> Service Details
                   </h3>
-                  <button onClick={() => setSelectedService(null)} className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded">
+                  <button
+                    onClick={() => setSelectedService(null)}
+                    className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded"
+                  >
                     <X size={18} />
                   </button>
                 </div>
-                
+
                 <div className="p-4 flex-1 overflow-y-auto space-y-6">
                   <div>
-                    <h4 className="text-sm font-semibold text-muted dark:text-[#c4bbae] mb-2 uppercase tracking-wider">Identity</h4>
+                    <h4 className="text-sm font-semibold text-muted dark:text-[#c4bbae] mb-2 uppercase tracking-wider">
+                      Identity
+                    </h4>
                     <div className="font-mono text-sm px-3 py-2 bg-black/5 dark:bg-white/10 rounded border border-black/10 dark:border-white/10">
                       {selectedService.id}
                     </div>
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-semibold text-muted dark:text-[#c4bbae] mb-2 uppercase tracking-wider">Exposed Port</h4>
+                    <h4 className="text-sm font-semibold text-muted dark:text-[#c4bbae] mb-2 uppercase tracking-wider">
+                      Exposed Port
+                    </h4>
                     <div className="font-mono text-sm px-3 py-2 bg-black/5 dark:bg-white/10 rounded border border-black/10 dark:border-white/10">
                       :{selectedService.port}
                     </div>
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-semibold text-muted dark:text-[#c4bbae] mb-2 uppercase tracking-wider">Environment</h4>
+                    <h4 className="text-sm font-semibold text-muted dark:text-[#c4bbae] mb-2 uppercase tracking-wider">
+                      Environment
+                    </h4>
                     {selectedService.env.length > 0 ? (
                       <ul className="space-y-1">
-                        {selectedService.env.map(e => (
-                          <li key={e} className="font-mono text-xs px-2 py-1 bg-black/5 dark:bg-white/10 rounded inline-block mr-2 mb-2 border border-black/10 dark:border-white/10">{e}</li>
+                        {selectedService.env.map((e) => (
+                          <li
+                            key={e}
+                            className="font-mono text-xs px-2 py-1 bg-black/5 dark:bg-white/10 rounded inline-block mr-2 mb-2 border border-black/10 dark:border-white/10"
+                          >
+                            {e}
+                          </li>
                         ))}
                       </ul>
                     ) : (
-                      <div className="text-sm text-muted">No external bindings</div>
+                      <div className="text-sm text-muted">
+                        No external bindings
+                      </div>
                     )}
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-semibold text-muted dark:text-[#c4bbae] mb-2 uppercase tracking-wider">Healthcheck</h4>
+                    <h4 className="text-sm font-semibold text-muted dark:text-[#c4bbae] mb-2 uppercase tracking-wider">
+                      Healthcheck
+                    </h4>
                     <div className="font-mono text-xs px-3 py-2 bg-black/5 dark:bg-white/10 rounded border border-black/10 dark:border-white/10 break-all">
                       {selectedService.healthcheck}
                     </div>
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-semibold text-muted dark:text-[#c4bbae] mb-2 uppercase tracking-wider">Dockerfile</h4>
+                    <h4 className="text-sm font-semibold text-muted dark:text-[#c4bbae] mb-2 uppercase tracking-wider">
+                      Dockerfile
+                    </h4>
                     <div className="font-mono text-xs px-3 py-2 bg-black/5 dark:bg-white/10 rounded border border-black/10 dark:border-white/10">
                       {selectedService.dockerfile}
                     </div>
@@ -237,10 +322,12 @@ export function DockerStackExplorer() {
         </h3>
         <div className="flex flex-col sm:flex-row gap-4 mb-4">
           <div className="flex-1">
-            <label className="block text-sm font-medium mb-1 text-muted">Action</label>
-            <select 
-              value={cmdAction} 
-              onChange={e => setCmdAction(e.target.value as any)}
+            <label className="block text-sm font-medium mb-1 text-muted">
+              Action
+            </label>
+            <select
+              value={cmdAction}
+              onChange={(e) => setCmdAction(e.target.value as any)}
               className="w-full rounded border border-black/20 bg-transparent px-3 py-2 text-sm dark:border-white/20"
             >
               <option value="up">Start & Build (up --build)</option>
@@ -249,34 +336,42 @@ export function DockerStackExplorer() {
             </select>
           </div>
           <div className="flex-1">
-            <label className="block text-sm font-medium mb-1 text-muted">Service</label>
-            <select 
-              value={cmdTarget} 
-              onChange={e => setCmdTarget(e.target.value)}
+            <label className="block text-sm font-medium mb-1 text-muted">
+              Service
+            </label>
+            <select
+              value={cmdTarget}
+              onChange={(e) => setCmdTarget(e.target.value)}
               className="w-full rounded border border-black/20 bg-transparent px-3 py-2 text-sm dark:border-white/20"
             >
-              {Object.keys(SERVICES).map(key => (
-                <option key={key} value={key}>{SERVICES[key].name} ({key})</option>
+              {Object.keys(SERVICES).map((key) => (
+                <option key={key} value={key}>
+                  {SERVICES[key].name} ({key})
+                </option>
               ))}
             </select>
           </div>
         </div>
-        
+
         <div className="relative">
           <pre className="overflow-x-auto rounded-lg bg-black/5 p-4 text-sm font-mono text-text dark:bg-white/10 dark:text-[#f0ebe2] border border-black/10 dark:border-white/10">
             {generatedCommand()}
           </pre>
-          <button 
+          <button
             onClick={() => copyCommand(generatedCommand())}
             className="absolute top-2 right-2 p-2 rounded-md bg-white dark:bg-black/40 border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/10 transition-colors flex items-center gap-2 text-xs font-semibold"
           >
-            {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+            {copied ? (
+              <Check size={14} className="text-emerald-500" />
+            ) : (
+              <Copy size={14} />
+            )}
             {copied ? "Copied" : "Copy"}
           </button>
         </div>
 
         <div className="mt-4 flex gap-4">
-          <button 
+          <button
             onClick={() => copyCommand("docker compose down -v")}
             className="text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-semibold underline underline-offset-2 flex items-center gap-1"
           >

@@ -31,7 +31,8 @@ const A11Y_TEMPLATES: A11yTemplate[] = [
     id: "broken-form",
     name: "1. Unaccessible Form (Missing Labels & Contrast)",
     category: "Form",
-    description: "Input fields without associated labels and low-contrast submit button.",
+    description:
+      "Input fields without associated labels and low-contrast submit button.",
     code: `<form>
   <h2>User Registration</h2>
   
@@ -54,7 +55,8 @@ const A11Y_TEMPLATES: A11yTemplate[] = [
     id: "missing-alt",
     name: "2. Media & Icon Buttons (Missing Alt & ARIA)",
     category: "Media",
-    description: "Images missing alt text and SVG icon buttons without screen reader labels.",
+    description:
+      "Images missing alt text and SVG icon buttons without screen reader labels.",
     code: `<div>
   <h3>Product Catalog</h3>
   
@@ -73,7 +75,8 @@ const A11Y_TEMPLATES: A11yTemplate[] = [
     id: "broken-modal",
     name: "3. Unaccessible Dialog (Missing ARIA Roles)",
     category: "Interactive",
-    description: "Custom modal overlay missing role='dialog', aria-modal, and aria-labelledby.",
+    description:
+      "Custom modal overlay missing role='dialog', aria-modal, and aria-labelledby.",
     code: `<div style="background: #1e293b; color: white; padding: 20px; border-radius: 8px;">
   <!-- Custom modal header without heading association -->
   <div>
@@ -93,7 +96,8 @@ const A11Y_TEMPLATES: A11yTemplate[] = [
     id: "accessible-form",
     name: "4. 100% Compliant WCAG 2.1 AAA Component",
     category: "Form",
-    description: "Fully compliant form with label associations, high contrast, and ARIA attributes.",
+    description:
+      "Fully compliant form with label associations, high contrast, and ARIA attributes.",
     code: `<form aria-labelledby="form-title">
   <h2 id="form-title" style="color: #0f172a;">Accessible Contact Form</h2>
   
@@ -134,11 +138,15 @@ const A11Y_TEMPLATES: A11yTemplate[] = [
 ];
 
 export function A11yLinterSandbox() {
-  const [activeTemplate, setActiveTemplate] = useState<A11yTemplate>(A11Y_TEMPLATES[0]);
+  const [activeTemplate, setActiveTemplate] = useState<A11yTemplate>(
+    A11Y_TEMPLATES[0],
+  );
   const [code, setCode] = useState(A11Y_TEMPLATES[0].code);
   const [issues, setIssues] = useState<axe.Result[]>([]);
   const [ignoredRules, setIgnoredRules] = useState<Set<string>>(new Set());
-  const [visionMode, setVisionMode] = useState<"normal" | "contrast" | "grayscale">("normal");
+  const [visionMode, setVisionMode] = useState<
+    "normal" | "contrast" | "grayscale"
+  >("normal");
   const [screenReaderText, setScreenReaderText] = useState<string>("");
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -154,7 +162,9 @@ export function A11yLinterSandbox() {
         },
       });
 
-      const filteredIssues = results.violations.filter((v) => !ignoredRules.has(v.id));
+      const filteredIssues = results.violations.filter(
+        (v) => !ignoredRules.has(v.id),
+      );
       setIssues(filteredIssues);
       generateScreenReaderPreview(containerRef.current);
     } catch (err) {
@@ -190,7 +200,9 @@ export function A11yLinterSandbox() {
         }
 
         if (tagName === "button") {
-          textNodes.push(`[button: ${elem.innerText.trim() || "unlabeled button"}]`);
+          textNodes.push(
+            `[button: ${elem.innerText.trim() || "unlabeled button"}]`,
+          );
           return;
         }
 
@@ -198,8 +210,12 @@ export function A11yLinterSandbox() {
           const type = elem.getAttribute("type") || "text";
           const placeholder = elem.getAttribute("placeholder");
           const id = elem.id;
-          const label = id ? el.querySelector(`label[for="${id}"]`)?.textContent?.trim() : null;
-          textNodes.push(`[input field ${type}: ${label || placeholder || "unlabeled input"}]`);
+          const label = id
+            ? el.querySelector(`label[for="${id}"]`)?.textContent?.trim()
+            : null;
+          textNodes.push(
+            `[input field ${type}: ${label || placeholder || "unlabeled input"}]`,
+          );
           return;
         }
       }
@@ -210,7 +226,9 @@ export function A11yLinterSandbox() {
     };
 
     walk(el);
-    setScreenReaderText(textNodes.join(" ➔ ") || "No screen reader announcements detected.");
+    setScreenReaderText(
+      textNodes.join(" ➔ ") || "No screen reader announcements detected.",
+    );
   };
 
   const handleSelectTemplate = (tpl: A11yTemplate) => {
@@ -223,7 +241,10 @@ export function A11yLinterSandbox() {
     let fixedCode = code;
 
     // 1. Fix missing alt on img tags
-    fixedCode = fixedCode.replace(/<img(?![^>]*\balt=)([^>]*)>/gi, '<img alt="Decorative image" $1>');
+    fixedCode = fixedCode.replace(
+      /<img(?![^>]*\balt=)([^>]*)>/gi,
+      '<img alt="Decorative image" $1>',
+    );
 
     // 2. Fix un-associated input fields by adding ids & labels
     fixedCode = fixedCode.replace(
@@ -231,19 +252,19 @@ export function A11yLinterSandbox() {
       (match, p1, p2, p3) => {
         const id = `input-${Math.random().toString(36).substring(2, 7)}`;
         return `<label for="${id}" style="display:block; font-weight:bold; margin-bottom:4px;">${p2}</label>\n  <input id="${id}" placeholder="${p2}" ${p1}${p3}>`;
-      }
+      },
     );
 
     // 3. Fix low contrast button styles
     fixedCode = fixedCode.replace(
       /style="([^"]*color:\s*#[0-9a-f]{3,6}[^"]*)"/gi,
-      'style="color: #ffffff; background-color: #0f172a; padding: 10px 16px; border-radius: 6px; border: 2px solid #000;"'
+      'style="color: #ffffff; background-color: #0f172a; padding: 10px 16px; border-radius: 6px; border: 2px solid #000;"',
     );
 
     // 4. Fix inaccessible buttons missing text or aria-label
     fixedCode = fixedCode.replace(
       /<button(?![^>]*\baria-label=)([^>]*)>(\s*<svg[^>]*>[\s\S]*?<\/svg>\s*)<\/button>/gi,
-      '<button aria-label="Action button" $1>$2</button>'
+      '<button aria-label="Action button" $1>$2</button>',
     );
 
     setCode(fixedCode);
@@ -251,10 +272,26 @@ export function A11yLinterSandbox() {
   };
 
   const getComplianceGrade = () => {
-    if (issues.length === 0) return { grade: "AAA", color: "bg-emerald-400 text-black", label: "100% WCAG Compliant" };
-    const criticalCount = issues.filter((i) => i.impact === "critical" || i.impact === "serious").length;
-    if (criticalCount === 0) return { grade: "AA", color: "bg-amber-300 text-black", label: "Minor Warnings" };
-    return { grade: "FAIL", color: "bg-rose-500 text-white", label: `${criticalCount} Critical Violations` };
+    if (issues.length === 0)
+      return {
+        grade: "AAA",
+        color: "bg-emerald-400 text-black",
+        label: "100% WCAG Compliant",
+      };
+    const criticalCount = issues.filter(
+      (i) => i.impact === "critical" || i.impact === "serious",
+    ).length;
+    if (criticalCount === 0)
+      return {
+        grade: "AA",
+        color: "bg-amber-300 text-black",
+        label: "Minor Warnings",
+      };
+    return {
+      grade: "FAIL",
+      color: "bg-rose-500 text-white",
+      label: `${criticalCount} Critical Violations`,
+    };
   };
 
   const compliance = getComplianceGrade();
@@ -272,12 +309,15 @@ export function A11yLinterSandbox() {
               <h1 className="text-2xl sm:text-3xl font-display font-black uppercase tracking-tight text-black dark:text-white">
                 WCAG Accessibility &amp; ARIA Studio
               </h1>
-              <span className={`text-xs font-mono font-black uppercase px-3 py-1 rounded-md border-2 border-black ${compliance.color}`}>
+              <span
+                className={`text-xs font-mono font-black uppercase px-3 py-1 rounded-md border-2 border-black ${compliance.color}`}
+              >
                 Grade: {compliance.grade}
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-bold mt-1">
-              Live axe-core WCAG 2.1 Linter • Screen Reader Voiceover Emulator • 1-Click Auto-Fix Studio
+              Live axe-core WCAG 2.1 Linter • Screen Reader Voiceover Emulator •
+              1-Click Auto-Fix Studio
             </p>
           </div>
         </div>
@@ -292,7 +332,11 @@ export function A11yLinterSandbox() {
           </button>
 
           <button
-            onClick={() => navigator.clipboard.writeText(code).then(() => toast.success("Code copied!"))}
+            onClick={() =>
+              navigator.clipboard
+                .writeText(code)
+                .then(() => toast.success("Code copied!"))
+            }
             className="flex items-center gap-2 px-4 py-2.5 bg-[#C3C0FF] hover:bg-[#b0adff] text-black border-2 border-black text-xs font-black rounded-xl shadow-card-sm transition-all"
           >
             <Copy className="w-4 h-4" /> Copy Clean HTML
@@ -304,9 +348,12 @@ export function A11yLinterSandbox() {
       <div className="bg-white dark:bg-[#151411] border-4 border-black dark:border-[#2e2924] rounded-2xl p-4 shadow-card space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
-            <Layers className="w-4 h-4 text-indigo-500" /> Test Preset Scenarios:
+            <Layers className="w-4 h-4 text-indigo-500" /> Test Preset
+            Scenarios:
           </h2>
-          <span className="text-[11px] font-mono font-bold text-slate-400">Select scenario to audit</span>
+          <span className="text-[11px] font-mono font-bold text-slate-400">
+            Select scenario to audit
+          </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 overflow-hidden">
@@ -334,7 +381,9 @@ export function A11yLinterSandbox() {
             <h3 className="font-black text-xs uppercase tracking-wider text-black dark:text-white flex items-center gap-2">
               <Code2 className="w-4 h-4 text-indigo-500" /> HTML Editor
             </h3>
-            <span className="text-[10px] font-mono text-slate-400">Keystroke Linter Active</span>
+            <span className="text-[10px] font-mono text-slate-400">
+              Keystroke Linter Active
+            </span>
           </div>
 
           <textarea
@@ -357,7 +406,9 @@ export function A11yLinterSandbox() {
               <button
                 onClick={() => setVisionMode("normal")}
                 className={`px-2 py-0.5 text-[10px] font-black rounded ${
-                  visionMode === "normal" ? "bg-black text-white" : "text-slate-400"
+                  visionMode === "normal"
+                    ? "bg-black text-white"
+                    : "text-slate-400"
                 }`}
               >
                 Normal
@@ -365,7 +416,9 @@ export function A11yLinterSandbox() {
               <button
                 onClick={() => setVisionMode("grayscale")}
                 className={`px-2 py-0.5 text-[10px] font-black rounded ${
-                  visionMode === "grayscale" ? "bg-black text-white" : "text-slate-400"
+                  visionMode === "grayscale"
+                    ? "bg-black text-white"
+                    : "text-slate-400"
                 }`}
               >
                 Monochrome
@@ -385,7 +438,8 @@ export function A11yLinterSandbox() {
           {/* Screen Reader Voiceover Simulation Box */}
           <div className="p-3 bg-[#0a0a0f] border-2 border-black dark:border-[#2e2924] rounded-xl font-mono text-[11px] text-amber-400 space-y-1">
             <div className="flex items-center gap-1.5 font-bold uppercase text-[10px] text-slate-400">
-              <Volume2 className="w-3.5 h-3.5 text-amber-400 animate-pulse" /> Screen Reader Voiceover Sequence:
+              <Volume2 className="w-3.5 h-3.5 text-amber-400 animate-pulse" />{" "}
+              Screen Reader Voiceover Sequence:
             </div>
             <p className="text-slate-200 truncate">{screenReaderText}</p>
           </div>
@@ -395,9 +449,12 @@ export function A11yLinterSandbox() {
         <div className="lg:col-span-4 space-y-3 bg-white dark:bg-[#151411] border-4 border-black dark:border-[#2e2924] rounded-2xl p-4 shadow-card flex flex-col h-[650px]">
           <div className="flex items-center justify-between pb-2 border-b-2 border-black dark:border-[#2e2924]">
             <h3 className="font-black text-xs uppercase tracking-wider text-black dark:text-white flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-500" /> Violations ({issues.length})
+              <AlertTriangle className="w-4 h-4 text-amber-500" /> Violations (
+              {issues.length})
             </h3>
-            <span className={`text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded ${compliance.color}`}>
+            <span
+              className={`text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded ${compliance.color}`}
+            >
               {compliance.label}
             </span>
           </div>

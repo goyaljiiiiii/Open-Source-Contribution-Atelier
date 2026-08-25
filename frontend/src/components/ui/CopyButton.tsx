@@ -1,4 +1,9 @@
-import { Check, ClipboardCopy, LoaderCircle, TriangleAlert } from "lucide-react";
+import {
+  Check,
+  ClipboardCopy,
+  LoaderCircle,
+  TriangleAlert,
+} from "lucide-react";
 import { useClipboard } from "../../hooks/useClipboard";
 import Tooltip from "./Tooltip";
 
@@ -41,9 +46,16 @@ export default function CopyButton({
           className="rounded-lg border-2 border-black bg-surface-low px-3 py-1 text-xs font-black text-black shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer flex items-center justify-center min-w-[72px] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
         >
           {isCopying ? (
-            <LoaderCircle className="w-3.5 h-3.5 mr-1 animate-spin" aria-hidden="true" />
+            <LoaderCircle
+              className="w-3.5 h-3.5 mr-1 animate-spin"
+              aria-hidden="true"
+            />
           ) : status === "success" ? (
-            <Check className="w-3.5 h-3.5 mr-1" strokeWidth={3} aria-hidden="true" />
+            <Check
+              className="w-3.5 h-3.5 mr-1"
+              strokeWidth={3}
+              aria-hidden="true"
+            />
           ) : status === "error" ? (
             <TriangleAlert className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
           ) : (
@@ -53,11 +65,16 @@ export default function CopyButton({
         </button>
       </Tooltip>
 
-      <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+      <span
+        className="sr-only"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
         {status === "success"
           ? `${copiedLabel}.`
           : status === "error"
-            ? error ?? `${errorLabel}.`
+            ? (error ?? `${errorLabel}.`)
             : ""}
       </span>
     </>

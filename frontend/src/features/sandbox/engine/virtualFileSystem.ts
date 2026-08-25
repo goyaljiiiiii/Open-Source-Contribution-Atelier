@@ -65,7 +65,8 @@ export class VirtualFileSystem {
           }
         };
         req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error ?? new Error("IndexedDB open failed"));
+        req.onerror = () =>
+          reject(req.error ?? new Error("IndexedDB open failed"));
       });
     } catch {
       this.useIndexedDB = false;

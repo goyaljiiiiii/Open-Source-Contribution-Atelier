@@ -27,7 +27,7 @@ describe("LeaderboardPage layout spacing", () => {
         <BrowserRouter>
           <LeaderboardPage />
         </BrowserRouter>
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     const mainContainer = container.querySelector(".max-w-5xl");

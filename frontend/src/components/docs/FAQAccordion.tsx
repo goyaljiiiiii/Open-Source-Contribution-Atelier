@@ -1,7 +1,12 @@
 import React, { useState } from "react";
 import { ChevronDown, HelpCircle, Search, X } from "lucide-react";
 
-type FaqCategory = "All" | "Setup" | "Git Sandbox" | "Certificates" | "Deployment";
+type FaqCategory =
+  | "All"
+  | "Setup"
+  | "Git Sandbox"
+  | "Certificates"
+  | "Deployment";
 
 interface FaqItem {
   id: string;
@@ -33,7 +38,8 @@ const FAQ_ITEMS: FaqItem[] = [
   {
     id: "setup-db",
     category: "Setup",
-    question: "Do I need the database and worker stack running for every docs change?",
+    question:
+      "Do I need the database and worker stack running for every docs change?",
     answers: [
       "No. Pure documentation or UI-only work can usually be validated without Postgres or Redis.",
       "If your change touches badges, certificates, or async flows, bring up the full stack so the linked data stays realistic.",
@@ -110,7 +116,8 @@ export function FAQAccordion() {
   const normalizedQuery = query.trim().toLowerCase();
 
   const filteredItems = FAQ_ITEMS.filter((item) => {
-    const matchesCategory = selectedCategory === "All" || item.category === selectedCategory;
+    const matchesCategory =
+      selectedCategory === "All" || item.category === selectedCategory;
     const matchesSearch =
       normalizedQuery === "" ||
       [item.question, item.category, ...item.keywords, ...item.answers]
@@ -140,7 +147,9 @@ export function FAQAccordion() {
               Search the docs without leaving the page
             </h2>
             <p className="mt-2 text-sm font-medium leading-relaxed text-zinc-700 dark:text-zinc-300">
-              Filter the most common questions by setup, Git Sandbox, certificates, and deployment, then jump straight to the answer you need.
+              Filter the most common questions by setup, Git Sandbox,
+              certificates, and deployment, then jump straight to the answer you
+              need.
             </p>
           </div>
 
@@ -156,7 +165,15 @@ export function FAQAccordion() {
 
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap gap-2">
-            {(["All", "Setup", "Git Sandbox", "Certificates", "Deployment"] as FaqCategory[]).map((category) => {
+            {(
+              [
+                "All",
+                "Setup",
+                "Git Sandbox",
+                "Certificates",
+                "Deployment",
+              ] as FaqCategory[]
+            ).map((category) => {
               const isActive = selectedCategory === category;
 
               return (
@@ -221,7 +238,8 @@ export function FAQAccordion() {
               No FAQs matched your search
             </p>
             <p className="mt-2 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-              Try a shorter keyword, switch categories, or reset the filters to bring back the full list.
+              Try a shorter keyword, switch categories, or reset the filters to
+              bring back the full list.
             </p>
           </div>
         ) : (
@@ -243,7 +261,9 @@ export function FAQAccordion() {
                   >
                     <div className="min-w-0">
                       <div className="mb-2 flex flex-wrap items-center gap-2">
-                        <span className={`rounded-full border-2 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${CATEGORY_STYLES[item.category]}`}>
+                        <span
+                          className={`rounded-full border-2 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${CATEGORY_STYLES[item.category]}`}
+                        >
                           {item.category}
                         </span>
                         <span className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">

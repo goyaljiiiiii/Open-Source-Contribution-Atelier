@@ -45,7 +45,9 @@ describe("ChallengeTimer onExpire idempotency and stability", () => {
 
   it("does not fire onExpire repeatedly when parent passes a new inline callback on re-render", () => {
     const handleExpire1 = vi.fn();
-    const { rerender } = render(<ChallengeTimer initialSeconds={1} onExpire={() => handleExpire1()} />);
+    const { rerender } = render(
+      <ChallengeTimer initialSeconds={1} onExpire={() => handleExpire1()} />,
+    );
 
     act(() => {
       vi.advanceTimersByTime(1000);
@@ -54,7 +56,9 @@ describe("ChallengeTimer onExpire idempotency and stability", () => {
 
     // Parent re-renders with a brand new inline arrow function
     const handleExpire2 = vi.fn();
-    rerender(<ChallengeTimer initialSeconds={1} onExpire={() => handleExpire2()} />);
+    rerender(
+      <ChallengeTimer initialSeconds={1} onExpire={() => handleExpire2()} />,
+    );
 
     // Fast-forward or trigger more renders
     act(() => {
@@ -68,7 +72,9 @@ describe("ChallengeTimer onExpire idempotency and stability", () => {
 
   it("resets countdown and re-arms when initialSeconds prop changes", () => {
     const handleExpire = vi.fn();
-    const { rerender } = render(<ChallengeTimer initialSeconds={1} onExpire={handleExpire} />);
+    const { rerender } = render(
+      <ChallengeTimer initialSeconds={1} onExpire={handleExpire} />,
+    );
 
     act(() => {
       vi.advanceTimersByTime(1000);

@@ -4,7 +4,13 @@
 
 export interface AnalysisSuggestion {
   id: string;
-  type: "readability" | "code" | "passive_voice" | "sentence_length" | "missing_alt" | "internal_link";
+  type:
+    | "readability"
+    | "code"
+    | "passive_voice"
+    | "sentence_length"
+    | "missing_alt"
+    | "internal_link";
   severity: "info" | "warning" | "error";
   title: string;
   message: string;
@@ -22,12 +28,32 @@ export interface LessonAnalysisReport {
   suggestions: AnalysisSuggestion[];
 }
 
-const KNOWN_CURRICULUM_CONCEPTS: { keyword: string; slug: string; title: string }[] = [
-  { keyword: "git rebase", slug: "git-rebase-flow", title: "Interactive Git Rebase" },
-  { keyword: "merge conflict", slug: "resolving-merge-conflicts", title: "Resolving Merge Conflicts" },
-  { keyword: "pull request", slug: "anatomy-of-a-pr", title: "Anatomy of a Pull Request" },
+const KNOWN_CURRICULUM_CONCEPTS: {
+  keyword: string;
+  slug: string;
+  title: string;
+}[] = [
+  {
+    keyword: "git rebase",
+    slug: "git-rebase-flow",
+    title: "Interactive Git Rebase",
+  },
+  {
+    keyword: "merge conflict",
+    slug: "resolving-merge-conflicts",
+    title: "Resolving Merge Conflicts",
+  },
+  {
+    keyword: "pull request",
+    slug: "anatomy-of-a-pr",
+    title: "Anatomy of a Pull Request",
+  },
   { keyword: "cherry pick", slug: "git-cherry-pick", title: "Git Cherry Pick" },
-  { keyword: "bisect", slug: "git-bisect-debugging", title: "Debugging with Git Bisect" },
+  {
+    keyword: "bisect",
+    slug: "git-bisect-debugging",
+    title: "Debugging with Git Bisect",
+  },
 ];
 
 /**
@@ -73,7 +99,9 @@ export function analyzeLessonMarkdown(markdown: string): LessonAnalysisReport {
   }
 
   // Strip code blocks and HTML tags for text analysis
-  const plainText = markdown.replace(/```[\s\S]*?```/g, "").replace(/`[^`]+`/g, "");
+  const plainText = markdown
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/`[^`]+`/g, "");
   const lines = markdown.split("\n");
 
   const words = plainText
@@ -99,11 +127,19 @@ export function analyzeLessonMarkdown(markdown: string): LessonAnalysisReport {
   const wordsPerSentence = wordCount / sentenceCount;
   const syllablesPerWord = wordCount > 0 ? totalSyllables / wordCount : 0;
   const readingEaseScore = Math.round(
-    Math.max(0, Math.min(100, 206.835 - 1.015 * wordsPerSentence - 84.6 * syllablesPerWord)),
+    Math.max(
+      0,
+      Math.min(
+        100,
+        206.835 - 1.015 * wordsPerSentence - 84.6 * syllablesPerWord,
+      ),
+    ),
   );
 
   // Flesch-Kincaid Grade Level = 0.39 * (words/sentences) + 11.8 * (syllables/words) - 15.59
-  const gradeLevel = Math.round(Math.max(1, 0.39 * wordsPerSentence + 11.8 * syllablesPerWord - 15.59));
+  const gradeLevel = Math.round(
+    Math.max(1, 0.39 * wordsPerSentence + 11.8 * syllablesPerWord - 15.59),
+  );
 
   if (readingEaseScore < 50) {
     suggestions.push({
@@ -134,7 +170,10 @@ export function analyzeLessonMarkdown(markdown: string): LessonAnalysisReport {
   const passiveRegex = /\b(am|is|are|was|were|be|been|being)\s+([a-z]+ed)\b/gi;
   let passiveMatch;
   let passiveCount = 0;
-  while ((passiveMatch = passiveRegex.exec(plainText)) !== null && passiveCount < 3) {
+  while (
+    (passiveMatch = passiveRegex.exec(plainText)) !== null &&
+    passiveCount < 3
+  ) {
     suggestions.push({
       id: `passive-voice-${passiveCount}`,
       type: "passive_voice",
@@ -156,7 +195,8 @@ export function analyzeLessonMarkdown(markdown: string): LessonAnalysisReport {
         type: "missing_alt",
         severity: "warning",
         title: "Missing Image Alt Text",
-        message: "Add descriptive accessibility alt text inside image brackets ![alt text](url).",
+        message:
+          "Add descriptive accessibility alt text inside image brackets ![alt text](url).",
         line: lineIdx + 1,
         originalText: match[0],
         suggestedFix: `![Descriptive image explanation](${match[2]})`,

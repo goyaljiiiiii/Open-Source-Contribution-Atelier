@@ -1,9 +1,15 @@
-from rest_framework import generics, permissions, status
+from rest_framework import generics, pagination, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Notification, NotificationPreference, PushSubscription
 from .serializers import NotificationSerializer, PushSubscriptionSerializer
+
+
+class NotificationPagination(pagination.PageNumberPagination):
+    page_size = 20
+    page_size_query_param = "page_size"
+    max_page_size = 100
 
 
 class NotificationPrefsView(APIView):
@@ -68,9 +74,14 @@ class NotificationListView(generics.ListAPIView):
 
     serializer_class = NotificationSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = NotificationPagination
 
     def get_queryset(self):
-        return Notification.objects.filter(recipient=self.request.user)
+        return (
+            Notification.objects.filter(recipient=self.request.user)
+            .select_related("sender")
+            .order_by("-created_at", "-id")
+        )
 
 
 class MarkAllReadView(APIView):
@@ -153,16 +164,42 @@ class UnsubscribePushView(APIView):
         )
 
 
-class DigestAPIView(APIView):
+class DigestAPIView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = NotificationSerializer
+    pagination_class = NotificationPagination
 
-    def get(self, request):
-        notifications = Notification.objects.filter(
-            recipient=request.user, is_read=False
+    def get_queryset(self):
+        return (
+            Notification.objects.filter(
+                recipient=self.request.user, is_read=False
+            )
+            .select_related("sender")
+            .order_by("-created_at", "-id")
         )
-        unread_count = notifications.count()
-        serializer = NotificationSerializer(notifications, many=True)
-        return Response({"digest": serializer.data, "unread_count": unread_count})
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            response = self.get_paginated_response(serializer.data)
+            response.data["unread_count"] = self.page.paginator.count
+            return response
+
+        unread_count = queryset.count()
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(
+            {
+                "count": unread_count,
+                "next": None,
+                "previous": None,
+                "results": serializer.data,
+                "unread_count": unread_count,
+            }
+        )
 
 
 class DigestReadView(APIView):
