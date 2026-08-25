@@ -23,7 +23,10 @@ export function BountiesPage() {
       setBounties(data);
     } catch (err: any) {
       console.error(err);
-      setError(err?.message || "Failed to load open-source bounties. Please try again.");
+      setError(
+        err?.message ||
+          "Failed to load open-source bounties. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -89,7 +92,8 @@ export function BountiesPage() {
             Help Wanted Bounties
           </h1>
           <p className="mt-2 text-muted dark:text-[#d7cec0]">
-            Claim open-source issues, fix them in the sandbox, and earn XP and badges!
+            Claim open-source issues, fix them in the sandbox, and earn XP and
+            badges!
           </p>
         </div>
       </div>

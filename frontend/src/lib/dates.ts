@@ -5,9 +5,14 @@ export { format, formatDistanceToNow };
 /**
  * Safely parses a date input and returns a valid Date object or null.
  */
-function safeParseDate(date: Date | number | string | null | undefined): Date | null {
+function safeParseDate(
+  date: Date | number | string | null | undefined,
+): Date | null {
   if (date == null) return null;
-  const d = typeof date === "string" || typeof date === "number" ? new Date(date) : date;
+  const d =
+    typeof date === "string" || typeof date === "number"
+      ? new Date(date)
+      : date;
   if (!(d instanceof Date) || isNaN(d.getTime())) return null;
   return d;
 }
@@ -24,7 +29,7 @@ export function formatInTimeZone(
   options: Intl.DateTimeFormatOptions = {
     dateStyle: "medium",
     timeStyle: "short",
-  }
+  },
 ): string {
   const d = safeParseDate(date);
   if (!d) return "N/A";

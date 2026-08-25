@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { AlertTriangle, RefreshCw, ChevronDown, ChevronUp, Home } from "lucide-react";
+import {
+  AlertTriangle,
+  RefreshCw,
+  ChevronDown,
+  ChevronUp,
+  Home,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 
 export interface ErrorStateCardProps {
@@ -52,7 +58,9 @@ export const ErrorStateCard: React.FC<ErrorStateCardProps> = ({
               onClick={() => setShowDetails(!showDetails)}
               className="flex items-center gap-1 text-xs font-bold text-muted hover:text-text dark:text-[#a0988c] dark:hover:text-[#f0ebe2] transition-colors mx-auto"
             >
-              {showDetails ? "Hide Diagnostic Details" : "Show Diagnostic Details"}
+              {showDetails
+                ? "Hide Diagnostic Details"
+                : "Show Diagnostic Details"}
               {showDetails ? (
                 <ChevronUp className="w-3.5 h-3.5" />
               ) : (

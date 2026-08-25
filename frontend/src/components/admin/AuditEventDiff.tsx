@@ -77,7 +77,8 @@ export const AuditEventDiff: React.FC<AuditEventDiffProps> = ({ event }) => {
     : diffEntries.filter((e) => e.type !== "unchanged");
 
   const formatValue = (val: any) => {
-    if (val === undefined) return <span className="text-gray-500 italic">none</span>;
+    if (val === undefined)
+      return <span className="text-gray-500 italic">none</span>;
     if (val === null) return <span className="text-gray-400 italic">null</span>;
     if (typeof val === "object") return JSON.stringify(val);
     return String(val);
@@ -93,8 +94,8 @@ export const AuditEventDiff: React.FC<AuditEventDiffProps> = ({ event }) => {
               event.action === "created"
                 ? "bg-green-500/20 text-green-700 dark:text-green-400 border border-green-500/30"
                 : event.action === "updated"
-                ? "bg-blue-500/20 text-blue-700 dark:text-blue-400 border border-blue-500/30"
-                : "bg-red-500/20 text-red-700 dark:text-red-400 border border-red-500/30"
+                  ? "bg-blue-500/20 text-blue-700 dark:text-blue-400 border border-blue-500/30"
+                  : "bg-red-500/20 text-red-700 dark:text-red-400 border border-red-500/30"
             }`}
           >
             {event.action}
@@ -144,7 +145,9 @@ export const AuditEventDiff: React.FC<AuditEventDiffProps> = ({ event }) => {
         <div className="p-3 bg-slate-50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-800 rounded-lg flex items-center gap-2.5">
           <Clock className="w-4 h-4 text-blue-500 shrink-0" />
           <div>
-            <div className="text-gray-500 dark:text-gray-400 text-[10px] uppercase font-semibold">Timestamp</div>
+            <div className="text-gray-500 dark:text-gray-400 text-[10px] uppercase font-semibold">
+              Timestamp
+            </div>
             <div className="text-gray-800 dark:text-gray-200 font-mono">
               {new Date(event.created_at).toLocaleString()}
             </div>
@@ -154,7 +157,9 @@ export const AuditEventDiff: React.FC<AuditEventDiffProps> = ({ event }) => {
         <div className="p-3 bg-slate-50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-800 rounded-lg flex items-center gap-2.5">
           <User className="w-4 h-4 text-purple-500 shrink-0" />
           <div>
-            <div className="text-gray-500 dark:text-gray-400 text-[10px] uppercase font-semibold">Actor</div>
+            <div className="text-gray-500 dark:text-gray-400 text-[10px] uppercase font-semibold">
+              Actor
+            </div>
             <div className="text-gray-800 dark:text-gray-200 font-semibold">
               {event.actor_username || "System"}
             </div>
@@ -164,7 +169,9 @@ export const AuditEventDiff: React.FC<AuditEventDiffProps> = ({ event }) => {
         <div className="p-3 bg-slate-50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-800 rounded-lg flex items-center gap-2.5">
           <Hash className="w-4 h-4 text-amber-500 shrink-0" />
           <div>
-            <div className="text-gray-500 dark:text-gray-400 text-[10px] uppercase font-semibold">Correlation ID</div>
+            <div className="text-gray-500 dark:text-gray-400 text-[10px] uppercase font-semibold">
+              Correlation ID
+            </div>
             <div className="text-gray-800 dark:text-gray-200 font-mono truncate max-w-[120px]">
               {event.correlation_id || "N/A"}
             </div>
@@ -174,7 +181,9 @@ export const AuditEventDiff: React.FC<AuditEventDiffProps> = ({ event }) => {
         <div className="p-3 bg-slate-50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-800 rounded-lg flex items-center gap-2.5">
           <Globe className="w-4 h-4 text-emerald-500 shrink-0" />
           <div>
-            <div className="text-gray-500 dark:text-gray-400 text-[10px] uppercase font-semibold">IP Address</div>
+            <div className="text-gray-500 dark:text-gray-400 text-[10px] uppercase font-semibold">
+              IP Address
+            </div>
             <div className="text-gray-800 dark:text-gray-200 font-mono">
               {event.ip_address || "Internal"}
             </div>
@@ -223,10 +232,10 @@ export const AuditEventDiff: React.FC<AuditEventDiffProps> = ({ event }) => {
                         item.type === "added"
                           ? "bg-emerald-50 dark:bg-green-950/20"
                           : item.type === "deleted"
-                          ? "bg-red-50 dark:bg-red-950/20"
-                          : item.type === "modified"
-                          ? "bg-amber-50 dark:bg-amber-950/15"
-                          : "hover:bg-slate-50 dark:hover:bg-slate-800/20"
+                            ? "bg-red-50 dark:bg-red-950/20"
+                            : item.type === "modified"
+                              ? "bg-amber-50 dark:bg-amber-950/15"
+                              : "hover:bg-slate-50 dark:hover:bg-slate-800/20"
                       }`}
                     >
                       <td className="py-2 px-4 text-center">
@@ -246,7 +255,9 @@ export const AuditEventDiff: React.FC<AuditEventDiffProps> = ({ event }) => {
                           </span>
                         )}
                         {item.type === "unchanged" && (
-                          <span className="inline-flex p-1 text-gray-400 dark:text-gray-600">=</span>
+                          <span className="inline-flex p-1 text-gray-400 dark:text-gray-600">
+                            =
+                          </span>
                         )}
                       </td>
                       <td className="py-2 px-4 font-semibold text-gray-800 dark:text-gray-200">

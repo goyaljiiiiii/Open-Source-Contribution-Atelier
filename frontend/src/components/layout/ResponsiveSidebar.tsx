@@ -36,71 +36,71 @@ export function ResponsiveSidebar({
         } border-r-4 border-black bg-white dark:bg-[#151411] dark:border-[#2e2924] overflow-y-auto p-6 flex-shrink-0 transition-all duration-300`}
       >
         <div className="flex justify-between items-center mb-6">
-    {!isSidebarCollapsed && (
-      <h2 className="text-xl font-black uppercase flex items-center gap-2">
-        {title}
-      </h2>
-    )}
-    
-  {setIsSidebarCollapsed && (
-    <button
-      onClick={() => setIsSidebarCollapsed((prev) => !prev)}
-      aria-label={
-        isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
-      }
-      className="border-2 border-black p-1 rounded-lg dark:border-[#2e2924] dark:text-[#f0ebe2]"
-    >
-      {isSidebarCollapsed ? (
-        <ChevronRight size={16} />
-      ) : (
-        <ChevronLeft size={16} />
-      )}
-    </button>
-  )}
-  </div>
-          {children}
-        </aside>
-      );
-    }
+          {!isSidebarCollapsed && (
+            <h2 className="text-xl font-black uppercase flex items-center gap-2">
+              {title}
+            </h2>
+          )}
 
-    return (
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={onClose}
-              className="fixed inset-0 z-[90] bg-black/40"
-            />
-            <motion.aside
-              drag="x"
-              dragConstraints={{ left: -300, right: 0 }}
-              dragElastic={{ left: 0.05, right: 0.5 }}
-              onDragEnd={(_, info) => {
-                if (info.offset.x < -80) {
-                  onClose();
-                }
-              }}
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed top-0 left-0 h-full w-[300px] border-r-4 border-black bg-white dark:bg-[#151411] dark:border-[#2e2924] overflow-y-auto p-6 z-[100] pt-6"
+          {setIsSidebarCollapsed && (
+            <button
+              onClick={() => setIsSidebarCollapsed((prev) => !prev)}
+              aria-label={
+                isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+              }
+              className="border-2 border-black p-1 rounded-lg dark:border-[#2e2924] dark:text-[#f0ebe2]"
             >
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-black uppercase flex items-center gap-2">
-                  {title}
-                </h2>
-                <button
-                  onClick={onClose}
-                  aria-label="Close outline"
-                  className="border-2 border-black p-1 rounded-lg dark:border-[#2e2924] dark:text-[#f0ebe2]"
-                >
-                  <X size={16} />
-                </button>
-              </div>
+              {isSidebarCollapsed ? (
+                <ChevronRight size={16} />
+              ) : (
+                <ChevronLeft size={16} />
+              )}
+            </button>
+          )}
+        </div>
+        {children}
+      </aside>
+    );
+  }
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 z-[90] bg-black/40"
+          />
+          <motion.aside
+            drag="x"
+            dragConstraints={{ left: -300, right: 0 }}
+            dragElastic={{ left: 0.05, right: 0.5 }}
+            onDragEnd={(_, info) => {
+              if (info.offset.x < -80) {
+                onClose();
+              }
+            }}
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 250 }}
+            className="fixed top-0 left-0 h-full w-[300px] border-r-4 border-black bg-white dark:bg-[#151411] dark:border-[#2e2924] overflow-y-auto p-6 z-[100] pt-6"
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-black uppercase flex items-center gap-2">
+                {title}
+              </h2>
+              <button
+                onClick={onClose}
+                aria-label="Close outline"
+                className="border-2 border-black p-1 rounded-lg dark:border-[#2e2924] dark:text-[#f0ebe2]"
+              >
+                <X size={16} />
+              </button>
+            </div>
             {children}
           </motion.aside>
         </>

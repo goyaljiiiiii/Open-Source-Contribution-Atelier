@@ -1,5 +1,11 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  cleanup,
+} from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { AudioRoom } from "../../../components/ui/AudioRoom";
 
@@ -17,7 +23,10 @@ describe("AudioRoom Component", () => {
       close: vi.fn(),
       readyState: 1, // WebSocket.OPEN
     };
-    vi.stubGlobal('WebSocket', vi.fn().mockImplementation(() => mockWebSocket));
+    vi.stubGlobal(
+      "WebSocket",
+      vi.fn().mockImplementation(() => mockWebSocket),
+    );
 
     // Mock getUserMedia
     const mockTrack = { stop: vi.fn(), enabled: true };

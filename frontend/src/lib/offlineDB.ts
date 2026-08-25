@@ -1,7 +1,8 @@
 export const DB_NAME = "atelier-offline-db";
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;
 export const SYNC_STORE = "sync-queue";
 export const LESSON_STORE = "lessons";
+export const QUIZ_SYNC_STORE = "pending_quiz_sync";
 
 export function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -19,6 +20,14 @@ export function openDB(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(LESSON_STORE)) {
         const store = db.createObjectStore(LESSON_STORE, { keyPath: "slug" });
         store.createIndex("fetchedAt", "fetchedAt", { unique: false });
+      }
+
+      // v3 store — offline quiz submissions awaiting background sync
+      if (!db.objectStoreNames.contains(QUIZ_SYNC_STORE)) {
+        const quizStore = db.createObjectStore(QUIZ_SYNC_STORE, {
+          keyPath: "id",
+        });
+        quizStore.createIndex("queuedAt", "queuedAt", { unique: false });
       }
     };
 

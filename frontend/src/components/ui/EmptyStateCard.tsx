@@ -20,7 +20,9 @@ export const EmptyStateCard: React.FC<EmptyStateCardProps> = ({
   className = "",
 }) => {
   return (
-    <div className={`w-full p-8 text-center bg-white dark:bg-[#151411] border-2 border-black/10 dark:border-[#2e2924] rounded-2xl flex flex-col items-center justify-center gap-3 shadow-sm ${className}`}>
+    <div
+      className={`w-full p-8 text-center bg-white dark:bg-[#151411] border-2 border-black/10 dark:border-[#2e2924] rounded-2xl flex flex-col items-center justify-center gap-3 shadow-sm ${className}`}
+    >
       <div className="p-3 rounded-2xl bg-surface-low dark:bg-[#1a1714] text-muted dark:text-[#a0988c] border border-black/10 dark:border-[#2e2924]">
         <Icon className="w-8 h-8" />
       </div>

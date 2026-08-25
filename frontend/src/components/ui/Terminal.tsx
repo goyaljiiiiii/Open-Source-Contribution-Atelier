@@ -71,7 +71,13 @@ function TerminalTab({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-2">
+      <div
+        className="flex-1 overflow-y-auto p-4 space-y-2"
+        role="log"
+        aria-label="Terminal output"
+        aria-live="polite"
+        aria-atomic="false"
+      >
         {commands.map((cmd) => (
           <div key={cmd.id} className="space-y-1">
             <div className="flex items-center gap-2 text-gray-400">

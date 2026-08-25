@@ -17,12 +17,29 @@ vi.mock("react-diff-viewer-continued", async (importOriginal) => {
     newValue,
     splitView,
     useDarkTheme,
+    renderGutter,
   }: any) => (
     <div data-testid="mock-diff-viewer">
       <div data-testid="old-value">{oldValue}</div>
       <div data-testid="new-value">{newValue}</div>
       <div data-testid="is-split-view">{splitView ? "true" : "false"}</div>
       <div data-testid="is-dark-theme">{useDarkTheme ? "true" : "false"}</div>
+      <table>
+        <tbody>
+          <tr>
+            {renderGutter?.({ lineNumber: 1, type: 2 })}
+            <td>old</td>
+          </tr>
+          <tr>
+            {renderGutter?.({ lineNumber: 1, type: 1 })}
+            <td>new</td>
+          </tr>
+          <tr>
+            {renderGutter?.({ lineNumber: 2, type: 0 })}
+            <td>same</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   );
   return {
@@ -92,5 +109,18 @@ describe("CodeDiffViewer", () => {
 
     expect(screen.getByText("Custom Title")).toBeInTheDocument();
     expect(screen.getByText("custom.js")).toBeInTheDocument();
+  });
+
+  it("should prefix changed lines with screen reader addition/deletion labels", () => {
+    render(<CodeDiffViewer originalCode="old" modifiedCode="new" />);
+
+    const deletionLabel = screen.getByText("Deletion:");
+    expect(deletionLabel).toHaveClass("sr-only");
+
+    const additionLabel = screen.getByText("Addition:");
+    expect(additionLabel).toHaveClass("sr-only");
+
+    // Unchanged lines must not receive a diff label.
+    expect(screen.queryByText("Modification:")).not.toBeInTheDocument();
   });
 });

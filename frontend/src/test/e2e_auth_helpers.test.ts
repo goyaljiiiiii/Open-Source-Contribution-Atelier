@@ -1,5 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
-import { generateUniqueTestUser, mockLogin, mockSignup, mockMagicLink } from "../../e2e/helpers/auth";
+import {
+  generateUniqueTestUser,
+  mockLogin,
+  mockSignup,
+  mockMagicLink,
+} from "../../e2e/helpers/auth";
 
 describe("Playwright E2E auth parallel isolation helpers", () => {
   it("generates unique distinct test users on consecutive calls", () => {
@@ -27,8 +32,14 @@ describe("Playwright E2E auth parallel isolation helpers", () => {
 
     expect(res.user.username).toBeDefined();
     expect(res.token).toBeDefined();
-    expect(mockPage.route).toHaveBeenCalledWith("**/api/auth/login/", expect.any(Function));
-    expect(mockPage.route).toHaveBeenCalledWith("**/api/auth/me/", expect.any(Function));
+    expect(mockPage.route).toHaveBeenCalledWith(
+      "**/api/auth/login/",
+      expect.any(Function),
+    );
+    expect(mockPage.route).toHaveBeenCalledWith(
+      "**/api/auth/me/",
+      expect.any(Function),
+    );
   });
 
   it("mockSignup and mockMagicLink return isolated dynamic credentials", async () => {
@@ -38,10 +49,16 @@ describe("Playwright E2E auth parallel isolation helpers", () => {
 
     const signupUser = await mockSignup(mockPage);
     expect(signupUser.username).toMatch(/^signup_user_/);
-    expect(mockPage.route).toHaveBeenCalledWith("**/api/auth/signup/", expect.any(Function));
+    expect(mockPage.route).toHaveBeenCalledWith(
+      "**/api/auth/signup/",
+      expect.any(Function),
+    );
 
     const magic = await mockMagicLink(mockPage);
     expect(magic.user.username).toMatch(/^magic_user_/);
-    expect(mockPage.route).toHaveBeenCalledWith("**/api/auth/magic-link/verify/", expect.any(Function));
+    expect(mockPage.route).toHaveBeenCalledWith(
+      "**/api/auth/magic-link/verify/",
+      expect.any(Function),
+    );
   });
 });

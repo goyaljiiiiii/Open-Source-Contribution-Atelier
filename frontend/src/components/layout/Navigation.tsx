@@ -40,7 +40,6 @@ import { LanguageSwitcher } from "../ui/LanguageSwitcher";
 import { useTranslate } from "../../i18n/useTranslate";
 import { LessonSearchModal } from "../Search/LessonSearchModal";
 
-
 const navGroups = [
   {
     title: "Curriculum",
@@ -99,8 +98,16 @@ const navGroups = [
     title: "Documentation",
     items: [
       { to: "/docs/fullstack", label: "Full-Stack Docs", icon: BookOpen },
-      { to: "/docs/env-generator", label: ".env Wizard", icon: SlidersHorizontal },
-      { to: "/docs/websocket-simulator", label: "WS Simulator", icon: Activity },
+      {
+        to: "/docs/env-generator",
+        label: ".env Wizard",
+        icon: SlidersHorizontal,
+      },
+      {
+        to: "/docs/websocket-simulator",
+        label: "WS Simulator",
+        icon: Activity,
+      },
     ],
   },
   {
@@ -117,38 +124,212 @@ const navGroups = [
 ];
 
 const SITE_FEATURES = [
-  { title: "Audit Log Inspector", category: "Admin & Observability", path: "/admin/audit", summary: "Inspect domain audit events, system actions & state diffs." },
-  { title: "Celery Task Dashboard", category: "Admin & Observability", path: "/admin/celery", summary: "Monitor worker queues, background tasks & trigger async jobs live." },
-  { title: "Full-Stack Documentation", category: "Documentation", path: "/docs/fullstack", summary: "Complete architecture specs, OpenAPI catalog, and repo directory." },
-  { title: "OAuth 2.0 Client Apps", category: "Security & Auth", path: "/admin/oauth-clients", summary: "Manage OAuth applications, API keys & test PKCE authorization flow." },
-  { title: "Environment Wizard (.env)", category: "Developer Tools", path: "/docs/env-generator", summary: "Generate frontend & backend environment variable files." },
-  { title: "WebSocket Simulator", category: "Developer Tools", path: "/docs/websocket-simulator", summary: "Simulate live WebSocket events and channel group broadcasts." },
-  { title: "Maintainer Reply Tone Coach", category: "AI & Collaboration", path: "/tone-coach", summary: "Analyze code review reply tone and optimize maintainer feedback with AI." },
-  { title: "Git Rebase Visualizer", category: "Git Tools", path: "/git-rebase", summary: "Step-by-step visual git rebase workflow simulator." },
-  { title: "Git Bisect Debugging Game", category: "Git Tools", path: "/git-bisect", summary: "Playful interactive game to isolate regression bugs using git bisect." },
-  { title: "Git Submodule Simulator", category: "Git Tools", path: "/git-submodules", summary: "Interactive submodule manager and commit tree visualizer." },
-  { title: "Git Stash Manager", category: "Git Tools", path: "/git-stash", summary: "Visual git stash stack management sandbox." },
-  { title: "Dockerfile Linter", category: "DevOps & CI", path: "/docker-linter", summary: "Lint Dockerfiles against security and multi-stage build best practices." },
-  { title: "Monorepo Dependency Visualizer", category: "Architecture", path: "/monorepo-visualizer", summary: "Visualize package graph dependencies in monorepo projects." },
-  { title: "Accessibility (A11y) Linter", category: "Frontend Tools", path: "/a11y-sandbox", summary: "WCAG accessibility linter sandbox and element auditor." },
-  { title: "PR Diff Summarizer", category: "AI & Collaboration", path: "/pr-diff-summarizer", summary: "Summarize complex pull request diffs using AI." },
-  { title: "Contributor Workspace Sandbox", category: "Git Tools", path: "/contributor-sandbox", summary: "Isolated git environment to practice commits and branch pushes." },
-  { title: "Live Collaborative Notes", category: "Collaboration", path: "/collab-notes", summary: "Real-time collaborative markdown & code notes with live peer cursors." },
-  { title: "Community Chat", category: "Collaboration", path: "/chat", summary: "Real-time group chat rooms and direct contributor messaging." },
-  { title: "Community Discussions & Feed", category: "Community", path: "/community", summary: "Ask questions, post code help requests, and join community discussions." },
-  { title: "Peer Review Exchange", category: "Community", path: "/peer-review", summary: "Submit code for peer review and provide constructive feedback to peers." },
-  { title: "Contributor Leaderboard", category: "Gamification", path: "/leaderboard", summary: "Rankings of open-source contributors based on XP and completed tasks." },
-  { title: "XP Shop", category: "Gamification", path: "/shop", summary: "Redeem accumulated XP for badges, custom titles, and profile perks." },
-  { title: "Skill Tree Roadmap", category: "Curriculum", path: "/skill-tree", summary: "Interactive skill tree roadmap for open-source mastery." },
-  { title: "Learning Pathways", category: "Curriculum", path: "/learning-path", summary: "Structured learning pathways for beginners, contributors, and maintainers." },
-  { title: "Open Bounties", category: "Issues & Bounties", path: "/bounties", summary: "Browse open-source issue bounties with XP rewards." },
-  { title: "Good First Issue Finder", category: "Issues & Bounties", path: "/good-first-issues", summary: "Curated beginner-friendly GitHub issues ready for contribution." },
-  { title: "Interactive Challenges", category: "Interactive Games", path: "/challenges", summary: "Solve interactive git & open-source contribution challenges." },
-  { title: "Profile & Account Settings", category: "Account", path: "/profile", summary: "User profile settings, avatar, notification preferences & billing." },
-  { title: "Webhook Subscriptions", category: "Account", path: "/settings/webhooks", summary: "Manage outgoing webhook endpoints and HMAC signatures." },
-  { title: "Connected Applications", category: "Account", path: "/settings/connected-apps", summary: "Manage third-party integrations and GitHub OAuth connections." },
-  { title: "API Performance Dashboard", category: "Admin & Observability", path: "/admin/performance", summary: "Inspect API latency metrics, endpoint throughput, and slow queries." },
-  { title: "Vulnerability Scanner", category: "Admin & Observability", path: "/admin/vulnerabilities", summary: "Security vulnerability audit dashboard and dependency alerts." },
+  {
+    title: "Audit Log Inspector",
+    category: "Admin & Observability",
+    path: "/admin/audit",
+    summary: "Inspect domain audit events, system actions & state diffs.",
+  },
+  {
+    title: "Celery Task Dashboard",
+    category: "Admin & Observability",
+    path: "/admin/celery",
+    summary:
+      "Monitor worker queues, background tasks & trigger async jobs live.",
+  },
+  {
+    title: "Full-Stack Documentation",
+    category: "Documentation",
+    path: "/docs/fullstack",
+    summary:
+      "Complete architecture specs, OpenAPI catalog, and repo directory.",
+  },
+  {
+    title: "OAuth 2.0 Client Apps",
+    category: "Security & Auth",
+    path: "/admin/oauth-clients",
+    summary:
+      "Manage OAuth applications, API keys & test PKCE authorization flow.",
+  },
+  {
+    title: "Environment Wizard (.env)",
+    category: "Developer Tools",
+    path: "/docs/env-generator",
+    summary: "Generate frontend & backend environment variable files.",
+  },
+  {
+    title: "WebSocket Simulator",
+    category: "Developer Tools",
+    path: "/docs/websocket-simulator",
+    summary: "Simulate live WebSocket events and channel group broadcasts.",
+  },
+  {
+    title: "Maintainer Reply Tone Coach",
+    category: "AI & Collaboration",
+    path: "/tone-coach",
+    summary:
+      "Analyze code review reply tone and optimize maintainer feedback with AI.",
+  },
+  {
+    title: "Git Rebase Visualizer",
+    category: "Git Tools",
+    path: "/git-rebase",
+    summary: "Step-by-step visual git rebase workflow simulator.",
+  },
+  {
+    title: "Git Bisect Debugging Game",
+    category: "Git Tools",
+    path: "/git-bisect",
+    summary:
+      "Playful interactive game to isolate regression bugs using git bisect.",
+  },
+  {
+    title: "Git Submodule Simulator",
+    category: "Git Tools",
+    path: "/git-submodules",
+    summary: "Interactive submodule manager and commit tree visualizer.",
+  },
+  {
+    title: "Git Stash Manager",
+    category: "Git Tools",
+    path: "/git-stash",
+    summary: "Visual git stash stack management sandbox.",
+  },
+  {
+    title: "Dockerfile Linter",
+    category: "DevOps & CI",
+    path: "/docker-linter",
+    summary:
+      "Lint Dockerfiles against security and multi-stage build best practices.",
+  },
+  {
+    title: "Monorepo Dependency Visualizer",
+    category: "Architecture",
+    path: "/monorepo-visualizer",
+    summary: "Visualize package graph dependencies in monorepo projects.",
+  },
+  {
+    title: "Accessibility (A11y) Linter",
+    category: "Frontend Tools",
+    path: "/a11y-sandbox",
+    summary: "WCAG accessibility linter sandbox and element auditor.",
+  },
+  {
+    title: "PR Diff Summarizer",
+    category: "AI & Collaboration",
+    path: "/pr-diff-summarizer",
+    summary: "Summarize complex pull request diffs using AI.",
+  },
+  {
+    title: "Contributor Workspace Sandbox",
+    category: "Git Tools",
+    path: "/contributor-sandbox",
+    summary: "Isolated git environment to practice commits and branch pushes.",
+  },
+  {
+    title: "Live Collaborative Notes",
+    category: "Collaboration",
+    path: "/collab-notes",
+    summary:
+      "Real-time collaborative markdown & code notes with live peer cursors.",
+  },
+  {
+    title: "Community Chat",
+    category: "Collaboration",
+    path: "/chat",
+    summary: "Real-time group chat rooms and direct contributor messaging.",
+  },
+  {
+    title: "Community Discussions & Feed",
+    category: "Community",
+    path: "/community",
+    summary:
+      "Ask questions, post code help requests, and join community discussions.",
+  },
+  {
+    title: "Peer Review Exchange",
+    category: "Community",
+    path: "/peer-review",
+    summary:
+      "Submit code for peer review and provide constructive feedback to peers.",
+  },
+  {
+    title: "Contributor Leaderboard",
+    category: "Gamification",
+    path: "/leaderboard",
+    summary:
+      "Rankings of open-source contributors based on XP and completed tasks.",
+  },
+  {
+    title: "XP Shop",
+    category: "Gamification",
+    path: "/shop",
+    summary:
+      "Redeem accumulated XP for badges, custom titles, and profile perks.",
+  },
+  {
+    title: "Skill Tree Roadmap",
+    category: "Curriculum",
+    path: "/skill-tree",
+    summary: "Interactive skill tree roadmap for open-source mastery.",
+  },
+  {
+    title: "Learning Pathways",
+    category: "Curriculum",
+    path: "/learning-path",
+    summary:
+      "Structured learning pathways for beginners, contributors, and maintainers.",
+  },
+  {
+    title: "Open Bounties",
+    category: "Issues & Bounties",
+    path: "/bounties",
+    summary: "Browse open-source issue bounties with XP rewards.",
+  },
+  {
+    title: "Good First Issue Finder",
+    category: "Issues & Bounties",
+    path: "/good-first-issues",
+    summary: "Curated beginner-friendly GitHub issues ready for contribution.",
+  },
+  {
+    title: "Interactive Challenges",
+    category: "Interactive Games",
+    path: "/challenges",
+    summary: "Solve interactive git & open-source contribution challenges.",
+  },
+  {
+    title: "Profile & Account Settings",
+    category: "Account",
+    path: "/profile",
+    summary:
+      "User profile settings, avatar, notification preferences & billing.",
+  },
+  {
+    title: "Webhook Subscriptions",
+    category: "Account",
+    path: "/settings/webhooks",
+    summary: "Manage outgoing webhook endpoints and HMAC signatures.",
+  },
+  {
+    title: "Connected Applications",
+    category: "Account",
+    path: "/settings/connected-apps",
+    summary: "Manage third-party integrations and GitHub OAuth connections.",
+  },
+  {
+    title: "API Performance Dashboard",
+    category: "Admin & Observability",
+    path: "/admin/performance",
+    summary:
+      "Inspect API latency metrics, endpoint throughput, and slow queries.",
+  },
+  {
+    title: "Vulnerability Scanner",
+    category: "Admin & Observability",
+    path: "/admin/vulnerabilities",
+    summary: "Security vulnerability audit dashboard and dependency alerts.",
+  },
 ];
 
 export function Navigation() {
@@ -157,7 +338,12 @@ export function Navigation() {
   const { t } = useTranslate();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<{
-    features: { title: string; category: string; path: string; summary: string }[];
+    features: {
+      title: string;
+      category: string;
+      path: string;
+      summary: string;
+    }[];
     lessons: {
       slug: string;
       title: string;
@@ -184,7 +370,6 @@ export function Navigation() {
     fetchLessonsApi().then((data) => setLessonsCatalog(data));
   }, []);
 
-
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       if (searchQuery.trim().length > 1) {
@@ -196,7 +381,7 @@ export function Navigation() {
             feat.title.toLowerCase().includes(query) ||
             feat.category.toLowerCase().includes(query) ||
             feat.summary.toLowerCase().includes(query) ||
-            feat.path.toLowerCase().includes(query)
+            feat.path.toLowerCase().includes(query),
         );
 
         const filteredLessons = lessonsCatalog.filter(
@@ -362,38 +547,39 @@ export function Navigation() {
                   </p>
                 ) : (
                   <div className="space-y-6">
-                    {searchResults.features && searchResults.features.length > 0 && (
-                      <div>
-                        <h4 className="font-mono text-[10px] uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-2 font-bold flex items-center justify-between">
-                          <span>🛠️ Features &amp; Tools</span>
-                          <span className="text-[9px] bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded">
-                            {searchResults.features.length} found
-                          </span>
-                        </h4>
-                        <div className="space-y-1.5">
-                          {searchResults.features.map((feat) => (
-                            <Link
-                              key={feat.path}
-                              to={feat.path}
-                              onClick={() => setSearchQuery("")}
-                              className="block p-2 rounded-xl hover:bg-indigo-50/80 dark:hover:bg-[#1f1c18] border border-transparent hover:border-indigo-200 dark:hover:border-indigo-900/40 transition group"
-                            >
-                              <div className="flex items-center justify-between">
-                                <p className="font-bold text-sm text-gray-900 dark:text-[#f0ebe2] group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
-                                  {feat.title}
+                    {searchResults.features &&
+                      searchResults.features.length > 0 && (
+                        <div>
+                          <h4 className="font-mono text-[10px] uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-2 font-bold flex items-center justify-between">
+                            <span>🛠️ Features &amp; Tools</span>
+                            <span className="text-[9px] bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded">
+                              {searchResults.features.length} found
+                            </span>
+                          </h4>
+                          <div className="space-y-1.5">
+                            {searchResults.features.map((feat) => (
+                              <Link
+                                key={feat.path}
+                                to={feat.path}
+                                onClick={() => setSearchQuery("")}
+                                className="block p-2 rounded-xl hover:bg-indigo-50/80 dark:hover:bg-[#1f1c18] border border-transparent hover:border-indigo-200 dark:hover:border-indigo-900/40 transition group"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <p className="font-bold text-sm text-gray-900 dark:text-[#f0ebe2] group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                                    {feat.title}
+                                  </p>
+                                  <span className="text-[10px] font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950 px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
+                                    {feat.category}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-gray-500 dark:text-[#c4bbae] truncate mt-0.5">
+                                  {feat.summary}
                                 </p>
-                                <span className="text-[10px] font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950 px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
-                                  {feat.category}
-                                </span>
-                              </div>
-                              <p className="text-xs text-gray-500 dark:text-[#c4bbae] truncate mt-0.5">
-                                {feat.summary}
-                              </p>
-                            </Link>
-                          ))}
+                              </Link>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
                     {searchResults.lessons.length > 0 && (
                       <div>
@@ -484,7 +670,9 @@ export function Navigation() {
                   title="Profile Settings"
                 >
                   👤{" "}
-                  <span className="hidden sm:inline-block max-w-[80px] truncate">{user.username}</span>
+                  <span className="hidden sm:inline-block max-w-[80px] truncate">
+                    {user.username}
+                  </span>
                   {user.is_staff && (
                     <span className="font-black text-[9px] bg-[#ff665c] text-white px-1.5 py-0.5 rounded border border-black dark:border-none">
                       ADMIN
@@ -499,7 +687,7 @@ export function Navigation() {
                   to="/login"
                   className="rounded-xl bg-white border-2 border-black px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold text-text shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 transition-all dark:bg-[#151411] dark:text-[#f0ebe2] dark:border-[#2e2924]"
                 >
-                  {t('nav.login', {defaultValue: 'Log In'})}
+                  {t("nav.login", { defaultValue: "Log In" })}
                 </Link>
                 <Link
                   to="/signup"

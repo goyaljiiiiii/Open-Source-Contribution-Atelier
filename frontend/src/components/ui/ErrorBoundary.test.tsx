@@ -30,12 +30,11 @@ describe("ErrorBoundary", () => {
     // Mock window.location.reload
     // @ts-expect-error - Mock window.location for testing
     delete window.location;
-     
+
     window.location = { ...originalLocation, reload: vi.fn() } as any;
   });
 
   afterEach(() => {
-     
     window.location = originalLocation as any;
   });
 

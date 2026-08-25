@@ -154,6 +154,59 @@ def test_google_login_creates_user_and_returnss(mock_get):
 
 
 @pytest.mark.django_db
+@patch("apps.accounts.views.http_requests.get")
+def test_google_login_with_id_token_fallback(mock_get):
+    client = APIClient()
+
+    # First call (userinfo) fails, second call (tokeninfo) succeeds
+    fail_resp = Mock()
+    fail_resp.ok = False
+
+    success_resp = Mock()
+    success_resp.ok = True
+    success_resp.json.return_value = {"email": "google-idtoken@example.com"}
+
+    mock_get.side_effect = [fail_resp, success_resp]
+
+    response = client.post(
+        "/api/auth/google/",
+        {"id_token": "header.payload.signature"},
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert "access" in response.data
+    assert User.objects.filter(email="google-idtoken@example.com").exists()
+
+
+@pytest.mark.django_db
+def test_google_login_missing_token_returns_400():
+    client = APIClient()
+    response = client.post("/api/auth/google/", {}, format="json")
+    assert response.status_code == 400
+    assert response.data["detail"] == "No access token provided"
+
+
+@pytest.mark.django_db
+@patch("apps.accounts.views.http_requests.get")
+def test_google_login_invalid_token_returns_401(mock_get):
+    client = APIClient()
+
+    fail_resp = Mock()
+    fail_resp.ok = False
+    mock_get.return_value = fail_resp
+
+    response = client.post(
+        "/api/auth/google/",
+        {"access_token": "invalid-token"},
+        format="json",
+    )
+
+    assert response.status_code == 401
+    assert response.data["detail"] == "Failed to verify Google token"
+
+
+@pytest.mark.django_db
 def test_github_oauth_start_redirects_to_github(monkeypatch):
     client = APIClient()
     monkeypatch.setenv("GITHUB_CLIENT_ID", "github-client-id")

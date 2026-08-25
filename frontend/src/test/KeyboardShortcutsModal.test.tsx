@@ -23,8 +23,12 @@ describe("KeyboardShortcutsModal", () => {
     fireEvent.keyDown(window, { key: "?" });
 
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByText("Navigate to next lesson in current pathway")).toBeInTheDocument();
-    expect(screen.getByText("Navigate to previous lesson in current pathway")).toBeInTheDocument();
+    expect(
+      screen.getByText("Navigate to next lesson in current pathway"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Navigate to previous lesson in current pathway"),
+    ).toBeInTheDocument();
   });
 
   it("opens modal when custom event 'toggle-keyboard-shortcuts' is dispatched", () => {

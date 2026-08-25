@@ -53,7 +53,7 @@ describe("AnalyticsCSVExport Component", () => {
         <ThemeProvider>
           <AnalyticsDashboardPage />
         </ThemeProvider>
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
   it("renders Export All CSV and per-widget Export CSV buttons", async () => {
@@ -65,16 +65,18 @@ describe("AnalyticsCSVExport Component", () => {
     expect(exportAllButton).toBeInTheDocument();
 
     expect(
-      screen.getByRole("button", { name: "Export Registrations to CSV" })
+      screen.getByRole("button", { name: "Export Registrations to CSV" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Export Course Engagement to CSV" })
+      screen.getByRole("button", { name: "Export Course Engagement to CSV" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Export Quiz Accuracy to CSV" })
+      screen.getByRole("button", { name: "Export Quiz Accuracy to CSV" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Export Challenge Submissions to CSV" })
+      screen.getByRole("button", {
+        name: "Export Challenge Submissions to CSV",
+      }),
     ).toBeInTheDocument();
   });
 

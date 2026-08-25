@@ -40,7 +40,10 @@ export const SkillGraphCanvas: React.FC<SkillGraphCanvasProps> = ({
   const [zoom, setZoom] = useState<number>(1);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [dragStart, setDragStart] = useState<{ x: number; y: number }>({
+    x: 0,
+    y: 0,
+  });
   const [hoveredNode, setHoveredNode] = useState<SkillNode | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -64,7 +67,8 @@ export const SkillGraphCanvas: React.FC<SkillGraphCanvasProps> = ({
     if (domain === "backend") return <Server className="w-5 h-5" />;
     if (domain === "devops") return <Cpu className="w-5 h-5" />;
     if (category.includes("Leadership")) return <Award className="w-5 h-5" />;
-    if (category.includes("Quality")) return <ShieldCheck className="w-5 h-5" />;
+    if (category.includes("Quality"))
+      return <ShieldCheck className="w-5 h-5" />;
     return <GitBranch className="w-5 h-5" />;
   };
 
@@ -152,7 +156,13 @@ export const SkillGraphCanvas: React.FC<SkillGraphCanvasProps> = ({
       >
         <svg className="w-[1200px] h-[700px] overflow-visible">
           <defs>
-            <linearGradient id="edgeCompleted" x1="0%" y1="0%" x2="100%" y2="0%">
+            <linearGradient
+              id="edgeCompleted"
+              x1="0%"
+              y1="0%"
+              x2="100%"
+              y2="0%"
+            >
               <stop offset="0%" stopColor="#10B981" stopOpacity="0.9" />
               <stop offset="100%" stopColor="#34D399" stopOpacity="0.9" />
             </linearGradient>
@@ -173,7 +183,10 @@ export const SkillGraphCanvas: React.FC<SkillGraphCanvasProps> = ({
             const targetNode = nodes.find((n) => n.id === edge.target);
 
             if (!sourceNode || !targetNode) return null;
-            if (!filteredNodeIds.has(sourceNode.id) && !filteredNodeIds.has(targetNode.id)) {
+            if (
+              !filteredNodeIds.has(sourceNode.id) &&
+              !filteredNodeIds.has(targetNode.id)
+            ) {
               return null;
             }
 
@@ -188,8 +201,12 @@ export const SkillGraphCanvas: React.FC<SkillGraphCanvasProps> = ({
             const controlX2 = x2 - dx * 0.5;
             const pathData = `M ${x1} ${y1} C ${controlX1} ${y1}, ${controlX2} ${y2}, ${x2} ${y2}`;
 
-            const isCompleted = sourceNode.status === "completed" && targetNode.status === "completed";
-            const isActive = sourceNode.status === "completed" && targetNode.status === "unlocked";
+            const isCompleted =
+              sourceNode.status === "completed" &&
+              targetNode.status === "completed";
+            const isActive =
+              sourceNode.status === "completed" &&
+              targetNode.status === "unlocked";
 
             return (
               <g key={edge.id}>
@@ -206,7 +223,9 @@ export const SkillGraphCanvas: React.FC<SkillGraphCanvasProps> = ({
                   <path
                     d={pathData}
                     fill="none"
-                    stroke={isCompleted ? "url(#edgeCompleted)" : "url(#edgeActive)"}
+                    stroke={
+                      isCompleted ? "url(#edgeCompleted)" : "url(#edgeActive)"
+                    }
                     strokeWidth="3.5"
                     filter="url(#glow)"
                     className={isActive ? "animate-pulse" : ""}
@@ -260,8 +279,8 @@ export const SkillGraphCanvas: React.FC<SkillGraphCanvasProps> = ({
                     isCompleted
                       ? "fill-slate-900 stroke-emerald-500/80 stroke-2"
                       : isUnlocked
-                      ? "fill-slate-900 stroke-indigo-500/80 stroke-2"
-                      : "fill-slate-950 stroke-slate-800 stroke-1 opacity-75"
+                        ? "fill-slate-900 stroke-indigo-500/80 stroke-2"
+                        : "fill-slate-950 stroke-slate-800 stroke-1 opacity-75"
                   } ${isHovered ? "scale-105" : ""}`}
                 />
 
@@ -276,8 +295,8 @@ export const SkillGraphCanvas: React.FC<SkillGraphCanvasProps> = ({
                     isCompleted
                       ? "fill-emerald-950/60"
                       : isUnlocked
-                      ? "fill-indigo-950/60"
-                      : "fill-slate-900"
+                        ? "fill-indigo-950/60"
+                        : "fill-slate-900"
                   }
                 />
                 <text
@@ -297,8 +316,8 @@ export const SkillGraphCanvas: React.FC<SkillGraphCanvasProps> = ({
                         isCompleted
                           ? "bg-emerald-500/20 text-emerald-400"
                           : isUnlocked
-                          ? "bg-indigo-500/20 text-indigo-400"
-                          : "bg-slate-800 text-slate-500"
+                            ? "bg-indigo-500/20 text-indigo-400"
+                            : "bg-slate-800 text-slate-500"
                       }`}
                     >
                       {isCompleted ? (
@@ -315,8 +334,8 @@ export const SkillGraphCanvas: React.FC<SkillGraphCanvasProps> = ({
                           isCompleted
                             ? "text-emerald-200"
                             : isUnlocked
-                            ? "text-slate-100"
-                            : "text-slate-500"
+                              ? "text-slate-100"
+                              : "text-slate-500"
                         }`}
                       >
                         {node.title}

@@ -52,7 +52,8 @@ export const AuditLogTable: React.FC<AuditLogTableProps> = ({
               <th className="py-3 px-4">Action</th>
               <th className="py-3 px-4">
                 <div className="flex items-center gap-1.5">
-                  <Database className="w-3.5 h-3.5 text-emerald-500" /> Model Type
+                  <Database className="w-3.5 h-3.5 text-emerald-500" /> Model
+                  Type
                 </div>
               </th>
               <th className="py-3 px-4">Object ID</th>
@@ -68,7 +69,10 @@ export const AuditLogTable: React.FC<AuditLogTableProps> = ({
             {loading ? (
               // Loading Skeleton Rows
               Array.from({ length: 5 }).map((_, idx) => (
-                <tr key={idx} className="animate-pulse bg-white dark:bg-slate-900">
+                <tr
+                  key={idx}
+                  className="animate-pulse bg-white dark:bg-slate-900"
+                >
                   <td className="py-3 px-4">
                     <div className="h-4 w-28 bg-slate-200 dark:bg-slate-800 rounded"></div>
                   </td>
@@ -102,7 +106,8 @@ export const AuditLogTable: React.FC<AuditLogTableProps> = ({
                       No audit log records found
                     </p>
                     <p className="text-xs text-gray-500 max-w-sm">
-                      Try adjusting your search criteria or clearing active filters to browse domain audit history.
+                      Try adjusting your search criteria or clearing active
+                      filters to browse domain audit history.
                     </p>
                   </div>
                 </td>
@@ -126,7 +131,9 @@ export const AuditLogTable: React.FC<AuditLogTableProps> = ({
                         @{event.actor_username}
                       </span>
                     ) : (
-                      <span className="text-gray-400 dark:text-gray-500 italic">System</span>
+                      <span className="text-gray-400 dark:text-gray-500 italic">
+                        System
+                      </span>
                     )}
                   </td>
 
@@ -137,10 +144,10 @@ export const AuditLogTable: React.FC<AuditLogTableProps> = ({
                         event.action === "created"
                           ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
                           : event.action === "updated"
-                          ? "bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30"
-                          : event.action === "deleted"
-                          ? "bg-red-500/15 text-red-700 dark:text-red-400 border border-red-500/30"
-                          : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                            ? "bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30"
+                            : event.action === "deleted"
+                              ? "bg-red-500/15 text-red-700 dark:text-red-400 border border-red-500/30"
+                              : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
                       }`}
                     >
                       {event.action}
@@ -161,7 +168,8 @@ export const AuditLogTable: React.FC<AuditLogTableProps> = ({
 
                   {/* Summary */}
                   <td className="py-3 px-4 text-gray-700 dark:text-gray-300 max-w-xs truncate font-medium">
-                    {event.summary || `${event.action} ${event.resource_type} #${event.resource_id}`}
+                    {event.summary ||
+                      `${event.action} ${event.resource_type} #${event.resource_id}`}
                   </td>
 
                   {/* Actions Column */}
@@ -187,13 +195,19 @@ export const AuditLogTable: React.FC<AuditLogTableProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-slate-50 dark:bg-slate-800/60 border-t border-gray-200 dark:border-slate-800 text-xs text-gray-500 dark:text-gray-400">
         <div className="flex items-center gap-3">
           <span>
-            Showing page <strong className="text-gray-900 dark:text-white">{page}</strong> of{" "}
-            <strong className="text-gray-900 dark:text-white">{totalPages}</strong> ({totalCount} total events)
+            Showing page{" "}
+            <strong className="text-gray-900 dark:text-white">{page}</strong> of{" "}
+            <strong className="text-gray-900 dark:text-white">
+              {totalPages}
+            </strong>{" "}
+            ({totalCount} total events)
           </span>
 
           {/* Page size dropdown */}
           <div className="flex items-center gap-1.5">
-            <span className="text-gray-500 dark:text-gray-400">Rows per page:</span>
+            <span className="text-gray-500 dark:text-gray-400">
+              Rows per page:
+            </span>
             <select
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}

@@ -44,24 +44,18 @@ export function LessonCollaborativeEditor({
     [onContentChange],
   );
 
-  const handleRemoteOp = useCallback(
-    (_op: unknown[], _revision: number) => {
-      // In a full implementation, this would apply the OT op
-      // to the local editor content. For now, the WS consumer
-      // handles full state sync, and we re-fetch on rebase.
-    },
-    [],
-  );
+  const handleRemoteOp = useCallback((_op: unknown[], _revision: number) => {
+    // In a full implementation, this would apply the OT op
+    // to the local editor content. For now, the WS consumer
+    // handles full state sync, and we re-fetch on rebase.
+  }, []);
 
-  const handleRemoteCursor = useCallback(
-    (cursor: RemoteCursorData) => {
-      setRemoteCursors((prev) => {
-        const filtered = prev.filter((c) => c.id !== cursor.id);
-        return [...filtered, cursor];
-      });
-    },
-    [],
-  );
+  const handleRemoteCursor = useCallback((cursor: RemoteCursorData) => {
+    setRemoteCursors((prev) => {
+      const filtered = prev.filter((c) => c.id !== cursor.id);
+      return [...filtered, cursor];
+    });
+  }, []);
 
   const handleRebase = useCallback(
     (state: { content: string; revision: number }) => {
@@ -194,19 +188,13 @@ export function LessonCollaborativeEditor({
           className="w-full min-h-[400px] p-4 font-mono text-sm bg-white dark:bg-[#151411] border border-black/10 dark:border-[#2e2924] rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/50 resize-y"
           spellCheck={false}
         />
-        <RemoteCursorOverlay
-          cursors={remoteCursors}
-          editorRef={editorRef}
-        />
+        <RemoteCursorOverlay cursors={remoteCursors} editorRef={editorRef} />
       </div>
     </div>
   );
 }
 
-function buildReplaceOp(
-  oldContent: string,
-  newContent: string,
-): unknown[] {
+function buildReplaceOp(oldContent: string, newContent: string): unknown[] {
   // Simple full-replacement operation
   const op: unknown[] = [];
   if (oldContent) {

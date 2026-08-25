@@ -438,6 +438,7 @@ export function GitTerminal({
           role="log"
           aria-label="Terminal output"
           aria-live="polite"
+          aria-atomic="false"
         >
           {lines.map((line) => (
             <LineRenderer key={line.id} line={line} />

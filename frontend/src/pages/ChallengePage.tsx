@@ -1,5 +1,18 @@
 import { useRef, useState, useEffect } from "react";
-import { Search, Upload, Trophy, HelpCircle, ArrowUpRight, CheckCircle2, Zap, Play, Sparkles, Filter, ShieldCheck, RefreshCw } from "lucide-react";
+import {
+  Search,
+  Upload,
+  Trophy,
+  HelpCircle,
+  ArrowUpRight,
+  CheckCircle2,
+  Zap,
+  Play,
+  Sparkles,
+  Filter,
+  ShieldCheck,
+  RefreshCw,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import clsx from "clsx";
 import { useAuth } from "../features/auth/AuthContext";
@@ -9,7 +22,11 @@ import toast from "react-hot-toast";
 export interface ChallengeItem {
   id: string;
   title: string;
-  category: "Git Operations" | "Conflict Resolution" | "Code Review" | "DevOps & Security";
+  category:
+    | "Git Operations"
+    | "Conflict Resolution"
+    | "Code Review"
+    | "DevOps & Security";
   difficulty: "beginner" | "intermediate" | "advanced";
   summary: string;
   xpReward: number;
@@ -27,11 +44,13 @@ const INTERACTIVE_CHALLENGES: ChallengeItem[] = [
     title: "🔀 Merge Conflict Resolution Drill",
     category: "Conflict Resolution",
     difficulty: "intermediate",
-    summary: "Resolve complex git merge conflict markers in a feature branch without losing upstream changes.",
+    summary:
+      "Resolve complex git merge conflict markers in a feature branch without losing upstream changes.",
     xpReward: 50,
     badge: "Conflict Ninja 🥷",
     route: "/conflict-scenario-builder",
-    instruction: "Identify and resolve the merge conflict markers (<<<<<<<, =======, >>>>>>>) in the code below. Remove markers and keep both upstream and feature additions.",
+    instruction:
+      "Identify and resolve the merge conflict markers (<<<<<<<, =======, >>>>>>>) in the code below. Remove markers and keep both upstream and feature additions.",
     hint: "Remove git conflict headers and ensure the final function contains both upstream fix and local feature.",
     initialCode: `<<<<<<< HEAD\nfunction formatUser(name: string) { return name.trim().toUpperCase(); }\n=======\nfunction formatUser(name: string, role = "contributor") { return \`\${name} (\${role})\`; }\n>>>>>>> feature/user-formatting`,
     expectedKeyword: "formatUser",
@@ -41,11 +60,13 @@ const INTERACTIVE_CHALLENGES: ChallengeItem[] = [
     title: "⚡ Git Rebase Scenario Lab",
     category: "Git Operations",
     difficulty: "intermediate",
-    summary: "Squash messy feature branch commits into clean atomic commits before opening a pull request.",
+    summary:
+      "Squash messy feature branch commits into clean atomic commits before opening a pull request.",
     xpReward: 50,
     badge: "Rebase Master ⚡",
     route: "/git-rebase",
-    instruction: "Use git rebase -i HEAD~3 to squash 3 WIP commits into a single descriptive commit message.",
+    instruction:
+      "Use git rebase -i HEAD~3 to squash 3 WIP commits into a single descriptive commit message.",
     hint: "In interactive rebase, change 'pick' to 'squash' (or 's') for the subsequent commits.",
   },
   {
@@ -53,11 +74,13 @@ const INTERACTIVE_CHALLENGES: ChallengeItem[] = [
     title: "🔍 Git Bisect Bug Hunting Game",
     category: "Git Operations",
     difficulty: "advanced",
-    summary: "Isolate a breaking regression commit in a 50-commit history using binary search git bisect.",
+    summary:
+      "Isolate a breaking regression commit in a 50-commit history using binary search git bisect.",
     xpReward: 75,
     badge: "Bug Sleuth 🔍",
     route: "/git-bisect",
-    instruction: "Run 'git bisect start', mark HEAD as bad and origin/main as good, then test each bisect commit.",
+    instruction:
+      "Run 'git bisect start', mark HEAD as bad and origin/main as good, then test each bisect commit.",
     hint: "Use git bisect run npm test to automate binary search finding the culprit commit.",
   },
   {
@@ -65,11 +88,13 @@ const INTERACTIVE_CHALLENGES: ChallengeItem[] = [
     title: "💾 Git Stash & Working Tree Rescue",
     category: "Git Operations",
     difficulty: "beginner",
-    summary: "Safely stash uncommitted changes when emergency hotfixes require switching branches immediately.",
+    summary:
+      "Safely stash uncommitted changes when emergency hotfixes require switching branches immediately.",
     xpReward: 50,
     badge: "Stash Wizard 🧙",
     route: "/git-stash",
-    instruction: "Stash working directory changes with 'git stash push -m WIP', switch to main, apply hotfix, then pop stash.",
+    instruction:
+      "Stash working directory changes with 'git stash push -m WIP', switch to main, apply hotfix, then pop stash.",
     hint: "Use 'git stash pop' to restore stashed changes onto your feature branch.",
   },
   {
@@ -77,11 +102,13 @@ const INTERACTIVE_CHALLENGES: ChallengeItem[] = [
     title: "💬 Maintainer Code Review Tone Workshop",
     category: "Code Review",
     difficulty: "beginner",
-    summary: "Analyze code review feedback and optimize maintainer replies for constructive community tone.",
+    summary:
+      "Analyze code review feedback and optimize maintainer replies for constructive community tone.",
     xpReward: 50,
     badge: "Empathy Diplomat 🤝",
     route: "/tone-coach",
-    instruction: "Rephrase abrasive pull request feedback into constructive, actionable guidance.",
+    instruction:
+      "Rephrase abrasive pull request feedback into constructive, actionable guidance.",
     hint: "Acknowledge the contributor's effort first before explaining requested changes.",
   },
   {
@@ -89,11 +116,13 @@ const INTERACTIVE_CHALLENGES: ChallengeItem[] = [
     title: "♿ Accessibility (A11y) WCAG Linter Drill",
     category: "DevOps & Security",
     difficulty: "intermediate",
-    summary: "Audit HTML elements for missing ARIA labels, alt tags, and keyboard navigation compliance.",
+    summary:
+      "Audit HTML elements for missing ARIA labels, alt tags, and keyboard navigation compliance.",
     xpReward: 60,
     badge: "A11y Champion ♿",
     route: "/a11y-sandbox",
-    instruction: "Add required aria-label, alt attributes, and keyboard focus rings to interactive elements.",
+    instruction:
+      "Add required aria-label, alt attributes, and keyboard focus rings to interactive elements.",
     hint: "All interactive buttons require descriptive aria-labels and visible focus indicators.",
   },
   {
@@ -101,11 +130,13 @@ const INTERACTIVE_CHALLENGES: ChallengeItem[] = [
     title: "📦 Git Submodule Sync & Update Drill",
     category: "Git Operations",
     difficulty: "advanced",
-    summary: "Initialize and sync external git submodules across monorepo package boundaries.",
+    summary:
+      "Initialize and sync external git submodules across monorepo package boundaries.",
     xpReward: 75,
     badge: "Submodule Sync 📦",
     route: "/git-submodules",
-    instruction: "Run 'git submodule update --init --recursive' to fetch submodules at targeted commit hashes.",
+    instruction:
+      "Run 'git submodule update --init --recursive' to fetch submodules at targeted commit hashes.",
     hint: "Remember to commit updated submodule pointers in the parent repository.",
   },
   {
@@ -113,11 +144,13 @@ const INTERACTIVE_CHALLENGES: ChallengeItem[] = [
     title: "📝 PR Diff AI Summarizer Challenge",
     category: "Code Review",
     difficulty: "intermediate",
-    summary: "Generate concise, executive pull request release notes from raw multi-file git diffs.",
+    summary:
+      "Generate concise, executive pull request release notes from raw multi-file git diffs.",
     xpReward: 50,
     badge: "Diff Architect 📝",
     route: "/pr-diff-summarizer",
-    instruction: "Paste a multi-file git diff and generate structured release summary notes.",
+    instruction:
+      "Paste a multi-file git diff and generate structured release summary notes.",
     hint: "Group changes by feature area, bug fixes, and breaking schema alterations.",
   },
 ];
@@ -143,19 +176,25 @@ export function ChallengePage() {
   });
 
   // Active Challenge Modal state
-  const [activeModalChallenge, setActiveModalChallenge] = useState<ChallengeItem | null>(null);
+  const [activeModalChallenge, setActiveModalChallenge] =
+    useState<ChallengeItem | null>(null);
   const [userSolutionCode, setUserSolutionCode] = useState("");
   const [showHintModal, setShowHintModal] = useState(false);
 
   useEffect(() => {
     try {
-      localStorage.setItem("osca_completed_challenges", JSON.stringify(completedIds));
+      localStorage.setItem(
+        "osca_completed_challenges",
+        JSON.stringify(completedIds),
+      );
     } catch {
       // Ignore
     }
   }, [completedIds]);
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -225,24 +264,35 @@ export function ChallengePage() {
                 Interactive Contribution Gym
               </span>
               <span className="bg-emerald-500 text-white font-black text-xs px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
-                <Zap size={12} /> {completedIds.length} / {INTERACTIVE_CHALLENGES.length} Drills Done
+                <Zap size={12} /> {completedIds.length} /{" "}
+                {INTERACTIVE_CHALLENGES.length} Drills Done
               </span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-3">
-              <Trophy size={36} className="text-amber-600 dark:text-amber-400" /> Contribution Challenges &amp; Drills
+              <Trophy
+                size={36}
+                className="text-amber-600 dark:text-amber-400"
+              />{" "}
+              Contribution Challenges &amp; Drills
             </h1>
             <p className="text-sm font-bold text-slate-800 dark:text-slate-300 mt-2 leading-relaxed max-w-2xl">
-              Master hands-on git operations, conflict resolution, rebase squashing, accessibility audits, and PR review workflows with real interactive drills.
+              Master hands-on git operations, conflict resolution, rebase
+              squashing, accessibility audits, and PR review workflows with real
+              interactive drills.
             </p>
           </div>
 
           <div className="bg-white dark:bg-slate-900 border-4 border-black dark:border-slate-700 p-4 rounded-2xl shadow-card text-center shrink-0 min-w-[180px]">
-            <span className="text-xs font-black uppercase text-slate-500 dark:text-slate-400 block">Total XP Earned</span>
+            <span className="text-xs font-black uppercase text-slate-500 dark:text-slate-400 block">
+              Total XP Earned
+            </span>
             <span className="text-3xl sm:text-4xl font-black text-amber-600 dark:text-amber-400 block mt-1">
               +{totalXP} XP
             </span>
             <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 block mt-1">
-              {completedIds.length === INTERACTIVE_CHALLENGES.length ? "🏆 All Drills Mastered!" : "Keep Leveling Up!"}
+              {completedIds.length === INTERACTIVE_CHALLENGES.length
+                ? "🏆 All Drills Mastered!"
+                : "Keep Leveling Up!"}
             </span>
           </div>
         </div>
@@ -306,7 +356,9 @@ export function ChallengePage() {
               onClick={() => setDifficulty(null)}
               className={clsx(
                 "px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase transition-all",
-                difficulty === null ? "bg-black text-white dark:bg-white dark:text-black" : "text-slate-600 dark:text-slate-300"
+                difficulty === null
+                  ? "bg-black text-white dark:bg-white dark:text-black"
+                  : "text-slate-600 dark:text-slate-300",
               )}
             >
               All
@@ -317,7 +369,9 @@ export function ChallengePage() {
                 onClick={() => setDifficulty(d)}
                 className={clsx(
                   "px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase transition-all",
-                  difficulty === d ? "bg-amber-400 text-black font-black" : "text-slate-600 dark:text-slate-300"
+                  difficulty === d
+                    ? "bg-amber-400 text-black font-black"
+                    : "text-slate-600 dark:text-slate-300",
                 )}
               >
                 {d}
@@ -349,7 +403,7 @@ export function ChallengePage() {
               key={item.id}
               className={clsx(
                 "border-4 border-black bg-white rounded-3xl shadow-card dark:bg-[#1a191f] dark:border-white/10 flex flex-col justify-between overflow-hidden transition-all hover:-translate-y-1",
-                isCompleted && "border-emerald-500 dark:border-emerald-500/50"
+                isCompleted && "border-emerald-500 dark:border-emerald-500/50",
               )}
             >
               {/* Header portion */}
@@ -359,9 +413,12 @@ export function ChallengePage() {
                     <span
                       className={clsx(
                         "text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border-2 border-black shadow-card-xs",
-                        item.difficulty === "beginner" && "bg-green-100 text-green-800",
-                        item.difficulty === "intermediate" && "bg-amber-100 text-amber-850",
-                        item.difficulty === "advanced" && "bg-red-100 text-red-800"
+                        item.difficulty === "beginner" &&
+                          "bg-green-100 text-green-800",
+                        item.difficulty === "intermediate" &&
+                          "bg-amber-100 text-amber-850",
+                        item.difficulty === "advanced" &&
+                          "bg-red-100 text-red-800",
                       )}
                     >
                       {item.difficulty}
@@ -415,7 +472,8 @@ export function ChallengePage() {
           <div className="col-span-full border-4 border-dashed border-black/10 dark:border-white/10 rounded-2xl py-16 text-center">
             <HelpCircle size={40} className="mx-auto text-slate-300 mb-3" />
             <p className="text-sm font-bold text-slate-400">
-              No matching drills found. Try loosening your search or difficulty filters!
+              No matching drills found. Try loosening your search or difficulty
+              filters!
             </p>
           </div>
         )}
@@ -428,7 +486,8 @@ export function ChallengePage() {
             <div className="flex items-start justify-between border-b-2 border-slate-200 dark:border-slate-800 pb-4">
               <div>
                 <span className="text-xs font-black uppercase text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950 px-2.5 py-1 rounded-full border border-amber-300 dark:border-amber-800">
-                  {activeModalChallenge.category} • +{activeModalChallenge.xpReward} XP
+                  {activeModalChallenge.category} • +
+                  {activeModalChallenge.xpReward} XP
                 </span>
                 <h2 className="text-2xl font-black text-slate-900 dark:text-white mt-2">
                   {activeModalChallenge.title}
@@ -478,7 +537,8 @@ export function ChallengePage() {
                 onClick={() => setShowHintModal(!showHintModal)}
                 className="text-xs font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1"
               >
-                <Sparkles size={14} /> {showHintModal ? "Hide Hint" : "Show Hint"}
+                <Sparkles size={14} />{" "}
+                {showHintModal ? "Hide Hint" : "Show Hint"}
               </button>
 
               <div className="flex items-center gap-3">
@@ -492,7 +552,8 @@ export function ChallengePage() {
                   onClick={() => handleCompleteDrill(activeModalChallenge)}
                   className="px-5 py-2.5 text-xs font-black border-2 border-black bg-emerald-400 text-black rounded-xl shadow-card-sm hover:-translate-y-0.5 flex items-center gap-1.5"
                 >
-                  <ShieldCheck size={16} /> Complete &amp; Claim +{activeModalChallenge.xpReward} XP
+                  <ShieldCheck size={16} /> Complete &amp; Claim +
+                  {activeModalChallenge.xpReward} XP
                 </button>
               </div>
             </div>

@@ -96,7 +96,9 @@ export function useWebSocket(url: string) {
               WebSocket Channel Flow Simulator
             </h1>
             <p className="text-sm font-medium text-muted dark:text-[#c4bbae] mt-1">
-              Interactive protocol demonstration of real-time communication between React clients, Django Channels consumers, and Redis pub/sub.
+              Interactive protocol demonstration of real-time communication
+              between React clients, Django Channels consumers, and Redis
+              pub/sub.
             </p>
           </div>
         </div>
@@ -114,7 +116,12 @@ export function useWebSocket(url: string) {
             Django Channels Async Consumer
           </div>
           <p className="text-xs text-muted dark:text-[#a0988c]">
-            Consumers handle ASGI WebSocket connections asynchronously, parsing inbound frames and managing group subscriptions via <code className="font-mono text-purple-400">channel_layer.group_send()</code>.
+            Consumers handle ASGI WebSocket connections asynchronously, parsing
+            inbound frames and managing group subscriptions via{" "}
+            <code className="font-mono text-purple-400">
+              channel_layer.group_send()
+            </code>
+            .
           </p>
 
           <CodeBlock
@@ -132,7 +139,9 @@ export function useWebSocket(url: string) {
             React Custom WebSocket Hook
           </div>
           <p className="text-xs text-muted dark:text-[#a0988c]">
-            The frontend manages persistent WebSocket lifecycles with state tracking for active connection status, frame buffering, and auto-reconnect fallback.
+            The frontend manages persistent WebSocket lifecycles with state
+            tracking for active connection status, frame buffering, and
+            auto-reconnect fallback.
           </p>
 
           <CodeBlock

@@ -25,7 +25,7 @@ function visualizerThresholdPlugin(maxGzipKB = 250): Plugin {
           const gzipKB = gzipped.length / 1024;
           if (gzipKB > maxGzipKB) {
             this.error(
-              `Chunk "${fileName}" (${gzipKB.toFixed(1)} KB gzipped) exceeds the maximum allowed threshold of ${maxGzipKB} KB gzipped.`
+              `Chunk "${fileName}" (${gzipKB.toFixed(1)} KB gzipped) exceeds the maximum allowed threshold of ${maxGzipKB} KB gzipped.`,
             );
           }
         }
@@ -71,7 +71,7 @@ export default defineConfig({
   },
   define: {
     "process.env.VERCEL_GIT_COMMIT_SHA": JSON.stringify(
-      process.env.VERCEL_GIT_COMMIT_SHA || ""
+      process.env.VERCEL_GIT_COMMIT_SHA || "",
     ),
   },
   worker: {
@@ -94,7 +94,7 @@ export default defineConfig({
       strategies: "injectManifest",
       srcDir: "src",
       filename: "sw.js",
-      registerType: "prompt",
+      registerType: "autoUpdate",
       injectManifest: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,json,md}"],
         maximumFileSizeToCacheInBytes: 7 * 1024 * 1024,
@@ -164,6 +164,7 @@ export default defineConfig({
         "workbox-strategies",
         "workbox-expiration",
         "@sentry/react",
+        "comlink",
       ],
     },
   },

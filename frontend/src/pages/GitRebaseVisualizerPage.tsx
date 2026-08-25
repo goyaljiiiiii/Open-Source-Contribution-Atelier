@@ -7,7 +7,10 @@ import {
   Terminal,
   Zap,
 } from "lucide-react";
-import { RebaseCommitGraph, RebaseCommit } from "../components/Sandbox/RebaseCommitGraph";
+import {
+  RebaseCommitGraph,
+  RebaseCommit,
+} from "../components/Sandbox/RebaseCommitGraph";
 import { RebaseControlsModal } from "../components/Sandbox/RebaseControlsModal";
 import toast from "react-hot-toast";
 
@@ -28,14 +31,45 @@ const REAL_WORLD_SCENARIOS: RebaseScenario[] = [
     title: "1. Squash 5 'WIP' Commits Before PR Review",
     difficulty: "Beginner",
     xp_reward: 150,
-    description: "You pushed 5 small draft commits while working on your feature PR. Maintainers requested squashing them into 1 single clean commit.",
+    description:
+      "You pushed 5 small draft commits while working on your feature PR. Maintainers requested squashing them into 1 single clean commit.",
     base_branch: "main",
     initial_commits: [
-      { hash: "a1b2c3d", message: "feat(auth): implement user login API route", author: "contributor", files_changed: ["src/auth.ts"], action: "pick" },
-      { hash: "e4f5g6h", message: "wip fix typo in auth validator", author: "contributor", files_changed: ["src/auth.ts"], action: "squash" },
-      { hash: "i7j8k9l", message: "wip add regex password check", author: "contributor", files_changed: ["src/auth.ts"], action: "squash" },
-      { hash: "m0n1o2p", message: "wip fix linter warnings", author: "contributor", files_changed: ["src/auth.ts"], action: "squash" },
-      { hash: "q3r4s5t", message: "wip remove console.log", author: "contributor", files_changed: ["src/auth.ts"], action: "squash" },
+      {
+        hash: "a1b2c3d",
+        message: "feat(auth): implement user login API route",
+        author: "contributor",
+        files_changed: ["src/auth.ts"],
+        action: "pick",
+      },
+      {
+        hash: "e4f5g6h",
+        message: "wip fix typo in auth validator",
+        author: "contributor",
+        files_changed: ["src/auth.ts"],
+        action: "squash",
+      },
+      {
+        hash: "i7j8k9l",
+        message: "wip add regex password check",
+        author: "contributor",
+        files_changed: ["src/auth.ts"],
+        action: "squash",
+      },
+      {
+        hash: "m0n1o2p",
+        message: "wip fix linter warnings",
+        author: "contributor",
+        files_changed: ["src/auth.ts"],
+        action: "squash",
+      },
+      {
+        hash: "q3r4s5t",
+        message: "wip remove console.log",
+        author: "contributor",
+        files_changed: ["src/auth.ts"],
+        action: "squash",
+      },
     ],
   },
   {
@@ -43,12 +77,32 @@ const REAL_WORLD_SCENARIOS: RebaseScenario[] = [
     title: "2. Reword Vague Messages & Drop Debug Code",
     difficulty: "Intermediate",
     xp_reward: 200,
-    description: "Fix non-descriptive commit titles with 'reword' and drop temporary debug print commits ('TEMP debug statement') with 'drop'.",
+    description:
+      "Fix non-descriptive commit titles with 'reword' and drop temporary debug print commits ('TEMP debug statement') with 'drop'.",
     base_branch: "main",
     initial_commits: [
-      { hash: "b8c9d0e", message: "add stuff for api", author: "contributor", files_changed: ["src/api.ts"], action: "reword", new_message: "feat(api): implement exponential retry backoff" },
-      { hash: "f1g2h3i", message: "TEMP: console.log response data", author: "contributor", files_changed: ["src/api.ts"], action: "drop" },
-      { hash: "j4k5l6m", message: "feat(ws): connect real-time WebSocket client", author: "contributor", files_changed: ["src/ws.ts"], action: "pick" },
+      {
+        hash: "b8c9d0e",
+        message: "add stuff for api",
+        author: "contributor",
+        files_changed: ["src/api.ts"],
+        action: "reword",
+        new_message: "feat(api): implement exponential retry backoff",
+      },
+      {
+        hash: "f1g2h3i",
+        message: "TEMP: console.log response data",
+        author: "contributor",
+        files_changed: ["src/api.ts"],
+        action: "drop",
+      },
+      {
+        hash: "j4k5l6m",
+        message: "feat(ws): connect real-time WebSocket client",
+        author: "contributor",
+        files_changed: ["src/ws.ts"],
+        action: "pick",
+      },
     ],
   },
   {
@@ -56,11 +110,24 @@ const REAL_WORLD_SCENARIOS: RebaseScenario[] = [
     title: "3. Resolve Rebase Conflicts with Main Branch",
     difficulty: "Advanced",
     xp_reward: 300,
-    description: "Main branch moved forward while your PR was open. Rebase your feature onto main and resolve the conflict hunk in src/config.ts.",
+    description:
+      "Main branch moved forward while your PR was open. Rebase your feature onto main and resolve the conflict hunk in src/config.ts.",
     base_branch: "main",
     initial_commits: [
-      { hash: "c3d4e5f", message: "feat(config): update environment port defaults", author: "contributor", files_changed: ["src/config.ts"], action: "pick" },
-      { hash: "g7h8i9j", message: "docs: update deployment instructions", author: "contributor", files_changed: ["README.md"], action: "pick" },
+      {
+        hash: "c3d4e5f",
+        message: "feat(config): update environment port defaults",
+        author: "contributor",
+        files_changed: ["src/config.ts"],
+        action: "pick",
+      },
+      {
+        hash: "g7h8i9j",
+        message: "docs: update deployment instructions",
+        author: "contributor",
+        files_changed: ["README.md"],
+        action: "pick",
+      },
     ],
     conflicts: [
       {
@@ -78,8 +145,12 @@ export const PORT = process.env.PORT || 3000;
 
 export function GitRebaseVisualizerPage() {
   const [scenarios] = useState<RebaseScenario[]>(REAL_WORLD_SCENARIOS);
-  const [activeScenario, setActiveScenario] = useState<RebaseScenario>(REAL_WORLD_SCENARIOS[0]);
-  const [commits, setCommits] = useState<RebaseCommit[]>(REAL_WORLD_SCENARIOS[0].initial_commits);
+  const [activeScenario, setActiveScenario] = useState<RebaseScenario>(
+    REAL_WORLD_SCENARIOS[0],
+  );
+  const [commits, setCommits] = useState<RebaseCommit[]>(
+    REAL_WORLD_SCENARIOS[0].initial_commits,
+  );
   const [executionLogs, setExecutionLogs] = useState<string[]>([]);
   const [showConflictModal, setShowConflictModal] = useState<boolean>(false);
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
@@ -93,9 +164,17 @@ export function GitRebaseVisualizerPage() {
     setIsCompleted(false);
   };
 
-  const handleCommitActionChange = (index: number, action: RebaseCommit["action"], newMessage?: string) => {
+  const handleCommitActionChange = (
+    index: number,
+    action: RebaseCommit["action"],
+    newMessage?: string,
+  ) => {
     setCommits((prev) =>
-      prev.map((c, i) => (i === index ? { ...c, action, new_message: newMessage || c.new_message } : c))
+      prev.map((c, i) =>
+        i === index
+          ? { ...c, action, new_message: newMessage || c.new_message }
+          : c,
+      ),
     );
   };
 
@@ -109,14 +188,18 @@ export function GitRebaseVisualizerPage() {
 
   const handleExecuteRebase = () => {
     setIsExecuting(true);
-    setExecutionLogs(["$ git rebase -i origin/main", "Parsing commit TODO list..."]);
+    setExecutionLogs([
+      "$ git rebase -i origin/main",
+      "Parsing commit TODO list...",
+    ]);
 
     setTimeout(() => {
       if (activeScenario.conflicts && activeScenario.conflicts.length > 0) {
         setExecutionLogs((prev) => [
           ...prev,
           "Applying: " + commits[0]?.message,
-          "CONFLICT (content): Merge conflict in " + activeScenario.conflicts![0].file,
+          "CONFLICT (content): Merge conflict in " +
+            activeScenario.conflicts![0].file,
           "error: Failed to merge in the changes.",
           "Patch failed at " + commits[0]?.hash.substring(0, 7),
           "Fix conflicts and then run 'git rebase --continue'.",
@@ -126,8 +209,10 @@ export function GitRebaseVisualizerPage() {
       } else {
         const logs = commits.map((c) => {
           const act = (c.action || "pick").toUpperCase();
-          if (act === "DROP") return `[DROPPED] ${c.hash.substring(0, 7)} - ${c.message}`;
-          if (act === "SQUASH") return `[SQUASHED] into previous commit: ${c.message}`;
+          if (act === "DROP")
+            return `[DROPPED] ${c.hash.substring(0, 7)} - ${c.message}`;
+          if (act === "SQUASH")
+            return `[SQUASHED] into previous commit: ${c.message}`;
           return `[APPLIED] ${c.hash.substring(0, 7)} - ${c.new_message || c.message}`;
         });
 
@@ -145,7 +230,10 @@ export function GitRebaseVisualizerPage() {
   };
 
   return (
-    <main id="main-content" className="w-full max-w-[1600px] mx-auto space-y-6 text-text dark:text-[#f0ebe2] px-2 sm:px-4 lg:px-6">
+    <main
+      id="main-content"
+      className="w-full max-w-[1600px] mx-auto space-y-6 text-text dark:text-[#f0ebe2] px-2 sm:px-4 lg:px-6"
+    >
       {/* Header Banner Deck - Clean 2-Row Neo-Brutalist Layout */}
       <div className="w-full bg-white dark:bg-[#151411] border-4 border-black dark:border-[#2e2924] rounded-3xl p-6 shadow-card space-y-5">
         {/* Row 1: Icon, Title & Subtitle */}
@@ -163,7 +251,12 @@ export function GitRebaseVisualizerPage() {
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-bold mt-1">
-              Master <code className="font-mono text-black dark:text-white bg-amber-300 px-1.5 py-0.5 rounded border border-black font-black">git rebase -i</code> in real-life open source scenarios. Squash WIP commits, reword titles, and resolve conflicts.
+              Master{" "}
+              <code className="font-mono text-black dark:text-white bg-amber-300 px-1.5 py-0.5 rounded border border-black font-black">
+                git rebase -i
+              </code>{" "}
+              in real-life open source scenarios. Squash WIP commits, reword
+              titles, and resolve conflicts.
             </p>
           </div>
         </div>
@@ -197,7 +290,9 @@ export function GitRebaseVisualizerPage() {
               +{activeScenario.xp_reward} Contributor XP
             </span>
           </div>
-          <p className="text-xs sm:text-sm font-black text-black dark:text-[#f0ebe2]">{activeScenario.description}</p>
+          <p className="text-xs sm:text-sm font-black text-black dark:text-[#f0ebe2]">
+            {activeScenario.description}
+          </p>
         </div>
 
         <button
@@ -222,7 +317,8 @@ export function GitRebaseVisualizerPage() {
                 Rebase Scenario Mastered!
               </h3>
               <p className="text-xs font-bold">
-                You successfully mastered this open-source Git workflow and earned <strong>+{earnedXP} Contributor XP</strong>.
+                You successfully mastered this open-source Git workflow and
+                earned <strong>+{earnedXP} Contributor XP</strong>.
               </p>
             </div>
           </div>
@@ -235,9 +331,12 @@ export function GitRebaseVisualizerPage() {
         <div className="lg:col-span-7 space-y-4 bg-white dark:bg-[#151411] border-4 border-black dark:border-[#2e2924] rounded-2xl p-5 shadow-card">
           <div className="flex items-center justify-between pb-3 border-b-2 border-black dark:border-[#2e2924]">
             <h2 className="text-sm font-black text-black dark:text-[#f0ebe2] uppercase tracking-wider flex items-center gap-2">
-              <GitCommit className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> Interactive Commit TODO List
+              <GitCommit className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />{" "}
+              Interactive Commit TODO List
             </h2>
-            <span className="text-xs font-mono font-bold text-slate-500">Pick / Reword / Squash / Drop</span>
+            <span className="text-xs font-mono font-bold text-slate-500">
+              Pick / Reword / Squash / Drop
+            </span>
           </div>
 
           <RebaseCommitGraph
@@ -258,11 +357,17 @@ export function GitRebaseVisualizerPage() {
             </div>
 
             <div className="h-[320px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-              <p className="text-slate-500"># Interactive Rebase instruction Todo list</p>
+              <p className="text-slate-500">
+                # Interactive Rebase instruction Todo list
+              </p>
               {commits.map((c, i) => (
                 <div key={i} className="text-slate-400 flex items-center gap-2">
-                  <span className="text-amber-400 font-bold uppercase text-[10px] w-14 shrink-0">{c.action || "pick"}</span>
-                  <span className="text-indigo-400 shrink-0">{c.hash.substring(0, 7)}</span>
+                  <span className="text-amber-400 font-bold uppercase text-[10px] w-14 shrink-0">
+                    {c.action || "pick"}
+                  </span>
+                  <span className="text-indigo-400 shrink-0">
+                    {c.hash.substring(0, 7)}
+                  </span>
                   <span className="truncate">{c.new_message || c.message}</span>
                 </div>
               ))}
@@ -280,23 +385,34 @@ export function GitRebaseVisualizerPage() {
           {/* Educational Command Guide Card */}
           <div className="p-5 bg-white dark:bg-[#151411] border-4 border-black dark:border-[#2e2924] rounded-2xl space-y-3 shadow-card">
             <h3 className="font-black text-sm text-black dark:text-white flex items-center gap-2 uppercase">
-              <Zap className="w-4 h-4 text-amber-500" /> Real-World Git Rebase Commands
+              <Zap className="w-4 h-4 text-amber-500" /> Real-World Git Rebase
+              Commands
             </h3>
             <ul className="space-y-2 text-xs font-bold text-slate-700 dark:text-slate-300">
               <li className="flex items-start gap-2">
-                <span className="font-mono font-black text-emerald-600 bg-emerald-100 dark:bg-emerald-950 px-1.5 py-0.5 rounded border border-black shrink-0">pick</span>
+                <span className="font-mono font-black text-emerald-600 bg-emerald-100 dark:bg-emerald-950 px-1.5 py-0.5 rounded border border-black shrink-0">
+                  pick
+                </span>
                 <span>Keep the commit as-is in history.</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="font-mono font-black text-purple-600 bg-purple-100 dark:bg-purple-950 px-1.5 py-0.5 rounded border border-black shrink-0">squash</span>
-                <span>Combine commit into previous commit and merge commit messages.</span>
+                <span className="font-mono font-black text-purple-600 bg-purple-100 dark:bg-purple-950 px-1.5 py-0.5 rounded border border-black shrink-0">
+                  squash
+                </span>
+                <span>
+                  Combine commit into previous commit and merge commit messages.
+                </span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="font-mono font-black text-cyan-600 bg-cyan-100 dark:bg-cyan-950 px-1.5 py-0.5 rounded border border-black shrink-0">reword</span>
+                <span className="font-mono font-black text-cyan-600 bg-cyan-100 dark:bg-cyan-950 px-1.5 py-0.5 rounded border border-black shrink-0">
+                  reword
+                </span>
                 <span>Keep commit changes but rewrite title/message.</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="font-mono font-black text-rose-600 bg-rose-100 dark:bg-rose-950 px-1.5 py-0.5 rounded border border-black shrink-0">drop</span>
+                <span className="font-mono font-black text-rose-600 bg-rose-100 dark:bg-rose-950 px-1.5 py-0.5 rounded border border-black shrink-0">
+                  drop
+                </span>
                 <span>Completely delete commit from branch history.</span>
               </li>
             </ul>
@@ -321,7 +437,9 @@ export function GitRebaseVisualizerPage() {
             ]);
             setIsCompleted(true);
             setEarnedXP(activeScenario.xp_reward);
-            toast.success(`Conflict Resolved & Scenario Mastered! +${activeScenario.xp_reward} XP`);
+            toast.success(
+              `Conflict Resolved & Scenario Mastered! +${activeScenario.xp_reward} XP`,
+            );
           }}
         />
       )}

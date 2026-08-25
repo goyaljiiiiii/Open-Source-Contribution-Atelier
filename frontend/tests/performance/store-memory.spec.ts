@@ -1,13 +1,17 @@
 import { test, expect } from "../../e2e/fixtures";
 
 test.describe("Redux Store Memory Performance", () => {
-  test("Redux store size stays under 2 MB after visiting 20 pages with large data payloads", async ({ authPage }) => {
+  test("Redux store size stays under 2 MB after visiting 20 pages with large data payloads", async ({
+    authPage,
+  }) => {
     // 1. Visit the dashboard
     await authPage.goto("/dashboard");
     await expect(authPage).toHaveURL(/.*\/dashboard/);
 
     // Verify the store is exposed on the window
-    const storeExists = await authPage.evaluate(() => typeof (window as any).store !== "undefined");
+    const storeExists = await authPage.evaluate(
+      () => typeof (window as any).store !== "undefined",
+    );
     expect(storeExists).toBe(true);
 
     const routes = ["/learning-path", "/challenges", "/dashboard"];

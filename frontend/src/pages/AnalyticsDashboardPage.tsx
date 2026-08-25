@@ -16,7 +16,14 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { Activity, Users, BookOpen, Code, AlertTriangle, Download } from "lucide-react";
+import {
+  Activity,
+  Users,
+  BookOpen,
+  Code,
+  AlertTriangle,
+  Download,
+} from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 
 interface AnalyticsData {
@@ -284,7 +291,8 @@ export default function AnalyticsDashboardPage() {
                     paddingAngle={5}
                     dataKey="value"
                     label={({ name, percent }: any) => {
-                      const pct = percent && !isNaN(percent) ? percent * 100 : 0;
+                      const pct =
+                        percent && !isNaN(percent) ? percent * 100 : 0;
                       return `${name} ${pct.toFixed(0)}%`;
                     }}
                     labelLine={false}
@@ -353,7 +361,8 @@ export default function AnalyticsDashboardPage() {
                     dataKey="count"
                     nameKey="status"
                     label={({ status, percent }: any) => {
-                      const pct = percent && !isNaN(percent) ? percent * 100 : 0;
+                      const pct =
+                        percent && !isNaN(percent) ? percent * 100 : 0;
                       return `${status} ${pct.toFixed(0)}%`;
                     }}
                   >

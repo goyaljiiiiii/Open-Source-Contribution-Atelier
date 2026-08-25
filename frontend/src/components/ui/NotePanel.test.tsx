@@ -28,7 +28,6 @@ describe("NotePanel", () => {
       isSaving: false,
       isError: false,
       isSuccess: true,
-       
     } as any);
   });
 
@@ -77,7 +76,6 @@ describe("NotePanel", () => {
       isSaving: false,
       isError: false,
       isSuccess: false,
-       
     } as any);
 
     render(<NotePanel lessonSlug="test-lesson" onClose={mockOnClose} />);
@@ -95,7 +93,6 @@ describe("NotePanel", () => {
       isSaving: true,
       isError: false,
       isSuccess: false,
-       
     } as any);
 
     render(<NotePanel lessonSlug="test-lesson" onClose={mockOnClose} />);

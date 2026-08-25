@@ -3,7 +3,11 @@ import CopyButton from "./CopyButton";
 import { pluginRegistry } from "../../lib/markdownPlugins";
 import { GlossaryTerm } from "./GlossaryTerm";
 import { GlossaryDrawer } from "./GlossaryDrawer";
-import { loadGlossary, splitTextWithGlossary, type GlossaryEntry } from "../../lib/glossary";
+import {
+  loadGlossary,
+  splitTextWithGlossary,
+  type GlossaryEntry,
+} from "../../lib/glossary";
 import DOMPurify from "dompurify";
 import { ArchitectureViewer } from "../docs/ArchitectureViewer";
 
@@ -234,7 +238,7 @@ export function MarkdownRenderer({
 
       if (lang === "mermaid") {
         blocks.push(
-          <ArchitectureViewer key={index} chart={codeContent.trim()} />
+          <ArchitectureViewer key={index} chart={codeContent.trim()} />,
         );
       } else {
         const displayLang = lang ? lang.toUpperCase() : "CODE";
@@ -268,7 +272,6 @@ export function MarkdownRenderer({
       }
       continue;
     }
-
 
     // 3. Headings: #, ##, ###
     if (line.startsWith("# ")) {

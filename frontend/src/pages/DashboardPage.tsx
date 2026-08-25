@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchApi } from "../lib/api";
 import { mockStudentStats, getTipOfTheDay } from "../lib/dashboardMockData";
 import { Link } from "react-router-dom";
-import { useLocation } from 'react-router-dom';
+import { useLocation } from "react-router-dom";
 import SkeletonCard from "../components/ui/skeletons/SkeletonCard";
 import { PRReviewPredictionWidget } from "../components/PRReviewPredictionWidget";
 import SkeletonAdminDashboard from "../components/ui/skeletons/SkeletonAdminDashboard";
@@ -57,7 +57,12 @@ export function DashboardPage() {
     }));
   }, [lessons, isLessonCompleted]);
 
-  const { data: contributorStats, isLoading: contributorLoading } = useQuery<{ continue_learning?: any[]; total_xp?: number; streak?: number; longest_streak?: number }>({
+  const { data: contributorStats, isLoading: contributorLoading } = useQuery<{
+    continue_learning?: any[];
+    total_xp?: number;
+    streak?: number;
+    longest_streak?: number;
+  }>({
     queryKey: ["contributorStats"],
     queryFn: () =>
       fetchApi("/progress/me/", {
@@ -78,13 +83,19 @@ export function DashboardPage() {
     isLessonCompleted(l.slug),
   ).length;
   const totalLessonsCount = lessons.length || 1;
-  const completionPercentage = Math.round((completedLessonsCount / totalLessonsCount) * 100);
+  const completionPercentage = Math.round(
+    (completedLessonsCount / totalLessonsCount) * 100,
+  );
 
   const stats = useMemo(() => {
     const xp = contributorStats?.total_xp ?? mockStudentStats.xp;
     const streakDays = contributorStats?.streak ?? mockStudentStats.streakDays;
-    const longestStreak = contributorStats?.longest_streak ?? mockStudentStats.longestStreak;
-    const currentModuleNum = Math.min(4, Math.floor(completedLessonsCount / 4) + 1);
+    const longestStreak =
+      contributorStats?.longest_streak ?? mockStudentStats.longestStreak;
+    const currentModuleNum = Math.min(
+      4,
+      Math.floor(completedLessonsCount / 4) + 1,
+    );
 
     return {
       ...mockStudentStats,
@@ -177,7 +188,10 @@ export function DashboardPage() {
       </section>
 
       {/* Continue Learning Section */}
-      <ContinueLearning lessons={contributorStats?.continue_learning} isLoading={contributorLoading} />
+      <ContinueLearning
+        lessons={contributorStats?.continue_learning}
+        isLoading={contributorLoading}
+      />
 
       {/* PR Review Delay Prediction Widget */}
       <section>

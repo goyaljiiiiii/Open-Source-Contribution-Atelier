@@ -52,7 +52,8 @@ export function RemoteCursorOverlay({
       container.style.bottom = "0";
       container.style.pointerEvents = "none";
 
-      const labels = container.querySelectorAll<HTMLElement>("[data-cursor-id]");
+      const labels =
+        container.querySelectorAll<HTMLElement>("[data-cursor-id]");
       labels.forEach((label) => {
         const cursorData = cursors.find(
           (c) => c.id === Number(label.dataset.cursorId),

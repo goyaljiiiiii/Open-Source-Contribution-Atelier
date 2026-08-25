@@ -5,3 +5,6 @@ class SecurityConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "apps.security"
     verbose_name = "Security & Vulnerability Management"
+
+    def ready(self):
+        import apps.security.checks  # noqa: F401

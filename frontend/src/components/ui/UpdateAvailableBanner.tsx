@@ -21,7 +21,9 @@ export const UpdateAvailableBanner: React.FC<UpdateAvailableBannerProps> = ({
   }, [propNeedRefresh]);
 
   useEffect(() => {
-    const handlePwaRefresh = (event: CustomEvent<{ updateSW: (reload?: boolean) => void }>) => {
+    const handlePwaRefresh = (
+      event: CustomEvent<{ updateSW: (reload?: boolean) => void }>,
+    ) => {
       setIsVisible(true);
       if (event.detail && typeof event.detail.updateSW === "function") {
         setUpdateHandler(() => () => event.detail.updateSW(true));
@@ -78,7 +80,8 @@ export const UpdateAvailableBanner: React.FC<UpdateAvailableBannerProps> = ({
               New Version Available
             </h4>
             <p className="text-xs text-muted dark:text-slate-300 mt-0.5 leading-snug">
-              A new version of Atelier is ready. Update now to load the latest features.
+              A new version of Atelier is ready. Update now to load the latest
+              features.
             </p>
           </div>
         </div>

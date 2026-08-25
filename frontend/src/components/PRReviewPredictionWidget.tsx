@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 interface PredictionResult {
   predicted_delay_hours: number;
   confidence_interval_hours: number;
   min_predicted_delay_hours: number;
   max_predicted_delay_hours: number;
-  risk_level: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  risk_level: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
   recommendation: string;
 }
 
@@ -15,7 +15,7 @@ export const PRReviewPredictionWidget: React.FC = () => {
   const [deletions, setDeletions] = useState<number>(85);
   const [changedFiles, setChangedFiles] = useState<number>(6);
   const [currentWorkload, setCurrentWorkload] = useState<number>(3);
-  const [reviewerName, setReviewerName] = useState<string>('alex_maintainer');
+  const [reviewerName, setReviewerName] = useState<string>("alex_maintainer");
   const [prediction, setPrediction] = useState<PredictionResult | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,9 +26,9 @@ export const PRReviewPredictionWidget: React.FC = () => {
     setError(null);
 
     try {
-      const res = await fetch('/api/predictions/predict/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/predictions/predict/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           pr_number: prNumber,
           additions,
@@ -45,21 +45,32 @@ export const PRReviewPredictionWidget: React.FC = () => {
       } else {
         // Intelligent Live ML Estimation Fallback
         const totalLines = additions + deletions;
-        const baseHours = Math.round((totalLines / 60) + (changedFiles * 1.8) + (currentWorkload * 3.2));
+        const baseHours = Math.round(
+          totalLines / 60 + changedFiles * 1.8 + currentWorkload * 3.2,
+        );
         const predictedHours = Math.max(2, baseHours);
         const confidenceMargin = Math.max(1, Math.round(predictedHours * 0.18));
-        const risk: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' =
-          predictedHours > 48 ? 'CRITICAL' : predictedHours > 24 ? 'HIGH' : predictedHours > 12 ? 'MEDIUM' : 'LOW';
+        const risk: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" =
+          predictedHours > 48
+            ? "CRITICAL"
+            : predictedHours > 24
+              ? "HIGH"
+              : predictedHours > 12
+                ? "MEDIUM"
+                : "LOW";
 
         const rec =
-          risk === 'CRITICAL' || risk === 'HIGH'
+          risk === "CRITICAL" || risk === "HIGH"
             ? `High delay predicted for PR #${prNumber}. Consider splitting into smaller commits or assigning co-reviewer ${reviewerName}.`
             : `PR #${prNumber} has manageable complexity. Turnaround estimated within ~${predictedHours} hours.`;
 
         setPrediction({
           predicted_delay_hours: predictedHours,
           confidence_interval_hours: confidenceMargin,
-          min_predicted_delay_hours: Math.max(1, predictedHours - confidenceMargin),
+          min_predicted_delay_hours: Math.max(
+            1,
+            predictedHours - confidenceMargin,
+          ),
           max_predicted_delay_hours: predictedHours + confidenceMargin,
           risk_level: risk,
           recommendation: rec,
@@ -68,21 +79,32 @@ export const PRReviewPredictionWidget: React.FC = () => {
     } catch {
       // Intelligent Live ML Estimation Fallback on network error
       const totalLines = additions + deletions;
-      const baseHours = Math.round((totalLines / 60) + (changedFiles * 1.8) + (currentWorkload * 3.2));
+      const baseHours = Math.round(
+        totalLines / 60 + changedFiles * 1.8 + currentWorkload * 3.2,
+      );
       const predictedHours = Math.max(2, baseHours);
       const confidenceMargin = Math.max(1, Math.round(predictedHours * 0.18));
-      const risk: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' =
-        predictedHours > 48 ? 'CRITICAL' : predictedHours > 24 ? 'HIGH' : predictedHours > 12 ? 'MEDIUM' : 'LOW';
+      const risk: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" =
+        predictedHours > 48
+          ? "CRITICAL"
+          : predictedHours > 24
+            ? "HIGH"
+            : predictedHours > 12
+              ? "MEDIUM"
+              : "LOW";
 
       const rec =
-        risk === 'CRITICAL' || risk === 'HIGH'
+        risk === "CRITICAL" || risk === "HIGH"
           ? `High delay predicted for PR #${prNumber}. Consider splitting into smaller commits or assigning co-reviewer ${reviewerName}.`
           : `PR #${prNumber} has manageable complexity. Turnaround estimated within ~${predictedHours} hours.`;
 
       setPrediction({
         predicted_delay_hours: predictedHours,
         confidence_interval_hours: confidenceMargin,
-        min_predicted_delay_hours: Math.max(1, predictedHours - confidenceMargin),
+        min_predicted_delay_hours: Math.max(
+          1,
+          predictedHours - confidenceMargin,
+        ),
         max_predicted_delay_hours: predictedHours + confidenceMargin,
         risk_level: risk,
         recommendation: rec,
@@ -94,16 +116,16 @@ export const PRReviewPredictionWidget: React.FC = () => {
 
   const getRiskBadgeColor = (risk: string) => {
     switch (risk) {
-      case 'LOW':
-        return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
-      case 'MEDIUM':
-        return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
-      case 'HIGH':
-        return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
-      case 'CRITICAL':
-        return 'bg-rose-500/20 text-rose-400 border-rose-500/30';
+      case "LOW":
+        return "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
+      case "MEDIUM":
+        return "bg-amber-500/20 text-amber-400 border-amber-500/30";
+      case "HIGH":
+        return "bg-orange-500/20 text-orange-400 border-orange-500/30";
+      case "CRITICAL":
+        return "bg-rose-500/20 text-rose-400 border-rose-500/30";
       default:
-        return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
+        return "bg-slate-500/20 text-slate-400 border-slate-500/30";
     }
   };
 
@@ -112,7 +134,8 @@ export const PRReviewPredictionWidget: React.FC = () => {
       <div className="flex items-center justify-between border-b border-slate-800 pb-4">
         <div>
           <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-            <span className="text-indigo-400">⚡</span> PR Review Delay Predictor
+            <span className="text-indigo-400">⚡</span> PR Review Delay
+            Predictor
           </h2>
           <p className="text-xs text-slate-400">
             ML-Powered Review Stagnation Prevention &amp; Availability Optimizer
@@ -128,7 +151,9 @@ export const PRReviewPredictionWidget: React.FC = () => {
         <form onSubmit={handlePredict} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-slate-400">PR Number</label>
+              <label className="block text-xs font-medium text-slate-400">
+                PR Number
+              </label>
               <input
                 type="number"
                 value={prNumber}
@@ -137,7 +162,9 @@ export const PRReviewPredictionWidget: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-400">Assigned Reviewer</label>
+              <label className="block text-xs font-medium text-slate-400">
+                Assigned Reviewer
+              </label>
               <input
                 type="text"
                 value={reviewerName}
@@ -149,7 +176,9 @@ export const PRReviewPredictionWidget: React.FC = () => {
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-400">Additions (+)</label>
+              <label className="block text-xs font-medium text-slate-400">
+                Additions (+)
+              </label>
               <input
                 type="number"
                 value={additions}
@@ -158,7 +187,9 @@ export const PRReviewPredictionWidget: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-400">Deletions (-)</label>
+              <label className="block text-xs font-medium text-slate-400">
+                Deletions (-)
+              </label>
               <input
                 type="number"
                 value={deletions}
@@ -167,7 +198,9 @@ export const PRReviewPredictionWidget: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-400">Files Changed</label>
+              <label className="block text-xs font-medium text-slate-400">
+                Files Changed
+              </label>
               <input
                 type="number"
                 value={changedFiles}
@@ -194,7 +227,9 @@ export const PRReviewPredictionWidget: React.FC = () => {
             disabled={loading}
             className="w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 transition-colors disabled:opacity-50"
           >
-            {loading ? 'Analyzing PR Complexity & Availability...' : 'Predict Review Delay'}
+            {loading
+              ? "Analyzing PR Complexity & Availability..."
+              : "Predict Review Delay"}
           </button>
         </form>
 
@@ -209,9 +244,12 @@ export const PRReviewPredictionWidget: React.FC = () => {
           {!prediction && !error && (
             <div className="flex h-full flex-col items-center justify-center text-center p-6">
               <span className="text-4xl mb-3">📊</span>
-              <h3 className="text-sm font-bold text-slate-200">No Active Prediction</h3>
+              <h3 className="text-sm font-bold text-slate-200">
+                No Active Prediction
+              </h3>
               <p className="mt-1 text-xs text-slate-400 max-w-xs">
-                Submit PR details to calculate predicted review turnaround time and stagnation risk.
+                Submit PR details to calculate predicted review turnaround time
+                and stagnation risk.
               </p>
             </div>
           )}
@@ -225,7 +263,7 @@ export const PRReviewPredictionWidget: React.FC = () => {
                   </span>
                   <span
                     className={`rounded-md border px-2.5 py-0.5 text-xs font-bold ${getRiskBadgeColor(
-                      prediction.risk_level
+                      prediction.risk_level,
                     )}`}
                   >
                     {prediction.risk_level} RISK
@@ -242,25 +280,35 @@ export const PRReviewPredictionWidget: React.FC = () => {
                 </div>
 
                 <p className="mt-1 text-xs text-slate-400">
-                  Range: {prediction.min_predicted_delay_hours}h – {prediction.max_predicted_delay_hours}h
+                  Range: {prediction.min_predicted_delay_hours}h –{" "}
+                  {prediction.max_predicted_delay_hours}h
                 </p>
 
                 <div className="mt-4 rounded-lg border border-slate-800 bg-slate-900/90 p-3 text-xs text-slate-300">
-                  <span className="font-semibold text-indigo-400">Actionable Insight: </span>
+                  <span className="font-semibold text-indigo-400">
+                    Actionable Insight:{" "}
+                  </span>
                   {prediction.recommendation}
                 </div>
               </div>
 
               <div className="mt-4 pt-4 border-t border-slate-800 grid grid-cols-2 gap-4 text-center">
                 <div className="rounded-lg bg-slate-900/60 p-2">
-                  <span className="text-[10px] text-slate-400 uppercase tracking-wider">Complexity Score</span>
+                  <span className="text-[10px] text-slate-400 uppercase tracking-wider">
+                    Complexity Score
+                  </span>
                   <p className="text-sm font-bold text-slate-200">
-                    {additions + deletions > 500 ? 'High' : 'Moderate'} ({additions + deletions} lines)
+                    {additions + deletions > 500 ? "High" : "Moderate"} (
+                    {additions + deletions} lines)
                   </p>
                 </div>
                 <div className="rounded-lg bg-slate-900/60 p-2">
-                  <span className="text-[10px] text-slate-400 uppercase tracking-wider">Workload Level</span>
-                  <p className="text-sm font-bold text-slate-200">{currentWorkload} PRs assigned</p>
+                  <span className="text-[10px] text-slate-400 uppercase tracking-wider">
+                    Workload Level
+                  </span>
+                  <p className="text-sm font-bold text-slate-200">
+                    {currentWorkload} PRs assigned
+                  </p>
                 </div>
               </div>
             </>

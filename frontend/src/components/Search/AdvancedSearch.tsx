@@ -6,7 +6,10 @@
  */
 
 import React, { useState, useEffect, useRef } from "react";
-import { useAdvancedSearch, AdvancedSearchResult } from "../../hooks/useAdvancedSearch";
+import {
+  useAdvancedSearch,
+  AdvancedSearchResult,
+} from "../../hooks/useAdvancedSearch";
 
 interface AdvancedSearchProps {
   initialQuery?: string;
@@ -128,7 +131,9 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
       {/* Filter Suggestions */}
       {filterSuggestions && Object.keys(filterSuggestions).length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2 items-center">
-          <span className="text-xs text-gray-400 font-medium">Suggested filters:</span>
+          <span className="text-xs text-gray-400 font-medium">
+            Suggested filters:
+          </span>
           {Object.entries(filterSuggestions).flatMap(([key, values]) =>
             values.map((val) => {
               const isActive = filters[key] === val;
