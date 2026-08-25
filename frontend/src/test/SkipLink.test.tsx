@@ -72,7 +72,9 @@ describe("Skip to main content link accessibility", () => {
       </App>,
     );
 
-    const skipLink = screen.getByRole("link", { name: /skip to main content/i });
+    const skipLink = screen.getByRole("link", {
+      name: /skip to main content/i,
+    });
     expect(skipLink).toBeInTheDocument();
     expect(skipLink).toHaveAttribute("href", "#main-content");
     expect(skipLink).toHaveClass("sr-only");
@@ -88,7 +90,9 @@ describe("Skip to main content link accessibility", () => {
       </App>,
     );
 
-    const skipLink = screen.getByRole("link", { name: /skip to main content/i });
+    const skipLink = screen.getByRole("link", {
+      name: /skip to main content/i,
+    });
     const mainContent = document.getElementById("main-content");
     expect(mainContent).toBeInTheDocument();
 
@@ -99,7 +103,9 @@ describe("Skip to main content link accessibility", () => {
   it("renders skip link in AppLayout and targets #main-content container", () => {
     renderWithProviders(<AppLayout />);
 
-    const skipLink = screen.getByRole("link", { name: /skip to main content/i });
+    const skipLink = screen.getByRole("link", {
+      name: /skip to main content/i,
+    });
     expect(skipLink).toBeInTheDocument();
     expect(skipLink).toHaveAttribute("href", "#main-content");
 

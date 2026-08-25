@@ -89,8 +89,12 @@ describe("notification badge count refresh via Redux slice", () => {
 
   it("polling refresh reflects correct unread count after reads", () => {
     const store = createStore();
-    store.dispatch(addNotification(makeNotification({ id: 1, is_read: false })));
-    store.dispatch(addNotification(makeNotification({ id: 2, is_read: false })));
+    store.dispatch(
+      addNotification(makeNotification({ id: 1, is_read: false })),
+    );
+    store.dispatch(
+      addNotification(makeNotification({ id: 2, is_read: false })),
+    );
     // wsUnreadCount is 2
 
     store.dispatch(markReadLocally(1));

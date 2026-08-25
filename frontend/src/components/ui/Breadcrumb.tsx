@@ -48,7 +48,10 @@ export function Breadcrumb({ items, className = "" }: BreadcrumbProps) {
                   className={`flex items-center gap-1 text-slate-600 dark:text-[#c4bbae] hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline transition-colors ${FOCUS_RING}`}
                 >
                   {index === 0 && (
-                    <Home className="h-3.5 w-3.5 shrink-0" data-testid="home-icon" />
+                    <Home
+                      className="h-3.5 w-3.5 shrink-0"
+                      data-testid="home-icon"
+                    />
                   )}
 
                   <span className="truncate max-w-[150px] sm:max-w-[200px]">

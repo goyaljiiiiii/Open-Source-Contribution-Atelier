@@ -30,7 +30,9 @@ describe("CopyButton", () => {
       await screen.findByRole("button", { name: "Copied!" }),
     ).toBeInTheDocument();
     const statusElements = screen.getAllByRole("status");
-    expect(statusElements[statusElements.length - 1]).toHaveTextContent("Copied!.");
+    expect(statusElements[statusElements.length - 1]).toHaveTextContent(
+      "Copied!.",
+    );
   });
 
   it("shows accessible failure feedback", async () => {

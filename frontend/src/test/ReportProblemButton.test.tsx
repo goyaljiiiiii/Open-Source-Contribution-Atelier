@@ -11,7 +11,7 @@ describe("Report a Problem Button Link Builder", () => {
       `**Lesson Title:** ${lessonTitle}\n` +
         `**Lesson URL:** ${currentUrl}\n\n` +
         `### What's wrong?\n` +
-        `Please describe the typo, broken link, or incorrect information in this lesson.`
+        `Please describe the typo, broken link, or incorrect information in this lesson.`,
     );
     const expectedUrl = `https://github.com/Babin123456/Open-Source-Contribution-Atelier/issues/new?title=${issueTitle}&body=${issueBody}&labels=bug,documentation`;
 

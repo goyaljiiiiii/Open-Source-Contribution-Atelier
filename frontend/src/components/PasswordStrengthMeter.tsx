@@ -1,5 +1,8 @@
 import React from "react";
-import { calculatePasswordEntropy, checkPasswordStrength } from "../utils/passwordStrength";
+import {
+  calculatePasswordEntropy,
+  checkPasswordStrength,
+} from "../utils/passwordStrength";
 
 interface PasswordStrengthMeterProps {
   password: string;
@@ -18,7 +21,11 @@ export const PasswordStrengthMeter: React.FC<PasswordStrengthMeterProps> = ({
     { label: "Weak", barColor: "bg-orange-500", textColor: "text-orange-600" },
     { label: "Fair", barColor: "bg-yellow-500", textColor: "text-yellow-700" },
     { label: "Strong", barColor: "bg-green-500", textColor: "text-green-600" },
-    { label: "Very Strong 💪", barColor: "bg-emerald-600", textColor: "text-emerald-700" },
+    {
+      label: "Very Strong 💪",
+      barColor: "bg-emerald-600",
+      textColor: "text-emerald-700",
+    },
   ];
 
   const currentTier = tiers[score] || tiers[0];

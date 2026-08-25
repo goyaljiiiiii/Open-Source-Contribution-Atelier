@@ -2,7 +2,10 @@ import React from "react";
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { PasswordStrengthMeter } from "../components/PasswordStrengthMeter";
-import { calculatePasswordEntropy, checkPasswordStrength } from "../utils/passwordStrength";
+import {
+  calculatePasswordEntropy,
+  checkPasswordStrength,
+} from "../utils/passwordStrength";
 
 describe("Password Strength Entropy Meter", () => {
   it("calculates entropy bits correctly based on character pool size", () => {

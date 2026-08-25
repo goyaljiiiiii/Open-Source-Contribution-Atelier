@@ -1,5 +1,12 @@
 import React from "react";
-import { Sun, Moon, Code2, GitBranch, ShieldCheck, Sparkles } from "lucide-react";
+import {
+  Sun,
+  Moon,
+  Code2,
+  GitBranch,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import { useTheme } from "../../hooks/useTheme";
 import { Link } from "react-router-dom";
 
@@ -66,7 +73,6 @@ export function AuthPageShell({
       {/* Main Content Area: Centered and strictly non-scrollable */}
       <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-2 flex-1 flex items-center justify-center relative z-10 min-h-0 overflow-hidden">
         <div className="w-full flex flex-col lg:flex-row gap-6 lg:gap-12 items-center justify-center max-h-full">
-
           {/* LEFT SIDE: Brand Features & Community Spotlight */}
           <div className="flex-1 hidden lg:flex flex-col justify-center max-w-lg">
             <div className="inline-flex items-center gap-2 mb-3">
@@ -76,7 +82,10 @@ export function AuthPageShell({
             </div>
 
             <h1 className="text-3xl lg:text-4xl font-black text-slate-900 mb-3 leading-[1.15] dark:text-white">
-              Master Open Source <span className="bg-[#C3C0FF] dark:bg-[#4D96FF]/40 px-2 py-0.5 rounded-lg border-2 border-black dark:border-white/20 inline-block rotate-[-1deg]">By Doing</span>
+              Master Open Source{" "}
+              <span className="bg-[#C3C0FF] dark:bg-[#4D96FF]/40 px-2 py-0.5 rounded-lg border-2 border-black dark:border-white/20 inline-block rotate-[-1deg]">
+                By Doing
+              </span>
             </h1>
 
             <p className="text-sm text-slate-600 font-bold leading-relaxed mb-5 dark:text-slate-300">
@@ -93,7 +102,8 @@ export function AuthPageShell({
                   Git Sandboxes 💻
                 </h3>
                 <p className="text-slate-600 dark:text-slate-400 text-[11px] font-semibold leading-snug">
-                  Practice Git workflows and merges safely in interactive sandboxes.
+                  Practice Git workflows and merges safely in interactive
+                  sandboxes.
                 </p>
               </div>
 
@@ -105,7 +115,8 @@ export function AuthPageShell({
                   Peer Reviews 🤝
                 </h3>
                 <p className="text-slate-600 dark:text-slate-400 text-[11px] font-semibold leading-snug">
-                  Review real pull requests and level up with maintainer feedback.
+                  Review real pull requests and level up with maintainer
+                  feedback.
                 </p>
               </div>
             </div>
@@ -113,7 +124,10 @@ export function AuthPageShell({
             {/* Micro Trust Banner */}
             <div className="mt-4 flex items-center gap-2 bg-white/80 dark:bg-[#1f1c18]/80 p-2.5 rounded-xl border-2 border-black/10 dark:border-white/10 text-[11px] font-bold text-slate-500 dark:text-slate-400">
               <ShieldCheck size={16} className="text-emerald-500 shrink-0" />
-              <span>Zero-friction setup. Start practicing real open source contributions.</span>
+              <span>
+                Zero-friction setup. Start practicing real open source
+                contributions.
+              </span>
             </div>
           </div>
 
@@ -123,13 +137,13 @@ export function AuthPageShell({
               {children}
             </div>
           </div>
-
         </div>
       </main>
 
       {/* Footer */}
       <footer className="w-full max-w-7xl mx-auto px-6 py-2.5 text-center text-[10px] font-bold text-slate-400 dark:text-slate-500 relative z-20 shrink-0">
-        © {new Date().getFullYear()} Open Source Contribution Atelier • Built for developers
+        © {new Date().getFullYear()} Open Source Contribution Atelier • Built
+        for developers
       </footer>
     </div>
   );

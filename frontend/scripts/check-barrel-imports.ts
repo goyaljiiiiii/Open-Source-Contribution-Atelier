@@ -8,8 +8,8 @@ const __dirname = path.dirname(__filename);
 const SRC_DIR = fs.existsSync(path.resolve(__dirname, "..", "src"))
   ? path.resolve(__dirname, "..", "src")
   : fs.existsSync(path.resolve(__dirname, "..", "frontend", "src"))
-  ? path.resolve(__dirname, "..", "frontend", "src")
-  : path.resolve(process.cwd(), "src");
+    ? path.resolve(__dirname, "..", "frontend", "src")
+    : path.resolve(process.cwd(), "src");
 
 function getFiles(dir: string, fileList: string[] = []): string[] {
   if (!fs.existsSync(dir)) return fileList;
@@ -33,7 +33,8 @@ function checkBarrelImports() {
   const files = getFiles(SRC_DIR);
   let violationCount = 0;
 
-  const BARREL_IMPORT_REGEX = /import\s+\{([^}]+)\}\s+from\s+["']lucide-react["']/g;
+  const BARREL_IMPORT_REGEX =
+    /import\s+\{([^}]+)\}\s+from\s+["']lucide-react["']/g;
 
   for (const file of files) {
     const content = fs.readFileSync(file, "utf-8");
@@ -41,15 +42,19 @@ function checkBarrelImports() {
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      if (line.includes("lucide-react") && line.includes("import") && line.includes("{")) {
+      if (
+        line.includes("lucide-react") &&
+        line.includes("import") &&
+        line.includes("{")
+      ) {
         const matches = [...line.matchAll(BARREL_IMPORT_REGEX)];
         if (matches.length > 0) {
           violationCount++;
           const relativePath = path.relative(process.cwd(), file);
           console.warn(
             `⚠️  [BARREL IMPORT WARNING] File: ${relativePath}:${i + 1}\n` +
-            `    Line: ${line.trim()}\n` +
-            `    Tip: Use per-icon imports e.g., import IconName from "lucide-react/dist/esm/icons/icon-name"\n`
+              `    Line: ${line.trim()}\n` +
+              `    Tip: Use per-icon imports e.g., import IconName from "lucide-react/dist/esm/icons/icon-name"\n`,
           );
         }
       }
@@ -58,7 +63,7 @@ function checkBarrelImports() {
 
   if (violationCount > 0) {
     console.warn(
-      `\n⚠️  Found ${violationCount} lucide-react barrel import(s). Consider replacing them with per-icon imports to keep bundle size minimal.\n`
+      `\n⚠️  Found ${violationCount} lucide-react barrel import(s). Consider replacing them with per-icon imports to keep bundle size minimal.\n`,
     );
   } else {
     console.log("✅ No lucide-react barrel imports found!");

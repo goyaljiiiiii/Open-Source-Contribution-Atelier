@@ -55,8 +55,7 @@ function normalizeRows(
     let tier = "🥉 Bronze Contributor";
     if (merged_prs >= 10 || total_xp >= 1000) tier = "💎 Diamond Contributor";
     else if (merged_prs >= 5 || total_xp >= 600) tier = "🥇 Gold Contributor";
-    else if (merged_prs >= 3 || total_xp >= 300)
-      tier = "🥈 Silver Contributor";
+    else if (merged_prs >= 3 || total_xp >= 300) tier = "🥈 Silver Contributor";
 
     return {
       rank: item.rank || index + 1,
@@ -92,7 +91,12 @@ export function LeaderboardPage() {
   }, [timePeriod, leaderboardScope]);
 
   // Fetch live leaderboard from the API, one page at a time.
-  const { data: apiData, isLoading, isFetching, isError } = useQuery({
+  const {
+    data: apiData,
+    isLoading,
+    isFetching,
+    isError,
+  } = useQuery({
     queryKey: ["leaderboardData", leaderboardScope, timePeriod, page],
     queryFn: async () => {
       const res = (await fetchApi(
@@ -398,25 +402,25 @@ export function LeaderboardPage() {
           ))}
         </div>
         {leaderboardScope === "platform" && (
-        <div className="flex items-center gap-2 flex-wrap">
-          {[
-            { id: "all_time", label: "All Time 🏆" },
-            { id: "seasonal", label: "ECSoC '26 ⚡" },
-            { id: "weekly", label: "Weekly 🔥" },
-          ].map((tp) => (
-            <button
-              key={tp.id}
-              onClick={() => setTimePeriod(tp.id)}
-              className={`px-4 py-2 rounded-full border-2 border-black text-xs font-black uppercase tracking-wider transition-all shadow-card-sm ${
-                timePeriod === tp.id
-                  ? "bg-black text-white dark:bg-white dark:text-black"
-                  : "bg-white text-black dark:bg-[#1f1c18] dark:text-[#c4bbae] dark:border-[#2e2924] hover:bg-gray-100"
-              }`}
-            >
-              {tp.label}
-            </button>
-          ))}
-        </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            {[
+              { id: "all_time", label: "All Time 🏆" },
+              { id: "seasonal", label: "ECSoC '26 ⚡" },
+              { id: "weekly", label: "Weekly 🔥" },
+            ].map((tp) => (
+              <button
+                key={tp.id}
+                onClick={() => setTimePeriod(tp.id)}
+                className={`px-4 py-2 rounded-full border-2 border-black text-xs font-black uppercase tracking-wider transition-all shadow-card-sm ${
+                  timePeriod === tp.id
+                    ? "bg-black text-white dark:bg-white dark:text-black"
+                    : "bg-white text-black dark:bg-[#1f1c18] dark:text-[#c4bbae] dark:border-[#2e2924] hover:bg-gray-100"
+                }`}
+              >
+                {tp.label}
+              </button>
+            ))}
+          </div>
         )}
       </section>
 
@@ -452,7 +456,9 @@ export function LeaderboardPage() {
                   </th>
                   <th className="py-4 px-4 text-center">Streak</th>
                   <th className="py-4 px-4 text-right">
-                    {leaderboardScope === "platform" ? "Total Points" : "Contributions"}
+                    {leaderboardScope === "platform"
+                      ? "Total Points"
+                      : "Contributions"}
                   </th>
                   <th className="py-4 px-4 text-center">Profile</th>
                 </tr>
@@ -502,94 +508,94 @@ export function LeaderboardPage() {
                   </tr>
                 </tbody>
               ) : (
-              <tbody className="divide-y-2 divide-black dark:divide-[#2e2924]">
-                {filteredList.map((row: ContributorRankData) => (
-                  <tr
-                    key={row.username}
-                    className={`transition-colors ${
-                      row.is_me
-                        ? "bg-amber-100/90 dark:bg-amber-900/30 font-black"
-                        : "hover:bg-amber-50/50 dark:hover:bg-[#25211c]/50"
-                    }`}
-                  >
-                    {/* Rank */}
-                    <td className="py-4 px-4 text-center font-black text-sm">
-                      {row.rank === 1 && "🥇"}
-                      {row.rank === 2 && "🥈"}
-                      {row.rank === 3 && "🥉"}
-                      {row.rank > 3 && `#${row.rank}`}
-                    </td>
+                <tbody className="divide-y-2 divide-black dark:divide-[#2e2924]">
+                  {filteredList.map((row: ContributorRankData) => (
+                    <tr
+                      key={row.username}
+                      className={`transition-colors ${
+                        row.is_me
+                          ? "bg-amber-100/90 dark:bg-amber-900/30 font-black"
+                          : "hover:bg-amber-50/50 dark:hover:bg-[#25211c]/50"
+                      }`}
+                    >
+                      {/* Rank */}
+                      <td className="py-4 px-4 text-center font-black text-sm">
+                        {row.rank === 1 && "🥇"}
+                        {row.rank === 2 && "🥈"}
+                        {row.rank === 3 && "🥉"}
+                        {row.rank > 3 && `#${row.rank}`}
+                      </td>
 
-                    {/* Contributor Avatar + Username */}
-                    <td className="py-4 px-4 font-sans font-black">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={row.avatar_url}
-                          alt={row.username}
-                          className="w-9 h-9 rounded-full border-2 border-black object-cover shadow-card-sm shrink-0"
-                          onError={(e) => {
-                            (e.target as HTMLElement).setAttribute(
-                              "src",
-                              "https://github.com/github.png",
-                            );
-                          }}
-                        />
-                        <div>
-                          <div className="text-sm font-black dark:text-[#f0ebe2] flex items-center gap-1.5">
-                            @{row.username}
-                            {row.is_me && (
-                              <span className="text-[10px] bg-black text-white dark:bg-white dark:text-black px-2 py-0.5 rounded-full border border-black font-black">
-                                YOU
-                              </span>
-                            )}
+                      {/* Contributor Avatar + Username */}
+                      <td className="py-4 px-4 font-sans font-black">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={row.avatar_url}
+                            alt={row.username}
+                            className="w-9 h-9 rounded-full border-2 border-black object-cover shadow-card-sm shrink-0"
+                            onError={(e) => {
+                              (e.target as HTMLElement).setAttribute(
+                                "src",
+                                "https://github.com/github.png",
+                              );
+                            }}
+                          />
+                          <div>
+                            <div className="text-sm font-black dark:text-[#f0ebe2] flex items-center gap-1.5">
+                              @{row.username}
+                              {row.is_me && (
+                                <span className="text-[10px] bg-black text-white dark:bg-white dark:text-black px-2 py-0.5 rounded-full border border-black font-black">
+                                  YOU
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Tier Badge */}
-                    <td className="py-4 px-4 font-sans">
-                      <span className="inline-block px-3 py-1 rounded-full border-2 border-black text-xs font-black bg-white dark:bg-[#25211c] dark:text-[#f0ebe2] shadow-card-sm">
-                        {row.tier}
-                      </span>
-                    </td>
+                      {/* Tier Badge */}
+                      <td className="py-4 px-4 font-sans">
+                        <span className="inline-block px-3 py-1 rounded-full border-2 border-black text-xs font-black bg-white dark:bg-[#25211c] dark:text-[#f0ebe2] shadow-card-sm">
+                          {row.tier}
+                        </span>
+                      </td>
 
-                    {/* Merged PRs */}
-                    <td className="py-4 px-4 text-center font-black text-green-600 dark:text-green-400 text-sm">
-                      {row.merged_prs} PRs
-                    </td>
+                      {/* Merged PRs */}
+                      <td className="py-4 px-4 text-center font-black text-green-600 dark:text-green-400 text-sm">
+                        {row.merged_prs} PRs
+                      </td>
 
-                    {/* Streak Days */}
-                    <td className="py-4 px-4 text-center font-black text-orange-500">
-                      <span className="inline-flex items-center gap-1">
-                        {row.streak_days >= HIGH_STREAK_DAYS ? (
-                          <StreakFlame animate size={16} />
-                        ) : (
-                          <Flame className="w-4 h-4 fill-orange-500 text-orange-500" />
-                        )}
-                        {row.streak_days}d
-                      </span>
-                    </td>
+                      {/* Streak Days */}
+                      <td className="py-4 px-4 text-center font-black text-orange-500">
+                        <span className="inline-flex items-center gap-1">
+                          {row.streak_days >= HIGH_STREAK_DAYS ? (
+                            <StreakFlame animate size={16} />
+                          ) : (
+                            <Flame className="w-4 h-4 fill-orange-500 text-orange-500" />
+                          )}
+                          {row.streak_days}d
+                        </span>
+                      </td>
 
-                    {/* Total Points */}
-                    <td className="py-4 px-4 text-right font-black text-amber-600 dark:text-amber-400 text-base">
-                      {row.total_xp} XP
-                    </td>
+                      {/* Total Points */}
+                      <td className="py-4 px-4 text-right font-black text-amber-600 dark:text-amber-400 text-base">
+                        {row.total_xp} XP
+                      </td>
 
-                    {/* Profile Link */}
-                    <td className="py-4 px-4 text-center">
-                      <a
-                        href={row.html_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`inline-flex items-center gap-1 px-3 py-1.5 bg-black text-white dark:bg-white dark:text-black text-xs font-black rounded-xl border-2 border-black hover:bg-gray-800 transition-colors ${CARD_FOCUS_RING}`}
-                      >
-                        GitHub <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+                      {/* Profile Link */}
+                      <td className="py-4 px-4 text-center">
+                        <a
+                          href={row.html_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`inline-flex items-center gap-1 px-3 py-1.5 bg-black text-white dark:bg-white dark:text-black text-xs font-black rounded-xl border-2 border-black hover:bg-gray-800 transition-colors ${CARD_FOCUS_RING}`}
+                        >
+                          GitHub <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
               )}
             </table>
           </div>

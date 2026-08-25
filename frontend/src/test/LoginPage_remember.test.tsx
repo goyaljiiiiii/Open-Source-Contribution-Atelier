@@ -42,7 +42,7 @@ describe("LoginPage Remember Me option", () => {
     render(
       <ThemeProvider>
         <LoginPage />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
 
     const checkbox = screen.getByLabelText(/remember me for 30 days/i);

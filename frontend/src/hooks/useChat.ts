@@ -350,7 +350,6 @@ export function useChat({ roomId, token, username }: UseChatOptions) {
     }
   }, [ws.isConnected, typing]);
 
-
   const sendMessage = useCallback(
     async (text: string, parentId?: number) => {
       messageIdRef.current += 1;

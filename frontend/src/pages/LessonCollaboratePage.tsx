@@ -5,7 +5,11 @@ import { fetchApi } from "../lib/api";
 
 export function LessonCollaboratePage() {
   const { slug } = useParams<{ slug: string }>();
-  const [lesson, setLesson] = useState<{ id: number; title: string; content: string } | null>(null);
+  const [lesson, setLesson] = useState<{
+    id: number;
+    title: string;
+    content: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -56,10 +60,7 @@ export function LessonCollaboratePage() {
         </div>
       </div>
 
-      <LessonCollaborativeEditor
-        slug={slug!}
-        initialContent={lesson.content}
-      />
+      <LessonCollaborativeEditor slug={slug!} initialContent={lesson.content} />
     </div>
   );
 }

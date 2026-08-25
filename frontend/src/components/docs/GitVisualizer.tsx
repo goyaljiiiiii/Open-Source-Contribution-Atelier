@@ -1,6 +1,12 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { GitBranch, GitCommit, GitMerge, RefreshCw, LogOut } from "lucide-react";
+import {
+  GitBranch,
+  GitCommit,
+  GitMerge,
+  RefreshCw,
+  LogOut,
+} from "lucide-react";
 
 type Commit = {
   sha: string;
@@ -70,7 +76,10 @@ export function GitVisualizer() {
       if (prev.branches["feature"]) return prev; // Already exists
       return {
         ...prev,
-        branches: { ...prev.branches, feature: prev.branches[prev.currentBranch] },
+        branches: {
+          ...prev.branches,
+          feature: prev.branches[prev.currentBranch],
+        },
       };
     });
   };
@@ -84,7 +93,8 @@ export function GitVisualizer() {
 
   const handleMerge = () => {
     setState((prev) => {
-      if (prev.currentBranch !== "main" || !prev.branches["feature"]) return prev;
+      if (prev.currentBranch !== "main" || !prev.branches["feature"])
+        return prev;
 
       const mainSha = prev.branches["main"];
       const featureSha = prev.branches["feature"];
@@ -120,7 +130,14 @@ export function GitVisualizer() {
   }, [state.commits]);
 
   const edges = useMemo(() => {
-    const lines: { id: string; x1: number; y1: number; x2: number; y2: number; isMerge: boolean }[] = [];
+    const lines: {
+      id: string;
+      x1: number;
+      y1: number;
+      x2: number;
+      y2: number;
+      isMerge: boolean;
+    }[] = [];
 
     layout.forEach((node) => {
       if (node.parentSha) {
@@ -157,7 +174,8 @@ export function GitVisualizer() {
   const maxCanvasWidth = Math.max(800, layout.length * NODE_X_SPACING + 100);
 
   const hasFeatureBranch = !!state.branches["feature"];
-  const isFeatureUpToDate = hasFeatureBranch && state.branches["main"] === state.branches["feature"];
+  const isFeatureUpToDate =
+    hasFeatureBranch && state.branches["main"] === state.branches["feature"];
 
   return (
     <article className="space-y-4 rounded-xl border border-black/10 bg-surface p-5 shadow-sm dark:border-white/10 dark:bg-[#12121a]">
@@ -188,22 +206,29 @@ export function GitVisualizer() {
           ) : (
             <button
               type="button"
-              onClick={() => handleCheckout(state.currentBranch === "main" ? "feature" : "main")}
+              onClick={() =>
+                handleCheckout(
+                  state.currentBranch === "main" ? "feature" : "main",
+                )
+              }
               className="inline-flex items-center gap-2 rounded-md border border-black/10 bg-black/5 px-3 py-2 text-sm font-semibold transition-colors hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
             >
-              <LogOut size={16} /> checkout {state.currentBranch === "main" ? "feature" : "main"}
+              <LogOut size={16} /> checkout{" "}
+              {state.currentBranch === "main" ? "feature" : "main"}
             </button>
           )}
 
-          {state.currentBranch === "main" && hasFeatureBranch && !isFeatureUpToDate && (
-            <button
-              type="button"
-              onClick={handleMerge}
-              className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-            >
-              <GitMerge size={16} /> git merge feature
-            </button>
-          )}
+          {state.currentBranch === "main" &&
+            hasFeatureBranch &&
+            !isFeatureUpToDate && (
+              <button
+                type="button"
+                onClick={handleMerge}
+                className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              >
+                <GitMerge size={16} /> git merge feature
+              </button>
+            )}
 
           <button
             type="button"
@@ -218,9 +243,12 @@ export function GitVisualizer() {
 
       <div className="relative overflow-x-auto rounded-lg border border-black/5 bg-black/[0.02] p-4 dark:border-white/5 dark:bg-white/[0.02]">
         <div className="flex min-w-[max-content] items-center text-sm font-medium text-muted dark:text-[#c4bbae] mb-2">
-          Current HEAD: <span className="ml-2 rounded bg-primary/20 px-2 py-0.5 text-xs text-primary dark:text-primary">{state.currentBranch}</span>
+          Current HEAD:{" "}
+          <span className="ml-2 rounded bg-primary/20 px-2 py-0.5 text-xs text-primary dark:text-primary">
+            {state.currentBranch}
+          </span>
         </div>
-        
+
         <svg width={maxCanvasWidth} height="200" className="block min-w-full">
           <g>
             <AnimatePresence>
@@ -233,7 +261,11 @@ export function GitVisualizer() {
                   d={`M ${edge.x1} ${edge.y1} C ${edge.x1 + 40} ${edge.y1}, ${edge.x2 - 40} ${edge.y2}, ${edge.x2} ${edge.y2}`}
                   fill="none"
                   strokeWidth="3"
-                  className={edge.isMerge ? "stroke-emerald-400 dark:stroke-emerald-600" : "stroke-black/20 dark:stroke-white/20"}
+                  className={
+                    edge.isMerge
+                      ? "stroke-emerald-400 dark:stroke-emerald-600"
+                      : "stroke-black/20 dark:stroke-white/20"
+                  }
                   strokeDasharray={edge.isMerge ? "6,6" : "none"}
                 />
               ))}
@@ -277,9 +309,11 @@ export function GitVisualizer() {
                     {/* Tooltip implementation using foreignObject to keep things contained or just title */}
                     <title>
                       {`Commit: ${node.sha}\nMessage: ${node.message}\nBranch: ${node.branch}`}
-                      {branchPointers.length > 0 ? `\nPointers: ${branchPointers.join(", ")}` : ""}
+                      {branchPointers.length > 0
+                        ? `\nPointers: ${branchPointers.join(", ")}`
+                        : ""}
                     </title>
-                    
+
                     {/* Branch Labels */}
                     {branchPointers.map((branchName, idx) => (
                       <text
@@ -289,7 +323,8 @@ export function GitVisualizer() {
                         textAnchor="middle"
                         className="fill-black/60 text-[10px] font-bold dark:fill-white/60"
                       >
-                        {branchName} {state.currentBranch === branchName ? "(HEAD)" : ""}
+                        {branchName}{" "}
+                        {state.currentBranch === branchName ? "(HEAD)" : ""}
                       </text>
                     ))}
                   </motion.g>
@@ -307,7 +342,9 @@ export function GitVisualizer() {
               if (!commit) return null;
               return (
                 <>
-                  <div className="font-mono text-primary font-bold">{commit.sha}</div>
+                  <div className="font-mono text-primary font-bold">
+                    {commit.sha}
+                  </div>
                   <div className="mt-1 font-semibold">{commit.message}</div>
                   <div className="mt-2 text-muted dark:text-[#c4bbae]">
                     Branch: <span className="font-medium">{commit.branch}</span>

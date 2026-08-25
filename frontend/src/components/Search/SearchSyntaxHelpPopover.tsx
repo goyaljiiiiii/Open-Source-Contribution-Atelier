@@ -7,40 +7,41 @@ interface SearchSyntaxHelpPopoverProps {
 
 export const SEARCH_OPERATORS = [
   {
-    syntax: 'tag:python',
-    description: 'Filter lessons by specific tag',
-    example: 'tag:git',
+    syntax: "tag:python",
+    description: "Filter lessons by specific tag",
+    example: "tag:git",
   },
   {
-    syntax: 'category:backend',
-    description: 'Filter by lesson category',
-    example: 'category:security',
+    syntax: "category:backend",
+    description: "Filter by lesson category",
+    example: "category:security",
   },
   {
     syntax: '"exact phrase"',
-    description: 'Search for exact matching phrase',
+    description: "Search for exact matching phrase",
     example: '"merge conflict"',
   },
   {
-    syntax: '-keyword',
-    description: 'Exclude results containing keyword',
-    example: 'react -native',
+    syntax: "-keyword",
+    description: "Exclude results containing keyword",
+    example: "react -native",
   },
   {
-    syntax: 'level:beginner',
-    description: 'Filter by difficulty level (beginner, intermediate, advanced)',
-    example: 'level:intermediate',
+    syntax: "level:beginner",
+    description:
+      "Filter by difficulty level (beginner, intermediate, advanced)",
+    example: "level:intermediate",
   },
   {
-    syntax: 'author:johndoe',
-    description: 'Filter by contributor or author username',
-    example: 'author:nandini',
+    syntax: "author:johndoe",
+    description: "Filter by contributor or author username",
+    example: "author:nandini",
   },
 ];
 
-export const SearchSyntaxHelpPopover: React.FC<SearchSyntaxHelpPopoverProps> = ({
-  onApplySyntax,
-}) => {
+export const SearchSyntaxHelpPopover: React.FC<
+  SearchSyntaxHelpPopoverProps
+> = ({ onApplySyntax }) => {
   const [isOpen, setIsOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -130,7 +131,8 @@ export const SearchSyntaxHelpPopover: React.FC<SearchSyntaxHelpPopoverProps> = (
           </div>
 
           <p className="text-xs text-gray-600 mb-3">
-            Use these special syntax prefixes to narrow down your search results faster:
+            Use these special syntax prefixes to narrow down your search results
+            faster:
           </p>
 
           <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
@@ -163,7 +165,9 @@ export const SearchSyntaxHelpPopover: React.FC<SearchSyntaxHelpPopoverProps> = (
 
           <div className="mt-3 pt-2 border-t border-gray-100 text-[11px] text-gray-500 text-center">
             Tip: Combine multiple operators like{" "}
-            <code className="font-mono bg-gray-100 px-1 rounded">tag:git level:beginner</code>
+            <code className="font-mono bg-gray-100 px-1 rounded">
+              tag:git level:beginner
+            </code>
           </div>
         </div>
       )}

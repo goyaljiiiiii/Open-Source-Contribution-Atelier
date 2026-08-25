@@ -34,7 +34,8 @@ export const BadgeUnlockModal: React.FC<BadgeUnlockModalProps> = ({
       const cardCanvas = createBadgeShareCardCanvas({
         badgeName: badge.name,
         badgeIcon: badge.icon || "🏅",
-        description: badge.description || badge.unlockCriteria || "Achievement unlocked!",
+        description:
+          badge.description || badge.unlockCriteria || "Achievement unlocked!",
         username,
         date: badge.earnedAt,
       });
@@ -54,7 +55,8 @@ export const BadgeUnlockModal: React.FC<BadgeUnlockModalProps> = ({
     downloadBadgeShareCardImage({
       badgeName: badge.name,
       badgeIcon: badge.icon || "🏅",
-      description: badge.description || badge.unlockCriteria || "Achievement unlocked!",
+      description:
+        badge.description || badge.unlockCriteria || "Achievement unlocked!",
       username,
       date: badge.earnedAt,
     });

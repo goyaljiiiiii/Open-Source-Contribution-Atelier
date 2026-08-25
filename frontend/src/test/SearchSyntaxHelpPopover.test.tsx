@@ -9,7 +9,9 @@ describe("SearchSyntaxHelpPopover", () => {
   });
   it("renders trigger button with correct accessibility attributes", () => {
     render(<SearchSyntaxHelpPopover />);
-    const trigger = screen.getByRole("button", { name: /search operator syntax help/i });
+    const trigger = screen.getByRole("button", {
+      name: /search operator syntax help/i,
+    });
     expect(trigger).toBeInTheDocument();
     expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
     expect(trigger).toHaveAttribute("aria-expanded", "false");
@@ -17,21 +19,29 @@ describe("SearchSyntaxHelpPopover", () => {
 
   it("opens popover on click and closes on close button", () => {
     render(<SearchSyntaxHelpPopover />);
-    const trigger = screen.getByRole("button", { name: /search operator syntax help/i });
+    const trigger = screen.getByRole("button", {
+      name: /search operator syntax help/i,
+    });
 
     fireEvent.click(trigger);
     expect(trigger).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByRole("dialog", { name: /search query operators guide/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: /search query operators guide/i }),
+    ).toBeInTheDocument();
     expect(screen.getByText("tag:python")).toBeInTheDocument();
 
-    const closeBtn = screen.getByRole("button", { name: /close syntax guide/i });
+    const closeBtn = screen.getByRole("button", {
+      name: /close syntax guide/i,
+    });
     fireEvent.click(closeBtn);
     expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
   it("closes on Escape key press", () => {
     render(<SearchSyntaxHelpPopover />);
-    const trigger = screen.getByRole("button", { name: /search operator syntax help/i });
+    const trigger = screen.getByRole("button", {
+      name: /search operator syntax help/i,
+    });
 
     fireEvent.click(trigger);
     expect(screen.getByRole("dialog")).toBeInTheDocument();
@@ -44,7 +54,9 @@ describe("SearchSyntaxHelpPopover", () => {
     const handleApply = vi.fn();
     render(<SearchSyntaxHelpPopover onApplySyntax={handleApply} />);
 
-    fireEvent.click(screen.getByRole("button", { name: /search operator syntax help/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /search operator syntax help/i }),
+    );
     const exampleBtn = screen.getByRole("button", { name: /try: tag:git/i });
 
     fireEvent.click(exampleBtn);

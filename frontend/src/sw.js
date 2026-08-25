@@ -219,10 +219,7 @@ async function syncProgressQueue() {
   try {
     actions = await getAllFromStore(db, STORE_NAME);
   } catch (err) {
-    console.error(
-      "[ServiceWorker] Failed to read IndexedDB store:",
-      err,
-    );
+    console.error("[ServiceWorker] Failed to read IndexedDB store:", err);
     return;
   }
 

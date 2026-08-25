@@ -164,15 +164,15 @@ export function LessonPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-  return localStorage.getItem("lesson-sidebar-collapsed") === "true";
-});
+    return localStorage.getItem("lesson-sidebar-collapsed") === "true";
+  });
 
-useEffect(() => {
-  localStorage.setItem(
-    "lesson-sidebar-collapsed",
-    String(isSidebarCollapsed),
-  );
-}, [isSidebarCollapsed]);
+  useEffect(() => {
+    localStorage.setItem(
+      "lesson-sidebar-collapsed",
+      String(isSidebarCollapsed),
+    );
+  }, [isSidebarCollapsed]);
 
   const curriculumLessonRefs = useMemo(
     () =>
@@ -604,7 +604,14 @@ useEffect(() => {
     });
     setQuizFeedback("timeout");
     quizDraft.clearDraft();
-  }, [lesson, currentQuizIndex, quizNonce, quizFeedback, quizAttemptMutation, quizDraft]);
+  }, [
+    lesson,
+    currentQuizIndex,
+    quizNonce,
+    quizFeedback,
+    quizAttemptMutation,
+    quizDraft,
+  ]);
 
   useEffect(() => {
     if (timeLeft === 0 && quizFeedback === null) {
@@ -624,13 +631,12 @@ useEffect(() => {
       if (totalHeight <= 0) {
         setScrollProgress(100);
       } else {
-          const scrollPercent =
-            (element.scrollTop / totalHeight) * 100;
+        const scrollPercent = (element.scrollTop / totalHeight) * 100;
 
-          setScrollProgress(
+        setScrollProgress(
           Math.min(100, Math.max(0, Math.round(scrollPercent))),
-          );
-      }   
+        );
+      }
 
       setShowBackToTop(element.scrollTop > 300);
     };
@@ -654,21 +660,32 @@ useEffect(() => {
 
       if (isInput) return;
 
-      if (e.altKey && (e.key === "ArrowRight" || e.key === "n" || e.key === "N")) {
+      if (
+        e.altKey &&
+        (e.key === "ArrowRight" || e.key === "n" || e.key === "N")
+      ) {
         e.preventDefault();
         if (nextLesson) {
           if (isCompleted) {
             navigate(`/lessons/${nextLesson.slug}`);
           } else {
-            toast.error("Complete the current lesson first to unlock the next module!");
+            toast.error(
+              "Complete the current lesson first to unlock the next module!",
+            );
           }
         }
-      } else if (e.altKey && (e.key === "ArrowLeft" || e.key === "p" || e.key === "P")) {
+      } else if (
+        e.altKey &&
+        (e.key === "ArrowLeft" || e.key === "p" || e.key === "P")
+      ) {
         e.preventDefault();
         if (previousLesson) {
           navigate(`/lessons/${previousLesson.slug}`);
         }
-      } else if (e.altKey && (e.key === "s" || e.key === "S" || e.key === "m" || e.key === "M")) {
+      } else if (
+        e.altKey &&
+        (e.key === "s" || e.key === "S" || e.key === "m" || e.key === "M")
+      ) {
         e.preventDefault();
         setIsSidebarOpen((prev) => !prev);
       } else if (e.altKey && (e.key === "b" || e.key === "B")) {
@@ -685,7 +702,14 @@ useEffect(() => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [navigate, nextLesson, previousLesson, isCompleted, lesson, toggleBookmark]);
+  }, [
+    navigate,
+    nextLesson,
+    previousLesson,
+    isCompleted,
+    lesson,
+    toggleBookmark,
+  ]);
 
   const handleCommandSubmit = async (
     e: React.FormEvent | React.KeyboardEvent,
@@ -927,11 +951,11 @@ useEffect(() => {
           }
         >
           <div className="space-y-6">
-          {!isSidebarCollapsed && (
-            <div className="pt-2">
-              <RecentlyViewedLessonsWidget />
-            </div>
-          )}
+            {!isSidebarCollapsed && (
+              <div className="pt-2">
+                <RecentlyViewedLessonsWidget />
+              </div>
+            )}
 
             {modules.map((mod, modIdx) => (
               <div key={mod.id} className="space-y-2">
@@ -943,7 +967,7 @@ useEffect(() => {
                                : "text-muted dark:text-[#c4bbae] border-transparent"
                            }`}
                 >
-                {isSidebarCollapsed
+                  {isSidebarCollapsed
                     ? `M${modIdx + 1}`
                     : `Module {modIdx + 1}: {mod.title}`}
                 </h3>
@@ -979,7 +1003,6 @@ useEffect(() => {
                             {!isSidebarCollapsed && (
                               <span className="truncate">{les.title}</span>
                             )}
-
                           </div>
                           {les.difficulty === "advanced" && (
                             <span className="text-[8px] bg-red-100 text-red-700 px-1 py-0.5 rounded border border-red-700">
@@ -1015,7 +1038,6 @@ useEffect(() => {
             <div className="max-w-3xl mx-auto space-y-6">
               <Breadcrumb items={breadcrumbItems} className="mb-2" />
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-[10px] font-mono font-black bg-accent text-black px-3 py-1 rounded-full border-2 border-black rotate-[-1deg] inline-block shadow-card-sm uppercase">
@@ -1134,7 +1156,9 @@ useEffect(() => {
                       }
                     >
                       {markdownContent.length > 102400 ? (
-                        <VirtualizedMarkdownRenderer content={markdownContent} />
+                        <VirtualizedMarkdownRenderer
+                          content={markdownContent}
+                        />
                       ) : (
                         <MarkdownRenderer content={markdownContent} />
                       )}
@@ -1142,7 +1166,7 @@ useEffect(() => {
                         <div className="mt-8 border-t pt-4 text-sm text-muted-foreground">
                           <strong>Last updated:</strong>{" "}
                           {new Date(lesson.updatedAt).toLocaleDateString()}
-                       </div>
+                        </div>
                       )}
                     </React.Suspense>
                   </article>
@@ -1152,12 +1176,14 @@ useEffect(() => {
                 {(() => {
                   const currentUrl = window.location.href;
                   const lessonTitle = lesson?.title || "Lesson";
-                  const issueTitle = encodeURIComponent(`[Lesson Issue]: ${lessonTitle}`);
+                  const issueTitle = encodeURIComponent(
+                    `[Lesson Issue]: ${lessonTitle}`,
+                  );
                   const issueBody = encodeURIComponent(
                     `**Lesson Title:** ${lessonTitle}\n` +
                       `**Lesson URL:** ${currentUrl}\n\n` +
                       `### What's wrong?\n` +
-                      `Please describe the typo, broken link, or incorrect information in this lesson.`
+                      `Please describe the typo, broken link, or incorrect information in this lesson.`,
                   );
                   const githubIssueUrl = `https://github.com/Babin123456/Open-Source-Contribution-Atelier/issues/new?title=${issueTitle}&body=${issueBody}&labels=bug,documentation`;
 
@@ -1698,7 +1724,9 @@ useEffect(() => {
           <div className="border-t-4 border-black p-4 bg-white dark:bg-[#151411] dark:border-[#2e2924] flex justify-end gap-4 flex-shrink-0 flex-wrap">
             <button
               onClick={() => {
-                window.dispatchEvent(new CustomEvent("toggle-keyboard-shortcuts"));
+                window.dispatchEvent(
+                  new CustomEvent("toggle-keyboard-shortcuts"),
+                );
               }}
               className="px-4 py-2 bg-white text-text dark:bg-[#151411] dark:text-[#f0ebe2] font-black text-xs rounded-lg border-4 border-black shadow-card-sm hover:-translate-y-0.5 cursor-pointer flex items-center gap-1.5"
               title="Press '?' for keyboard shortcuts cheat sheet"
@@ -1868,7 +1896,7 @@ useEffect(() => {
           />
         )}
       </div>
-      
+
       <AITutorFloatingPanel
         lessonSlug={lesson.slug}
         lessonTitle={lesson.title}

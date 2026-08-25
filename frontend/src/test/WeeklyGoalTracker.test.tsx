@@ -24,13 +24,55 @@ const mockGoalData = {
   minutes_progress_pct: 75,
   overall_progress_pct: 68,
   daily_breakdown: [
-    { day_name: "Mon", date: "2026-07-27", is_active: true, is_today: false, is_future: false },
-    { day_name: "Tue", date: "2026-07-28", is_active: true, is_today: false, is_future: false },
-    { day_name: "Wed", date: "2026-07-29", is_active: false, is_today: false, is_future: false },
-    { day_name: "Thu", date: "2026-07-30", is_active: true, is_today: false, is_future: false },
-    { day_name: "Fri", date: "2026-07-31", is_active: true, is_today: true, is_future: false },
-    { day_name: "Sat", date: "2026-08-01", is_active: false, is_today: false, is_future: true },
-    { day_name: "Sun", date: "2026-08-02", is_active: false, is_today: false, is_future: true },
+    {
+      day_name: "Mon",
+      date: "2026-07-27",
+      is_active: true,
+      is_today: false,
+      is_future: false,
+    },
+    {
+      day_name: "Tue",
+      date: "2026-07-28",
+      is_active: true,
+      is_today: false,
+      is_future: false,
+    },
+    {
+      day_name: "Wed",
+      date: "2026-07-29",
+      is_active: false,
+      is_today: false,
+      is_future: false,
+    },
+    {
+      day_name: "Thu",
+      date: "2026-07-30",
+      is_active: true,
+      is_today: false,
+      is_future: false,
+    },
+    {
+      day_name: "Fri",
+      date: "2026-07-31",
+      is_active: true,
+      is_today: true,
+      is_future: false,
+    },
+    {
+      day_name: "Sat",
+      date: "2026-08-01",
+      is_active: false,
+      is_today: false,
+      is_future: true,
+    },
+    {
+      day_name: "Sun",
+      date: "2026-08-02",
+      is_active: false,
+      is_today: false,
+      is_future: true,
+    },
   ],
 };
 
@@ -43,7 +85,7 @@ function renderWithClient(ui: React.ReactElement) {
     },
   });
   return render(
-    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
   );
 }
 

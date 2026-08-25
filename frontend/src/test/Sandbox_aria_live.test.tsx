@@ -86,7 +86,9 @@ describe("Sandbox ARIA live regions and accessibility", () => {
 
     render(<PythonSandbox exercise={mockExercise} onSuccess={vi.fn()} />);
 
-    const outputRegion = screen.getByRole("region", { name: /console output/i });
+    const outputRegion = screen.getByRole("region", {
+      name: /console output/i,
+    });
     expect(outputRegion).toBeInTheDocument();
     expect(outputRegion).toHaveAttribute("aria-live", "polite");
     expect(outputRegion).toHaveAttribute("aria-atomic", "false");
@@ -101,7 +103,9 @@ describe("Sandbox ARIA live regions and accessibility", () => {
 
     render(<RustSandbox exercise={mockExercise} onSuccess={vi.fn()} />);
 
-    const outputRegion = screen.getByRole("region", { name: /console output/i });
+    const outputRegion = screen.getByRole("region", {
+      name: /console output/i,
+    });
     expect(outputRegion).toBeInTheDocument();
     expect(outputRegion).toHaveAttribute("aria-live", "polite");
     expect(outputRegion).toHaveAttribute("aria-atomic", "false");
@@ -135,10 +139,10 @@ describe("Sandbox ARIA live regions and accessibility", () => {
   });
 
   it("renders TerminalReplay with accessible live region for terminal output log", () => {
-    const mockCommands = [
-      { command: "git status", output: "On branch main" },
-    ];
-    render(<TerminalReplay sessionName="Test Replay" commands={mockCommands} />);
+    const mockCommands = [{ command: "git status", output: "On branch main" }];
+    render(
+      <TerminalReplay sessionName="Test Replay" commands={mockCommands} />,
+    );
 
     const outputLog = screen.getByRole("log", { name: /terminal output/i });
     expect(outputLog).toBeInTheDocument();
@@ -146,4 +150,3 @@ describe("Sandbox ARIA live regions and accessibility", () => {
     expect(outputLog).toHaveAttribute("aria-atomic", "false");
   });
 });
-

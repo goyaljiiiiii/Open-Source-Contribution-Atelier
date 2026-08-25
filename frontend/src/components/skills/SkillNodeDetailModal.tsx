@@ -59,8 +59,7 @@ export const SkillNodeDetailModal: React.FC<SkillNodeDetailModalProps> = ({
   });
 
   const canMaster =
-    node.status !== "completed" &&
-    prereqNodes.every((p) => p.isCompleted);
+    node.status !== "completed" && prereqNodes.every((p) => p.isCompleted);
 
   return (
     <div
@@ -90,8 +89,8 @@ export const SkillNodeDetailModal: React.FC<SkillNodeDetailModalProps> = ({
                 node.status === "completed"
                   ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
                   : node.status === "unlocked"
-                  ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/40"
-                  : "bg-slate-800 text-slate-400 border-slate-700"
+                    ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/40"
+                    : "bg-slate-800 text-slate-400 border-slate-700"
               }`}
             >
               {node.status}

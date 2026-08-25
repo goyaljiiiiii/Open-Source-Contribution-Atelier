@@ -179,7 +179,11 @@ export function createBadgeShareCardCanvas(
   // User & Date Tagline
   ctx.font = "700 24px Arial, sans-serif";
   ctx.fillStyle = "#38bdf8"; // sky-400
-  ctx.fillText(`Unlocked by ${formattedUser} · ${formattedDate}`, contentX, 280);
+  ctx.fillText(
+    `Unlocked by ${formattedUser} · ${formattedDate}`,
+    contentX,
+    280,
+  );
 
   // Divider Line
   ctx.strokeStyle = "#334155";
@@ -233,7 +237,8 @@ export function downloadBadgeShareCardImage(
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
-  const downloadName = filename || `badge-share-${sanitizeName || "achievement"}.png`;
+  const downloadName =
+    filename || `badge-share-${sanitizeName || "achievement"}.png`;
 
   const link = document.createElement("a");
   link.href = dataUrl;

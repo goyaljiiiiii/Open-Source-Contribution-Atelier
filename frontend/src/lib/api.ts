@@ -11,7 +11,6 @@ import {
   isRetryableApiError,
 } from "./apiErrors";
 
-
 let refreshPromise: Promise<string | null> | null = null;
 
 const getSafeEnvVar = (key: string): string => {
@@ -123,15 +122,21 @@ async function fetchWithTimeout(
 }
 
 export const safeGenerateUUID = (): string => {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
     return crypto.randomUUID();
   }
-  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.getRandomValues === "function"
+  ) {
     return ("" + 1e7 + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) =>
       (
         Number(c) ^
         (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (Number(c) / 4)))
-      ).toString(16)
+      ).toString(16),
     );
   }
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
@@ -187,11 +192,17 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const elapsed = Date.now() - startTime;
     if (elapsed >= totalTimeoutMs && attempt > 0) {
-      throw lastError || new Error(`Overall request timeout of ${totalTimeoutMs}ms exceeded`);
+      throw (
+        lastError ||
+        new Error(`Overall request timeout of ${totalTimeoutMs}ms exceeded`)
+      );
     }
 
     try {
-      const remainingTime = Math.max(100, totalTimeoutMs - (Date.now() - startTime));
+      const remainingTime = Math.max(
+        100,
+        totalTimeoutMs - (Date.now() - startTime),
+      );
       const currentTimeoutMs = Math.min(timeoutMs, remainingTime);
 
       const response = await fetchWithTimeout(
@@ -235,21 +246,23 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ refresh: refreshToken }),
-                }).then(async (res) => {
-                  if (res.ok) {
-                    const data = await res.json();
-                    if (data.access) {
-                      setAccessToken(data.access);
-                      if (data.refresh) {
-                        localStorage.setItem("refreshToken", data.refresh);
+                })
+                  .then(async (res) => {
+                    if (res.ok) {
+                      const data = await res.json();
+                      if (data.access) {
+                        setAccessToken(data.access);
+                        if (data.refresh) {
+                          localStorage.setItem("refreshToken", data.refresh);
+                        }
+                        return data.access;
                       }
-                      return data.access;
                     }
-                  }
-                  throw new Error("Refresh failed");
-                }).finally(() => {
-                  refreshPromise = null;
-                });
+                    throw new Error("Refresh failed");
+                  })
+                  .finally(() => {
+                    refreshPromise = null;
+                  });
               }
               const newAccessToken = await refreshPromise;
               if (newAccessToken) {
@@ -292,7 +305,9 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
           } else if (response.status === 404) {
             toast.error("We couldn't find the requested resource.");
           } else if (response.status >= 500) {
-            toast.error("The server is having trouble right now. Please try again.");
+            toast.error(
+              "The server is having trouble right now. Please try again.",
+            );
           }
         }
 

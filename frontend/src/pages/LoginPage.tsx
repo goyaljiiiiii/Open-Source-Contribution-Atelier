@@ -10,7 +10,14 @@ import { DemoLoginButton } from "../features/auth/DemoLoginButton";
 import { formatGoogleOAuthError } from "../lib/googleOAuth";
 import { PasswordInput } from "../components/PasswordInput";
 import { MascotBuddy, MascotState } from "../components/ui/MascotBuddy";
-import { User, KeyRound, Sparkles, AlertCircle, ArrowRight, Shield } from "lucide-react";
+import {
+  User,
+  KeyRound,
+  Sparkles,
+  AlertCircle,
+  ArrowRight,
+  Shield,
+} from "lucide-react";
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
@@ -90,7 +97,6 @@ export function LoginPage() {
     navigate("/dashboard");
   };
 
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -122,12 +128,20 @@ export function LoginPage() {
       navigate(redirect);
     } catch (err: any) {
       setMascotState("error");
-      if (err?.requires_2fa || err?.code === "2fa_required" || (err?.message && err.message.includes("Two-factor"))) {
+      if (
+        err?.requires_2fa ||
+        err?.code === "2fa_required" ||
+        (err?.message && err.message.includes("Two-factor"))
+      ) {
         setRequires2FA(true);
         toast.error("2FA code required. Enter code from authenticator app.");
       } else {
         setError(getErrorMessage(err, "Failed to login"));
-        toast.error(requires2FA ? "Invalid 2FA code or backup code." : "Login failed. Please try again.");
+        toast.error(
+          requires2FA
+            ? "Invalid 2FA code or backup code."
+            : "Login failed. Please try again.",
+        );
       }
     } finally {
       setIsLoading(false);
@@ -142,7 +156,10 @@ export function LoginPage() {
     >
       {/* Interactive Mascot Buddy Top Header (Compact) */}
       <div className="flex flex-col items-center mb-3">
-        <MascotBuddy state={mascotState} className="mb-2 scale-90 sm:scale-100" />
+        <MascotBuddy
+          state={mascotState}
+          className="mb-2 scale-90 sm:scale-100"
+        />
         <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
           Welcome Back!
         </h2>
@@ -180,7 +197,6 @@ export function LoginPage() {
             )}
           </div>
         )}
-
 
         {!requires2FA ? (
           <>
@@ -270,7 +286,9 @@ export function LoginPage() {
               }}
               className="text-[11px] font-bold text-blue-600 hover:underline block text-center w-full"
             >
-              {useBackupCode ? "Use Authenticator 6-digit code" : "Use a backup code"}
+              {useBackupCode
+                ? "Use Authenticator 6-digit code"
+                : "Use a backup code"}
             </button>
           </div>
         )}
@@ -294,8 +312,19 @@ export function LoginPage() {
           disabled={isLoading}
           className="w-full rounded-xl border-2 border-black bg-[#C3C0FF] dark:bg-[#C3C0FF] px-4 py-2.5 font-black text-black text-xs shadow-card-sm hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all cursor-pointer uppercase flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed group"
         >
-          <span>{isLoading ? "Verifying..." : requires2FA ? "Verify & Log In 🛡️" : "Let Me In!"}</span>
-          {!isLoading && <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />}
+          <span>
+            {isLoading
+              ? "Verifying..."
+              : requires2FA
+                ? "Verify & Log In 🛡️"
+                : "Let Me In!"}
+          </span>
+          {!isLoading && (
+            <ArrowRight
+              size={14}
+              className="group-hover:translate-x-1 transition-transform"
+            />
+          )}
         </button>
 
         {/* Single Clean Divider */}
@@ -349,18 +378,32 @@ export function LoginPage() {
             className="text-[10px] font-black text-slate-500 hover:text-black dark:text-slate-400 dark:hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
           >
             <Sparkles size={11} className="text-[#FFD93D]" />
-            <span>{showStickers ? "Hide Stickers 🎨" : "Playful Stickers 🎨"}</span>
+            <span>
+              {showStickers ? "Hide Stickers 🎨" : "Playful Stickers 🎨"}
+            </span>
           </button>
 
           {showStickers && (
             <div className="absolute bottom-6 bg-white dark:bg-[#1a1714] p-2.5 rounded-xl border-2 border-black shadow-card z-50 flex flex-wrap justify-center gap-1.5 animate-scale-up w-64">
-              <DraggableSticker initialX={0} initialY={0} className="bg-[#FF6B6B] text-white text-[10px] px-2 py-0.5">
+              <DraggableSticker
+                initialX={0}
+                initialY={0}
+                className="bg-[#FF6B6B] text-white text-[10px] px-2 py-0.5"
+              >
                 Bug Hunter 🐛
               </DraggableSticker>
-              <DraggableSticker initialX={0} initialY={0} className="bg-[#4D96FF] text-white text-[10px] px-2 py-0.5">
+              <DraggableSticker
+                initialX={0}
+                initialY={0}
+                className="bg-[#4D96FF] text-white text-[10px] px-2 py-0.5"
+              >
                 git commit 🚀
               </DraggableSticker>
-              <DraggableSticker initialX={0} initialY={0} className="bg-[#6BCB77] text-black text-[10px] px-2 py-0.5">
+              <DraggableSticker
+                initialX={0}
+                initialY={0}
+                className="bg-[#6BCB77] text-black text-[10px] px-2 py-0.5"
+              >
                 100% Merged ✅
               </DraggableSticker>
             </div>

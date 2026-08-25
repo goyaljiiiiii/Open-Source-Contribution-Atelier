@@ -20,7 +20,13 @@ import { useMarkdownWorker } from "../../hooks/useMarkdownWorker";
 
 interface TechComponent {
   name: string;
-  category: "frontend" | "backend" | "database" | "async" | "security" | "realtime";
+  category:
+    | "frontend"
+    | "backend"
+    | "database"
+    | "async"
+    | "security"
+    | "realtime";
   description: string;
   technologies: string[];
   features: string[];
@@ -31,77 +37,163 @@ const REPO_FEATURES: TechComponent[] = [
   {
     name: "Interactive Learning & Content Studio",
     category: "frontend",
-    description: "Curriculum viewer, interactive quiz runner, markdown renderer, and teacher content draft studio.",
+    description:
+      "Curriculum viewer, interactive quiz runner, markdown renderer, and teacher content draft studio.",
     technologies: ["React 19", "KaTeX", "Vite", "Django REST"],
-    features: ["Step-by-step progress", "Quiz builder & validation", "Live Markdown preview", "XP awards on completion"],
+    features: [
+      "Step-by-step progress",
+      "Quiz builder & validation",
+      "Live Markdown preview",
+      "XP awards on completion",
+    ],
     endpointOrPath: "/learning-path",
   },
   {
     name: "Contributor Sandbox & Code Execution Engine",
     category: "frontend",
-    description: "Browser & server-side isolated code execution playground supporting multi-language snippet testing.",
+    description:
+      "Browser & server-side isolated code execution playground supporting multi-language snippet testing.",
     technologies: ["Monaco Editor", "Web Workers", "Docker", "Pyodide"],
-    features: ["Live stdout/stderr capture", "Lint error highlighting", "Theme customization", "Snippet export"],
+    features: [
+      "Live stdout/stderr capture",
+      "Lint error highlighting",
+      "Theme customization",
+      "Snippet export",
+    ],
     endpointOrPath: "/contributor-sandbox",
   },
   {
     name: "Audit Log Inspector & Domain Ledger",
     category: "security",
-    description: "Immutable domain event ledger tracking created, updated, and deleted model snapshots with JSON state diffs.",
+    description:
+      "Immutable domain event ledger tracking created, updated, and deleted model snapshots with JSON state diffs.",
     technologies: ["Django Audit Model", "PostgreSQL JSONB", "Tailwind UI"],
-    features: ["Before/after state diff", "Search & filter", "Actor & correlation tracking", "CSV/JSON export"],
+    features: [
+      "Before/after state diff",
+      "Search & filter",
+      "Actor & correlation tracking",
+      "CSV/JSON export",
+    ],
     endpointOrPath: "/admin/audit",
   },
   {
     name: "Celery Distributed Task Worker Queue",
     category: "async",
-    description: "Asynchronous background job worker handling PDF generation, webhook dispatches, and issue quality scans.",
-    technologies: ["Celery", "Redis Broker", "WebSocket Push", "Django Monitoring"],
-    features: ["Queue depth monitoring", "Worker health gauges", "24h execution sparklines", "Live task triggers"],
+    description:
+      "Asynchronous background job worker handling PDF generation, webhook dispatches, and issue quality scans.",
+    technologies: [
+      "Celery",
+      "Redis Broker",
+      "WebSocket Push",
+      "Django Monitoring",
+    ],
+    features: [
+      "Queue depth monitoring",
+      "Worker health gauges",
+      "24h execution sparklines",
+      "Live task triggers",
+    ],
     endpointOrPath: "/admin/celery",
   },
   {
     name: "OAuth 2.0 & OpenID Connect Provider",
     category: "security",
-    description: "RFC 7636 PKCE compliant OAuth 2.0 authorization server issuing JWT access and refresh tokens to client apps.",
-    technologies: ["Django OAuth Toolkit", "SimpleJWT", "PyJWT", "OIDC Provider"],
-    features: ["Client Registration", "Public (PKCE) & Confidential types", "Allowed Redirect URIs", "Grant Scopes"],
+    description:
+      "RFC 7636 PKCE compliant OAuth 2.0 authorization server issuing JWT access and refresh tokens to client apps.",
+    technologies: [
+      "Django OAuth Toolkit",
+      "SimpleJWT",
+      "PyJWT",
+      "OIDC Provider",
+    ],
+    features: [
+      "Client Registration",
+      "Public (PKCE) & Confidential types",
+      "Allowed Redirect URIs",
+      "Grant Scopes",
+    ],
     endpointOrPath: "/admin/oauth-clients",
   },
   {
     name: "Git Rebase Simulator & PR Diff Summarizer",
     category: "frontend",
-    description: "Interactive visualizer for Git branch merging, rebase conflict resolution, and automated PR diff summarization.",
+    description:
+      "Interactive visualizer for Git branch merging, rebase conflict resolution, and automated PR diff summarization.",
     technologies: ["Git Graph UI", "Mermaid.js", "AI Summarizer"],
-    features: ["Interactive graph manipulation", "Step-by-step rebase guide", "Diff highlighting", "Conflict resolution sandbox"],
+    features: [
+      "Interactive graph manipulation",
+      "Step-by-step rebase guide",
+      "Diff highlighting",
+      "Conflict resolution sandbox",
+    ],
     endpointOrPath: "/git-rebase-simulator",
   },
   {
     name: "Skill Tree, XP Shop & Contributor Rankings",
     category: "realtime",
-    description: "Gamified learning progression tree with unlockable nodes, XP store rewards, and real-time contributor rankings.",
+    description:
+      "Gamified learning progression tree with unlockable nodes, XP store rewards, and real-time contributor rankings.",
     technologies: ["Cytoscape.js", "Recharts", "WebSockets"],
-    features: ["Interactive node tree", "XP purchase system", "Global rankings", "Streak multiplier calculation"],
+    features: [
+      "Interactive node tree",
+      "XP purchase system",
+      "Global rankings",
+      "Streak multiplier calculation",
+    ],
     endpointOrPath: "/skill-tree",
   },
   {
     name: "Live Notes, Community Chat & Peer Review",
     category: "realtime",
-    description: "Collaborative markdown notebook, real-time community chat channels, and pull request peer review platform.",
+    description:
+      "Collaborative markdown notebook, real-time community chat channels, and pull request peer review platform.",
     technologies: ["Django Channels", "WebSockets", "Lucide React"],
-    features: ["Real-time document sync", "Chat channel switching", "Code review comments", "Notification badges"],
+    features: [
+      "Real-time document sync",
+      "Chat channel switching",
+      "Code review comments",
+      "Notification badges",
+    ],
     endpointOrPath: "/collab-notes",
   },
 ];
 
 const API_ENDPOINTS = [
-  { method: "GET", path: "/api/content/lessons/", desc: "List all curriculum modules and lessons" },
-  { method: "POST", path: "/api/auth/token/", desc: "Obtain JWT Access & Refresh Token pair" },
-  { method: "GET", path: "/api/admin/audit/", desc: "Search & filter domain audit event logs" },
-  { method: "GET", path: "/api/admin/celery-stats/", desc: "Fetch live Celery worker & queue metrics" },
-  { method: "POST", path: "/api/oauth/clients/", desc: "Register new OAuth 2.0 application client" },
-  { method: "GET", path: "/api/leaderboard/", desc: "Retrieve global contributor XP rankings" },
-  { method: "GET", path: "/health/", desc: "Comprehensive system component health checks" },
+  {
+    method: "GET",
+    path: "/api/content/lessons/",
+    desc: "List all curriculum modules and lessons",
+  },
+  {
+    method: "POST",
+    path: "/api/auth/token/",
+    desc: "Obtain JWT Access & Refresh Token pair",
+  },
+  {
+    method: "GET",
+    path: "/api/admin/audit/",
+    desc: "Search & filter domain audit event logs",
+  },
+  {
+    method: "GET",
+    path: "/api/admin/celery-stats/",
+    desc: "Fetch live Celery worker & queue metrics",
+  },
+  {
+    method: "POST",
+    path: "/api/oauth/clients/",
+    desc: "Register new OAuth 2.0 application client",
+  },
+  {
+    method: "GET",
+    path: "/api/leaderboard/",
+    desc: "Retrieve global contributor XP rankings",
+  },
+  {
+    method: "GET",
+    path: "/health/",
+    desc: "Comprehensive system component health checks",
+  },
 ];
 
 const HERO_INTRO_MARKDOWN =
@@ -124,7 +216,9 @@ function WorkerMarkdownBlock({
   className?: string;
 }) {
   const { html } = useMarkdownWorker(content);
-  return <div className={className} dangerouslySetInnerHTML={{ __html: html }} />;
+  return (
+    <div className={className} dangerouslySetInnerHTML={{ __html: html }} />
+  );
 }
 
 export function FullStackDocsPage() {
@@ -135,9 +229,12 @@ export function FullStackDocsPage() {
     const matchesSearch =
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.technologies.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()));
+      item.technologies.some((t) =>
+        t.toLowerCase().includes(searchQuery.toLowerCase()),
+      );
 
-    const matchesCategory = activeCategory === "all" || item.category === activeCategory;
+    const matchesCategory =
+      activeCategory === "all" || item.category === activeCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -161,7 +258,7 @@ export function FullStackDocsPage() {
           <h1 className="text-3xl sm:text-5xl font-black text-white drop-shadow-[2px_2px_0_rgba(0,0,0,0.3)] tracking-tight">
             Open-Source Atelier Master Docs
           </h1>
-          
+
           <WorkerMarkdownBlock
             content={HERO_INTRO_MARKDOWN}
             className="text-white/90 font-bold text-base sm:text-lg max-w-2xl leading-relaxed"
@@ -173,8 +270,12 @@ export function FullStackDocsPage() {
                 30+
               </div>
               <div className="text-left">
-                <p className="text-xs font-black uppercase tracking-wider text-gray-500">Modules</p>
-                <p className="text-sm font-black text-gray-900">Full-Stack Features</p>
+                <p className="text-xs font-black uppercase tracking-wider text-gray-500">
+                  Modules
+                </p>
+                <p className="text-sm font-black text-gray-900">
+                  Full-Stack Features
+                </p>
               </div>
             </div>
 
@@ -183,8 +284,12 @@ export function FullStackDocsPage() {
                 100%
               </div>
               <div className="text-left">
-                <p className="text-xs font-black uppercase tracking-wider text-gray-500">Coverage</p>
-                <p className="text-sm font-black text-gray-900">API Specifications</p>
+                <p className="text-xs font-black uppercase tracking-wider text-gray-500">
+                  Coverage
+                </p>
+                <p className="text-sm font-black text-gray-900">
+                  API Specifications
+                </p>
               </div>
             </div>
           </div>
@@ -203,7 +308,8 @@ export function FullStackDocsPage() {
                 System Architecture Overview
               </h2>
               <p className="text-xs font-bold text-gray-500 dark:text-[#c4bbae]">
-                Modular 3-Tier Stack: Frontend SPA, Django REST API, Async Queues
+                Modular 3-Tier Stack: Frontend SPA, Django REST API, Async
+                Queues
               </p>
             </div>
           </div>
@@ -218,7 +324,8 @@ export function FullStackDocsPage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between border-b-2 border-black dark:border-[#2e2924] pb-2">
                 <span className="font-black text-sm dark:text-[#f0ebe2] flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-blue-600 dark:text-blue-400" /> Frontend App Layer
+                  <Globe className="w-4 h-4 text-blue-600 dark:text-blue-400" />{" "}
+                  Frontend App Layer
                 </span>
                 <span className="text-[10px] font-black uppercase bg-blue-400 text-black px-2 py-0.5 rounded-full border border-black shadow-card-sm">
                   Vite + React
@@ -230,9 +337,15 @@ export function FullStackDocsPage() {
               />
             </div>
             <div className="flex flex-wrap gap-1.5 pt-2">
-              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">React 19</span>
-              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">Lucide Icons</span>
-              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">Monaco Editor</span>
+              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">
+                React 19
+              </span>
+              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">
+                Lucide Icons
+              </span>
+              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">
+                Monaco Editor
+              </span>
             </div>
           </div>
 
@@ -241,7 +354,8 @@ export function FullStackDocsPage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between border-b-2 border-black dark:border-[#2e2924] pb-2">
                 <span className="font-black text-sm dark:text-[#f0ebe2] flex items-center gap-2">
-                  <Server className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Django REST Backend
+                  <Server className="w-4 h-4 text-purple-600 dark:text-purple-400" />{" "}
+                  Django REST Backend
                 </span>
                 <span className="text-[10px] font-black uppercase bg-purple-400 text-black px-2 py-0.5 rounded-full border border-black shadow-card-sm">
                   Python 3.11
@@ -253,9 +367,15 @@ export function FullStackDocsPage() {
               />
             </div>
             <div className="flex flex-wrap gap-1.5 pt-2">
-              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">SimpleJWT</span>
-              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">Audit Engine</span>
-              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">OAuth 2.0 PKCE</span>
+              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">
+                SimpleJWT
+              </span>
+              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">
+                Audit Engine
+              </span>
+              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">
+                OAuth 2.0 PKCE
+              </span>
             </div>
           </div>
 
@@ -264,7 +384,8 @@ export function FullStackDocsPage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between border-b-2 border-black dark:border-[#2e2924] pb-2">
                 <span className="font-black text-sm dark:text-[#f0ebe2] flex items-center gap-2">
-                  <Cpu className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Async & Database
+                  <Cpu className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />{" "}
+                  Async & Database
                 </span>
                 <span className="text-[10px] font-black uppercase bg-emerald-400 text-black px-2 py-0.5 rounded-full border border-black shadow-card-sm">
                   Celery + Redis
@@ -276,9 +397,15 @@ export function FullStackDocsPage() {
               />
             </div>
             <div className="flex flex-wrap gap-1.5 pt-2">
-              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">Redis Broker</span>
-              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">WebSockets</span>
-              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">Async Tasks</span>
+              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">
+                Redis Broker
+              </span>
+              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">
+                WebSockets
+              </span>
+              <span className="px-2.5 py-1 bg-white dark:bg-[#25211c] text-black dark:text-[#f0ebe2] rounded-lg border-2 border-black text-[11px] font-extrabold">
+                Async Tasks
+              </span>
             </div>
           </div>
         </div>
@@ -296,7 +423,8 @@ export function FullStackDocsPage() {
                 Repository Feature Directory
               </h2>
               <p className="text-xs font-bold text-gray-500 dark:text-[#c4bbae]">
-                Explore every feature, service worker, and module built into this repository.
+                Explore every feature, service worker, and module built into
+                this repository.
               </p>
             </div>
           </div>
@@ -315,19 +443,21 @@ export function FullStackDocsPage() {
             </div>
 
             <div className="flex items-center gap-1.5 flex-wrap">
-              {["all", "frontend", "security", "async", "realtime"].map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`px-3.5 py-2 rounded-full border-2 border-black text-xs font-black uppercase tracking-wider transition-all shadow-card-sm ${
-                    activeCategory === cat
-                      ? "bg-black text-white dark:bg-white dark:text-black"
-                      : "bg-white text-black dark:bg-[#1f1c18] dark:text-[#c4bbae] dark:border-[#2e2924] hover:bg-gray-100 dark:hover:bg-[#25211c]"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
+              {["all", "frontend", "security", "async", "realtime"].map(
+                (cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`px-3.5 py-2 rounded-full border-2 border-black text-xs font-black uppercase tracking-wider transition-all shadow-card-sm ${
+                      activeCategory === cat
+                        ? "bg-black text-white dark:bg-white dark:text-black"
+                        : "bg-white text-black dark:bg-[#1f1c18] dark:text-[#c4bbae] dark:border-[#2e2924] hover:bg-gray-100 dark:hover:bg-[#25211c]"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ),
+              )}
             </div>
           </div>
         </div>
@@ -359,7 +489,8 @@ export function FullStackDocsPage() {
                       key={fIdx}
                       className="text-[11px] font-extrabold px-3 py-1 bg-green-50 dark:bg-[#162722] text-green-900 dark:text-green-200 rounded-xl border-2 border-black flex items-center gap-1.5 shadow-card-sm"
                     >
-                      <CheckCircle2 className="w-3.5 h-3.5 text-green-600 dark:text-green-400 shrink-0" /> {item}
+                      <CheckCircle2 className="w-3.5 h-3.5 text-green-600 dark:text-green-400 shrink-0" />{" "}
+                      {item}
                     </span>
                   ))}
                 </div>
@@ -401,7 +532,8 @@ export function FullStackDocsPage() {
                 Core REST & OpenAPI Catalog
               </h2>
               <p className="text-xs font-bold text-gray-500 dark:text-[#c4bbae]">
-                Principal Django REST Framework API endpoints available in the backend.
+                Principal Django REST Framework API endpoints available in the
+                backend.
               </p>
             </div>
           </div>
@@ -428,7 +560,10 @@ export function FullStackDocsPage() {
               </thead>
               <tbody className="divide-y-2 divide-black dark:divide-[#2e2924]">
                 {API_ENDPOINTS.map((api, idx) => (
-                  <tr key={idx} className="hover:bg-amber-50/50 dark:hover:bg-[#25211c]/50 transition-colors">
+                  <tr
+                    key={idx}
+                    className="hover:bg-amber-50/50 dark:hover:bg-[#25211c]/50 transition-colors"
+                  >
                     <td className="py-3.5 px-4">
                       <span
                         className={`px-2.5 py-1 text-[10px] font-black uppercase rounded-lg border-2 border-black shadow-card-sm ${

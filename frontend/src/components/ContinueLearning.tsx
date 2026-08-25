@@ -22,13 +22,24 @@ export interface ContinueLearningProps {
   } | null;
 }
 
-export function ContinueLearning({ lessons = [], isLoading = false, lastLesson }: ContinueLearningProps) {
+export function ContinueLearning({
+  lessons = [],
+  isLoading = false,
+  lastLesson,
+}: ContinueLearningProps) {
   // Support legacy single-item prop if passed
-  const displayLessons: IncompleteLesson[] = lessons.length > 0 
-    ? lessons 
-    : lastLesson 
-      ? [{ lesson_slug: lastLesson.slug, lesson_title: lastLesson.title, progress_percentage: lastLesson.progress }]
-      : [];
+  const displayLessons: IncompleteLesson[] =
+    lessons.length > 0
+      ? lessons
+      : lastLesson
+        ? [
+            {
+              lesson_slug: lastLesson.slug,
+              lesson_title: lastLesson.title,
+              progress_percentage: lastLesson.progress,
+            },
+          ]
+        : [];
 
   if (isLoading) {
     return (
@@ -36,7 +47,10 @@ export function ContinueLearning({ lessons = [], isLoading = false, lastLesson }
         <div className="mb-4 h-6 w-48 animate-pulse rounded bg-slate-800" />
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-36 animate-pulse rounded-lg bg-slate-800/50 p-4" />
+            <div
+              key={i}
+              className="h-36 animate-pulse rounded-lg bg-slate-800/50 p-4"
+            />
           ))}
         </div>
       </div>
@@ -48,19 +62,27 @@ export function ContinueLearning({ lessons = [], isLoading = false, lastLesson }
   }
 
   return (
-    <section className="continue-learning-section mb-8 rounded-xl border border-indigo-500/20 bg-slate-900/80 p-6 shadow-lg shadow-indigo-500/5 backdrop-blur-md" data-testid="continue-learning">
+    <section
+      className="continue-learning-section mb-8 rounded-xl border border-indigo-500/20 bg-slate-900/80 p-6 shadow-lg shadow-indigo-500/5 backdrop-blur-md"
+      data-testid="continue-learning"
+    >
       <div className="mb-5 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-indigo-500/20 bg-indigo-500/10 text-indigo-400">
             <BookOpen className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-slate-100">Continue Learning</h2>
-            <p className="text-xs text-slate-400">Pick up right where you left off</p>
+            <h2 className="text-xl font-bold text-slate-100">
+              Continue Learning
+            </h2>
+            <p className="text-xs text-slate-400">
+              Pick up right where you left off
+            </p>
           </div>
         </div>
         <span className="rounded-full border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 text-xs font-semibold text-indigo-400">
-          {displayLessons.length} {displayLessons.length === 1 ? "lesson" : "lessons"} in progress
+          {displayLessons.length}{" "}
+          {displayLessons.length === 1 ? "lesson" : "lessons"} in progress
         </span>
       </div>
 
@@ -92,7 +114,9 @@ export function ContinueLearning({ lessons = [], isLoading = false, lastLesson }
               <div className="mb-3 h-2 w-full overflow-hidden rounded-full bg-slate-700/60">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-300"
-                  style={{ width: `${Math.max(5, Math.min(100, item.progress_percentage))}%` }}
+                  style={{
+                    width: `${Math.max(5, Math.min(100, item.progress_percentage))}%`,
+                  }}
                 />
               </div>
 

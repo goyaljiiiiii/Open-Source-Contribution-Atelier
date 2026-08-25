@@ -18,9 +18,8 @@ describe("authSync", () => {
     });
 
     it("broadcasts and receives via storage event", async () => {
-      const { broadcastAuthEvent, onAuthSyncEvent } = await import(
-        "./authSync"
-      );
+      const { broadcastAuthEvent, onAuthSyncEvent } =
+        await import("./authSync");
       const handler = vi.fn();
       const unsub = onAuthSyncEvent(handler);
 
@@ -40,9 +39,8 @@ describe("authSync", () => {
     });
 
     it("broadcasts LOGOUT event type", async () => {
-      const { broadcastAuthEvent, onAuthSyncEvent } = await import(
-        "./authSync"
-      );
+      const { broadcastAuthEvent, onAuthSyncEvent } =
+        await import("./authSync");
       const handler = vi.fn();
       const unsub = onAuthSyncEvent(handler);
 
@@ -60,9 +58,8 @@ describe("authSync", () => {
     });
 
     it("broadcasts TOKEN_REFRESHED event type", async () => {
-      const { broadcastAuthEvent, onAuthSyncEvent } = await import(
-        "./authSync"
-      );
+      const { broadcastAuthEvent, onAuthSyncEvent } =
+        await import("./authSync");
       const handler = vi.fn();
       const unsub = onAuthSyncEvent(handler);
 
@@ -207,10 +204,7 @@ describe("authSync", () => {
           }
         }
       }
-      addEventListener(
-        _event: string,
-        handler: (e: MessageEvent) => void,
-      ) {
+      addEventListener(_event: string, handler: (e: MessageEvent) => void) {
         this.onmessage = handler;
       }
       removeEventListener() {
@@ -227,9 +221,8 @@ describe("authSync", () => {
     });
 
     it("broadcasts and receives via BroadcastChannel", async () => {
-      const { broadcastAuthEvent, onAuthSyncEvent } = await import(
-        "./authSync"
-      );
+      const { broadcastAuthEvent, onAuthSyncEvent } =
+        await import("./authSync");
       const handler = vi.fn();
       const unsub = onAuthSyncEvent(handler);
 
@@ -240,9 +233,8 @@ describe("authSync", () => {
     });
 
     it("does not fire storage events when BroadcastChannel is available", async () => {
-      const { broadcastAuthEvent, onAuthSyncEvent } = await import(
-        "./authSync"
-      );
+      const { broadcastAuthEvent, onAuthSyncEvent } =
+        await import("./authSync");
       const handler = vi.fn();
       const unsub = onAuthSyncEvent(handler);
 
@@ -264,14 +256,14 @@ describe("authSync", () => {
     });
 
     it("handles BroadcastChannel postMessage failure gracefully", async () => {
-      const { broadcastAuthEvent, onAuthSyncEvent } = await import(
-        "./authSync"
-      );
+      const { broadcastAuthEvent, onAuthSyncEvent } =
+        await import("./authSync");
       const handler = vi.fn();
       const unsub = onAuthSyncEvent(handler);
 
-      const originalPostMessage =
-        mockInstances[0].postMessage.bind(mockInstances[0]);
+      const originalPostMessage = mockInstances[0].postMessage.bind(
+        mockInstances[0],
+      );
       mockInstances[0].postMessage = () => {
         throw new Error("channel closed");
       };
@@ -283,9 +275,8 @@ describe("authSync", () => {
     });
 
     it("unsubscribe cleans up BroadcastChannel listener", async () => {
-      const { broadcastAuthEvent, onAuthSyncEvent } = await import(
-        "./authSync"
-      );
+      const { broadcastAuthEvent, onAuthSyncEvent } =
+        await import("./authSync");
       const handler = vi.fn();
       const unsub = onAuthSyncEvent(handler);
 
@@ -296,17 +287,12 @@ describe("authSync", () => {
     });
 
     it("receives all event types via BroadcastChannel", async () => {
-      const { broadcastAuthEvent, onAuthSyncEvent } = await import(
-        "./authSync"
-      );
+      const { broadcastAuthEvent, onAuthSyncEvent } =
+        await import("./authSync");
       const handler = vi.fn();
       const unsub = onAuthSyncEvent(handler);
 
-      const types: AuthSyncEventType[] = [
-        "LOGIN",
-        "LOGOUT",
-        "TOKEN_REFRESHED",
-      ];
+      const types: AuthSyncEventType[] = ["LOGIN", "LOGOUT", "TOKEN_REFRESHED"];
       for (const type of types) {
         broadcastAuthEvent(type);
       }
@@ -325,9 +311,8 @@ describe("authSync", () => {
     });
 
     it("falls back to storage event when BroadcastChannel is undefined", async () => {
-      const { broadcastAuthEvent, onAuthSyncEvent } = await import(
-        "./authSync"
-      );
+      const { broadcastAuthEvent, onAuthSyncEvent } =
+        await import("./authSync");
       const handler = vi.fn();
       const unsub = onAuthSyncEvent(handler);
 
@@ -354,9 +339,8 @@ describe("authSync", () => {
         },
       );
 
-      const { broadcastAuthEvent, onAuthSyncEvent } = await import(
-        "./authSync"
-      );
+      const { broadcastAuthEvent, onAuthSyncEvent } =
+        await import("./authSync");
       const handler = vi.fn();
       const unsub = onAuthSyncEvent(handler);
 
@@ -384,11 +368,7 @@ describe("authSync", () => {
       const handler = vi.fn();
       const unsub = onAuthSyncEvent(handler);
 
-      const types: AuthSyncEventType[] = [
-        "LOGIN",
-        "LOGOUT",
-        "TOKEN_REFRESHED",
-      ];
+      const types: AuthSyncEventType[] = ["LOGIN", "LOGOUT", "TOKEN_REFRESHED"];
       for (const type of types) {
         window.dispatchEvent(
           new StorageEvent("storage", {

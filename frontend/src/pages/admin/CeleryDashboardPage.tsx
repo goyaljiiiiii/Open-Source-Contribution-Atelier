@@ -76,7 +76,9 @@ interface TaskRun {
 
 export default function CeleryDashboardPage() {
   const [stats, setStats] = useState<CeleryStats | null>(null);
-  const [taskStats, setTaskStats] = useState<TaskTypeStatsResponse | null>(null);
+  const [taskStats, setTaskStats] = useState<TaskTypeStatsResponse | null>(
+    null,
+  );
   const [taskRuns, setTaskRuns] = useState<TaskRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -89,28 +91,31 @@ export default function CeleryDashboardPage() {
 
   const wsRef = useRef<WebSocket | null>(null);
 
-  const loadData = useCallback(async (showToast = false) => {
-    try {
-      if (showToast) setRefreshing(true);
-      const [statsRes, taskStatsRes, runsRes] = await Promise.all([
-        fetchApi("/admin/celery-stats/"),
-        fetchApi("/admin/celery-task-stats/"),
-        fetchApi(
-          `/admin/celery-task-runs/?search=${encodeURIComponent(searchQuery)}&status=${encodeURIComponent(statusFilter)}`,
-        ),
-      ]);
+  const loadData = useCallback(
+    async (showToast = false) => {
+      try {
+        if (showToast) setRefreshing(true);
+        const [statsRes, taskStatsRes, runsRes] = await Promise.all([
+          fetchApi("/admin/celery-stats/"),
+          fetchApi("/admin/celery-task-stats/"),
+          fetchApi(
+            `/admin/celery-task-runs/?search=${encodeURIComponent(searchQuery)}&status=${encodeURIComponent(statusFilter)}`,
+          ),
+        ]);
 
-      setStats(statsRes);
-      setTaskStats(taskStatsRes);
-      setTaskRuns(runsRes.results || runsRes);
-      if (showToast) toast.success("Celery metrics updated");
-    } catch (error) {
-      toast.error("Failed to load Celery monitoring metrics");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [searchQuery, statusFilter]);
+        setStats(statsRes);
+        setTaskStats(taskStatsRes);
+        setTaskRuns(runsRes.results || runsRes);
+        if (showToast) toast.success("Celery metrics updated");
+      } catch (error) {
+        toast.error("Failed to load Celery monitoring metrics");
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [searchQuery, statusFilter],
+  );
 
   useEffect(() => {
     loadData();
@@ -215,7 +220,8 @@ export default function CeleryDashboardPage() {
             )}
           </div>
           <p className="text-gray-600 dark:text-gray-400 text-xs md:text-sm mt-1">
-            Real-time queue depth, worker health gauges, task execution logs, and background job triggers.
+            Real-time queue depth, worker health gauges, task execution logs,
+            and background job triggers.
           </p>
         </div>
 
@@ -226,7 +232,9 @@ export default function CeleryDashboardPage() {
                 await fetchApi("/api/admin/celery-trigger-task/", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ task_name: "tasks.generate_pdf_report" }),
+                  body: JSON.stringify({
+                    task_name: "tasks.generate_pdf_report",
+                  }),
                 });
                 toast.success("Dispatched test Celery PDF task!");
                 loadData(false);
@@ -244,7 +252,9 @@ export default function CeleryDashboardPage() {
             disabled={refreshing}
             className="flex items-center px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-slate-700 font-semibold text-xs rounded-xl transition-all disabled:opacity-50"
           >
-            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${refreshing ? "animate-spin text-indigo-500" : ""}`} />
+            <RefreshCw
+              className={`w-3.5 h-3.5 mr-1.5 ${refreshing ? "animate-spin text-indigo-500" : ""}`}
+            />
             Refresh Stats
           </button>
         </div>
@@ -261,7 +271,11 @@ export default function CeleryDashboardPage() {
               What does Celery do in this application?
             </h4>
             <p className="text-indigo-800 dark:text-indigo-300 mt-1 leading-relaxed">
-              Celery is an asynchronous distributed task queue processor. It runs heavy background jobs out-of-band so web HTTP requests stay fast. Tasks include generating PDF certificates, dispatching email/push webhooks, processing GitHub issue quality scans, and purging expired tokens.
+              Celery is an asynchronous distributed task queue processor. It
+              runs heavy background jobs out-of-band so web HTTP requests stay
+              fast. Tasks include generating PDF certificates, dispatching
+              email/push webhooks, processing GitHub issue quality scans, and
+              purging expired tokens.
             </p>
           </div>
         </div>
@@ -270,7 +284,9 @@ export default function CeleryDashboardPage() {
       {loading ? (
         <div className="flex flex-col items-center justify-center p-20 space-y-4">
           <Activity className="h-10 w-10 animate-spin text-indigo-500" />
-          <p className="text-gray-500 dark:text-gray-400 font-medium">Fetching Celery cluster metrics...</p>
+          <p className="text-gray-500 dark:text-gray-400 font-medium">
+            Fetching Celery cluster metrics...
+          </p>
         </div>
       ) : (
         <>
@@ -321,7 +337,8 @@ export default function CeleryDashboardPage() {
                       key={queueName}
                       className="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-800 text-gray-300 border border-gray-700"
                     >
-                      {queueName}: <strong className="text-amber-300">{count}</strong>
+                      {queueName}:{" "}
+                      <strong className="text-amber-300">{count}</strong>
                     </span>
                   ))}
                 </div>
@@ -368,7 +385,8 @@ export default function CeleryDashboardPage() {
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    <Activity className="h-5 w-5 text-indigo-400" /> 24-Hour Success vs Failure Rate
+                    <Activity className="h-5 w-5 text-indigo-400" /> 24-Hour
+                    Success vs Failure Rate
                   </h3>
                   <p className="text-xs text-gray-400 mt-1">
                     Hourly count of completed task runs over the last 24 hours.
@@ -380,17 +398,49 @@ export default function CeleryDashboardPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={taskStats?.sparkline_24h || []}>
                     <defs>
-                      <linearGradient id="colorSuccess" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                      <linearGradient
+                        id="colorSuccess"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor="#10b981"
+                          stopOpacity={0.4}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="#10b981"
+                          stopOpacity={0.0}
+                        />
                       </linearGradient>
-                      <linearGradient id="colorFailure" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.0} />
+                      <linearGradient
+                        id="colorFailure"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor="#f43f5e"
+                          stopOpacity={0.4}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="#f43f5e"
+                          stopOpacity={0.0}
+                        />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                    <XAxis dataKey="hour" stroke="#6b7280" tick={{ fontSize: 11 }} />
+                    <XAxis
+                      dataKey="hour"
+                      stroke="#6b7280"
+                      tick={{ fontSize: 11 }}
+                    />
                     <YAxis stroke="#6b7280" tick={{ fontSize: 11 }} />
                     <Tooltip
                       contentStyle={{
@@ -426,13 +476,15 @@ export default function CeleryDashboardPage() {
             <div className="bg-[#141a26] border border-gray-800 p-6 rounded-2xl shadow-sm flex flex-col justify-between">
               <div>
                 <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-1">
-                  <AlertTriangle className="h-5 w-5 text-rose-400" /> Top-5 Failing Tasks
+                  <AlertTriangle className="h-5 w-5 text-rose-400" /> Top-5
+                  Failing Tasks
                 </h3>
                 <p className="text-xs text-gray-400 mb-4">
                   Tasks experiencing the highest error rates.
                 </p>
 
-                {taskStats?.top_failing_tasks && taskStats.top_failing_tasks.length > 0 ? (
+                {taskStats?.top_failing_tasks &&
+                taskStats.top_failing_tasks.length > 0 ? (
                   <div className="space-y-3">
                     {taskStats.top_failing_tasks.map((task) => {
                       const failureRate =
@@ -477,7 +529,8 @@ export default function CeleryDashboardPage() {
             <div className="p-6 border-b border-gray-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Database className="h-5 w-5 text-indigo-400" /> Recent Task Runs
+                  <Database className="h-5 w-5 text-indigo-400" /> Recent Task
+                  Runs
                 </h3>
                 <p className="text-xs text-gray-400 mt-1">
                   Filterable history of Celery task executions.
@@ -547,10 +600,15 @@ export default function CeleryDashboardPage() {
                         <td className="py-3.5 px-4 font-mono text-gray-400">
                           {run.task_id.substring(0, 8)}...
                         </td>
-                        <td className="py-3.5 px-4">{getStatusBadge(run.status)}</td>
+                        <td className="py-3.5 px-4">
+                          {getStatusBadge(run.status)}
+                        </td>
                         <td className="py-3.5 px-4 text-gray-300">
                           {run.started_at
-                            ? format(new Date(run.started_at), "MMM dd, HH:mm:ss")
+                            ? format(
+                                new Date(run.started_at),
+                                "MMM dd, HH:mm:ss",
+                              )
                             : "-"}
                         </td>
                         <td className="py-3.5 px-4 text-gray-300 font-mono">
@@ -580,7 +638,10 @@ export default function CeleryDashboardPage() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={7} className="py-12 text-center text-gray-500 italic">
+                      <td
+                        colSpan={7}
+                        className="py-12 text-center text-gray-500 italic"
+                      >
                         No task runs found matching the current filters.
                       </td>
                     </tr>
@@ -612,8 +673,12 @@ export default function CeleryDashboardPage() {
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-[#0b0f17] p-4 rounded-xl border border-gray-800">
                   <div>
-                    <span className="text-[10px] text-gray-500 uppercase font-bold">Status</span>
-                    <div className="mt-1">{getStatusBadge(selectedTaskRun.status)}</div>
+                    <span className="text-[10px] text-gray-500 uppercase font-bold">
+                      Status
+                    </span>
+                    <div className="mt-1">
+                      {getStatusBadge(selectedTaskRun.status)}
+                    </div>
                   </div>
                   <div>
                     <span className="text-[10px] text-gray-500 uppercase font-bold">
@@ -621,18 +686,27 @@ export default function CeleryDashboardPage() {
                     </span>
                     <p className="text-xs font-mono text-gray-200 mt-1">
                       {selectedTaskRun.started_at
-                        ? format(new Date(selectedTaskRun.started_at), "HH:mm:ss MMM dd")
+                        ? format(
+                            new Date(selectedTaskRun.started_at),
+                            "HH:mm:ss MMM dd",
+                          )
                         : "-"}
                     </p>
                   </div>
                   <div>
-                    <span className="text-[10px] text-gray-500 uppercase font-bold">Duration</span>
+                    <span className="text-[10px] text-gray-500 uppercase font-bold">
+                      Duration
+                    </span>
                     <p className="text-xs font-mono text-gray-200 mt-1">
-                      {selectedTaskRun.duration !== null ? `${selectedTaskRun.duration}s` : "-"}
+                      {selectedTaskRun.duration !== null
+                        ? `${selectedTaskRun.duration}s`
+                        : "-"}
                     </p>
                   </div>
                   <div>
-                    <span className="text-[10px] text-gray-500 uppercase font-bold">Retries</span>
+                    <span className="text-[10px] text-gray-500 uppercase font-bold">
+                      Retries
+                    </span>
                     <p className="text-xs font-mono text-gray-200 mt-1">
                       {selectedTaskRun.retry_count}
                     </p>
@@ -655,7 +729,8 @@ export default function CeleryDashboardPage() {
                 {selectedTaskRun.error_message ? (
                   <div>
                     <h4 className="text-xs font-bold text-rose-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                      <AlertTriangle className="w-4 h-4" /> Error Details / Exception Log
+                      <AlertTriangle className="w-4 h-4" /> Error Details /
+                      Exception Log
                     </h4>
                     <pre className="bg-rose-950/30 p-4 rounded-xl border border-rose-900/50 font-mono text-xs text-rose-300 whitespace-pre-wrap overflow-x-auto max-h-60">
                       {selectedTaskRun.error_message}
@@ -663,7 +738,8 @@ export default function CeleryDashboardPage() {
                   </div>
                 ) : (
                   <div className="p-3 bg-emerald-950/20 border border-emerald-800/40 rounded-xl text-emerald-300 text-xs flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Task executed smoothly without any recorded exceptions.
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Task
+                    executed smoothly without any recorded exceptions.
                   </div>
                 )}
               </div>

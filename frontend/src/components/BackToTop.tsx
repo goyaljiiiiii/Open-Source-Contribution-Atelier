@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 
 interface BackToTopProps {
   /** Scroll threshold in pixels before showing button (default: 300) */
   threshold?: number;
   /** Smooth scroll behavior (default: 'smooth') */
-  behavior?: 'smooth' | 'auto';
+  behavior?: "smooth" | "auto";
   /** Custom className for styling */
   className?: string;
   /** Show button on all pages or only specific routes */
@@ -13,8 +13,8 @@ interface BackToTopProps {
 
 const BackToTop: React.FC<BackToTopProps> = ({
   threshold = 300,
-  behavior = 'smooth',
-  className = '',
+  behavior = "smooth",
+  className = "",
   showOnRoutes,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -37,12 +37,12 @@ const BackToTop: React.FC<BackToTopProps> = ({
   // ===== KEYBOARD SUPPORT =====
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' || e.key === ' ') {
+      if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         scrollToTop();
       }
     },
-    [scrollToTop]
+    [scrollToTop],
   );
 
   // ===== SETUP SCROLL LISTENER =====
@@ -55,12 +55,12 @@ const BackToTop: React.FC<BackToTopProps> = ({
       }
     }
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
     // Initial check
     handleScroll();
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener("scroll", handleScroll);
     };
   }, [handleScroll, showOnRoutes]);
 
@@ -84,7 +84,7 @@ const BackToTop: React.FC<BackToTopProps> = ({
         text-white shadow-lg
         transition-all duration-300 ease-in-out
         focus:outline-none focus:ring-4 focus:ring-emerald-400/50
-        ${isHovered ? 'scale-110 shadow-xl' : 'scale-100'}
+        ${isHovered ? "scale-110 shadow-xl" : "scale-100"}
         ${className}
       `}
       aria-label="Back to Top"
@@ -93,7 +93,7 @@ const BackToTop: React.FC<BackToTopProps> = ({
       {/* Arrow Icon */}
       <svg
         className={`w-5 h-5 transition-transform duration-300 ${
-          isHovered ? '-translate-y-0.5' : ''
+          isHovered ? "-translate-y-0.5" : ""
         }`}
         fill="none"
         stroke="currentColor"
@@ -122,7 +122,12 @@ const BackToTop: React.FC<BackToTopProps> = ({
           stroke="currentColor"
           strokeWidth="2"
           strokeDasharray="125.6"
-          strokeDashoffset={125.6 - (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 125.6}
+          strokeDashoffset={
+            125.6 -
+            (window.scrollY /
+              (document.documentElement.scrollHeight - window.innerHeight)) *
+              125.6
+          }
           className="transition-all duration-300"
         />
       </svg>

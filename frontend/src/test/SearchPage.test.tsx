@@ -35,7 +35,9 @@ describe("SearchPage and SearchWithFilters", () => {
         </MemoryRouter>,
       );
 
-      expect(screen.getByRole("heading", { name: /Search/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: /Search/i }),
+      ).toBeInTheDocument();
       expect(
         screen.getByText("Find lessons, modules, and resources"),
       ).toBeInTheDocument();
@@ -86,7 +88,9 @@ describe("SearchPage and SearchWithFilters", () => {
 
       const skeletonContainer = screen.getByLabelText("Loading search results");
       expect(skeletonContainer).toBeInTheDocument();
-      expect(skeletonContainer.querySelectorAll(".result-skeleton").length).toBe(4);
+      expect(
+        skeletonContainer.querySelectorAll(".result-skeleton").length,
+      ).toBe(4);
       expect(screen.queryByText(/No lessons found/i)).not.toBeInTheDocument();
     });
   });
@@ -141,7 +145,9 @@ describe("SearchPage and SearchWithFilters", () => {
 
       fireEvent.click(clearBtn);
 
-      const input = screen.getByRole("textbox", { name: /Search/i }) as HTMLInputElement;
+      const input = screen.getByRole("textbox", {
+        name: /Search/i,
+      }) as HTMLInputElement;
       expect(input.value).toBe("");
     });
 

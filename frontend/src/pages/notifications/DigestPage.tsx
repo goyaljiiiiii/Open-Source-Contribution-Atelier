@@ -51,10 +51,13 @@ export default function DigestPage() {
   }, [loadPage]);
 
   const grouped = useMemo(() => {
-    return notifications.reduce<Record<string, Notification[]>>((groups, notif) => {
-      (groups[notif.notif_type] ??= []).push(notif);
-      return groups;
-    }, {});
+    return notifications.reduce<Record<string, Notification[]>>(
+      (groups, notif) => {
+        (groups[notif.notif_type] ??= []).push(notif);
+        return groups;
+      },
+      {},
+    );
   }, [notifications]);
 
   const markAllRead = () => {
@@ -129,8 +132,12 @@ export default function DigestPage() {
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <h3 className="font-bold text-black dark:text-white">{notif.title}</h3>
-                        <p className="text-sm text-gray-600 dark:text-[#c4bbae] mt-1">{notif.message}</p>
+                        <h3 className="font-bold text-black dark:text-white">
+                          {notif.title}
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-[#c4bbae] mt-1">
+                          {notif.message}
+                        </p>
                       </div>
                       <time className="text-xs text-gray-400 whitespace-nowrap">
                         {new Date(notif.created_at).toLocaleDateString()}

@@ -10,7 +10,11 @@ describe("CodeBlock Component", () => {
   it("renders language badge and code content", () => {
     const sampleCode = "const hello = 'world';";
     render(
-      <CodeBlock code={sampleCode} language="typescript" filename="example.ts" />
+      <CodeBlock
+        code={sampleCode}
+        language="typescript"
+        filename="example.ts"
+      />,
     );
 
     expect(screen.getByText("example.ts")).toBeInTheDocument();
@@ -37,7 +41,9 @@ describe("CodeBlock Component", () => {
 
     render(<CodeBlock code="echo 'test'" language="bash" />);
 
-    const copyBtn = screen.getAllByRole("button", { name: "Copy to Clipboard" })[0];
+    const copyBtn = screen.getAllByRole("button", {
+      name: "Copy to Clipboard",
+    })[0];
     fireEvent.click(copyBtn);
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith("echo 'test'");

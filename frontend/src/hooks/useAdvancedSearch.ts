@@ -31,8 +31,14 @@ export function useAdvancedSearch(): UseAdvancedSearchResult {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [total, setTotal] = useState(0);
-  const [filterSuggestions, setFilterSuggestions] = useState<Record<string, string[]> | null>(null);
-  const [relevanceScores, setRelevanceScores] = useState({ average: 0, high: 0 });
+  const [filterSuggestions, setFilterSuggestions] = useState<Record<
+    string,
+    string[]
+  > | null>(null);
+  const [relevanceScores, setRelevanceScores] = useState({
+    average: 0,
+    high: 0,
+  });
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -78,22 +84,28 @@ export function useAdvancedSearch(): UseAdvancedSearchResult {
           ? data
           : data?.results || [];
 
-        const mappedResults: AdvancedSearchResult[] = rawResults.map((item: any, index: number) => {
-          const score = typeof item.rank === "number" ? item.rank : (item.relevance_score ?? 0.8);
-          return {
-            id: item.id ?? item.pk ?? `result-${index}`,
-            title: item.title || item.headline || "Untitled",
-            description: item.description || item.body || item.summary || "",
-            content_type: item.content_type || item.type || "lesson",
-            relevance_score: score,
-            semantic_score: item.semantic_score ?? undefined,
-            tags: item.tags || [],
-            ...item,
-          };
-        });
+        const mappedResults: AdvancedSearchResult[] = rawResults.map(
+          (item: any, index: number) => {
+            const score =
+              typeof item.rank === "number"
+                ? item.rank
+                : (item.relevance_score ?? 0.8);
+            return {
+              id: item.id ?? item.pk ?? `result-${index}`,
+              title: item.title || item.headline || "Untitled",
+              description: item.description || item.body || item.summary || "",
+              content_type: item.content_type || item.type || "lesson",
+              relevance_score: score,
+              semantic_score: item.semantic_score ?? undefined,
+              tags: item.tags || [],
+              ...item,
+            };
+          },
+        );
 
         setResults(mappedResults);
-        const count = typeof data?.count === "number" ? data.count : mappedResults.length;
+        const count =
+          typeof data?.count === "number" ? data.count : mappedResults.length;
         setTotal(count);
 
         // Compute relevance stats

@@ -42,13 +42,15 @@ describe("badgeShareCard Canvas utility", () => {
     const clickSpy = vi.fn();
     const originalCreateElement = document.createElement.bind(document);
 
-    vi.spyOn(document, "createElement").mockImplementation((tagName: string) => {
-      const el = originalCreateElement(tagName);
-      if (tagName === "a") {
-        el.click = clickSpy;
-      }
-      return el;
-    });
+    vi.spyOn(document, "createElement").mockImplementation(
+      (tagName: string) => {
+        const el = originalCreateElement(tagName);
+        if (tagName === "a") {
+          el.click = clickSpy;
+        }
+        return el;
+      },
+    );
 
     downloadBadgeShareCardImage(
       {
