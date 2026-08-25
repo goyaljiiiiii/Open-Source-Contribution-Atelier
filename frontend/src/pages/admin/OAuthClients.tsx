@@ -107,6 +107,17 @@ export function OAuthClients() {
     fetchClients();
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (showCreateModal) setShowCreateModal(false);
+        if (showTestModal) setShowTestModal(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showCreateModal, showTestModal]);
+
   const handleCreateClient = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
