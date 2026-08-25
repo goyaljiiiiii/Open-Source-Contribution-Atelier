@@ -1019,3 +1019,16 @@ SILENCED_SYSTEM_CHECKS = ["perf.E001", "fields.E336"]
 if TESTING:
     CELERY_TASK_ALWAYS_EAGER = True
     CELERY_TASK_EAGER_PROPAGATES = True
+
+# ──────────────────────────────────────────
+# Celery Beat Schedule Configuration
+# ──────────────────────────────────────────
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    "archive-monthly-leaderboard": {
+        "task": "apps.progress.tasks.archive_monthly_leaderboard",
+        "schedule": crontab(minute=0, hour=0, day_of_month="1"),
+    },
+}
+

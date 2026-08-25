@@ -217,3 +217,75 @@ class LeaderboardService:
             cache.set(cache_key, result, timeout=300)
             return result
         return None
+
+    @classmethod
+    def archive_and_reset_monthly_leaderboard(cls, target_date=None):
+        """
+        Snapshots monthly XP ranks into LeaderboardArchive and resets the monthly Redis XP counter,
+        while leaving lifetime XP (leaderboard:all_time and XPEvent) untouched.
+        """
+        from datetime import timedelta
+
+        from django.contrib.auth import get_user_model
+        from django.core.cache import cache
+
+        from apps.progress.models import LeaderboardArchive
+
+        User = get_user_model()
+        now = timezone.now()
+
+        # If target_date is not provided, check if today is 1st of month -> target previous month
+        if target_date is None:
+            if now.day == 1:
+                target_date = now - timedelta(days=1)
+            else:
+                target_date = now
+
+        year = target_date.year
+        month = target_date.month
+        month_key = f"{year}_{month:02d}"
+        redis_monthly_key = cls.get_monthly_key(target_date)
+
+        client = get_redis_client()
+        archived_count = 0
+
+        if client:
+            # Fetch all user scores for the monthly key
+            user_scores = client.zrevrange(redis_monthly_key, 0, -1, withscores=True)
+            for idx, (username, score) in enumerate(user_scores):
+                rank = idx + 1
+                try:
+                    user = User.objects.get(username=username)
+                    LeaderboardArchive.objects.update_or_create(
+                        user=user,
+                        year=year,
+                        month=month,
+                        defaults={
+                            "month_key": month_key,
+                            "rank": rank,
+                            "monthly_xp": int(score),
+                        },
+                    )
+                    archived_count += 1
+                except User.DoesNotExist:
+                    logger.warning(
+                        "User %s not found during monthly leaderboard archive", username
+                    )
+
+            # Reset monthly user XP counters in Redis while leaving ALL_TIME intact
+            client.delete(redis_monthly_key)
+
+        # Clear cached monthly leaderboard entries
+        try:
+            cache.delete_pattern("hof_cache:monthly*")
+            cache.delete_pattern("hof_user_rank:monthly*")
+        except Exception:
+            pass
+
+        logger.info(
+            "Archived %d entries for monthly leaderboard %s and reset monthly counters",
+            archived_count,
+            month_key,
+        )
+        return {"period": month_key, "archived_count": archived_count}
+
