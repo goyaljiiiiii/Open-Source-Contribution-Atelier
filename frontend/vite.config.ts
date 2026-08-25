@@ -164,6 +164,7 @@ export default defineConfig({
         "workbox-strategies",
         "workbox-expiration",
         "@sentry/react",
+        "comlink",
       ],
     },
   },
