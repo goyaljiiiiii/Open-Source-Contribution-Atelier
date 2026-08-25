@@ -596,6 +596,8 @@ REST_FRAMEWORK = {
         "chat_message": "30/minute",
         # ── Events ───────────────────────────────────────────────────────────
         "events_list": os.getenv("RATE_EVENTS_LIST", "60/minute"),
+        # AI Tutor
+        "ai_tutor": os.getenv("RATE_AI_TUTOR", "10/minute"),
     },
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",

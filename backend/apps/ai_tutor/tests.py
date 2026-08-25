@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock, patch
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from rest_framework import status
@@ -79,3 +80,28 @@ class AiTutorTests(TestCase):
                     answer, "Git commits track your repository changes over time."
                 )
                 mock_openai.chat.completions.create.assert_called_once()
+
+    @override_settings(
+        REST_FRAMEWORK={
+            **settings.REST_FRAMEWORK,
+            "DEFAULT_THROTTLE_RATES": {
+                **settings.REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"],
+                "ai_tutor": "2/minute",
+            },
+        }
+    )
+    def test_ask_view_is_rate_limited_per_user(self):
+        with patch.object(AiTutorService, "get_response", return_value="answer"):
+            first = self.client.post(
+                "/api/ai/tutor/ask/", {"question": "First?"}
+            )
+            second = self.client.post(
+                "/api/ai/tutor/ask/", {"question": "Second?"}
+            )
+            third = self.client.post(
+                "/api/ai/tutor/ask/", {"question": "Third?"}
+            )
+
+        self.assertEqual(first.status_code, status.HTTP_200_OK)
+        self.assertEqual(second.status_code, status.HTTP_200_OK)
+        self.assertEqual(third.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
