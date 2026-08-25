@@ -141,10 +141,24 @@ _frontend_url = os.getenv("FRONTEND_URL", "").strip().rstrip("/")
 if _frontend_url and _frontend_url not in CORS_ALLOWED_ORIGINS:
     CORS_ALLOWED_ORIGINS.append(_frontend_url)
 
-if not DEBUG and not TESTING and not CORS_ALLOWED_ORIGINS:
+if not DEBUG and not TESTING:
+    import urllib.parse
     from django.core.exceptions import ImproperlyConfigured
 
-    raise ImproperlyConfigured("CORS_ALLOWED_ORIGINS cannot be empty in production.")
+    if not CORS_ALLOWED_ORIGINS:
+        raise ImproperlyConfigured("CORS_ALLOWED_ORIGINS cannot be empty in production.")
+
+    for origin in CORS_ALLOWED_ORIGINS:
+        if "*" in origin:
+            raise ImproperlyConfigured(
+                f"Insecure CORS origin '{origin}': Wildcard origins are not permitted when DEBUG=False."
+            )
+        parsed = urllib.parse.urlparse(origin)
+        if parsed.scheme not in ("http", "https") or not parsed.netloc:
+            raise ImproperlyConfigured(
+                f"Invalid CORS origin '{origin}': Every origin in CORS_ALLOWED_ORIGINS "
+                "must include a valid scheme ('http://' or 'https://') and domain name."
+            )
 
 CORS_ALLOW_CREDENTIALS = True
 if DEBUG:
@@ -161,7 +175,8 @@ if DEBUG:
             "DJANGO_ENV to something other than 'production') to continue."
         )
     CORS_ALLOW_ALL_ORIGINS = True
-# CORS_ALLOW_ALL_ORIGINS defaults to False; rely on CORS_ALLOWED_ORIGINS allowlist.
+else:
+    CORS_ALLOW_ALL_ORIGINS = False
 
 INSTALLED_APPS = [
     # "daphne",
