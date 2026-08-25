@@ -49,6 +49,7 @@ export function CodeDiffViewer({
 
         <div className="flex bg-black/10 dark:bg-white/10 p-1 rounded-lg">
           <button
+            type="button"
             onClick={() => setSplitView(true)}
             className={`p-1 rounded ${
               splitView
@@ -56,10 +57,12 @@ export function CodeDiffViewer({
                 : "text-muted hover:text-text"
             }`}
             title="Split View"
+            aria-label="Split View"
           >
             <Columns size={16} />
           </button>
           <button
+            type="button"
             onClick={() => setSplitView(false)}
             className={`p-1 rounded ${
               !splitView
@@ -67,6 +70,7 @@ export function CodeDiffViewer({
                 : "text-muted hover:text-text"
             }`}
             title="Unified View"
+            aria-label="Unified View"
           >
             <List size={16} />
           </button>
