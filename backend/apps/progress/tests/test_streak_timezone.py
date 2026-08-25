@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -66,3 +66,32 @@ class TestStreakTimezoneEvaluation:
         )
         assert created is True
         assert streak_prof.last_activity_date.day == 5
+
+    def test_signal_streak_uses_user_timezone_at_utc_boundary(self):
+        from unittest.mock import patch
+
+        from django.utils import timezone as django_timezone
+
+        from apps.progress.models import StreakProfile
+        from apps.progress.signals import update_user_streak
+
+        user = User.objects.create_user(
+            username="kiritimati_signal_user", password="password"
+        )
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+        profile.timezone = "Pacific/Kiritimati"  # UTC+14
+        profile.save()
+
+        # 2026-08-04 10:00 UTC is already Aug 5 at 00:00 in Kiritimati.
+        # Keep Django's active timezone at UTC so a regression to
+        # timezone.localdate() would incorrectly record Aug 4.
+        now = datetime(2026, 8, 4, 10, 0, 0, tzinfo=timezone.utc)
+
+        with django_timezone.override("UTC"), patch(
+            "apps.progress.streak_engine.timezone.now", return_value=now
+        ):
+            update_user_streak(user)
+
+        streak_profile = StreakProfile.objects.get(user=user)
+        assert streak_profile.last_activity_date == date(2026, 8, 5)
+        assert streak_profile.current_streak == 1
