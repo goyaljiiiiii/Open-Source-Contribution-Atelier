@@ -241,7 +241,13 @@ export function GitTerminal() {
             </span>
           </div>
         </div>
-        <div className="terminal-output">
+        <div
+          className="terminal-output"
+          role="log"
+          aria-label="Terminal output"
+          aria-live="polite"
+          aria-atomic="false"
+        >
           {output.map((line, i) => (
             <div key={i} className="terminal-line">
               {line}
