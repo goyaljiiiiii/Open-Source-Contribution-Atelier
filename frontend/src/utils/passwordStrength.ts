@@ -19,7 +19,19 @@ export interface PasswordStrength {
   score: number; // 0-4 (0=weak, 4=strong)
   label: string;
   color: string;
+  entropyBits: number;
   suggestions: string[];
+}
+
+export function calculatePasswordEntropy(password: string): number {
+  if (!password) return 0;
+  let poolSize = 0;
+  if (/[a-z]/.test(password)) poolSize += 26;
+  if (/[A-Z]/.test(password)) poolSize += 26;
+  if (/\d/.test(password)) poolSize += 10;
+  if (/[^a-zA-Z0-9]/.test(password)) poolSize += 33;
+  if (poolSize === 0) return 0;
+  return Math.round(password.length * Math.log2(poolSize));
 }
 
 export function checkPasswordStrength(password: string): PasswordStrength {
@@ -28,7 +40,7 @@ export function checkPasswordStrength(password: string): PasswordStrength {
 
   //  Check if password is empty
   if (!password) {
-    return { score: 0, label: 'Empty', color: '#9e9e9e', suggestions: ['Enter a password'] };
+    return { score: 0, label: 'Empty', color: '#9e9e9e', entropyBits: 0, suggestions: ['Enter a password'] };
   }
 
   //  Check against common passwords (immediate fail)
@@ -37,6 +49,7 @@ export function checkPasswordStrength(password: string): PasswordStrength {
       score: 0,
       label: 'Weak',
       color: '#f44336',
+      entropyBits: calculatePasswordEntropy(password),
       suggestions: ['This password is too common. Choose a more unique password.']
     };
   }
@@ -99,6 +112,7 @@ export function checkPasswordStrength(password: string): PasswordStrength {
     score,
     label: labels[score] || 'Weak',
     color: colors[score] || '#f44336',
+    entropyBits: calculatePasswordEntropy(password),
     suggestions: suggestions.slice(0, 3)
   };
 }
