@@ -61,6 +61,32 @@ test.describe("Authentication Flows", () => {
     await expect(page).toHaveURL(/.*\/dashboard/);
   });
 
+  test("User session persists across page reloads with valid token storage", async ({
+    page,
+  }) => {
+    const testUser = await mockLogin(page);
+
+    await page.goto("/login");
+    await page
+      .getByPlaceholder("the_smartest@kid.com")
+      .fill(testUser.user.username);
+    await page.getByPlaceholder("••••••••").fill("password123");
+    await page.getByRole("button", { name: "Let Me In!" }).click();
+
+    // Verify redirection to dashboard
+    await expect(page).toHaveURL(/.*\/dashboard/);
+
+    // Assert authentication tokens are persisted in localStorage
+    const storedToken = await page.evaluate(() =>
+      localStorage.getItem("accessToken"),
+    );
+    expect(storedToken).toBe(testUser.token);
+
+    // Reload page and verify user remains logged in on dashboard
+    await page.reload();
+    await expect(page).toHaveURL(/.*\/dashboard/);
+  });
+
   test("Successful signup redirects to dashboard", async ({ page }) => {
     const signupUser = await mockSignup(page);
     await mockLogin(page, signupUser);
