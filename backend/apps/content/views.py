@@ -647,11 +647,59 @@ class ModuleDraftViewSet(viewsets.ModelViewSet):
                     )
         return response.Response({"status": "reordered"}, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=["post"], url_path="restore")
+    def restore(self, request, pk=None):
+        draft = ModuleDraft.all_objects.filter(pk=pk).first()
+        if not draft:
+            return response.Response(
+                {"detail": f"ModuleDraft with id {pk} not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        draft.restore()
+        serializer = self.get_serializer(draft)
+        return response.Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class LessonDraftViewSet(viewsets.ModelViewSet):
     queryset = LessonDraft.objects.prefetch_related("quizzes").all()
     serializer_class = LessonDraftSerializer
     permission_classes = [permissions.AllowAny]
+
+    from rest_framework.decorators import action
+
+    @action(detail=True, methods=["post"], url_path="restore")
+    def restore(self, request, pk=None):
+        draft = LessonDraft.all_objects.filter(pk=pk).first()
+        if not draft:
+            return response.Response(
+                {"detail": f"LessonDraft with id {pk} not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        draft.restore()
+        serializer = self.get_serializer(draft)
+        return response.Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class DraftRestoreView(views.APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, pk):
+        draft = (
+            LessonDraft.all_objects.filter(pk=pk).first()
+            or ModuleDraft.all_objects.filter(pk=pk).first()
+        )
+        if not draft:
+            return response.Response(
+                {"detail": f"Draft with id {pk} not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        draft.restore()
+        if isinstance(draft, LessonDraft):
+            serializer = LessonDraftSerializer(draft)
+        else:
+            serializer = ModuleDraftSerializer(draft)
+        return response.Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class QuizDraftViewSet(viewsets.ModelViewSet):

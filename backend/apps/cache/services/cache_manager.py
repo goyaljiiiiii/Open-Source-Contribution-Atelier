@@ -166,13 +166,20 @@ class CacheManager:
                 f"Created cache dependency: {source} -> {target} ({cache_key})"
             )
 
-    def invalidate_dependencies(self, target: models.Model):
+    def invalidate_dependencies(self, target: models.Model, visited: Optional[set] = None):
         """
         Invalidate all cache keys that depend on a target object.
 
         Args:
             target: Target model instance that changed
         """
+        if visited is None:
+            visited = set()
+        target_key = (target._meta.label, target.pk)
+        if target_key in visited:
+            return
+        visited.add(target_key)
+
         target_ct = ContentType.objects.get_for_model(target)
 
         # Find all dependencies where this object is the target
@@ -193,15 +200,22 @@ class CacheManager:
             logger.info(f"Invalidated {len(keys_invalidated)} cache keys for {target}")
 
         # Also invalidate parent dependencies (cascade)
-        self.invalidate_dependencies_cascade(target)
+        self.invalidate_dependencies_cascade(target, visited=visited)
 
-    def invalidate_dependencies_cascade(self, target: models.Model):
+    def invalidate_dependencies_cascade(self, target: models.Model, visited: Optional[set] = None):
         """
         Cascade invalidation to related objects.
 
         Args:
             target: Target model instance
         """
+        if visited is None:
+            visited = set()
+        target_key = (target._meta.label, target.pk)
+        if target_key in visited:
+            return
+        visited.add(target_key)
+
         # Find objects that have this as a foreign key
         for field in target._meta.get_fields():
             if field.is_relation and field.many_to_one:
@@ -210,7 +224,7 @@ class CacheManager:
                     try:
                         parent = getattr(target, field.name)
                         if parent:
-                            self.invalidate_dependencies(parent)
+                            self.invalidate_dependencies(parent, visited=visited)
                     except Exception as e:
                         logger.warning("Caught exception: %s", e)
                         logger.exception(
