@@ -15,7 +15,10 @@ import {
 import { API_BASE, fetchApi } from "../../lib/api";
 import { useAuth } from "../../features/auth/AuthContext";
 import { AuditLogTable } from "../../components/admin/AuditLogTable";
-import { AuditEventDiff, AuditEventData } from "../../components/admin/AuditEventDiff";
+import {
+  AuditEventDiff,
+  AuditEventData,
+} from "../../components/admin/AuditEventDiff";
 import { toast } from "react-hot-toast";
 
 export function AuditLogViewerPage() {
@@ -36,7 +39,9 @@ export function AuditLogViewerPage() {
   const [endDate, setEndDate] = useState("");
 
   // Modal / Detail state
-  const [selectedEvent, setSelectedEvent] = useState<AuditEventData | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<AuditEventData | null>(
+    null,
+  );
 
   const fetchLogs = useCallback(async () => {
     try {
@@ -47,7 +52,8 @@ export function AuditLogViewerPage() {
 
       if (searchQuery.trim()) params.set("search", searchQuery.trim());
       if (actionFilter) params.set("action", actionFilter);
-      if (modelTypeFilter.trim()) params.set("model_type", modelTypeFilter.trim());
+      if (modelTypeFilter.trim())
+        params.set("model_type", modelTypeFilter.trim());
       if (actorFilter.trim()) params.set("actor", actorFilter.trim());
       if (startDate) params.set("start_date", startDate);
       if (endDate) params.set("end_date", endDate);
@@ -69,7 +75,16 @@ export function AuditLogViewerPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, searchQuery, actionFilter, modelTypeFilter, actorFilter, startDate, endDate]);
+  }, [
+    page,
+    pageSize,
+    searchQuery,
+    actionFilter,
+    modelTypeFilter,
+    actorFilter,
+    startDate,
+    endDate,
+  ]);
 
   useEffect(() => {
     fetchLogs();
@@ -91,15 +106,17 @@ export function AuditLogViewerPage() {
 
     if (searchQuery.trim()) params.set("search", searchQuery.trim());
     if (actionFilter) params.set("action", actionFilter);
-    if (modelTypeFilter.trim()) params.set("model_type", modelTypeFilter.trim());
+    if (modelTypeFilter.trim())
+      params.set("model_type", modelTypeFilter.trim());
     if (actorFilter.trim()) params.set("actor", actorFilter.trim());
     if (startDate) params.set("start_date", startDate);
     if (endDate) params.set("end_date", endDate);
 
     const exportUrl = `${API_BASE}/admin/audit/?${params.toString()}`;
-    
+
     // Trigger file download
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    const token =
+      localStorage.getItem("token") || sessionStorage.getItem("token");
     fetch(exportUrl, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
@@ -116,7 +133,9 @@ export function AuditLogViewerPage() {
         a.click();
         a.remove();
         window.URL.revokeObjectURL(url);
-        toast.success(`Successfully exported audit logs as ${format.toUpperCase()}`);
+        toast.success(
+          `Successfully exported audit logs as ${format.toUpperCase()}`,
+        );
       })
       .catch((err) => {
         console.error("Export error:", err);
@@ -154,7 +173,8 @@ export function AuditLogViewerPage() {
               Audit Event Inspector & Chronicles
             </h1>
             <p className="text-xs md:text-sm text-blue-100 font-medium">
-              Playful live ledger of domain writes, snapshot history, state diff investigations, and system events.
+              Playful live ledger of domain writes, snapshot history, state diff
+              investigations, and system events.
             </p>
           </div>
         </div>
@@ -166,7 +186,9 @@ export function AuditLogViewerPage() {
             disabled={loading}
             className="flex items-center gap-1.5 px-3 py-2 bg-white/20 hover:bg-white/30 border border-white/30 rounded-xl text-xs font-bold text-white transition-all backdrop-blur-md"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`}
+            />
             Refresh Trail
           </button>
 

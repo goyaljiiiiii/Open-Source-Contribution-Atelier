@@ -43,9 +43,13 @@ export const DeliveryLogTable: React.FC<DeliveryLogTableProps> = ({
   isReplayingId = null,
   isLoading = false,
 }) => {
-  const [inspectDelivery, setInspectDelivery] = useState<WebhookDelivery | null>(null);
+  const [inspectDelivery, setInspectDelivery] =
+    useState<WebhookDelivery | null>(null);
 
-  const getStatusBadge = (status: WebhookDelivery["status"], statusCode: number | null) => {
+  const getStatusBadge = (
+    status: WebhookDelivery["status"],
+    statusCode: number | null,
+  ) => {
     switch (status) {
       case "success":
         return (
@@ -97,14 +101,21 @@ export const DeliveryLogTable: React.FC<DeliveryLogTableProps> = ({
             <tbody className="divide-y divide-slate-800/60 text-slate-200">
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-slate-500 font-medium">
+                  <td
+                    colSpan={5}
+                    className="p-8 text-center text-slate-500 font-medium"
+                  >
                     Loading delivery audit logs...
                   </td>
                 </tr>
               ) : deliveries.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-slate-500 font-medium">
-                    No webhook delivery events recorded yet. Trigger a test ping or event to populate logs.
+                  <td
+                    colSpan={5}
+                    className="p-8 text-center text-slate-500 font-medium"
+                  >
+                    No webhook delivery events recorded yet. Trigger a test ping
+                    or event to populate logs.
                   </td>
                 </tr>
               ) : (
@@ -116,7 +127,9 @@ export const DeliveryLogTable: React.FC<DeliveryLogTableProps> = ({
                     {/* Delivery ID & Event */}
                     <td className="p-4">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-slate-400">#{delivery.id}</span>
+                        <span className="font-mono text-slate-400">
+                          #{delivery.id}
+                        </span>
                         <span className="px-2 py-0.5 font-mono font-bold text-[11px] text-indigo-300 bg-indigo-950/60 border border-indigo-800/40 rounded">
                           {delivery.event_type}
                         </span>
@@ -124,14 +137,17 @@ export const DeliveryLogTable: React.FC<DeliveryLogTableProps> = ({
                     </td>
 
                     {/* Status Badge */}
-                    <td className="p-4">{getStatusBadge(delivery.status, delivery.status_code)}</td>
+                    <td className="p-4">
+                      {getStatusBadge(delivery.status, delivery.status_code)}
+                    </td>
 
                     {/* HTTP Code */}
                     <td className="p-4 font-mono font-bold">
                       {delivery.status_code ? (
                         <span
                           className={
-                            delivery.status_code >= 200 && delivery.status_code < 300
+                            delivery.status_code >= 200 &&
+                            delivery.status_code < 300
                               ? "text-emerald-400"
                               : "text-rose-400"
                           }
@@ -166,10 +182,14 @@ export const DeliveryLogTable: React.FC<DeliveryLogTableProps> = ({
                       >
                         <RotateCw
                           className={`w-3.5 h-3.5 ${
-                            isReplayingId === delivery.id ? "animate-spin text-indigo-400" : ""
+                            isReplayingId === delivery.id
+                              ? "animate-spin text-indigo-400"
+                              : ""
                           }`}
                         />
-                        {isReplayingId === delivery.id ? "Replaying..." : "Replay"}
+                        {isReplayingId === delivery.id
+                          ? "Replaying..."
+                          : "Replay"}
                       </button>
                     </td>
                   </tr>
@@ -214,7 +234,9 @@ export const DeliveryLogTable: React.FC<DeliveryLogTableProps> = ({
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
                   HMAC SHA-256 Signed Payload
                 </div>
-                <span className="font-mono text-slate-400">Header: X-Hub-Signature-256</span>
+                <span className="font-mono text-slate-400">
+                  Header: X-Hub-Signature-256
+                </span>
               </div>
 
               {/* Sent JSON Payload */}
@@ -233,7 +255,8 @@ export const DeliveryLogTable: React.FC<DeliveryLogTableProps> = ({
                   Endpoint Response Body
                 </h4>
                 <pre className="p-4 bg-slate-950 border border-slate-800 rounded-xl font-mono text-xs text-slate-300 overflow-x-auto max-h-48">
-                  {inspectDelivery.response_body || "No response body received."}
+                  {inspectDelivery.response_body ||
+                    "No response body received."}
                 </pre>
               </div>
             </div>

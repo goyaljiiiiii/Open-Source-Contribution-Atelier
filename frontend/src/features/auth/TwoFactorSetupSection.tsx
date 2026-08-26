@@ -127,7 +127,9 @@ export function TwoFactorSetupSection() {
       setConfirmPassword("");
       await fetchStatus();
     } catch (err: any) {
-      toast.error(err.message || "Incorrect password. Failed to regenerate backup codes.");
+      toast.error(
+        err.message || "Incorrect password. Failed to regenerate backup codes.",
+      );
     } finally {
       setModalLoading(false);
     }
@@ -146,7 +148,9 @@ export function TwoFactorSetupSection() {
   };
 
   const downloadBackupCodes = (codes: string[]) => {
-    const content = `ATELIER 2FA RECOVERY BACKUP CODES\n${new Date().toISOString()}\n\nKeep these codes in a safe place. Each code can be used once.\n\n` + codes.join("\n");
+    const content =
+      `ATELIER 2FA RECOVERY BACKUP CODES\n${new Date().toISOString()}\n\nKeep these codes in a safe place. Each code can be used once.\n\n` +
+      codes.join("\n");
     const blob = new Blob([content], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -168,15 +172,22 @@ export function TwoFactorSetupSection() {
     <div className="rounded-2xl border-4 border-black bg-white p-8 shadow-card dark:bg-[#121218] dark:border-[#3a3a45]">
       <div className="flex items-center justify-between border-b-2 border-dashed border-gray-200 dark:border-gray-800 pb-4 mb-6">
         <div className="flex items-center gap-3">
-          <div className={`p-3 rounded-xl border-2 border-black ${status?.is_enabled ? "bg-emerald-400 text-black" : "bg-amber-300 text-black"}`}>
-            {status?.is_enabled ? <ShieldCheck className="w-7 h-7" /> : <ShieldAlert className="w-7 h-7" />}
+          <div
+            className={`p-3 rounded-xl border-2 border-black ${status?.is_enabled ? "bg-emerald-400 text-black" : "bg-amber-300 text-black"}`}
+          >
+            {status?.is_enabled ? (
+              <ShieldCheck className="w-7 h-7" />
+            ) : (
+              <ShieldAlert className="w-7 h-7" />
+            )}
           </div>
           <div>
             <h3 className="text-xl font-black uppercase tracking-tight text-black dark:text-white flex items-center gap-2">
               Two-Factor Authentication (2FA)
             </h3>
             <p className="text-sm font-medium text-muted">
-              Secure your account with an authenticator app (Google Authenticator, Authy, Bitwarden).
+              Secure your account with an authenticator app (Google
+              Authenticator, Authy, Bitwarden).
             </p>
           </div>
         </div>
@@ -202,7 +213,9 @@ export function TwoFactorSetupSection() {
               Enhance Account Security
             </h4>
             <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xl">
-              Requiring a 6-digit code from an authenticator app protects your maintainer and contributor privileges against password leaks and phishing.
+              Requiring a 6-digit code from an authenticator app protects your
+              maintainer and contributor privileges against password leaks and
+              phishing.
             </p>
           </div>
           <button
@@ -250,7 +263,9 @@ export function TwoFactorSetupSection() {
                   alt="2FA QR Code"
                   className="w-44 h-44 object-contain"
                 />
-                <p className="mt-2 text-xs font-medium text-gray-500">Scan with Authenticator app</p>
+                <p className="mt-2 text-xs font-medium text-gray-500">
+                  Scan with Authenticator app
+                </p>
               </div>
 
               {/* Secret Key Text */}
@@ -266,7 +281,11 @@ export function TwoFactorSetupSection() {
                     onClick={() => copyToClipboard(setupData.secret, "secret")}
                     className="p-2 border-2 border-black rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:text-white"
                   >
-                    {copiedSecret ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                    {copiedSecret ? (
+                      <Check className="w-4 h-4 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -287,12 +306,16 @@ export function TwoFactorSetupSection() {
                   </button>
                 </div>
                 <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold mb-2">
-                  ⚠️ Save these 10 backup codes in a password manager. You can use them if you lose access to your authenticator.
+                  ⚠️ Save these 10 backup codes in a password manager. You can
+                  use them if you lose access to your authenticator.
                 </p>
 
                 <div className="grid grid-cols-2 gap-1.5 p-3 bg-gray-100 dark:bg-gray-800/80 rounded-lg border border-gray-300 dark:border-gray-700 max-h-36 overflow-y-auto">
                   {setupData.backup_codes.map((code, index) => (
-                    <span key={index} className="text-xs font-mono font-bold text-gray-800 dark:text-gray-200">
+                    <span
+                      key={index}
+                      className="text-xs font-mono font-bold text-gray-800 dark:text-gray-200"
+                    >
                       {code}
                     </span>
                   ))}
@@ -300,7 +323,10 @@ export function TwoFactorSetupSection() {
               </div>
 
               {/* Step 3: Enter Verification Code */}
-              <form onSubmit={handleVerifySetup} className="space-y-3 pt-3 border-t border-gray-200 dark:border-gray-800">
+              <form
+                onSubmit={handleVerifySetup}
+                className="space-y-3 pt-3 border-t border-gray-200 dark:border-gray-800"
+              >
                 <label className="block text-xs font-bold uppercase tracking-wider text-black dark:text-white">
                   Step 3: Enter 6-Digit Code to Confirm
                 </label>
@@ -310,7 +336,9 @@ export function TwoFactorSetupSection() {
                     maxLength={6}
                     placeholder="123456"
                     value={verificationCode}
-                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ""))}
+                    onChange={(e) =>
+                      setVerificationCode(e.target.value.replace(/\D/g, ""))
+                    }
                     className="w-full px-4 py-2 text-center text-lg tracking-widest font-mono font-bold border-2 border-black rounded-xl bg-white text-black dark:bg-black dark:text-white dark:border-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <button
@@ -338,7 +366,8 @@ export function TwoFactorSetupSection() {
                   Your Account is Protected with 2FA
                 </h4>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {status.backup_codes_remaining} single-use recovery backup codes remaining.
+                  {status.backup_codes_remaining} single-use recovery backup
+                  codes remaining.
                 </p>
               </div>
             </div>
@@ -378,7 +407,8 @@ export function TwoFactorSetupSection() {
               <Lock className="w-5 h-5 text-red-600" /> Confirm Disable 2FA
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Please enter your current account password to disable two-factor authentication.
+              Please enter your current account password to disable two-factor
+              authentication.
             </p>
             <form onSubmit={handleDisable2FA} className="space-y-4">
               <input
@@ -415,14 +445,19 @@ export function TwoFactorSetupSection() {
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-[#181820] border-4 border-black rounded-2xl p-6 max-w-md w-full shadow-card space-y-4">
             <h3 className="text-lg font-black uppercase text-black dark:text-white flex items-center gap-2">
-              <Key className="w-5 h-5 text-blue-600" /> Generate New Backup Codes
+              <Key className="w-5 h-5 text-blue-600" /> Generate New Backup
+              Codes
             </h3>
             {!newBackupCodes ? (
               <>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Generating new backup codes will invalidate any remaining existing backup codes. Enter your password to proceed.
+                  Generating new backup codes will invalidate any remaining
+                  existing backup codes. Enter your password to proceed.
                 </p>
-                <form onSubmit={handleRegenerateBackupCodes} className="space-y-4">
+                <form
+                  onSubmit={handleRegenerateBackupCodes}
+                  className="space-y-4"
+                >
                   <input
                     type="password"
                     placeholder="Enter account password"

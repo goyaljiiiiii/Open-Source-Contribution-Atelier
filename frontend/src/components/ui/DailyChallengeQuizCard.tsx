@@ -14,28 +14,26 @@ interface QuizQuestion {
 
 const FALLBACK_QUIZZES: QuizQuestion[] = [
   {
-    question: "What is the primary defining characteristic of open-source software?",
+    question:
+      "What is the primary defining characteristic of open-source software?",
     options: [
       "It is always completely free of charge.",
       "Its source code is publicly accessible, allowing anyone to view, modify, and distribute it.",
       "It can only be developed by large non-profit foundations.",
-      "It has no copyright licenses associated with it."
+      "It has no copyright licenses associated with it.",
     ],
     answer: 1,
-    explanation: "Open-source software is defined by its source code being publicly available for anyone to inspect, modify, and enhance under open licenses.",
-    lessonTitle: "What is Open Source?"
+    explanation:
+      "Open-source software is defined by its source code being publicly available for anyone to inspect, modify, and enhance under open licenses.",
+    lessonTitle: "What is Open Source?",
   },
   {
     question: "Which Git command is used to record changes to the repository?",
-    options: [
-      "git push",
-      "git stage",
-      "git commit",
-      "git checkout"
-    ],
+    options: ["git push", "git stage", "git commit", "git checkout"],
     answer: 2,
-    explanation: "git commit creates a new commit containing the current contents of the index and the given log message describing the changes.",
-    lessonTitle: "Git Basics"
+    explanation:
+      "git commit creates a new commit containing the current contents of the index and the given log message describing the changes.",
+    lessonTitle: "Git Basics",
   },
   {
     question: "What is the primary purpose of a pull request (PR)?",
@@ -43,12 +41,13 @@ const FALLBACK_QUIZZES: QuizQuestion[] = [
       "To download code locally",
       "To propose changes and request review before merging into a target branch",
       "To delete a Git branch automatically",
-      "To bypass automated CI tests"
+      "To bypass automated CI tests",
     ],
     answer: 1,
-    explanation: "Pull requests let you tell others about changes you've pushed to a branch in a repository and discuss/review potential changes before they are merged.",
-    lessonTitle: "Pull Requests & Code Review"
-  }
+    explanation:
+      "Pull requests let you tell others about changes you've pushed to a branch in a repository and discuss/review potential changes before they are merged.",
+    lessonTitle: "Pull Requests & Code Review",
+  },
 ];
 
 export function DailyChallengeQuizCard() {
@@ -63,7 +62,12 @@ export function DailyChallengeQuizCard() {
       for (const lesson of mod.lessons || []) {
         if (lesson.quizzes && Array.isArray(lesson.quizzes)) {
           for (const q of lesson.quizzes as any[]) {
-            if (q && q.question && Array.isArray(q.options) && typeof q.answer === "number") {
+            if (
+              q &&
+              q.question &&
+              Array.isArray(q.options) &&
+              typeof q.answer === "number"
+            ) {
               list.push({
                 question: q.question,
                 options: q.options,
@@ -119,7 +123,9 @@ export function DailyChallengeQuizCard() {
   };
 
   const [initial] = useState(getInitialState);
-  const [selectedOption, setSelectedOption] = useState<number | null>(initial.selectedOption);
+  const [selectedOption, setSelectedOption] = useState<number | null>(
+    initial.selectedOption,
+  );
   const [isSubmitted, setIsSubmitted] = useState<boolean>(initial.isSubmitted);
   const [isCompleted, setIsCompleted] = useState<boolean>(initial.isCompleted);
   const [earnedXp, setEarnedXp] = useState<number>(initial.earnedXp);
@@ -155,7 +161,9 @@ export function DailyChallengeQuizCard() {
         suppressErrorToast: true,
       });
       queryClient.invalidateQueries({ queryKey: ["contributorStats"] });
-      queryClient.invalidateQueries({ queryKey: ["contributorDashboardStats"] });
+      queryClient.invalidateQueries({
+        queryKey: ["contributorDashboardStats"],
+      });
     } catch {
       // Ignored if offline or endpoint not directly accepting manual delta
     }
@@ -211,16 +219,22 @@ export function DailyChallengeQuizCard() {
                 <XCircle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
               )}
               <h4 className="font-black text-sm">
-                {isCorrect ? "Correct! Well done!" : "Nice attempt!"} (+{earnedXp} XP)
+                {isCorrect ? "Correct! Well done!" : "Nice attempt!"} (+
+                {earnedXp} XP)
               </h4>
             </div>
-            <p className="text-xs font-bold leading-relaxed">{dailyQuiz.explanation}</p>
+            <p className="text-xs font-bold leading-relaxed">
+              {dailyQuiz.explanation}
+            </p>
           </div>
 
           <div className="flex items-center justify-between p-4 rounded-2xl border-2 border-black/10 bg-white/60 dark:bg-black/20 dark:border-white/10 text-xs font-bold text-gray-600 dark:text-[#c4bbae]">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-              <span>You've completed today's challenge! Come back tomorrow for a new question.</span>
+              <span>
+                You've completed today's challenge! Come back tomorrow for a new
+                question.
+              </span>
             </div>
             <span className="bg-black text-white dark:bg-white dark:text-black px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
               Done for today
@@ -251,7 +265,9 @@ export function DailyChallengeQuizCard() {
                   <span>{option}</span>
                   <span
                     className={`w-5 h-5 rounded-full border-2 border-black flex items-center justify-center text-[10px] font-black flex-shrink-0 ${
-                      isSelected ? "bg-black text-white" : "bg-transparent text-black dark:text-white"
+                      isSelected
+                        ? "bg-black text-white"
+                        : "bg-transparent text-black dark:text-white"
                     }`}
                   >
                     {String.fromCharCode(65 + idx)}

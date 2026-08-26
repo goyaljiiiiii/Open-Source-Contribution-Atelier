@@ -134,7 +134,7 @@ describe("AuthContext and useAuth", () => {
     // Suppress console.error for expected thrown error
     const consoleError = vi
       .spyOn(console, "error")
-      .mockImplementation(() => { });
+      .mockImplementation(() => {});
 
     expect(() => {
       renderHook(() => useAuth());
@@ -160,7 +160,7 @@ describe("AuthContext and useAuth", () => {
     // Suppress console.error inside logout
     const consoleError = vi
       .spyOn(console, "error")
-      .mockImplementation(() => { });
+      .mockImplementation(() => {});
 
     await act(async () => {
       await result.current.logout();
@@ -173,24 +173,24 @@ describe("AuthContext and useAuth", () => {
     consoleError.mockRestore();
   });
 
- it("should handle custom edge case: localStorage throws error on access (e.g. disabled cookies/incognito)", async () => {
-  const storageError = new Error("Access denied");
+  it("should handle custom edge case: localStorage throws error on access (e.g. disabled cookies/incognito)", async () => {
+    const storageError = new Error("Access denied");
 
-  vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
-    throw storageError;
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw storageError;
+    });
+
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw storageError;
+    });
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    // Login dispatches Redux actions, so it should not crash.
+    expect(result.current).toBeDefined();
   });
-
-  vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
-    throw storageError;
-  });
-
-  const { result } = renderHook(() => useAuth(), { wrapper });
-
-  await waitFor(() => {
-    expect(result.current.isLoading).toBe(false);
-  });
-
-  // Login dispatches Redux actions, so it should not crash.
-  expect(result.current).toBeDefined();
-});
 });

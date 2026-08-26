@@ -1,7 +1,15 @@
 import { useState, useMemo, useRef, useCallback } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { fetchApi } from "../../lib/api";
-import { HelpCircle, Code, Award, BookOpen, Clock, Search, Filter } from "lucide-react";
+import {
+  HelpCircle,
+  Code,
+  Award,
+  BookOpen,
+  Clock,
+  Search,
+  Filter,
+} from "lucide-react";
 import { DiscussionSearchInput } from "./DiscussionSearchInput";
 
 interface FeedEntry {
@@ -61,18 +69,24 @@ function timeAgo(dateStr: string): string {
 
 function HighlightText({ text, query }: { text: string; query: string }) {
   if (!query.trim()) return <>{text}</>;
-  const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+  const regex = new RegExp(
+    `(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+    "gi",
+  );
   const parts = text.split(regex);
   return (
     <>
       {parts.map((part, i) =>
         regex.test(part) ? (
-          <mark key={i} className="bg-yellow-200 dark:bg-yellow-800 text-black dark:text-white px-0.5 rounded">
+          <mark
+            key={i}
+            className="bg-yellow-200 dark:bg-yellow-800 text-black dark:text-white px-0.5 rounded"
+          >
             {part}
           </mark>
         ) : (
           part
-        )
+        ),
       )}
     </>
   );
@@ -174,7 +188,8 @@ export function CommunityFeed() {
     queryKey: ["feedPostSearch", searchQuery, selectedType],
     queryFn: async () => {
       let params = [];
-      if (searchQuery.trim()) params.push(`q=${encodeURIComponent(searchQuery.trim())}`);
+      if (searchQuery.trim())
+        params.push(`q=${encodeURIComponent(searchQuery.trim())}`);
       if (selectedType !== "all") params.push(`post_type=${selectedType}`);
       const queryString = params.length ? `?${params.join("&")}` : "";
       return fetchApi(`/feed/posts/search/${queryString}`);
@@ -202,7 +217,8 @@ export function CommunityFeed() {
     [isFetchingNextPage, hasNextPage, fetchNextPage],
   );
 
-  const isSearchActive = searchQuery.trim().length > 0 || selectedType !== "all";
+  const isSearchActive =
+    searchQuery.trim().length > 0 || selectedType !== "all";
 
   return (
     <div className="rounded-2xl border-4 border-black bg-white p-4 sm:p-6 shadow-card dark:bg-[#1a1a24] dark:border-[#3a3a45]">
@@ -251,7 +267,8 @@ export function CommunityFeed() {
           ) : (
             <div className="space-y-3">
               <p className="text-xs font-bold text-muted mb-2">
-                Found {searchData.count} post{searchData.count === 1 ? "" : "s"}:
+                Found {searchData.count} post{searchData.count === 1 ? "" : "s"}
+                :
               </p>
               {searchData.results.map((post) => (
                 <div

@@ -20,12 +20,19 @@ export interface CodeBlockProps {
   className?: string;
 }
 
-const LANGUAGE_BADGES: Record<string, { label: string; bg: string; text: string }> = {
+const LANGUAGE_BADGES: Record<
+  string,
+  { label: string; bg: string; text: string }
+> = {
   ts: { label: "TS", bg: "bg-blue-500/20", text: "text-blue-400" },
   typescript: { label: "TS", bg: "bg-blue-500/20", text: "text-blue-400" },
   js: { label: "JS", bg: "bg-yellow-500/20", text: "text-yellow-400" },
   javascript: { label: "JS", bg: "bg-yellow-500/20", text: "text-yellow-400" },
-  python: { label: "Python", bg: "bg-emerald-500/20", text: "text-emerald-400" },
+  python: {
+    label: "Python",
+    bg: "bg-emerald-500/20",
+    text: "text-emerald-400",
+  },
   py: { label: "Python", bg: "bg-emerald-500/20", text: "text-emerald-400" },
   bash: { label: "Bash", bg: "bg-purple-500/20", text: "text-purple-400" },
   sh: { label: "Bash", bg: "bg-purple-500/20", text: "text-purple-400" },
@@ -62,11 +69,15 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
   // Prism Highlight
   const getHighlightedCode = () => {
     let grammar = Prism.languages.javascript;
-    if (langKey === "python" || langKey === "py") grammar = Prism.languages.python;
-    else if (langKey === "typescript" || langKey === "ts") grammar = Prism.languages.typescript;
-    else if (langKey === "bash" || langKey === "sh") grammar = Prism.languages.bash;
+    if (langKey === "python" || langKey === "py")
+      grammar = Prism.languages.python;
+    else if (langKey === "typescript" || langKey === "ts")
+      grammar = Prism.languages.typescript;
+    else if (langKey === "bash" || langKey === "sh")
+      grammar = Prism.languages.bash;
     else if (langKey === "json") grammar = Prism.languages.json;
-    else if (langKey === "yaml" || langKey === "yml") grammar = Prism.languages.yaml;
+    else if (langKey === "yaml" || langKey === "yml")
+      grammar = Prism.languages.yaml;
 
     if (!grammar) return code;
     return Prism.highlight(code.trim(), grammar, langKey);
@@ -75,7 +86,9 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
   const lines = code.trim().split("\n");
 
   return (
-    <div className={`w-full rounded-2xl border border-gray-800 bg-[#0d0f17] shadow-xl overflow-hidden text-gray-200 font-mono text-xs ${className}`}>
+    <div
+      className={`w-full rounded-2xl border border-gray-800 bg-[#0d0f17] shadow-xl overflow-hidden text-gray-200 font-mono text-xs ${className}`}
+    >
       {/* Header Bar */}
       <div className="flex items-center justify-between px-4 py-2.5 bg-[#131622] border-b border-gray-800/80">
         <div className="flex items-center gap-2">
@@ -108,7 +121,11 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
           }`}
           aria-label="Copy to Clipboard"
         >
-          {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+          {copied ? (
+            <Check className="w-3.5 h-3.5 text-emerald-400" />
+          ) : (
+            <Copy className="w-3.5 h-3.5" />
+          )}
           {copied ? "Copied!" : "Copy"}
         </button>
       </div>
@@ -124,7 +141,9 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
                 <tr
                   key={idx}
                   className={`transition-colors ${
-                    isHighlighted ? "bg-blue-500/15 border-l-2 border-blue-500" : ""
+                    isHighlighted
+                      ? "bg-blue-500/15 border-l-2 border-blue-500"
+                      : ""
                   }`}
                 >
                   {showLineNumbers && (
@@ -137,7 +156,8 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
                       dangerouslySetInnerHTML={{
                         __html: Prism.highlight(
                           line,
-                          Prism.languages[langKey] || Prism.languages.javascript,
+                          Prism.languages[langKey] ||
+                            Prism.languages.javascript,
                           langKey,
                         ),
                       }}

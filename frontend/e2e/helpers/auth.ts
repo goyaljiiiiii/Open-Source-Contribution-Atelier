@@ -13,7 +13,9 @@ export interface TestUserData {
  *
  * @param prefix - Prefix for the username and email
  */
-export function generateUniqueTestUser(prefix = "user"): Required<Omit<TestUserData, keyof Record<string, any>>> & TestUserData {
+export function generateUniqueTestUser(
+  prefix = "user",
+): Required<Omit<TestUserData, keyof Record<string, any>>> & TestUserData {
   const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   return {
     id: Math.floor(Math.random() * 900000) + 100000,
@@ -117,7 +119,10 @@ export async function mockMagicLink(page: Page, userData: TestUserData = {}) {
  * @param page - Playwright Page object
  * @param token - Optional custom token to store
  */
-export async function setAuthenticatedState(page: Page, token = "mock-access-token") {
+export async function setAuthenticatedState(
+  page: Page,
+  token = "mock-access-token",
+) {
   // First, visit root or domain so we can set local storage
   await page.goto("/");
   await page.evaluate((tok) => {

@@ -121,4 +121,3 @@ export interface WeeklyGoalData {
   overall_progress_pct: number;
   daily_breakdown: WeeklyGoalDay[];
 }
-

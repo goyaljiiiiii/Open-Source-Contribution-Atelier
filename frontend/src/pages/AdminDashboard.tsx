@@ -1,13 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { fetchApi } from '../lib/api';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import React, { useState, useEffect } from "react";
+import { fetchApi } from "../lib/api";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 export function AdminDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchApi('/admin/productivity/')
+    fetchApi("/admin/productivity/")
       .then(setData)
       .finally(() => setLoading(false));
   }, []);
@@ -17,7 +25,7 @@ export function AdminDashboard() {
   return (
     <div className="admin-dashboard">
       <h1>📊 Developer Productivity Dashboard</h1>
-      
+
       <div className="stats-grid">
         <div className="stat-card">
           <span>👥 Active Today</span>
@@ -41,8 +49,18 @@ export function AdminDashboard() {
             <XAxis dataKey="date" />
             <YAxis />
             <Tooltip />
-            <Line type="monotone" dataKey="opened" stroke="#4CAF50" name="PRs Opened" />
-            <Line type="monotone" dataKey="closed" stroke="#f44336" name="PRs Closed" />
+            <Line
+              type="monotone"
+              dataKey="opened"
+              stroke="#4CAF50"
+              name="PRs Opened"
+            />
+            <Line
+              type="monotone"
+              dataKey="closed"
+              stroke="#f44336"
+              name="PRs Closed"
+            />
           </LineChart>
         </ResponsiveContainer>
       </div>

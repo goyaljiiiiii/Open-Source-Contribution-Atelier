@@ -6,10 +6,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .services import AiTutorService
+from .throttles import AiTutorRateThrottle
 
 
 class TutorAskView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [AiTutorRateThrottle]
 
     def post(self, request):
         question = request.data.get("question", "").strip()

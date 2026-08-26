@@ -1,4 +1,10 @@
-import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  cleanup,
+} from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { AdvancedSearch } from "../components/Search/AdvancedSearch";
 import * as apiModule from "../lib/api";
@@ -47,7 +53,9 @@ describe("AdvancedSearch component", () => {
 
     await waitFor(
       () => {
-        expect(screen.getByText("Introduction to Git Branching")).toBeInTheDocument();
+        expect(
+          screen.getByText("Introduction to Git Branching"),
+        ).toBeInTheDocument();
       },
       { timeout: 3000 },
     );
@@ -112,7 +120,9 @@ describe("AdvancedSearch component", () => {
     });
 
     render(<AdvancedSearch />);
-    const input = screen.getByPlaceholderText(/search with natural language/i) as HTMLInputElement;
+    const input = screen.getByPlaceholderText(
+      /search with natural language/i,
+    ) as HTMLInputElement;
     const searchBtn = screen.getByRole("button", { name: /search/i });
 
     fireEvent.change(input, { target: { value: "review" } });

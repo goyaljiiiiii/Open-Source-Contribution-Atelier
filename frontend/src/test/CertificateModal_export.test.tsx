@@ -11,11 +11,7 @@ vi.mock("html-to-image", () => ({
 describe("CertificateModal Safari-safe image export", () => {
   it("renders certificate modal with Download PNG button", () => {
     render(
-      <CertificateModal
-        isOpen={true}
-        onClose={vi.fn()}
-        username="Nandini"
-      />
+      <CertificateModal isOpen={true} onClose={vi.fn()} username="Nandini" />,
     );
 
     const exportBtn = screen.getByText(/download png/i);

@@ -15,7 +15,6 @@ vi.mock("../components/docs/ArchitectureViewer", () => ({
   ArchitectureViewer: () => <div data-testid="architecture-viewer" />,
 }));
 
-
 describe("MarkdownRenderer Code Block Copy Button", () => {
   afterEach(() => {
     cleanup();
@@ -34,10 +33,7 @@ describe("MarkdownRenderer Code Block Copy Button", () => {
     const markdown = "```bash\necho 'hello world'\n```";
 
     render(
-      <MarkdownRenderer
-        content={markdown}
-        loadGlossaryFn={async () => []}
-      />
+      <MarkdownRenderer content={markdown} loadGlossaryFn={async () => []} />,
     );
 
     expect(screen.getByText("BASH")).toBeInTheDocument();
@@ -52,10 +48,7 @@ describe("MarkdownRenderer Code Block Copy Button", () => {
     const markdown = "```python\ndef greet():\n    print('Hello')\n```";
 
     render(
-      <MarkdownRenderer
-        content={markdown}
-        loadGlossaryFn={async () => []}
-      />
+      <MarkdownRenderer content={markdown} loadGlossaryFn={async () => []} />,
     );
 
     expect(screen.getByText("PYTHON")).toBeInTheDocument();
@@ -63,9 +56,8 @@ describe("MarkdownRenderer Code Block Copy Button", () => {
     const copyBtns = screen.getAllByRole("button", { name: /Copy code/i });
     fireEvent.click(copyBtns[0]);
 
-
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-      "def greet():\n    print('Hello')"
+      "def greet():\n    print('Hello')",
     );
   });
 });

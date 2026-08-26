@@ -1,9 +1,5 @@
 import React from "react";
-import {
-  Activity,
-  Server,
-  Code,
-} from "lucide-react";
+import { Activity, Server, Code } from "lucide-react";
 import { WebSocketSimulator } from "../../components/docs/WebSocketSimulator";
 
 export function WebSocketSimulatorPage() {
@@ -99,7 +95,9 @@ export function useWebSocket(url: string) {
               WebSocket Channel Flow Simulator
             </h1>
             <p className="text-sm font-medium text-muted dark:text-[#c4bbae] mt-1">
-              Interactive protocol demonstration of real-time communication between React clients, Django Channels consumers, and Redis pub/sub.
+              Interactive protocol demonstration of real-time communication
+              between React clients, Django Channels consumers, and Redis
+              pub/sub.
             </p>
           </div>
         </div>
@@ -117,7 +115,12 @@ export function useWebSocket(url: string) {
             Django Channels Async Consumer
           </div>
           <p className="text-xs text-muted dark:text-[#a0988c]">
-            Consumers handle ASGI WebSocket connections asynchronously, parsing inbound frames and managing group subscriptions via <code className="font-mono text-purple-400">channel_layer.group_send()</code>.
+            Consumers handle ASGI WebSocket connections asynchronously, parsing
+            inbound frames and managing group subscriptions via{" "}
+            <code className="font-mono text-purple-400">
+              channel_layer.group_send()
+            </code>
+            .
           </p>
 
           <pre className="text-xs font-mono bg-[#0d0c0a] text-[#f0ebe2] p-4 rounded-xl border border-black/20 dark:border-[#2e2924] overflow-x-auto">
@@ -132,7 +135,9 @@ export function useWebSocket(url: string) {
             React Custom WebSocket Hook
           </div>
           <p className="text-xs text-muted dark:text-[#a0988c]">
-            The frontend manages persistent WebSocket lifecycles with state tracking for active connection status, frame buffering, and auto-reconnect fallback.
+            The frontend manages persistent WebSocket lifecycles with state
+            tracking for active connection status, frame buffering, and
+            auto-reconnect fallback.
           </p>
 
           <pre className="text-xs font-mono bg-[#0d0c0a] text-[#f0ebe2] p-4 rounded-xl border border-black/20 dark:border-[#2e2924] overflow-x-auto">

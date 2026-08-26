@@ -15,7 +15,9 @@ describe("useStripeCheckout hook", () => {
   });
 
   it("should handle checkout_url response signature", async () => {
-    vi.spyOn(api, "fetchApi").mockResolvedValueOnce({ checkout_url: "https://stripe.com/checkout123" });
+    vi.spyOn(api, "fetchApi").mockResolvedValueOnce({
+      checkout_url: "https://stripe.com/checkout123",
+    });
     const { result } = renderHook(() => useStripeCheckout());
 
     await act(async () => {
@@ -29,7 +31,9 @@ describe("useStripeCheckout hook", () => {
   });
 
   it("should handle url response signature", async () => {
-    vi.spyOn(api, "fetchApi").mockResolvedValueOnce({ url: "https://stripe.com/session456" });
+    vi.spyOn(api, "fetchApi").mockResolvedValueOnce({
+      url: "https://stripe.com/session456",
+    });
     const { result } = renderHook(() => useStripeCheckout());
 
     await act(async () => {

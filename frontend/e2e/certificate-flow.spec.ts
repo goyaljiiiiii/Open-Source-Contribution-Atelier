@@ -95,7 +95,9 @@ test.describe("Certificate Generation & Verification E2E Flow", () => {
     await expect(downloadPngBtn).toBeVisible();
 
     // Trigger PNG download and catch event
-    const downloadPromise = authPage.waitForEvent("download", { timeout: 15000 });
+    const downloadPromise = authPage.waitForEvent("download", {
+      timeout: 15000,
+    });
     await downloadPngBtn.click();
     const download = await downloadPromise;
 

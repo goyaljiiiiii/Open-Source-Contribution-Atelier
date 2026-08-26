@@ -45,7 +45,6 @@ export function RichTextEditor({
         "|",
         "guide",
       ],
-       
     } as any;
   }, [placeholder]);
 

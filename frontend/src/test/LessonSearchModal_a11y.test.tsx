@@ -1,4 +1,10 @@
-import { render, screen, fireEvent, cleanup, act } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  cleanup,
+  act,
+} from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { LessonSearchModal } from "../components/Search/LessonSearchModal";
 import { BrowserRouter } from "react-router-dom";
@@ -72,7 +78,10 @@ describe("LessonSearchModal accessibility & keyboard navigation", () => {
     expect(options).toHaveLength(2);
     expect(options[0]).toHaveAttribute("aria-selected", "true");
     expect(options[1]).toHaveAttribute("aria-selected", "false");
-    expect(combobox).toHaveAttribute("aria-activedescendant", "lesson-option-0");
+    expect(combobox).toHaveAttribute(
+      "aria-activedescendant",
+      "lesson-option-0",
+    );
   });
 
   it("navigates options via ArrowDown and ArrowUp updating aria-activedescendant", () => {
@@ -96,13 +105,19 @@ describe("LessonSearchModal accessibility & keyboard navigation", () => {
     fireEvent.keyDown(combobox, { key: "ArrowDown" });
     expect(options[0]).toHaveAttribute("aria-selected", "false");
     expect(options[1]).toHaveAttribute("aria-selected", "true");
-    expect(combobox).toHaveAttribute("aria-activedescendant", "lesson-option-1");
+    expect(combobox).toHaveAttribute(
+      "aria-activedescendant",
+      "lesson-option-1",
+    );
 
     // Press ArrowUp
     fireEvent.keyDown(combobox, { key: "ArrowUp" });
     expect(options[0]).toHaveAttribute("aria-selected", "true");
     expect(options[1]).toHaveAttribute("aria-selected", "false");
-    expect(combobox).toHaveAttribute("aria-activedescendant", "lesson-option-0");
+    expect(combobox).toHaveAttribute(
+      "aria-activedescendant",
+      "lesson-option-0",
+    );
   });
 
   it("selects active item on Enter key and navigates", () => {

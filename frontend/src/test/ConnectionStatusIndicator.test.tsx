@@ -1,4 +1,10 @@
-import { render, screen, fireEvent, act, cleanup } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  act,
+  cleanup,
+} from "@testing-library/react";
 import { describe, it, expect, afterEach } from "vitest";
 import { ConnectionStatusIndicator } from "../components/ui/ConnectionStatusIndicator";
 
@@ -16,18 +22,26 @@ describe("ConnectionStatusIndicator keyboard accessibility", () => {
   };
 
   it("renders with correct tabIndex and role for keyboard accessibility", () => {
-    render(<ConnectionStatusIndicator state="OPEN" getMetrics={() => mockMetrics} />);
+    render(
+      <ConnectionStatusIndicator state="OPEN" getMetrics={() => mockMetrics} />,
+    );
 
-    const button = screen.getByRole("button", { name: /connection status: connected/i });
+    const button = screen.getByRole("button", {
+      name: /connection status: connected/i,
+    });
     expect(button).toBeInTheDocument();
     expect(button).toHaveAttribute("tabindex", "0");
     expect(button).toHaveAttribute("aria-expanded", "false");
   });
 
   it("shows tooltip on keyboard focus and hides on blur", async () => {
-    render(<ConnectionStatusIndicator state="OPEN" getMetrics={() => mockMetrics} />);
+    render(
+      <ConnectionStatusIndicator state="OPEN" getMetrics={() => mockMetrics} />,
+    );
 
-    const button = screen.getByRole("button", { name: /connection status: connected/i });
+    const button = screen.getByRole("button", {
+      name: /connection status: connected/i,
+    });
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
 
     act(() => {
@@ -48,9 +62,13 @@ describe("ConnectionStatusIndicator keyboard accessibility", () => {
   });
 
   it("toggles tooltip on Enter and Space keypress", () => {
-    render(<ConnectionStatusIndicator state="OPEN" getMetrics={() => mockMetrics} />);
+    render(
+      <ConnectionStatusIndicator state="OPEN" getMetrics={() => mockMetrics} />,
+    );
 
-    const button = screen.getByRole("button", { name: /connection status: connected/i });
+    const button = screen.getByRole("button", {
+      name: /connection status: connected/i,
+    });
 
     // Press Enter to open
     fireEvent.keyDown(button, { key: "Enter" });
@@ -69,9 +87,13 @@ describe("ConnectionStatusIndicator keyboard accessibility", () => {
   });
 
   it("closes tooltip on Escape keypress", () => {
-    render(<ConnectionStatusIndicator state="OPEN" getMetrics={() => mockMetrics} />);
+    render(
+      <ConnectionStatusIndicator state="OPEN" getMetrics={() => mockMetrics} />,
+    );
 
-    const button = screen.getByRole("button", { name: /connection status: connected/i });
+    const button = screen.getByRole("button", {
+      name: /connection status: connected/i,
+    });
 
     fireEvent.mouseEnter(button);
     expect(screen.getByRole("tooltip")).toBeInTheDocument();
@@ -82,9 +104,13 @@ describe("ConnectionStatusIndicator keyboard accessibility", () => {
   });
 
   it("shows tooltip on mouse hover and hides on mouse leave", () => {
-    render(<ConnectionStatusIndicator state="OPEN" getMetrics={() => mockMetrics} />);
+    render(
+      <ConnectionStatusIndicator state="OPEN" getMetrics={() => mockMetrics} />,
+    );
 
-    const button = screen.getByRole("button", { name: /connection status: connected/i });
+    const button = screen.getByRole("button", {
+      name: /connection status: connected/i,
+    });
 
     fireEvent.mouseEnter(button);
     expect(screen.getByRole("tooltip")).toBeInTheDocument();

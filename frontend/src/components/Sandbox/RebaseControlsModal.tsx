@@ -14,13 +14,16 @@ export const RebaseControlsModal: React.FC<RebaseControlsModalProps> = ({
   onResolveConflict,
   onClose,
 }) => {
-  const [resolvedHunks, setResolvedHunks] = useState<Record<number, boolean>>({});
+  const [resolvedHunks, setResolvedHunks] = useState<Record<number, boolean>>(
+    {},
+  );
 
   const handleToggleResolve = (idx: number) => {
     setResolvedHunks((prev) => ({ ...prev, [idx]: !prev[idx] }));
   };
 
-  const allResolved = conflicts.length === 0 || conflicts.every((_, i) => resolvedHunks[i]);
+  const allResolved =
+    conflicts.length === 0 || conflicts.every((_, i) => resolvedHunks[i]);
 
   return (
     <div
@@ -50,7 +53,12 @@ export const RebaseControlsModal: React.FC<RebaseControlsModalProps> = ({
         {/* Conflict Hunks List */}
         <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
           <p className="text-xs text-slate-400 font-medium">
-            Git rebase paused due to conflicting changes in reordered commits. Resolve the conflict markers below to execute <code className="font-mono text-amber-500">git rebase --continue</code>.
+            Git rebase paused due to conflicting changes in reordered commits.
+            Resolve the conflict markers below to execute{" "}
+            <code className="font-mono text-amber-500">
+              git rebase --continue
+            </code>
+            .
           </p>
 
           {conflicts.map((conflict, idx) => (

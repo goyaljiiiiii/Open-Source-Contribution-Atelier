@@ -51,7 +51,9 @@ test.describe("Authentication Flows", () => {
     const testUser = await mockLogin(page);
 
     await page.goto("/login");
-    await page.getByPlaceholder("the_smartest@kid.com").fill(testUser.user.username);
+    await page
+      .getByPlaceholder("the_smartest@kid.com")
+      .fill(testUser.user.username);
     await page.getByPlaceholder("••••••••").fill("password123");
     await page.getByRole("button", { name: "Let Me In!" }).click();
 

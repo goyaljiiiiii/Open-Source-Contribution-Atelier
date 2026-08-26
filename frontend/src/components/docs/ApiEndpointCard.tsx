@@ -112,7 +112,9 @@ export function ApiEndpointCard({
           status: response.status,
           endpoint: requestPath,
         }).message;
-        setResult(`${response.status} ${response.statusText}\n${friendlyMessage}`);
+        setResult(
+          `${response.status} ${response.statusText}\n${friendlyMessage}`,
+        );
         return;
       }
 

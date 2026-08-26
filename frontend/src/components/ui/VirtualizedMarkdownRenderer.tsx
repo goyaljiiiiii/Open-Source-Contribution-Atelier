@@ -42,7 +42,10 @@ export const VirtualizedMarkdownRenderer = React.memo(
   }: VirtualizedMarkdownRendererProps) {
     const parentRef = useRef<HTMLDivElement>(null);
 
-    const sections = useMemo(() => splitContentIntoSections(content), [content]);
+    const sections = useMemo(
+      () => splitContentIntoSections(content),
+      [content],
+    );
 
     const getEstimatedHeight = useCallback(() => SECTION_ESTIMATED_HEIGHT, []);
 

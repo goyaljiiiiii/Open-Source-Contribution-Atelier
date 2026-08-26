@@ -12,15 +12,14 @@ describe("MarkdownRenderer Table Parsing", () => {
 `;
 
     render(
-      <MarkdownRenderer
-        content={markdown}
-        loadGlossaryFn={async () => []}
-      />,
+      <MarkdownRenderer content={markdown} loadGlossaryFn={async () => []} />,
     );
 
     expect(screen.getByText("Command")).toBeInTheDocument();
     expect(screen.getByText("Description")).toBeInTheDocument();
-    expect(screen.getByText("git Log --oneline | grep feat")).toBeInTheDocument();
+    expect(
+      screen.getByText("git Log --oneline | grep feat"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Filter logs by feat")).toBeInTheDocument();
   });
 });

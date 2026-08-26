@@ -98,7 +98,10 @@ export function useLessonEditorWS({
         switch (data.type) {
           case "doc_init":
             revisionRef.current = data.revision;
-            onDocInitRef.current?.({ content: data.content, revision: data.revision });
+            onDocInitRef.current?.({
+              content: data.content,
+              revision: data.revision,
+            });
             break;
           case "op":
             revisionRef.current = data.revision;
@@ -125,7 +128,10 @@ export function useLessonEditorWS({
             break;
           case "rebase":
             revisionRef.current = data.revision;
-            onRebaseRef.current?.({ content: data.content, revision: data.revision });
+            onRebaseRef.current?.({
+              content: data.content,
+              revision: data.revision,
+            });
             break;
         }
       } catch {
@@ -142,17 +148,18 @@ export function useLessonEditorWS({
   const sendOp = useCallback((op: unknown[]) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
-    ws.send(
-      JSON.stringify({ type: "op", op, revision: revisionRef.current }),
-    );
+    ws.send(JSON.stringify({ type: "op", op, revision: revisionRef.current }));
     revisionRef.current += 1;
   }, []);
 
-  const sendCursor = useCallback((cursor: CursorInfo, user: { id: number; name: string }) => {
-    const ws = wsRef.current;
-    if (!ws || ws.readyState !== WebSocket.OPEN) return;
-    ws.send(JSON.stringify({ type: "cursor", cursor, user }));
-  }, []);
+  const sendCursor = useCallback(
+    (cursor: CursorInfo, user: { id: number; name: string }) => {
+      const ws = wsRef.current;
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      ws.send(JSON.stringify({ type: "cursor", cursor, user }));
+    },
+    [],
+  );
 
   const sendSave = useCallback(() => {
     const ws = wsRef.current;

@@ -27,7 +27,7 @@ export const MultiLangSnippet: React.FC<MultiLangSnippetProps> = ({
       setActiveLang(saved);
     } else {
       const available = (Object.keys(snippets) as SnippetLanguage[]).find(
-        (key) => snippets[key]
+        (key) => snippets[key],
       );
       if (available) setActiveLang(available);
     }
@@ -51,7 +51,10 @@ export const MultiLangSnippet: React.FC<MultiLangSnippetProps> = ({
 
     return () => {
       window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("snippetLangChange" as any, handleCustomChange);
+      window.removeEventListener(
+        "snippetLangChange" as any,
+        handleCustomChange,
+      );
     };
   }, [snippets]);
 
@@ -59,7 +62,7 @@ export const MultiLangSnippet: React.FC<MultiLangSnippetProps> = ({
     setActiveLang(lang);
     localStorage.setItem(LANGUAGE_KEY, lang);
     window.dispatchEvent(
-      new CustomEvent("snippetLangChange", { detail: { lang } })
+      new CustomEvent("snippetLangChange", { detail: { lang } }),
     );
   };
 
@@ -101,7 +104,13 @@ export const MultiLangSnippet: React.FC<MultiLangSnippetProps> = ({
       </div>
       <CodeBlock
         code={currentCode}
-        language={activeLang === "curl" ? "bash" : activeLang === "js" ? "javascript" : "python"}
+        language={
+          activeLang === "curl"
+            ? "bash"
+            : activeLang === "js"
+              ? "javascript"
+              : "python"
+        }
         showLineNumbers={true}
       />
     </div>

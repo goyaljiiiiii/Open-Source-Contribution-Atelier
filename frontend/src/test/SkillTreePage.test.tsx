@@ -1,4 +1,10 @@
-import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  cleanup,
+} from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { SkillTreePage } from "../pages/SkillTreePage";
 
@@ -107,7 +113,9 @@ describe("SkillTreePage XP handling and mounted guard", () => {
       expect(screen.getByText("200")).toBeInTheDocument();
     });
 
-    const refreshBtn = screen.getByRole("button", { name: /refresh skill tree data/i });
+    const refreshBtn = screen.getByRole("button", {
+      name: /refresh skill tree data/i,
+    });
     fireEvent.click(refreshBtn);
 
     expect(mockFetch).toHaveBeenCalledTimes(2);

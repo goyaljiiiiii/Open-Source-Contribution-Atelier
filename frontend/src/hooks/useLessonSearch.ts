@@ -1,5 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { fetchCurriculum, flattenCurriculumLessons, CurriculumLesson } from "../lib/curriculum";
+import {
+  fetchCurriculum,
+  flattenCurriculumLessons,
+  CurriculumLesson,
+} from "../lib/curriculum";
 
 export interface SearchResultItem {
   slug: string;
@@ -33,7 +37,11 @@ function fuzzyMatch(text: string, query: string): boolean {
 /**
  * Generate a text snippet with matching terms highlighted.
  */
-export function highlightText(text: string, query: string, maxSnippetLength = 120): string {
+export function highlightText(
+  text: string,
+  query: string,
+  maxSnippetLength = 120,
+): string {
   if (!text || !query.trim()) return text;
 
   const lowerText = text.toLowerCase();
@@ -41,7 +49,9 @@ export function highlightText(text: string, query: string, maxSnippetLength = 12
   const matchIndex = lowerText.indexOf(lowerQuery);
 
   if (matchIndex === -1) {
-    return text.length > maxSnippetLength ? text.slice(0, maxSnippetLength) + "..." : text;
+    return text.length > maxSnippetLength
+      ? text.slice(0, maxSnippetLength) + "..."
+      : text;
   }
 
   const start = Math.max(0, matchIndex - 30);
@@ -58,7 +68,9 @@ export function highlightText(text: string, query: string, maxSnippetLength = 12
  * Custom React hook for indexing and full-text searching curriculum lessons.
  */
 export function useLessonSearch() {
-  const [lessons, setLessons] = useState<(CurriculumLesson & { moduleTitle: string })[]>([]);
+  const [lessons, setLessons] = useState<
+    (CurriculumLesson & { moduleTitle: string })[]
+  >([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -107,7 +119,8 @@ export function useLessonSearch() {
         const hintLower = (lesson.hint || "").toLowerCase();
 
         let score = 0;
-        let matchType: "title" | "body" | "code" | "description" = "description";
+        let matchType: "title" | "body" | "code" | "description" =
+          "description";
         let snippet = lesson.description || "";
 
         // 1. Exact title match

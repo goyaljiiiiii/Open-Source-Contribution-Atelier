@@ -26,7 +26,6 @@ import toast from "react-hot-toast";
 import { MarkdownRenderer } from "../../components/ui/MarkdownRenderer";
 import { ContentSuggestionsPanel } from "../../components/admin/ContentSuggestionsPanel";
 
-
 export interface QuizItem {
   id: number;
   question: string;
@@ -55,9 +54,24 @@ export interface FolderItem {
 }
 
 const DEFAULT_FOLDERS: FolderItem[] = [
-  { id: "folder-git", title: "Git & Branch Workflows", icon: "git", color: "from-amber-500/20 to-orange-500/10 border-amber-500/30" },
-  { id: "folder-opensource", title: "Open Source Etiquette", icon: "community", color: "from-blue-500/20 to-indigo-500/10 border-blue-500/30" },
-  { id: "folder-devops", title: "DevOps & CLI Reference", icon: "devops", color: "from-emerald-500/20 to-teal-500/10 border-emerald-500/30" },
+  {
+    id: "folder-git",
+    title: "Git & Branch Workflows",
+    icon: "git",
+    color: "from-amber-500/20 to-orange-500/10 border-amber-500/30",
+  },
+  {
+    id: "folder-opensource",
+    title: "Open Source Etiquette",
+    icon: "community",
+    color: "from-blue-500/20 to-indigo-500/10 border-blue-500/30",
+  },
+  {
+    id: "folder-devops",
+    title: "DevOps & CLI Reference",
+    icon: "devops",
+    color: "from-emerald-500/20 to-teal-500/10 border-emerald-500/30",
+  },
 ];
 
 const DEFAULT_NOTES: NoteItem[] = [
@@ -90,10 +104,17 @@ git rebase --abort
     quizzes: [
       {
         id: 1,
-        question: "What flag allows interactive commit squashing during a rebase?",
-        options: ["-i or --interactive", "-f or --force", "-m or --message", "-b or --branch"],
+        question:
+          "What flag allows interactive commit squashing during a rebase?",
+        options: [
+          "-i or --interactive",
+          "-f or --force",
+          "-m or --message",
+          "-b or --branch",
+        ],
         answer: 0,
-        explanation: "git rebase -i opens an interactive editor to pick, squash, or edit commits.",
+        explanation:
+          "git rebase -i opens an interactive editor to pick, squash, or edit commits.",
       },
     ],
   },
@@ -141,11 +162,17 @@ export function ContentStudioPage() {
     }
   });
 
-  const [activeNoteId, setActiveNoteId] = useState<string>(() => notes[0]?.id || "");
-  const [viewMode, setViewMode] = useState<"split" | "editor" | "preview" | "meta" | "quizzes" | "ai_suggestions">("split");
+  const [activeNoteId, setActiveNoteId] = useState<string>(
+    () => notes[0]?.id || "",
+  );
+  const [viewMode, setViewMode] = useState<
+    "split" | "editor" | "preview" | "meta" | "quizzes" | "ai_suggestions"
+  >("split");
   const [searchQuery, setSearchQuery] = useState("");
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving">("saved");
-  const [collapsedFolders, setCollapsedFolders] = useState<Record<string, boolean>>({});
+  const [collapsedFolders, setCollapsedFolders] = useState<
+    Record<string, boolean>
+  >({});
 
   // Auto-persist state to localStorage
   useEffect(() => {
@@ -165,7 +192,11 @@ export function ContentStudioPage() {
   const updateActiveNote = (updates: Partial<NoteItem>) => {
     if (!activeNote) return;
     setSaveStatus("saving");
-    const updated = { ...activeNote, ...updates, updatedAt: new Date().toISOString() };
+    const updated = {
+      ...activeNote,
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
     setNotes((prev) => prev.map((n) => (n.id === activeNote.id ? updated : n)));
     setTimeout(() => setSaveStatus("saved"), 300);
   };
@@ -213,7 +244,8 @@ export function ContentStudioPage() {
     if (!confirm("Delete this study note?")) return;
     const remaining = notes.filter((n) => n.id !== id);
     setNotes(remaining);
-    if (activeNoteId === id && remaining.length > 0) setActiveNoteId(remaining[0].id);
+    if (activeNoteId === id && remaining.length > 0)
+      setActiveNoteId(remaining[0].id);
     toast.success("Note removed");
   };
 
@@ -227,13 +259,18 @@ export function ContentStudioPage() {
 
   const handleInsertFormatting = (prefix: string, suffix: string = "") => {
     if (!activeNote) return;
-    const textarea = document.getElementById("studio-content-textarea") as HTMLTextAreaElement;
+    const textarea = document.getElementById(
+      "studio-content-textarea",
+    ) as HTMLTextAreaElement;
     if (!textarea) return;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selected = activeNote.content.substring(start, end);
     const replacement = `${prefix}${selected || "text"}${suffix}`;
-    const newContent = activeNote.content.substring(0, start) + replacement + activeNote.content.substring(end);
+    const newContent =
+      activeNote.content.substring(0, start) +
+      replacement +
+      activeNote.content.substring(end);
     updateActiveNote({ content: newContent });
   };
 
@@ -266,7 +303,7 @@ export function ContentStudioPage() {
   const filteredNotes = notes.filter(
     (n) =>
       n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      n.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()))
+      n.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase())),
   );
 
   return (
@@ -287,7 +324,8 @@ export function ContentStudioPage() {
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-300 font-medium mt-1">
-              Personalized Knowledge Vault • Git Cheat Sheets, Code Snippets &amp; Custom Annotations
+              Personalized Knowledge Vault • Git Cheat Sheets, Code Snippets
+              &amp; Custom Annotations
             </p>
           </div>
         </div>
@@ -296,12 +334,19 @@ export function ContentStudioPage() {
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">
           <div className="flex items-center gap-1.5 px-3.5 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-slate-300">
             <Check className="w-4 h-4 text-emerald-400" />
-            <span>{saveStatus === "saving" ? "Saving..." : "100% Persisted"}</span>
+            <span>
+              {saveStatus === "saving" ? "Saving..." : "100% Persisted"}
+            </span>
           </div>
 
           <label className="flex items-center gap-1.5 text-xs font-black px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl cursor-pointer transition-all shadow-card-sm">
             <Upload className="w-4 h-4" /> Import .md
-            <input type="file" accept=".md,.txt" onChange={handleImportMarkdown} className="hidden" />
+            <input
+              type="file"
+              accept=".md,.txt"
+              onChange={handleImportMarkdown}
+              className="hidden"
+            />
           </label>
 
           <button
@@ -321,7 +366,8 @@ export function ContentStudioPage() {
           <div className="bg-white dark:bg-[#151411] border-2 border-black/10 dark:border-[#2e2924] rounded-2xl p-4 space-y-3 shadow-card-sm">
             <div className="flex items-center justify-between gap-2">
               <h2 className="font-black text-base text-text dark:text-[#f0ebe2] flex items-center gap-2">
-                <BookMarked className="w-5 h-5 text-indigo-500" /> Knowledge Folders
+                <BookMarked className="w-5 h-5 text-indigo-500" /> Knowledge
+                Folders
               </h2>
               <button
                 onClick={handleAddFolder}
@@ -347,7 +393,9 @@ export function ContentStudioPage() {
           {/* Folder & Notes Grid Cards */}
           <div className="space-y-4 max-h-[700px] overflow-y-auto pr-1">
             {folders.map((folder) => {
-              const folderNotes = filteredNotes.filter((n) => n.folderId === folder.id);
+              const folderNotes = filteredNotes.filter(
+                (n) => n.folderId === folder.id,
+              );
               const isCollapsed = collapsedFolders[folder.id];
 
               return (
@@ -435,7 +483,9 @@ export function ContentStudioPage() {
                                 <button
                                   onClick={(e) => handleDeleteNote(note.id, e)}
                                   className={`p-1 rounded hover:bg-red-500 hover:text-white transition-colors ${
-                                    isActive ? "text-white/80" : "text-slate-400"
+                                    isActive
+                                      ? "text-white/80"
+                                      : "text-slate-400"
                                   }`}
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -464,13 +514,16 @@ export function ContentStudioPage() {
                   <input
                     type="text"
                     value={activeNote.title}
-                    onChange={(e) => updateActiveNote({ title: e.target.value })}
+                    onChange={(e) =>
+                      updateActiveNote({ title: e.target.value })
+                    }
                     className="font-black text-xl sm:text-2xl bg-transparent text-text dark:text-[#f0ebe2] border-b-2 border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none transition-colors w-full tracking-tight"
                     placeholder="Note Title..."
                   />
                   <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-slate-400 font-mono">
                     <span className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5 text-indigo-400" /> {new Date(activeNote.updatedAt).toLocaleTimeString()}
+                      <Clock className="w-3.5 h-3.5 text-indigo-400" />{" "}
+                      {new Date(activeNote.updatedAt).toLocaleTimeString()}
                     </span>
                     <span>•</span>
                     <span>{activeNote.content.length} characters</span>
@@ -479,7 +532,10 @@ export function ContentStudioPage() {
                         <span>•</span>
                         <div className="flex items-center gap-1">
                           {activeNote.tags.map((tag) => (
-                            <span key={tag} className="text-[10px] bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded-md font-bold">
+                            <span
+                              key={tag}
+                              className="text-[10px] bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded-md font-bold"
+                            >
                               #{tag}
                             </span>
                           ))}
@@ -542,7 +598,8 @@ export function ContentStudioPage() {
                         : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5"
                     }`}
                   >
-                    <HelpCircle className="w-3.5 h-3.5" /> Quiz ({activeNote.quizzes.length})
+                    <HelpCircle className="w-3.5 h-3.5" /> Quiz (
+                    {activeNote.quizzes.length})
                   </button>
 
                   <button
@@ -553,7 +610,8 @@ export function ContentStudioPage() {
                         : "text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
                     }`}
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" /> AI Suggestions
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />{" "}
+                    AI Suggestions
                   </button>
                 </div>
               </div>
@@ -565,7 +623,8 @@ export function ContentStudioPage() {
                     markdown={activeNote.content}
                     onApplyFix={(fix) => {
                       if (fix.suggestedFix) {
-                        const updated = activeNote.content + "\n\n" + fix.suggestedFix;
+                        const updated =
+                          activeNote.content + "\n\n" + fix.suggestedFix;
                         updateActiveNote({ content: updated });
                         toast.success("Applied suggestion to lesson!");
                       }
@@ -603,7 +662,9 @@ export function ContentStudioPage() {
                         I
                       </button>
                       <button
-                        onClick={() => handleInsertFormatting("\n```typescript\n", "\n```\n")}
+                        onClick={() =>
+                          handleInsertFormatting("\n```typescript\n", "\n```\n")
+                        }
                         className="px-2 py-1 text-xs font-mono font-bold text-indigo-400 bg-indigo-500/10 rounded"
                       >
                         Code
@@ -612,7 +673,9 @@ export function ContentStudioPage() {
                     <textarea
                       id="studio-content-textarea"
                       value={activeNote.content}
-                      onChange={(e) => updateActiveNote({ content: e.target.value })}
+                      onChange={(e) =>
+                        updateActiveNote({ content: e.target.value })
+                      }
                       className="flex-1 p-4 bg-transparent font-mono text-xs sm:text-sm text-text dark:text-[#f0ebe2] outline-none resize-none leading-relaxed"
                     />
                   </div>
@@ -652,7 +715,9 @@ export function ContentStudioPage() {
                       Italic
                     </button>
                     <button
-                      onClick={() => handleInsertFormatting("\n```typescript\n", "\n```\n")}
+                      onClick={() =>
+                        handleInsertFormatting("\n```typescript\n", "\n```\n")
+                      }
                       className="px-3 py-1 text-xs font-mono font-bold text-indigo-400 bg-indigo-500/10 rounded-lg"
                     >
                       Code Block
@@ -675,7 +740,9 @@ export function ContentStudioPage() {
                     id="studio-content-textarea"
                     rows={18}
                     value={activeNote.content}
-                    onChange={(e) => updateActiveNote({ content: e.target.value })}
+                    onChange={(e) =>
+                      updateActiveNote({ content: e.target.value })
+                    }
                     className="w-full p-4 bg-surface-low/50 dark:bg-[#0a0a0f] border-2 border-black/10 dark:border-[#2e2924] rounded-2xl font-mono text-sm text-text dark:text-[#f0ebe2] outline-none focus:border-indigo-500 transition-colors leading-relaxed"
                   />
                 </div>
@@ -698,7 +765,10 @@ export function ContentStudioPage() {
                       value={activeNote.tags.join(", ")}
                       onChange={(e) =>
                         updateActiveNote({
-                          tags: e.target.value.split(",").map((t) => t.trim()).filter(Boolean),
+                          tags: e.target.value
+                            .split(",")
+                            .map((t) => t.trim())
+                            .filter(Boolean),
                         })
                       }
                       className="w-full p-3 bg-surface-low dark:bg-[#0a0a0f] border border-black/10 dark:border-[#2e2924] rounded-xl font-mono text-sm outline-none"
@@ -733,7 +803,9 @@ export function ContentStudioPage() {
                         type="number"
                         value={activeNote.estimatedMinutes}
                         onChange={(e) =>
-                          updateActiveNote({ estimatedMinutes: Number(e.target.value) })
+                          updateActiveNote({
+                            estimatedMinutes: Number(e.target.value),
+                          })
                         }
                         className="w-full p-3 bg-surface-low dark:bg-[#0a0a0f] border border-black/10 dark:border-[#2e2924] rounded-xl font-bold text-sm outline-none"
                       />
@@ -753,11 +825,18 @@ export function ContentStudioPage() {
                         const newQ: QuizItem = {
                           id: Date.now(),
                           question: "New Self-Test Question?",
-                          options: ["Option A", "Option B", "Option C", "Option D"],
+                          options: [
+                            "Option A",
+                            "Option B",
+                            "Option C",
+                            "Option D",
+                          ],
                           answer: 0,
                           explanation: "Explanation for the correct choice.",
                         };
-                        updateActiveNote({ quizzes: [...activeNote.quizzes, newQ] });
+                        updateActiveNote({
+                          quizzes: [...activeNote.quizzes, newQ],
+                        });
                         toast.success("Question added!");
                       }}
                       className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition-all shadow-card-sm"
@@ -768,7 +847,8 @@ export function ContentStudioPage() {
 
                   {activeNote.quizzes.length === 0 ? (
                     <div className="text-center py-16 text-slate-400 text-sm italic">
-                      No quiz questions in this study note. Click "+ Add Question" to create self-test quizzes.
+                      No quiz questions in this study note. Click "+ Add
+                      Question" to create self-test quizzes.
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -783,7 +863,9 @@ export function ContentStudioPage() {
                             </span>
                             <button
                               onClick={() => {
-                                const remaining = activeNote.quizzes.filter((q) => q.id !== quiz.id);
+                                const remaining = activeNote.quizzes.filter(
+                                  (q) => q.id !== quiz.id,
+                                );
                                 updateActiveNote({ quizzes: remaining });
                               }}
                               className="text-xs text-red-500 hover:underline font-bold"
@@ -797,7 +879,9 @@ export function ContentStudioPage() {
                             value={quiz.question}
                             onChange={(e) => {
                               const updated = activeNote.quizzes.map((q) =>
-                                q.id === quiz.id ? { ...q, question: e.target.value } : q
+                                q.id === quiz.id
+                                  ? { ...q, question: e.target.value }
+                                  : q,
                               );
                               updateActiveNote({ quizzes: updated });
                             }}
@@ -812,7 +896,8 @@ export function ContentStudioPage() {
             </>
           ) : (
             <div className="text-center py-24 text-slate-400 text-sm">
-              No note selected. Select a note from the left directory or click "+ Note" to create one.
+              No note selected. Select a note from the left directory or click
+              "+ Note" to create one.
             </div>
           )}
         </div>

@@ -5,7 +5,11 @@ export interface WebSocketServiceOptions {
   url: string;
   token?: string | null;
   onMessage?: (data: unknown) => void;
-  onStateChange?: (state: { isConnected: boolean; reconnectExhausted: boolean; error: Event | null }) => void;
+  onStateChange?: (state: {
+    isConnected: boolean;
+    reconnectExhausted: boolean;
+    error: Event | null;
+  }) => void;
   reconnectInterval?: number; // Base delay for reconnect manager
   maxReconnectAttempts?: number;
 }
@@ -21,19 +25,19 @@ export class WebSocketService {
 
   constructor(options: WebSocketServiceOptions) {
     this.options = options;
-    
+
     this.reconnectManager = new ReconnectManager(
       () => this.connect(),
       options.reconnectInterval || 1000, // starting backoff delay 1s
       30000, // max backoff 30s
-      options.maxReconnectAttempts || 10
+      options.maxReconnectAttempts || 10,
     );
 
     this.heartbeatManager = new HeartbeatManager(
       () => this.send({ type: "ping" }),
       () => this.handleHeartbeatTimeout(),
       30000, // interval 30s
-      5000 // timeout 5s
+      5000, // timeout 5s
     );
   }
 
@@ -63,7 +67,7 @@ export class WebSocketService {
 
     this.intentionalClose = false;
     const wsUrl = this.buildUrl();
-    
+
     try {
       this.ws = new WebSocket(wsUrl);
 
@@ -84,7 +88,10 @@ export class WebSocketService {
           }
           this.options.onMessage?.(data);
         } catch (e) {
-          console.error("WebSocketService: failed to parse message", event.data);
+          console.error(
+            "WebSocketService: failed to parse message",
+            event.data,
+          );
         }
       };
 
