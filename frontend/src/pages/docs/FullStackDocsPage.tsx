@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { FAQAccordion } from "../../components/docs/FAQAccordion";
+import CopyButton from "../../components/ui/CopyButton";
 import { CARD_FOCUS_RING } from "../../lib/a11yFocus";
 import { useMarkdownWorker } from "../../hooks/useMarkdownWorker";
 
@@ -216,8 +217,82 @@ function WorkerMarkdownBlock({
   className?: string;
 }) {
   const { html } = useMarkdownWorker(content);
+
+  // The markdown worker emits fenced code blocks as a single <div> wrapping a
+  // <pre><code> pair. We split the rendered HTML around those wrappers so each
+  // code block can be rendered with an inline CopyButton affordance.
+  const blocks = React.useMemo(() => {
+    if (!html) return [{ type: "html" as const, value: "" }];
+
+    const segments: { type: "html" | "code"; value: string }[] = [];
+    const wrapperRe =
+      /<div[^>]*\bclass="[^"]*rounded-2xl[^"]*"[^>]*>\s*<pre[^>]*>([\s\S]*?)<\/pre>\s*<\/div>/gi;
+    const codeRe = /<pre[^>]*>([\s\S]*?)<\/pre>/i;
+    const codeContentRe = /<code[^>]*>([\s\S]*?)<\/code>/i;
+
+    let cursor = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = wrapperRe.exec(html)) !== null) {
+      if (match.index > cursor) {
+        segments.push({ type: "html", value: html.slice(cursor, match.index) });
+      }
+
+      const wrapper = match[0];
+      const innerMatch = wrapper.match(codeRe);
+      const codeMatch = innerMatch
+        ? innerMatch[1].match(codeContentRe)
+        : null;
+      const codeHtml = codeMatch ? codeMatch[1] : innerMatch ? innerMatch[1] : "";
+      // `codeHtml` is escaped by the worker, so decode entities for clipboard text.
+      const codeText = codeHtml
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&amp;/g, "&");
+
+      segments.push({ type: "code", value: codeText });
+      cursor = match.index + wrapper.length;
+    }
+
+    if (cursor < html.length) {
+      segments.push({ type: "html", value: html.slice(cursor) });
+    }
+
+    return segments.length ? segments : [{ type: "html", value: html }];
+  }, [html]);
+
+  if (blocks.length === 1 && blocks[0].type === "html") {
+    return <div className={className} dangerouslySetInnerHTML={{ __html: blocks[0].value }} />;
+  }
+
   return (
-    <div className={className} dangerouslySetInnerHTML={{ __html: html }} />
+    <div className={className}>
+      {blocks.map((block, idx) =>
+        block.type === "code" ? (
+          <div
+            key={`code-${idx}`}
+            className="relative my-4 group rounded-2xl border-4 border-black dark:border-[#2e2924] bg-[#1a1510] overflow-hidden shadow-card-sm"
+          >
+            <div
+              className="absolute top-2 right-2 z-10 flex items-center gap-1.5 rounded-xl bg-white/10 px-2 py-1 text-xs font-black text-white/80 backdrop-blur"
+              data-testid="code-block-copy-wrapper"
+            >
+              <CopyButton text={block.value.trim()} label="Copy" copiedLabel="Copied!" />
+            </div>
+            <pre className="w-full overflow-x-auto p-4 font-mono text-sm leading-relaxed text-[#ffebc2]">
+              <code className="block whitespace-pre">{block.value}</code>
+            </pre>
+          </div>
+        ) : (
+          <div
+            key={`html-${idx}`}
+            dangerouslySetInnerHTML={{ __html: block.value }}
+          />
+        ),
+      )}
+    </div>
   );
 }
 
