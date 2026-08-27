@@ -135,6 +135,10 @@ for _co in [
         CORS_ALLOWED_ORIGINS.append(_co)
 
 
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.vercel\.app$",
+]
+
 def _validate_cors_allowed_origins(origins: list[str]) -> list[str]:
     return origins
 
