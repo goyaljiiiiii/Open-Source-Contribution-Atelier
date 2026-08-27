@@ -4,7 +4,7 @@ services:
     env: python
     rootDir: backend
     buildCommand: pip install -r requirements.txt && python manage.py migrate
-    startCommand: daphne -b 0.0.0.0 -p $PORT config.asgi:application
+    startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
@@ -14,5 +14,3 @@ services:
         value: "*"
       - key: CORS_ALLOW_ALL_ORIGINS
         value: "True"
-      - key: GOOGLE_CLIENT_ID
-        value: "27042928964-pbolsldqvdv2hfipblmrcf332evg83v8.apps.googleusercontent.com"
