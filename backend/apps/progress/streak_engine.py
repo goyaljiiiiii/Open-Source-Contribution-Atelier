@@ -78,12 +78,30 @@ class StreakEngine:
     # -------------------------------------------------------------------
 
     @staticmethod
-    def get_multiplier_for_streak(streak_days: int) -> float:
-        """Return the XP multiplier for a given streak length."""
+    def is_weekend_event(current_date: Optional[Union[date, datetime]] = None) -> bool:
+        """
+        Check if the given date falls on a weekend (Saturday or Sunday in UTC/local time).
+        Weekend open source events grant a 1.5x multiplier boost.
+        """
+        if current_date is None:
+            current_date = timezone.now().date()
+        elif isinstance(current_date, datetime):
+            current_date = current_date.date()
+        # weekday(): Monday is 0 and Sunday is 6 -> Saturday=5, Sunday=6
+        return current_date.weekday() in (5, 6)
+
+    @staticmethod
+    def get_multiplier_for_streak(streak_days: int, current_date: Optional[Union[date, datetime]] = None) -> float:
+        """
+        Return the XP multiplier for a given streak length, applying 1.5x weekend multiplier
+        if current_date falls on Saturday/Sunday.
+        """
         multiplier = 1.0
         for milestone in STREAK_MILESTONES:
             if streak_days >= milestone["days"]:
                 multiplier = milestone["multiplier"]
+        if StreakEngine.is_weekend_event(current_date):
+            multiplier = round(multiplier * 1.5, 2)
         return multiplier
 
     @staticmethod
@@ -126,13 +144,16 @@ class StreakEngine:
         return profile
 
     @classmethod
-    def get_multiplier_for_user(cls, user: User) -> float:
-        """Return the current streak multiplier for a user (fast path via profile)."""
+    def get_multiplier_for_user(cls, user: User, current_date: Optional[Union[date, datetime]] = None) -> float:
+        """Return the current effective streak multiplier for a user including weekend bonus."""
         try:
             profile = StreakProfile.objects.get(user=user)
-            return profile.current_multiplier
+            base = profile.current_multiplier
+            if cls.is_weekend_event(current_date):
+                return round(base * 1.5, 2)
+            return base
         except StreakProfile.DoesNotExist:
-            return 1.0
+            return 1.5 if cls.is_weekend_event(current_date) else 1.0
 
     @classmethod
     def record_activity(
@@ -215,10 +236,15 @@ class StreakEngine:
         next_ms = cls.get_next_milestone(profile.current_streak)
         progress_pct = cls.compute_milestone_progress(profile.current_streak)
 
+        is_weekend = cls.is_weekend_event()
+        effective_mult = round(profile.current_multiplier * 1.5, 2) if is_weekend else profile.current_multiplier
+
         return {
             "current_streak": profile.current_streak,
             "longest_streak": profile.longest_streak,
             "current_multiplier": profile.current_multiplier,
+            "effective_multiplier": effective_mult,
+            "is_weekend_event": is_weekend,
             "streak_freezes": profile.streak_freezes,
             "next_milestone": (
                 {
@@ -242,10 +268,15 @@ class StreakEngine:
     @staticmethod
     def _build_result(profile: StreakProfile, multiplier_unlocked: bool) -> dict:
         next_ms = StreakEngine.get_next_milestone(profile.current_streak)
+        is_weekend = StreakEngine.is_weekend_event()
+        effective_mult = round(profile.current_multiplier * 1.5, 2) if is_weekend else profile.current_multiplier
+
         return {
             "current_streak": profile.current_streak,
             "longest_streak": profile.longest_streak,
             "current_multiplier": profile.current_multiplier,
+            "effective_multiplier": effective_mult,
+            "is_weekend_event": is_weekend,
             "streak_freezes": profile.streak_freezes,
             "multiplier_unlocked": multiplier_unlocked,
             "next_milestone": next_ms,

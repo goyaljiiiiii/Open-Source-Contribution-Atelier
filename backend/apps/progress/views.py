@@ -1854,6 +1854,8 @@ class StreakStatusView(APIView):
             "current_streak": data["current_streak"],
             "highest_streak": data["longest_streak"],
             "multiplier": data["current_multiplier"],
+            "effective_multiplier": data.get("effective_multiplier", data["current_multiplier"]),
+            "is_weekend_event": data.get("is_weekend_event", False),
             "next_milestone": (
                 data["next_milestone"]["days"] if data["next_milestone"] else None
             ),
