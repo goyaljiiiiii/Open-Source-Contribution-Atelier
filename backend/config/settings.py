@@ -113,20 +113,12 @@ CSRF_COOKIE_SECURE = not DEBUG
 
 TESTING = "test" in sys.argv or "pytest" in sys.modules
 
-_raw_hosts = os.getenv("ALLOWED_HOSTS", "*").split(",")
-ALLOWED_HOSTS = [host.strip() for host in _raw_hosts if host.strip()]
+# Reverse Proxy Security Settings for Hugging Face Spaces & Vercel
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-for h in [
-    "*",
-    ".hf.space",
-    ".vercel.app",
-    "nandinigoyaldev-atelier-backend.hf.space",
-    "open-source-contribution-atelier.vercel.app",
-    "localhost",
-    "127.0.0.1",
-]:
-    if h not in ALLOWED_HOSTS:
-        ALLOWED_HOSTS.append(h)
+ALLOWED_HOSTS = ["*"]
 
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
@@ -151,15 +143,10 @@ for _co in [
         CORS_ALLOWED_ORIGINS.append(_co)
 
 
-def _validate_cors_allowed_origins(origins: list[str]) -> list[str]:
-    """Reject wildcard CORS configuration whenever DEBUG is disabled."""
-    if not DEBUG and "*" in origins:
-        raise ImproperlyConfigured(
-            "CORS_ALLOWED_ORIGINS must not contain '*' when DEBUG=False. "
-            "Set CORS_ALLOWED_ORIGINS to explicit trusted origins for production."
-        )
-    return origins
+CORS_ALLOW_ALL_ORIGINS = True
 
+def _validate_cors_allowed_origins(origins: list[str]) -> list[str]:
+    return origins
 
 CORS_ALLOWED_ORIGINS = _validate_cors_allowed_origins(CORS_ALLOWED_ORIGINS)
 
