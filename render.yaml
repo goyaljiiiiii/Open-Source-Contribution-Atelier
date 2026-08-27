@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: atelier-backend
+    env: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt && python manage.py migrate
+    startCommand: daphne -b 0.0.0.0 -p $PORT config.asgi:application
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings
+      - key: ALLOWED_HOSTS
+        value: "*"
+      - key: CORS_ALLOW_ALL_ORIGINS
+        value: "True"
+      - key: GOOGLE_CLIENT_ID
+        value: "27042928964-pbolsldqvdv2hfipblmrcf332evg83v8.apps.googleusercontent.com"
