@@ -33,6 +33,7 @@ from .views import (
     GitHubOAuthStartView,
 )
 from .secure_oauth import SecureGitHubOAuthCallbackView
+from .views_webauthn import PasskeyRegisterBeginView, PasskeyRegisterFinishView
 
 urlpatterns = [
     path("signup/", SignupView.as_view(), name="signup"),
@@ -64,6 +65,8 @@ urlpatterns = [
     path("otp/verify/", OtpVerifyView.as_view(), name="otp-verify"),
     path("magic-link/request/", MagicLinkRequestView.as_view(), name="magic-link-request"),
     path("magic-link/verify/", MagicLinkVerifyView.as_view(), name="magic-link-verify"),
+    path("passkey/register/begin/", PasskeyRegisterBeginView.as_view(), name="passkey-register-begin"),
+    path("passkey/register/finish/", PasskeyRegisterFinishView.as_view(), name="passkey-register-finish"),
     path("profile/<str:username>/", PublicProfileView.as_view(), name="public-profile"),
     path("shop/streak-freeze/", ShopStreakFreezeView.as_view(), name="shop-streak-freeze"),
 ]
