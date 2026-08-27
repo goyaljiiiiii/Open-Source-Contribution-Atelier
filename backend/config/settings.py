@@ -32,11 +32,14 @@ from dotenv import load_dotenv
 
 load_dotenv(BASE_DIR / ".env")
 
-SECRET_KEY = os.getenv(
-    "SECRET_KEY", "django-insecure-dev-key-not-for-production-use-32bytes!!"
-)
+DEFAULT_DEV_SECRET_KEY = "django-insecure-dev-key-not-for-production-use-32bytes!!"
+SECRET_KEY = os.getenv("SECRET_KEY", DEFAULT_DEV_SECRET_KEY)
 if not SECRET_KEY:
     raise ImproperlyConfigured("SECRET_KEY environment variable is not set")
+if not DEBUG and not TESTING and SECRET_KEY == DEFAULT_DEV_SECRET_KEY:
+    raise ImproperlyConfigured(
+        "SECRET_KEY must be configured in production environment!"
+    )
 
 # Base64 encoded 32-byte key for AES-GCM field encryption.
 # Can be a comma-separated list of keys to support double-read during key rotation.
@@ -142,8 +145,6 @@ for _co in [
     if _co not in CORS_ALLOWED_ORIGINS:
         CORS_ALLOWED_ORIGINS.append(_co)
 
-
-CORS_ALLOW_ALL_ORIGINS = True
 
 def _validate_cors_allowed_origins(origins: list[str]) -> list[str]:
     return origins
