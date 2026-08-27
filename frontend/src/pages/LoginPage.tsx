@@ -62,6 +62,7 @@ export function LoginPage() {
   }, []);
 
   const googleLogin = useGoogleLogin({
+    scope: "email profile openid",
     onSuccess: async (tokenResponse: any) => {
       try {
         const rawToken =

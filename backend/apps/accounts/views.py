@@ -301,6 +301,15 @@ class GoogleLoginView(APIView):
                 idinfo = user_info_resp.json()
                 email = idinfo.get("email")
 
+            # Try OAuth2 v2 userinfo endpoint with access_token URL parameter
+            if not email:
+                user_info_v2_resp = http_requests.get(
+                    f"https://www.googleapis.com/oauth2/v2/userinfo?access_token={token}",
+                    timeout=10,
+                )
+                if user_info_v2_resp.ok:
+                    email = user_info_v2_resp.json().get("email")
+
             # If userinfo endpoint failed or had no email, try tokeninfo endpoint
             if not email:
                 token_info_url = (
