@@ -55,10 +55,15 @@ export class ErrorBoundary extends Component<Props, State> {
                 Something went wrong
               </h1>
 
-              <p className="text-muted mb-8">
-                We've encountered an unexpected error. Our systems have logged
-                the issue.
+              <p className="text-muted mb-4">
+                We've encountered an unexpected error.
               </p>
+
+              {this.state.error && (
+                <div className="mb-6 p-3 bg-red-50 border-2 border-red-500 rounded-xl text-left text-xs font-mono text-red-700 overflow-x-auto break-words">
+                  <strong>Error:</strong> {this.state.error.message}
+                </div>
+              )}
 
               <button
                 onClick={this.handleReset}
