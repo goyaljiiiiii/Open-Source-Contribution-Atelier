@@ -29,12 +29,11 @@ def validate_strong_password(value):
 
 
 class SignupSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=8)
+    password = serializers.CharField(write_only=True, min_length=8, max_length=128)
 
     class Meta:
         model = User
         fields = ("id", "username", "email", "password")
-
     def validate_username(self, value):
         """Reject duplicate usernames using a case-insensitive comparison."""
         normalized = value.strip()
@@ -60,8 +59,9 @@ class SignupSerializer(serializers.ModelSerializer):
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=False, min_length=8)
-    avatar = serializers.ImageField(required=False)
+    password = serializers.CharField(
+        write_only=True, required=False, min_length=8, max_length=128
+    )    avatar = serializers.ImageField(required=False)
     cover_image = serializers.ImageField(required=False)
     timezone = serializers.CharField(required=False)
     twitter_url = serializers.URLField(required=False, allow_blank=True)
@@ -252,10 +252,22 @@ class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
     remember = serializers.BooleanField(required=False, default=False)
     totp_code = serializers.CharField(required=False, allow_blank=True, write_only=True)
 
+    MAX_PASSWORD_LENGTH = 128
+
     def validate(self, attrs):
+        password = attrs.get("password", "")
+        if isinstance(password, str) and len(password) > self.MAX_PASSWORD_LENGTH:
+            raise serializers.ValidationError(
+                {
+                    "password": (
+                        f"Ensure this field has no more than "
+                        f"{self.MAX_PASSWORD_LENGTH} characters."
+                    )
+                }
+            )
+
         username_key = self.username_field
         identifier = attrs.get(username_key, "")
-
         if isinstance(identifier, str) and "@" in identifier:
             user = User.objects.filter(email__iexact=identifier.strip()).first()
             if user:
@@ -347,8 +359,7 @@ class TwoFactorVerifySerializer(serializers.Serializer):
 class TwoFactorDisableSerializer(serializers.Serializer):
     """Accept user password to confirm disabling 2FA."""
 
-    password = serializers.CharField(write_only=True)
-
+    password = serializers.CharField(write_only=True, max_length=128)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -366,8 +377,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     """Accept a reset token and the new password to complete the reset."""
 
     token = serializers.UUIDField()
-    new_password = serializers.CharField(write_only=True, min_length=8)
-
+    new_password = serializers.CharField(write_only=True, min_length=8, max_length=128)
     def validate_new_password(self, value):
         return validate_strong_password(value)
 
@@ -408,9 +418,8 @@ class MagicLinkVerifySerializer(serializers.Serializer):
 
 
 class ChangePasswordSerializer(serializers.Serializer):
-    old_password = serializers.CharField(required=True)
-    new_password = serializers.CharField(required=True, min_length=8)
-
+    old_password = serializers.CharField(required=True, max_length=128)
+    new_password = serializers.CharField(required=True, min_length=8, max_length=128)
     def validate_new_password(self, value):
         return validate_strong_password(value)
 
