@@ -445,7 +445,7 @@ export function AppRouter() {
           path="/"
           element={
             <PublicOnlyRoute>
-              <LandingPage />
+              <LoginPage />
             </PublicOnlyRoute>
           }
         />
