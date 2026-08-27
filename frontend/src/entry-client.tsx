@@ -61,6 +61,10 @@ if (typeof window !== "undefined" && "serviceWorker" in navigator) {
           "[ServiceWorker] Registered with scope:",
           registration.scope,
         );
+        if (registration.waiting) {
+          registration.waiting.postMessage({ type: "SKIP_WAITING" });
+        }
+        registration.update();
       })
       .catch((error) => {
         console.error("[ServiceWorker] Registration failed:", error);

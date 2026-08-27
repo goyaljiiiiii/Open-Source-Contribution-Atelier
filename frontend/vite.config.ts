@@ -96,7 +96,7 @@ export default defineConfig({
       filename: "sw.js",
       registerType: "autoUpdate",
       injectManifest: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,json,md}"],
+        globPatterns: ["**/*.{js,css,ico,png,svg,json,md}"],
         maximumFileSizeToCacheInBytes: 7 * 1024 * 1024,
       },
       manifest: {
