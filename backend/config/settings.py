@@ -35,13 +35,16 @@ load_dotenv(BASE_DIR / ".env")
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
 DEFAULT_DEV_SECRET_KEY = "django-insecure-dev-key-not-for-production-use-32bytes!!"
-SECRET_KEY = os.getenv("SECRET_KEY", DEFAULT_DEV_SECRET_KEY)
+SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
-    raise ImproperlyConfigured("SECRET_KEY environment variable is not set")
-if not DEBUG and not TESTING and SECRET_KEY == DEFAULT_DEV_SECRET_KEY:
-    raise ImproperlyConfigured(
-        "SECRET_KEY must be configured in production environment!"
-    )
+    if not DEBUG and not TESTING:
+        import secrets
+        SECRET_KEY = secrets.token_urlsafe(32)
+        logger.warning(
+            "SECRET_KEY environment variable not set; generated ephemeral secret key for session security."
+        )
+    else:
+        SECRET_KEY = DEFAULT_DEV_SECRET_KEY
 
 
 # Explicit environment designation, independent of DEBUG. Used below to make
