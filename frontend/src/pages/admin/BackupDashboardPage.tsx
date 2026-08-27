@@ -39,9 +39,21 @@ export default function BackupDashboardPage() {
     }
   };
 
+  const [selectedBackup, setSelectedBackup] = useState<BackupVerification | null>(null);
+
   useEffect(() => {
     fetchStatus();
   }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && selectedBackup) {
+        setSelectedBackup(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedBackup]);
 
   const handleVerifyNow = async () => {
     if (
@@ -184,16 +196,61 @@ export default function BackupDashboardPage() {
           </div>
 
           {latest?.status === "failed" && (
-            <div className="p-4 bg-red-900/50 border border-red-500 rounded-lg shadow-sm text-red-200 flex items-start gap-3">
-              <Database className="h-5 w-5 mt-0.5 text-red-400" />
+            <div className="p-4 bg-red-900/50 border border-red-500 rounded-lg shadow-sm text-red-200 flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <Database className="h-5 w-5 mt-0.5 text-red-400" />
+                <div>
+                  <h4 className="font-semibold">Latest Verification Failed</h4>
+                  <pre className="whitespace-pre-wrap mt-2 text-sm text-red-300 font-mono overflow-x-auto">
+                    {latest.logs}
+                  </pre>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedBackup(latest)}
+                className="px-3 py-1.5 bg-red-800 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors shrink-0"
+              >
+                Inspect Logs
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Backup Verification Inspection Modal */}
+      {selectedBackup && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#141a26] border border-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full p-6 space-y-6 relative max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Database className="w-5 h-5 text-blue-500" />
+                Backup Verification Inspection
+              </h3>
+              <button
+                onClick={() => setSelectedBackup(null)}
+                className="text-gray-400 hover:text-white text-xs font-bold"
+              >
+                Close
+              </button>
+            </div>
+            <div className="space-y-3 font-mono text-xs text-gray-300">
               <div>
-                <h4 className="font-semibold">Latest Verification Failed</h4>
-                <pre className="whitespace-pre-wrap mt-2 text-sm text-red-300 font-mono overflow-x-auto">
-                  {latest.logs}
+                <strong>Status:</strong> {selectedBackup.status}
+              </div>
+              <div>
+                <strong>Verified At:</strong> {selectedBackup.verification_timestamp}
+              </div>
+              <div>
+                <strong>Size:</strong> {(selectedBackup.size_bytes / 1024 / 1024).toFixed(2)} MB
+              </div>
+              <div>
+                <strong>Log Output:</strong>
+                <pre className="bg-[#0b0f17] p-4 rounded-xl border border-gray-800 mt-2 whitespace-pre-wrap text-red-300">
+                  {selectedBackup.logs || "No logs available."}
                 </pre>
               </div>
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>

@@ -90,6 +90,16 @@ export function AuditLogViewerPage() {
     fetchLogs();
   }, [fetchLogs]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && selectedEvent) {
+        setSelectedEvent(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedEvent]);
+
   const handleResetFilters = () => {
     setSearchQuery("");
     setActionFilter("");

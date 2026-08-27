@@ -121,6 +121,16 @@ export default function CeleryDashboardPage() {
     loadData();
   }, [loadData]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && selectedTaskRun) {
+        setSelectedTaskRun(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedTaskRun]);
+
   // Setup WebSocket connection for live task completion push
   useEffect(() => {
     const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
