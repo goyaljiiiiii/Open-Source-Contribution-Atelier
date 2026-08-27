@@ -10,7 +10,96 @@ import { ExpirationPlugin } from "workbox-expiration";
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
 
-// Cache curriculum content dynamically if not precached
+/**
+ * Runtime cache used for Vite's content chunks.
+ *
+ * Dynamic imports are intentionally not part of Workbox's precache manifest
+ * because their hashed filenames are generated during the build. Cache them
+ * on first request instead, allowing an already-downloaded module to remain
+ * available after the network disappears.
+ */
+const MODULE_CACHE_NAME = "atelier-modules-v1";
+const MODULE_CACHE_MAX_ENTRIES = 150;
+const MODULE_CACHE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
+const MODULE_CHUNK_PATTERN = /^\/assets\/(?:Module|module)-[^/]+\.js$/;
+const GENERIC_CHUNK_PATTERN = /^\/assets\/[^/]+\.js$/;
+
+function isModuleChunkRequest({ request, url }) {
+  if (request.method !== "GET") return false;
+  if (url.origin !== self.location.origin) return false;
+  return MODULE_CHUNK_PATTERN.test(url.pathname) || GENERIC_CHUNK_PATTERN.test(url.pathname);
+}
+
+function isJavaScriptChunkResponse(response) {
+  const contentType = response.headers.get("content-type") || "";
+  return response.ok && (
+    contentType.includes("javascript") ||
+    contentType.includes("application/octet-stream") ||
+    contentType === ""
+  );
+}
+
+async function cacheModuleResponse({ request, preloadResponse }) {
+  const response = preloadResponse || await fetch(request);
+
+  if (!isJavaScriptChunkResponse(response)) {
+    return response;
+  }
+
+  const cache = await caches.open(MODULE_CACHE_NAME);
+  await cache.put(request, response.clone());
+  return response;
+}
+
+async function offlineChunkFallback(request) {
+  const cache = await caches.open(MODULE_CACHE_NAME);
+  const cached = await cache.match(request);
+
+  if (cached) return cached;
+
+  return new Response(
+    `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Offline module unavailable</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f7f7f8; color: #222; }
+    main { max-width: 32rem; padding: 2rem; text-align: center; }
+    h1 { font-size: 1.35rem; margin-bottom: .75rem; }
+    p { line-height: 1.55; color: #555; }
+    button { border: 0; border-radius: .5rem; padding: .7rem 1rem; cursor: pointer; font: inherit; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>This learning module is not available offline yet.</h1>
+    <p>Reconnect to the internet and open this module once so its JavaScript content can be stored for future offline use.</p>
+    <button onclick="location.reload()">Try again</button>
+  </main>
+</body>
+</html>`,
+    {
+      status: 503,
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    },
+  );
+}
+
+registerRoute(
+  isModuleChunkRequest,
+  async ({ request, preloadResponse }) => {
+    try {
+      return await cacheModuleResponse({ request, preloadResponse });
+    } catch (error) {
+      console.warn("[ServiceWorker] Dynamic module unavailable:", request.url, error);
+      return offlineChunkFallback(request);
+    }
+  },
+  "GET",
+);
+
 registerRoute(
   ({ url }) => url.pathname.startsWith("/content/"),
   new CacheFirst({
@@ -18,14 +107,12 @@ registerRoute(
     plugins: [
       new ExpirationPlugin({
         maxEntries: 100,
-        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+        maxAgeSeconds: 30 * 24 * 60 * 60,
       }),
     ],
   }),
 );
 
-// Cache API GET responses for instant dashboard/progress loads
-// Serves cached data immediately, revalidates in background
 const API_CACHE_PATHS = [
   "/api/dashboard/",
   "/api/progress/",
@@ -46,7 +133,7 @@ registerRoute(
     plugins: [
       new ExpirationPlugin({
         maxEntries: 50,
-        maxAgeSeconds: 60 * 60, // 1 hour
+        maxAgeSeconds: 60 * 60,
       }),
     ],
   }),
@@ -64,17 +151,22 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   console.log("[ServiceWorker] Activated");
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    (async () => {
+      await self.clients.claim();
+      const cacheNames = await caches.keys();
+      const obsoleteModuleCaches = cacheNames.filter(
+        (name) => name.startsWith("atelier-modules-") && name !== MODULE_CACHE_NAME,
+      );
+      await Promise.all(obsoleteModuleCaches.map((name) => caches.delete(name)));
+    })(),
+  );
 });
 
 self.addEventListener("sync", (event) => {
   console.log("[ServiceWorker] Sync event fired for tag:", event.tag);
-  if (event.tag === "sync-progress") {
-    event.waitUntil(syncProgressQueue());
-  }
-  if (event.tag === "sync-quiz-progress") {
-    event.waitUntil(syncQuizQueue());
-  }
+  if (event.tag === "sync-progress") event.waitUntil(syncProgressQueue());
+  if (event.tag === "sync-quiz-progress") event.waitUntil(syncQuizQueue());
 });
 
 self.addEventListener("message", (event) => {
@@ -85,6 +177,8 @@ self.addEventListener("message", (event) => {
     event.waitUntil(syncProgressQueue());
   } else if (event.data && event.data.type === "TRIGGER_QUIZ_SYNC") {
     event.waitUntil(syncQuizQueue());
+  } else if (event.data && event.data.type === "CLEAR_MODULE_CACHE") {
+    event.waitUntil(clearModuleCache());
   }
 });
 
@@ -97,11 +191,9 @@ self.addEventListener("push", (event) => {
     const title = data.title || "New Notification";
     const options = {
       body: data.message || "You have a new message.",
-      icon: "/vite.svg", // Fallback icon
+      icon: "/vite.svg",
       badge: "/vite.svg",
-      data: {
-        url: data.url || "/",
-      },
+      data: { url: data.url || "/" },
     };
 
     event.waitUntil(self.registration.showNotification(title, options));
@@ -120,22 +212,23 @@ self.addEventListener("notificationclick", (event) => {
     self.clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((windowClients) => {
-        // Check if there is already a window/tab open with the target URL
         for (let i = 0; i < windowClients.length; i++) {
           const client = windowClients[i];
           if (client.url.includes(urlToOpen) && "focus" in client) {
             return client.focus();
           }
         }
-        // If not, open a new window
-        if (self.clients.openWindow) {
-          return self.clients.openWindow(urlToOpen);
-        }
+        if (self.clients.openWindow) return self.clients.openWindow(urlToOpen);
       }),
   );
 });
 
-function openDB() {
+async function clearModuleCache() {
+  const deleted = await caches.delete(MODULE_CACHE_NAME);
+  await notifyClients({ type: "MODULE_CACHE_CLEARED", deleted });
+}
+
+async function openDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = (event) => {
@@ -144,36 +237,28 @@ function openDB() {
         db.createObjectStore(STORE_NAME, { keyPath: "id" });
       }
       if (!db.objectStoreNames.contains(QUIZ_STORE_NAME)) {
-        const quizStore = db.createObjectStore(QUIZ_STORE_NAME, {
-          keyPath: "id",
-        });
+        const quizStore = db.createObjectStore(QUIZ_STORE_NAME, { keyPath: "id" });
         quizStore.createIndex("queuedAt", "queuedAt", { unique: false });
       }
     };
-    request.onsuccess = (event) => {
-      resolve(event.target.result);
-    };
-    request.onerror = (event) => {
-      reject(event.target.error);
-    };
+    request.onsuccess = (event) => resolve(event.target.result);
+    request.onerror = (event) => reject(event.target.error);
   });
 }
 
-function getAllFromStore(db, storeName) {
+async function getAllFromStore(db, storeName) {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(storeName, "readonly");
-    const store = transaction.objectStore(storeName);
-    const request = store.getAll();
+    const request = transaction.objectStore(storeName).getAll();
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
 }
 
-function deleteFromStore(db, storeName, id) {
+async function deleteFromStore(db, storeName, id) {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(storeName, "readwrite");
-    const store = transaction.objectStore(storeName);
-    const request = store.delete(id);
+    const request = transaction.objectStore(storeName).delete(id);
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error);
   });
@@ -181,103 +266,62 @@ function deleteFromStore(db, storeName, id) {
 
 async function notifyClients(message) {
   const clients = await self.clients.matchAll();
-  clients.forEach((client) => {
-    client.postMessage(message);
-  });
+  clients.forEach((client) => client.postMessage(message));
 }
 
 async function syncProgressQueue() {
   console.log("[ServiceWorker] Starting background queue sync...");
   let db;
-  try {
-    db = await openDB();
-  } catch (err) {
+  try { db = await openDB(); } catch (err) {
     console.error("[ServiceWorker] Failed to open IndexedDB:", err);
     return;
   }
 
   let actions;
-  try {
-    actions = await getAllFromStore(db, STORE_NAME);
-  } catch (err) {
+  try { actions = await getAllFromStore(db, STORE_NAME); } catch (err) {
     console.error("[ServiceWorker] Failed to read IndexedDB store:", err);
     return;
   }
 
-  if (!actions || actions.length === 0) {
-    console.log("[ServiceWorker] Queue is empty. Nothing to sync.");
-    return;
-  }
-
-  console.log(
-    `[ServiceWorker] Found ${actions.length} pending actions to sync.`,
-  );
+  if (!actions || actions.length === 0) return;
 
   for (const action of actions) {
     try {
-      console.log(
-        `[ServiceWorker] Replaying action: ${action.id} to ${action.url}`,
-      );
       const response = await fetch(action.url, {
         method: action.method,
         headers: action.headers,
         body: action.body,
       });
 
-      // Extract lesson slug if id starts with 'progress-sync-'
       let lesson_slug = null;
       if (action.id && action.id.startsWith("progress-sync-")) {
         lesson_slug = action.id.replace("progress-sync-", "");
       }
 
       if (response.ok || response.status === 400) {
-        console.log(
-          `[ServiceWorker] Action ${action.id} synced successfully (Status: ${response.status})`,
-        );
-
-        // Delete from IndexedDB
         await deleteFromStore(db, STORE_NAME, action.id);
-
-        // Notify clients
         await notifyClients({
           type: "SYNC_SUCCESS",
           id: action.id,
-          lesson_slug: lesson_slug,
+          lesson_slug,
           entity_type: action.entity_type,
           entity_id: action.entity_id,
         });
       } else if (response.status === 409) {
-        console.warn(
-          `[ServiceWorker] Conflict detected on server for action ${action.id}`,
-        );
-        // On 409 Conflict, notify client of the conflict to open resolution UI, do not delete from store yet
-        const serverData = await response
-          .clone()
-          .json()
-          .catch(() => ({}));
+        const serverData = await response.clone().json().catch(() => ({}));
         let localData = {};
-        try {
-          localData = JSON.parse(action.body);
-        } catch (e) {}
+        try { localData = JSON.parse(action.body); } catch (e) {}
 
         await notifyClients({
           type: "SYNC_CONFLICT",
           id: action.id,
-          lesson_slug: lesson_slug,
+          lesson_slug,
           serverData,
           localData,
         });
-      } else {
-        console.warn(
-          `[ServiceWorker] Action ${action.id} sync failed (Status: ${response.status}). Retrying later.`,
-        );
       }
     } catch (err) {
-      console.error(
-        `[ServiceWorker] Fetch error for action ${action.id}:`,
-        err,
-      );
-      // Keep in queue and resolve to try again later on network error
+      console.error(`[ServiceWorker] Fetch error for action ${action.id}:`, err);
     }
   }
 }
@@ -285,37 +329,21 @@ async function syncProgressQueue() {
 async function syncQuizQueue() {
   console.log("[ServiceWorker] Starting offline quiz submission sync...");
   let db;
-  try {
-    db = await openDB();
-  } catch (err) {
+  try { db = await openDB(); } catch (err) {
     console.error("[ServiceWorker] Failed to open IndexedDB:", err);
     return;
   }
 
   let submissions;
-  try {
-    submissions = await getAllFromStore(db, QUIZ_STORE_NAME);
-  } catch (err) {
+  try { submissions = await getAllFromStore(db, QUIZ_STORE_NAME); } catch (err) {
     console.error("[ServiceWorker] Failed to read quiz submission queue:", err);
     return;
   }
 
-  if (!submissions || submissions.length === 0) {
-    console.log(
-      "[ServiceWorker] Quiz submission queue is empty. Nothing to sync.",
-    );
-    return;
-  }
-
-  console.log(
-    `[ServiceWorker] Found ${submissions.length} pending quiz submissions to sync.`,
-  );
+  if (!submissions || submissions.length === 0) return;
 
   for (const submission of submissions) {
     try {
-      console.log(
-        `[ServiceWorker] Replaying quiz submission: ${submission.id} to ${submission.url}`,
-      );
       const response = await fetch(submission.url, {
         method: submission.method,
         headers: submission.headers,
@@ -323,27 +351,13 @@ async function syncQuizQueue() {
       });
 
       if (response.ok) {
-        console.log(
-          `[ServiceWorker] Quiz submission ${submission.id} synced successfully`,
-        );
         await deleteFromStore(db, QUIZ_STORE_NAME, submission.id);
         await notifyClients({
           type: "QUIZ_SYNC_SUCCESS",
           id: submission.id,
           question_id: submission.question_id,
         });
-      } else if (response.status === 401 || response.status >= 500) {
-        // Transient failure (expired token / server trouble): keep queued so a
-        // future sync event can retry it.
-        console.warn(
-          `[ServiceWorker] Quiz submission ${submission.id} failed transiently (Status: ${response.status}). Retrying later.`,
-        );
-      } else {
-        // Permanent rejection (e.g. bad payload or 403 replay-protection from
-        // an expired one-time nonce): drop it and let the client know.
-        console.warn(
-          `[ServiceWorker] Quiz submission ${submission.id} rejected permanently (Status: ${response.status}). Dropping.`,
-        );
+      } else if (response.status !== 401 && response.status < 500) {
         await deleteFromStore(db, QUIZ_STORE_NAME, submission.id);
         await notifyClients({
           type: "QUIZ_SYNC_FAILED",
@@ -353,11 +367,7 @@ async function syncQuizQueue() {
         });
       }
     } catch (err) {
-      console.error(
-        `[ServiceWorker] Fetch error for quiz submission ${submission.id}:`,
-        err,
-      );
-      // Network still unavailable — leave queued for the next sync event.
+      console.error(`[ServiceWorker] Fetch error for quiz submission ${submission.id}:`, err);
     }
   }
 }
