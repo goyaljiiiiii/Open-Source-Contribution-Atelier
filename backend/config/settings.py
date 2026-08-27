@@ -113,20 +113,20 @@ CSRF_COOKIE_SECURE = not DEBUG
 
 TESTING = "test" in sys.argv or "pytest" in sys.modules
 
-_raw_hosts = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+_raw_hosts = os.getenv("ALLOWED_HOSTS", "*").split(",")
 ALLOWED_HOSTS = [host.strip() for host in _raw_hosts if host.strip()]
 
-if not DEBUG and "*" in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.remove("*")
-
-_render_host = os.getenv("RENDER_EXTERNAL_HOSTNAME")
-if _render_host and _render_host not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append(_render_host)
-
-if not DEBUG and not TESTING and not ALLOWED_HOSTS:
-    from django.core.exceptions import ImproperlyConfigured
-
-    raise ImproperlyConfigured("ALLOWED_HOSTS cannot be empty in production.")
+for h in [
+    "*",
+    ".hf.space",
+    ".vercel.app",
+    "nandinigoyaldev-atelier-backend.hf.space",
+    "open-source-contribution-atelier.vercel.app",
+    "localhost",
+    "127.0.0.1",
+]:
+    if h not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(h)
 
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
@@ -140,6 +140,15 @@ CORS_ALLOWED_ORIGINS = [
 _frontend_url = os.getenv("FRONTEND_URL", "").strip().rstrip("/")
 if _frontend_url and _frontend_url not in CORS_ALLOWED_ORIGINS:
     CORS_ALLOWED_ORIGINS.append(_frontend_url)
+
+for _co in [
+    "https://open-source-contribution-atelier.vercel.app",
+    "https://nandinigoyaldev-atelier-backend.hf.space",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]:
+    if _co not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append(_co)
 
 
 def _validate_cors_allowed_origins(origins: list[str]) -> list[str]:
@@ -717,10 +726,16 @@ CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
     if origin.strip()
-] or [
-    "http://localhost:8000",
-    "http://localhost:5173",
 ]
+for _to in [
+    "https://open-source-contribution-atelier.vercel.app",
+    "https://nandinigoyaldev-atelier-backend.hf.space",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:8000",
+]:
+    if _to not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(_to)
 
 CONTENT_SECURITY_POLICY = {
     "img-src": [
