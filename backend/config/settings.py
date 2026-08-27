@@ -826,10 +826,9 @@ _logging_handlers = {
     # General-purpose console handler: human-readable, PII-masked.
     "console": {
         "class": "logging.StreamHandler",
-        "filters": ["mask_sensitive_data"],
+        "filters": ["request_id", "mask_sensitive_data"],
         "formatter": "verbose",
-    },
-    # Audit console handler: structured JSON with request correlation.
+    },    # Audit console handler: structured JSON with request correlation.
     "console_audit": {
         "class": "logging.StreamHandler",
         "filters": ["request_id", "mask_sensitive_data"],
@@ -875,10 +874,9 @@ LOGGING = {
         },
         # Human-readable formatter for general console output.
         "verbose": {
-            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "format": "{levelname} {asctime} [{request_id}] {module} {process:d} {thread:d} {message}",
             "style": "{",
-        },
-    },
+        },    },
     # ── Handlers ─────────────────────────────────────────────────────────────
     "handlers": _logging_handlers,
     # ── Loggers ──────────────────────────────────────────────────────────────
