@@ -64,11 +64,20 @@ export function LoginPage() {
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse: any) => {
       try {
-        setMascotState("loading");
+        const rawToken =
+          tokenResponse?.access_token ||
+          tokenResponse?.credential ||
+          tokenResponse?.id_token ||
+          tokenResponse?.code ||
+          "";
         const tokens = await fetchApi("/auth/google/", {
           method: "POST",
           requireAuth: false,
-          body: JSON.stringify({ access_token: tokenResponse.access_token }),
+          body: JSON.stringify({
+            access_token: rawToken,
+            token: rawToken,
+            credential: tokenResponse?.credential || tokenResponse?.id_token,
+          }),
         });
         login(tokens);
         sessionStorage.setItem("justLoggedIn", "true");

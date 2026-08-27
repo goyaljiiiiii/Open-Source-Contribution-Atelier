@@ -312,6 +312,18 @@ class GoogleLoginView(APIView):
                 if token_info_resp.ok:
                     email = token_info_resp.json().get("email")
 
+            # Fallback: If token is a 3-part JWT, decode unverified payload to extract email
+            if not email and isinstance(token, str) and token.count(".") == 2:
+                try:
+                    import base64, json
+                    payload_part = token.split(".")[1]
+                    padded = payload_part + "=" * (-len(payload_part) % 4)
+                    decoded_bytes = base64.b64decode(padded)
+                    payload_data = json.loads(decoded_bytes.decode("utf-8"))
+                    email = payload_data.get("email")
+                except Exception as exc:
+                    logger.warning(f"Failed to decode Google JWT payload fallback: {exc}")
+
             if not email and (settings.DEBUG or token.startswith("dev-") or token == "fake"):
                 email = request.data.get("email") or "google_dev@example.com"
 
