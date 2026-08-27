@@ -5,6 +5,14 @@ Apollo Federation-style directives and utilities.
 import json
 from typing import Any, Dict, List, Optional
 
+from graphql import parse, print_ast, visit
+from graphql.language import Visitor
+from graphql.language.ast import (
+    FieldNode,
+    FragmentSpreadNode,
+    InlineFragmentNode,
+)
+
 # ============================================================
 # Federation Directives
 # ============================================================
