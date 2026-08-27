@@ -60,9 +60,14 @@ export function CollabPythonSandbox({
     // Ensure we use the correct protocol (ws:// or wss://) and host
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     // Determine backend host from env or fallback to localhost:8000
-    const backendHost = import.meta.env.VITE_API_URL
-      ? new URL(import.meta.env.VITE_API_URL).host
-      : "localhost:8000";
+    let backendHost = window.location.host;
+    if (import.meta.env.VITE_API_URL) {
+      try {
+        backendHost = new URL(import.meta.env.VITE_API_URL).host;
+      } catch {
+        backendHost = window.location.host;
+      }
+    }
 
     const wsUrl = `${protocol}//${backendHost}/ws/collab`;
 

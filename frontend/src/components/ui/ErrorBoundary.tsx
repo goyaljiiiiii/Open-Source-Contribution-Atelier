@@ -23,6 +23,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("ErrorBoundary caught an unhandled error:", error, errorInfo);
     // Log the error to the centralized error reporting service
     logger.error(error, errorInfo);
   }
