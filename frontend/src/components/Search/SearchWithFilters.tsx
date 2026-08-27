@@ -28,6 +28,7 @@ interface SearchWithFiltersProps {
   error?: string | null;
   isDegraded?: boolean;
   categories?: string[];
+  durationMs?: number | null;
   placeholder?: string;
 }
 
@@ -41,6 +42,7 @@ export const SearchWithFilters: React.FC<SearchWithFiltersProps> = ({
   error = null,
   isDegraded = false,
   categories = [],
+  durationMs = null,
   placeholder = "Search lessons, modules, and more...",
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -224,6 +226,12 @@ export const SearchWithFilters: React.FC<SearchWithFiltersProps> = ({
                 {selectedCategory && (
                   <span className="filter-badge">
                     Filtered by: #{selectedCategory}
+                  </span>
+                )}
+                {durationMs !== null && (
+                  <span className="results-duration">
+                    {" "}
+                    in {durationMs}ms
                   </span>
                 )}
               </span>

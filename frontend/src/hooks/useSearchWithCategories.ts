@@ -23,6 +23,7 @@ interface UseSearchWithCategoriesResult {
   error: string | null;
   isDegraded: boolean;
   categories: string[];
+  durationMs: number | null;
   search: (query: string, category: string | null) => Promise<void>;
   retry: () => void;
   clearSearch: () => void;
@@ -50,6 +51,7 @@ export function useSearchWithCategories(): UseSearchWithCategoriesResult {
   const [error, setError] = useState<string | null>(null);
   const [isDegraded, setIsDegraded] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
+  const [durationMs, setDurationMs] = useState<number | null>(null);
 
   // Keeps the arguments of the last search so `retry()` can replay it,
   // and lets an in-flight request be cancelled if a newer one starts.
@@ -85,6 +87,9 @@ export function useSearchWithCategories(): UseSearchWithCategoriesResult {
 
     setIsLoading(true);
     setError(null);
+    setDurationMs(null);
+
+    const startedAt = performance.now();
 
     try {
       const params: Record<string, string> = {};
@@ -95,6 +100,16 @@ export function useSearchWithCategories(): UseSearchWithCategoriesResult {
         params,
         signal: controller.signal,
       });
+
+      // Prefer a backend-reported timing if present (e.g. Meilisearch
+      // query time), otherwise fall back to the client fetch delta.
+      const backendDuration: number | undefined =
+        response.data?.meta?.duration_ms;
+      setDurationMs(
+        typeof backendDuration === "number"
+          ? backendDuration
+          : Math.round(performance.now() - startedAt),
+      );
 
       const rawResults = response.data.results || response.data.lessons || [];
       setResults(rawResults);
@@ -150,6 +165,7 @@ export function useSearchWithCategories(): UseSearchWithCategoriesResult {
     setResults([]);
     setError(null);
     setIsDegraded(false);
+    setDurationMs(null);
   }, []);
 
   return {
@@ -158,6 +174,7 @@ export function useSearchWithCategories(): UseSearchWithCategoriesResult {
     error,
     isDegraded,
     categories,
+    durationMs,
     search,
     retry,
     clearSearch,

@@ -193,5 +193,57 @@ describe("SearchPage and SearchWithFilters", () => {
         screen.getByText("Learn version control fundamentals"),
       ).toBeInTheDocument();
     });
+
+    it("appends search latency to the results count when durationMs is provided", () => {
+      const mockResults = [
+        {
+          id: "1",
+          title: "Introduction to Git",
+          description: "Learn version control fundamentals",
+          category: "Git",
+          tags: ["git", "basics"],
+          url: "/lessons/git-intro",
+        },
+      ];
+
+      render(
+        <MemoryRouter>
+          <SearchWithFilters
+            results={mockResults}
+            isLoading={false}
+            durationMs={38}
+          />
+        </MemoryRouter>,
+      );
+
+      expect(screen.getByText("1 results found")).toBeInTheDocument();
+      expect(screen.getByText(/in 38ms/)).toBeInTheDocument();
+    });
+
+    it("does not render latency text when durationMs is null", () => {
+      const mockResults = [
+        {
+          id: "1",
+          title: "Introduction to Git",
+          description: "Learn version control fundamentals",
+          category: "Git",
+          tags: ["git", "basics"],
+          url: "/lessons/git-intro",
+        },
+      ];
+
+      render(
+        <MemoryRouter>
+          <SearchWithFilters
+            results={mockResults}
+            isLoading={false}
+            durationMs={null}
+          />
+        </MemoryRouter>,
+      );
+
+      expect(screen.getByText("1 results found")).toBeInTheDocument();
+      expect(screen.queryByText(/in \d+ms/)).not.toBeInTheDocument();
+    });
   });
 });
