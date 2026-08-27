@@ -681,7 +681,10 @@ SOCIALACCOUNT_PROVIDERS = {
     },
     "google": {
         "APP": {
-            "client_id": os.getenv("GOOGLE_CLIENT_ID"),
+            "client_id": os.getenv(
+                "GOOGLE_CLIENT_ID",
+                "27042928964-pbolsldqvdv2hfipblmrcf332evg83v8.apps.googleusercontent.com",
+            ),
             "secret": os.getenv("GOOGLE_CLIENT_SECRET", ""),
         },
         "SCOPE": [
