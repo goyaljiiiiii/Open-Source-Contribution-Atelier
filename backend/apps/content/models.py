@@ -309,6 +309,9 @@ class ModuleDraft(models.Model):
         return self.title
 
 
+Module = ModuleDraft
+
+
 class LessonDraft(models.Model):
     module = models.ForeignKey(
         ModuleDraft,

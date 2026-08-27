@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 import pytest
 from django.core.cache import cache
 
@@ -6,7 +8,12 @@ from apps.content.views import get_active_lessons
 
 
 @pytest.fixture(autouse=True)
-def clear_cache_before_tests():
+def clear_cache_before_tests(monkeypatch):
+    monkeypatch.setattr("apps.content.signals.encode", lambda text: None)
+    monkeypatch.setattr(
+        "apps.core.cache.stampede.stampede_protected_get_or_set",
+        lambda key, generate_func, **kwargs: generate_func(),
+    )
     cache.clear()
     yield
     cache.clear()
@@ -58,3 +65,45 @@ def test_active_lessons_caching():
 
     # Cache should be cleared
     assert cache.get("active_lessons_list") is None
+
+
+def test_module_and_lesson_signal_cache_invalidation():
+    from django.db.models.signals import post_delete, post_save
+
+    from apps.content.models import Exercise, Lesson, Module, ModuleDraft
+    from apps.content.signals import clear_curriculum_caches, invalidate_lesson_cache
+
+    # Populate cache keys matching pathway_ordering_* and module_list_*
+    cache.set("pathway_ordering_1", "path_data", 300)
+    cache.set("module_list_123", "module_data", 300)
+    cache.set("unrelated_key", "keep_me", 300)
+
+    # Calling clear_curriculum_caches purges pathway_ordering_* and module_list_*
+    clear_curriculum_caches()
+
+    assert cache.get("pathway_ordering_1") is None
+    assert cache.get("module_list_123") is None
+    assert cache.get("unrelated_key") is None
+
+    # Verify signal handlers are connected to Lesson, Module, ModuleDraft, Exercise for post_save and post_delete
+    for model in [Lesson, Module, ModuleDraft, Exercise]:
+        receivers_save = [r[1]() for r in post_save.receivers if r[1]() == invalidate_lesson_cache]
+        receivers_delete = [r[1]() for r in post_delete.receivers if r[1]() == invalidate_lesson_cache]
+        assert len(receivers_save) > 0, f"post_save signal not connected for {model}"
+        assert len(receivers_delete) > 0, f"post_delete signal not connected for {model}"
+
+
+from unittest.mock import MagicMock, patch
+
+
+def test_purge_redis_cache_patterns_delete_pattern():
+    from apps.content.signals import purge_redis_cache_patterns
+
+    mock_delete_pattern = MagicMock()
+    with patch.object(cache, "delete_pattern", mock_delete_pattern, create=True):
+        purge_redis_cache_patterns(["pathway_ordering_*", "module_list_*"])
+
+    assert mock_delete_pattern.call_count == 2
+    mock_delete_pattern.assert_any_call("pathway_ordering_*")
+    mock_delete_pattern.assert_any_call("module_list_*")
+
