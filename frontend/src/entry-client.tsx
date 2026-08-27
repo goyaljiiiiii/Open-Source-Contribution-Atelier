@@ -74,8 +74,9 @@ syncOfflineQueue();
 // Keep HF Spaces container warm (production only)
 initKeepAlive();
 
-ReactDOM.hydrateRoot(
-  document.getElementById("root")!,
+const container = document.getElementById("root")!;
+
+ReactDOM.createRoot(container).render(
   <React.StrictMode>
     <Provider store={store}>
       <I18nextProvider i18n={i18n}>
