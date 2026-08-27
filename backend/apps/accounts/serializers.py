@@ -177,6 +177,8 @@ class UserListSerializer(serializers.ModelSerializer):
     github_url = serializers.SerializerMethodField()
     active_track_status = serializers.SerializerMethodField()
     next_milestone = serializers.SerializerMethodField()
+    global_rank = serializers.SerializerMethodField()
+    percentile_standing = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -194,7 +196,19 @@ class UserListSerializer(serializers.ModelSerializer):
             "github_url",
             "active_track_status",
             "next_milestone",
+            "global_rank",
+            "percentile_standing",
         )
+
+    def get_global_rank(self, obj):
+        if "bulk_global_ranks" in self.context:
+            return self.context["bulk_global_ranks"].get(obj.id, 1)
+        return getattr(obj, "global_rank", 1)
+
+    def get_percentile_standing(self, obj):
+        if "bulk_percentiles" in self.context:
+            return self.context["bulk_percentiles"].get(obj.id, 1)
+        return getattr(obj, "percentile_standing", 1)
 
     def get_active_track_status(self, obj):
         if "bulk_track_statuses" in self.context:
