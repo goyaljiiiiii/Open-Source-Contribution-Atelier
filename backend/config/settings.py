@@ -251,6 +251,7 @@ INSTALLED_APPS = [
     "apps.dependency_graph",
     "apps.issue_quality",
     "apps.ml_triage",
+    "apps.learning_analytics",
 ]
 
 
