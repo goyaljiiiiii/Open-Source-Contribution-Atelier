@@ -1047,4 +1047,8 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.progress.tasks.archive_monthly_leaderboard",
         "schedule": crontab(minute=0, hour=0, day_of_month="1"),
     },
+    "cleanup-expired-sandbox-sessions": {
+        "task": "apps.sandbox.tasks.cleanup_expired_sandbox_sessions",
+        "schedule": crontab(minute=0, hour=3),
+    },
 }
