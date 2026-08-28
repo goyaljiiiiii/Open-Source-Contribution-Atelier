@@ -452,3 +452,14 @@ class UserConnectedAppsViewSet(viewsets.ViewSet):
     def revoke(self, request, pk=None):
         OAuthToken.objects.filter(id=pk, user=request.user).update(is_revoked=True)
         return Response({"status": "revoked"}, status=200)
+
+    @action(detail=True, methods=["post"])
+    def sync(self, request, pk=None):
+        token = OAuthToken.objects.filter(id=pk, user=request.user).first()
+        if not token:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        token.last_sync = timezone.now()
+        token.save(update_fields=["last_sync"])
+        serializer = OAuthTokenSerializer(token)
+        return Response(serializer.data, status=200)
