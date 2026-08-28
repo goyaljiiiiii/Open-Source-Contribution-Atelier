@@ -106,6 +106,8 @@ api_v1_patterns = [
     path("api/study-groups/", include("apps.study_groups.urls")),
     # ── Mentorship Matching & Tracking ─────────────────────────────────────
     path("api/mentorship/", include("apps.mentorship.urls")),
+    # ── Learning Journal & Daily Reflection ─────────────────────────────────
+    path("api/journal/", include("apps.learning_journal.urls")),
     # ── AI Tutor ────────────────────────────────────────────────────────────────
     path("api/ai/tutor/", include("apps.ai_tutor.urls")),
     # ── Events & GraphQL ──────────────────────────────────────────────────────

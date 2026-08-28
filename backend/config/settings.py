@@ -255,6 +255,7 @@ INSTALLED_APPS = [
     "apps.flashcards",
     "apps.study_groups",
     "apps.mentorship",
+    "apps.learning_journal",
 ]
 
 
