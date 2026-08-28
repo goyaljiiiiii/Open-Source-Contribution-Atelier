@@ -39,6 +39,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from .tokens import generate_tokens_for_user
 from apps.progress.models import LessonProgress, UserBadge
 from apps.progress.serializers import UserBadgeSerializer
 from schemas.user import (
@@ -372,13 +373,12 @@ class GoogleLoginView(APIView):
                     password=secrets.token_urlsafe(24),
                 )
 
-            refresh = RefreshToken.for_user(user)
+            tokens = generate_tokens_for_user(user)
             return Response(
                 {
-                    "refresh": str(refresh),
-                    "access": str(refresh.access_token),
-                    "user": {
-                        "username": user.username,
+                    "refresh": tokens["refresh"],
+                    "access": tokens["access"],
+                    "user": {                        "username": user.username,
                         "email": user.email,
                         "is_staff": user.is_staff,
                     },
@@ -568,17 +568,16 @@ class GitHubOAuthCallbackView(APIView):
                     password=secrets.token_urlsafe(24),
                 )
 
-            refresh = RefreshToken.for_user(user)
+            tokens = generate_tokens_for_user(user)
             return redirect(
                 frontend_url(
                     "/auth/github/callback",
                     {
-                        "access": str(refresh.access_token),
-                        "refresh": str(refresh),
-                    },
+                        "access": tokens["access"],
+                        "refresh": tokens["refresh"],
+                    }
                 )
-            )
-        except CircuitOpenError:
+            )        except CircuitOpenError:
             return redirect(
                 frontend_url(
                     "/",
@@ -931,14 +930,13 @@ class MagicLinkVerifyView(APIView):
         magic_token.is_used = True
         magic_token.save(update_fields=["is_used"])
 
-        refresh = RefreshToken.for_user(user)
+        tokens = generate_tokens_for_user(user)
 
         return Response(
             {
-                "refresh": str(refresh),
-                "access": str(refresh.access_token),
-                "user": {
-                    "username": user.username,
+                "refresh": tokens["refresh"],
+                "access": tokens["access"],
+                "user": {                    "username": user.username,
                     "email": user.email,
                     "is_staff": user.is_staff,
                 },
