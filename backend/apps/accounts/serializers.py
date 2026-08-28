@@ -471,3 +471,60 @@ class UserSessionSerializer(serializers.ModelSerializer):
             "last_activity",
         )
         read_only_fields = fields
+
+
+class StudyActivityExportSerializer(serializers.Serializer):
+    """Serializes a user's study activity log for JSON export."""
+
+    profile = serializers.SerializerMethodField()
+    streak = serializers.SerializerMethodField()
+    earned_badges = serializers.SerializerMethodField()
+    completed_lessons = serializers.SerializerMethodField()
+
+    def get_profile(self, user):
+        profile = getattr(user, "user_profile", None)
+        return {
+            "username": user.username,
+            "email": user.email,
+            "date_joined": user.date_joined,
+            "bio": getattr(profile, "bio", ""),
+            "timezone": getattr(profile, "timezone", "UTC"),
+        }
+
+    def get_streak(self, user):
+        from apps.progress.models import StreakProfile
+
+        try:
+            streak_profile = user.streak_profile
+        except StreakProfile.DoesNotExist:
+            return None
+
+        return {
+            "current_streak": streak_profile.current_streak,
+            "longest_streak": streak_profile.longest_streak,
+            "last_activity_date": streak_profile.last_activity_date,
+        }
+
+    def get_earned_badges(self, user):
+        from apps.progress.models import UserBadge
+
+        badges = UserBadge.objects.filter(user=user).select_related("badge")
+        return [
+            {"badge_name": ub.badge.name, "earned_at": ub.earned_at}
+            for ub in badges
+        ]
+
+    def get_completed_lessons(self, user):
+        from apps.progress.models import LessonProgress
+
+        lessons = LessonProgress.objects.filter(
+            user=user, completed=True
+        ).select_related("lesson")
+        return [
+            {
+                "lesson_title": lp.lesson.title,
+                "score": lp.score,
+                "completed_at": lp.updated_at,
+            }
+            for lp in lessons
+        ]

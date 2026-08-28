@@ -1049,9 +1049,39 @@ class ExportDataView(APIView):
         )
 
 
+import json
+
+from django.core.serializers.json import DjangoJSONEncoder
+
+from .serializers import StudyActivityExportSerializer
+
+
+class StudyActivityExportView(APIView):
+    """
+    GET /api/v1/accounts/export-data/
+    Exports the authenticated user's study activity log (profile,
+    streak, earned badges, completed lessons) as downloadable JSON.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        responses={
+            200: OpenApiResponse(description="Study activity export file (JSON)"),
+        }
+    )
+    def get(self, request):
+        data = StudyActivityExportSerializer(request.user).data
+        json_data = json.dumps(data, cls=DjangoJSONEncoder, indent=2)
+        response = HttpResponse(json_data, content_type="application/json")
+        response["Content-Disposition"] = (
+            'attachment; filename="atelier_study_export.json"'
+        )
+        return response
+
+
 from apps.chat.models import Message
 from apps.content.models import Comment
-
 
 class SecureAccountDeleteView(APIView):
     """
