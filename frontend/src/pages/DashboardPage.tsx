@@ -17,6 +17,7 @@ import { BADGES } from "../constants/badges";
 
 import { DailyChallengeQuizCard } from "../components/ui/DailyChallengeQuizCard";
 import { RecentActivity } from "../components/RecentActivity";
+import { StreakMilestoneProgressBar } from "../components/dashboard/StreakMilestoneProgressBar";
 
 import { ContinueLearning } from "../components/ContinueLearning";
 import {
@@ -27,6 +28,7 @@ import {
   BookOpen,
   Award,
   Sparkles,
+  Zap,
 } from "lucide-react";
 import { AvailableOfflineBadge } from "../components/ui/AvailableOfflineBadge";
 import { CARD_FOCUS_RING } from "../lib/a11yFocus";
@@ -239,7 +241,7 @@ export function DashboardPage() {
         </div>
 
         {/* Streak Card */}
-        <div className="rounded-[2rem] border-4 border-black bg-gradient-to-br from-orange-50 to-red-50 dark:from-[#2a1f1a] dark:to-[#1f1410] dark:border-[#2e2924] p-6 shadow-card flex flex-col items-center justify-center text-center">
+        <div className="rounded-[2rem] border-4 border-black bg-gradient-to-br from-orange-50 to-red-50 dark:from-[#2a1f1a] dark:to-[#1f1410] dark:border-[#2e2924] p-6 shadow-card flex flex-col items-center justify-center text-center relative overflow-hidden">
           <Flame className="w-10 h-10 text-orange-500 mb-2" />
           <span className="text-5xl font-black text-orange-500 drop-shadow-[2px_2px_0_rgba(0,0,0,0.2)]">
             {stats.streakDays}
@@ -250,7 +252,24 @@ export function DashboardPage() {
           <p className="text-xs font-bold text-gray-400 dark:text-[#8a7f72] mt-2">
             Best: {stats.longestStreak} days
           </p>
+
+          {/* Weekend Event Multiplier Indicator */}
+          <div
+            data-testid="weekend-xp-multiplier-badge"
+            className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 bg-amber-400 text-black text-[11px] font-black rounded-full border-2 border-black shadow-card-sm"
+          >
+            <Zap size={13} className="fill-black stroke-[2.5]" />
+            <span>Weekend Event: 1.5x XP Active</span>
+          </div>
         </div>
+      </section>
+
+      {/* Streak Milestone Progress Bar Widget */}
+      <section>
+        <StreakMilestoneProgressBar
+          currentStreak={stats.streakDays}
+          longestStreak={stats.longestStreak}
+        />
       </section>
 
       {/* Concept / Tip of the Day */}

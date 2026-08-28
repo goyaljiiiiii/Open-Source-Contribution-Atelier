@@ -7,14 +7,49 @@ from django.dispatch import receiver
 
 from apps.events.services.event_bus import EventBus
 
-from .models import Exercise, Lesson, LessonVersion
+from .models import Exercise, Lesson, LessonVersion, Module, ModuleDraft
 from .semantic_search import encode
 
 logger = logging.getLogger(__name__)
 
 
+def purge_redis_cache_patterns(patterns=("pathway_ordering_*", "module_list_*")):
+    """
+    Purges keys matching specified patterns from Redis or active cache backend.
+    Prefers cache.delete_pattern when Redis backend is active, and falls back to
+    pattern scanning via cache.keys or redis client scan_iter.
+    """
+    for pattern in patterns:
+        if hasattr(cache, "delete_pattern"):
+            try:
+                cache.delete_pattern(pattern)
+                continue
+            except Exception as exc:
+                logger.warning("cache.delete_pattern failed for pattern %s: %s", pattern, exc)
+
+        if hasattr(cache, "keys"):
+            try:
+                matching_keys = cache.keys(pattern)
+                for key in matching_keys:
+                    cache.delete(key)
+                continue
+            except Exception as exc:
+                logger.warning("cache.keys scan failed for pattern %s: %s", pattern, exc)
+
+        if hasattr(cache, "client") and "redis" in getattr(cache, "__module__", "").lower():
+            try:
+                client = cache.client.get_client()
+                if hasattr(client, "scan_iter"):
+                    keys = list(client.scan_iter(match=pattern))
+                    if keys:
+                        client.delete(*keys)
+            except Exception as exc:
+                logger.warning("Redis client scan_iter failed for pattern %s: %s", pattern, exc)
+
+
 def clear_curriculum_caches():
     cache.delete("active_lessons_list")
+    purge_redis_cache_patterns(["pathway_ordering_*", "module_list_*"])
     cache.clear()
 
 
@@ -29,6 +64,8 @@ def _update_embedding(lesson):
 
 
 @receiver([post_save, post_delete], sender=Lesson)
+@receiver([post_save, post_delete], sender=Module)
+@receiver([post_save, post_delete], sender=ModuleDraft)
 @receiver([post_save, post_delete], sender=Exercise)
 def invalidate_lesson_cache(sender, instance, **kwargs):
     transaction.on_commit(lambda: clear_curriculum_caches())

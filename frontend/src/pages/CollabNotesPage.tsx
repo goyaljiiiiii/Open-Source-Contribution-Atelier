@@ -295,9 +295,11 @@ export const CollabNotesPage: React.FC = () => {
             </select>
 
             {/* View Mode Toggle Buttons */}
-            <div className="flex items-center p-1 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs">
+            <div className="flex items-center p-1 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs" role="group" aria-label="Editor View Mode">
               <button
+                type="button"
                 onClick={() => setViewMode("edit")}
+                aria-label="Switch to editor only view"
                 className={`px-2.5 py-1.5 font-bold rounded-lg transition-all flex items-center gap-1 ${
                   viewMode === "edit"
                     ? "bg-blue-600 text-white shadow-sm"
@@ -307,7 +309,9 @@ export const CollabNotesPage: React.FC = () => {
                 <Edit3 className="w-3.5 h-3.5" /> Edit
               </button>
               <button
+                type="button"
                 onClick={() => setViewMode("split")}
+                aria-label="Switch to split editor and preview view"
                 className={`px-2.5 py-1.5 font-bold rounded-lg transition-all flex items-center gap-1 ${
                   viewMode === "split"
                     ? "bg-blue-600 text-white shadow-sm"
@@ -317,7 +321,9 @@ export const CollabNotesPage: React.FC = () => {
                 <Columns className="w-3.5 h-3.5" /> Split
               </button>
               <button
+                type="button"
                 onClick={() => setViewMode("preview")}
+                aria-label="Switch to rendered preview only view"
                 className={`px-2.5 py-1.5 font-bold rounded-lg transition-all flex items-center gap-1 ${
                   viewMode === "preview"
                     ? "bg-blue-600 text-white shadow-sm"
@@ -329,9 +335,11 @@ export const CollabNotesPage: React.FC = () => {
             </div>
 
             <button
+              type="button"
               onClick={handleCopyShareLink}
               className="px-3 py-2 text-xs font-bold text-gray-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
               title="Copy Live Share Link"
+              aria-label="Copy Live Share Link"
             >
               {isCopied ? (
                 <Check className="w-4 h-4 text-emerald-500" />
@@ -342,8 +350,10 @@ export const CollabNotesPage: React.FC = () => {
             </button>
 
             <button
+              type="button"
               onClick={handleSaveToBackend}
               disabled={isSaving}
+              aria-label="Save note to backend database"
               className="px-3.5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
             >
               <Save className="w-4 h-4" />
@@ -351,17 +361,21 @@ export const CollabNotesPage: React.FC = () => {
             </button>
 
             <button
+              type="button"
               onClick={handleDownloadMarkdown}
               className="p-2 text-gray-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl transition-colors"
               title="Download Markdown (.md)"
+              aria-label="Download Markdown file"
             >
               <Download className="w-4 h-4" />
             </button>
 
             <button
+              type="button"
               onClick={() => setZenMode(!zenMode)}
               className="p-2 text-gray-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl transition-colors"
               title={zenMode ? "Exit Zen Mode" : "Fullscreen Zen Mode"}
+              aria-label={zenMode ? "Exit Zen Mode" : "Fullscreen Zen Mode"}
             >
               {zenMode ? (
                 <Minimize2 className="w-4 h-4" />

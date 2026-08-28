@@ -28,7 +28,10 @@ TOKEN_BLACKLIST_CLEANUP_INTERVAL = timedelta(days=1)
 
 # OAuth2 settings
 OAUTH2_CONFIG = {
-    "GOOGLE_CLIENT_ID": os.getenv("GOOGLE_CLIENT_ID"),
+    "GOOGLE_CLIENT_ID": os.getenv(
+        "GOOGLE_CLIENT_ID",
+        "27042928964-pbolsldqvdv2hfipblmrcf332evg83v8.apps.googleusercontent.com",
+    ),
     "GOOGLE_CLIENT_SECRET": os.getenv("GOOGLE_CLIENT_SECRET"),
     "GITHUB_CLIENT_ID": os.getenv("GITHUB_CLIENT_ID"),
     "GITHUB_CLIENT_SECRET": os.getenv("GITHUB_CLIENT_SECRET"),

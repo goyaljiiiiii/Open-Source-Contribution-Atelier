@@ -30,7 +30,7 @@ interface AuthState {
 const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
-  isLoading: true,
+  isLoading: typeof window !== "undefined" ? !!getAccessToken() : false,
 };
 
 function sanitizeStorageData(value: string): string {

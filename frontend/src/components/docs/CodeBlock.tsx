@@ -87,6 +87,8 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
 
   return (
     <div
+      role="region"
+      aria-label={`Code snippet: ${language}`}
       className={`w-full rounded-2xl border border-gray-800 bg-[#0d0f17] shadow-xl overflow-hidden text-gray-200 font-mono text-xs ${className}`}
     >
       {/* Header Bar */}

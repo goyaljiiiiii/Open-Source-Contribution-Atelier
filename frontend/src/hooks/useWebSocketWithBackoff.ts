@@ -59,7 +59,9 @@ export function useWebSocketWithBackoff(
   const [retryCount, setRetryCount] = useState(0);
   const [lastError, setLastError] = useState<string | null>(null);
   const [lastMessage, setLastMessage] = useState<any>(null);
-  const [readyState, setReadyState] = useState<number>(WebSocket.CONNECTING);
+  const [readyState, setReadyState] = useState<number>(
+    typeof WebSocket !== "undefined" ? WebSocket.CONNECTING : 0,
+  );
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimerRef = useRef<number | null>(null);

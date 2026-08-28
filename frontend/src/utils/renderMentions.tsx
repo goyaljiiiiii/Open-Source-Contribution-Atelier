@@ -448,6 +448,8 @@ export function RichTextRenderer({
             return (
               <div
                 key={i}
+                role="region"
+                aria-label={`Code snippet: ${token.metadata?.language || "text"}`}
                 className="my-3 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#0d0d0d]"
               >
                 {token.metadata?.language && (

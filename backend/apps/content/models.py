@@ -3,7 +3,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from apps.core.models import AuditableModel
+from apps.core.models import AuditableModel, SoftDeleteModel
 from apps.search.mixins import SearchIndexMixin
 
 User = get_user_model()
@@ -294,7 +294,7 @@ class Profile(models.Model):
         return f"Profile for {self.user.username}"
 
 
-class ModuleDraft(models.Model):
+class ModuleDraft(SoftDeleteModel):
     title = models.CharField(max_length=255)
     slug = models.SlugField(unique=True)
     description = models.TextField(blank=True)
@@ -309,7 +309,10 @@ class ModuleDraft(models.Model):
         return self.title
 
 
-class LessonDraft(models.Model):
+Module = ModuleDraft
+
+
+class LessonDraft(SoftDeleteModel):
     module = models.ForeignKey(
         ModuleDraft,
         on_delete=models.SET_NULL,

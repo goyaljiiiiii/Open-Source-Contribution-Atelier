@@ -1,5 +1,6 @@
 import logging
 import re
+import time
 
 from django.conf import settings
 from django.contrib.postgres.search import (
@@ -24,6 +25,11 @@ from .serializers import SearchAnalyticsSerializer, SearchDocumentSerializer
 from .utils import get_search_cache_version
 
 logger = logging.getLogger(__name__)
+
+
+def _get_slow_query_threshold_ms() -> int:
+    return getattr(settings, "SLOW_QUERY_THRESHOLD_MS", 200)
+
 
 # ---------------------------------------------------------------------------
 # Pagination
@@ -127,20 +133,51 @@ class UnifiedSearchView(generics.ListAPIView):
             f"search_api:v{version}:q:{q}:type:{content_type_filter}"
             f":page:{page}:page_size:{page_size}"
         )
-        
+
         from apps.core.cache.stampede import stampede_protected_get_or_set
 
         def generate():
+            threshold_ms = _get_slow_query_threshold_ms()
+            queries_before = len(connection.queries)
+            start = time.monotonic()
+
             queryset = self._build_queryset(q, content_type_filter)
 
             # Paginate
             page_obj = self.paginate_queryset(queryset)
             if page_obj is not None:
                 serializer = self.get_serializer(page_obj, many=True)
-                return self.get_paginated_response(serializer.data).data
+                result = self.get_paginated_response(serializer.data).data
+            else:
+                serializer = self.get_serializer(queryset, many=True)
+                result = serializer.data
 
-            serializer = self.get_serializer(queryset, many=True)
-            return serializer.data
+            elapsed_ms = (time.monotonic() - start) * 1000
+            if elapsed_ms >= threshold_ms:
+                logger.warning(
+                    "Slow search query detected: %.1fms (threshold %dms) "
+                    "q=%r type=%r",
+                    elapsed_ms,
+                    threshold_ms,
+                    q,
+                    content_type_filter or None,
+                )
+
+            # Also check individual queries captured by Django
+            slow_queries = connection.queries[queries_before:]
+            for qry in slow_queries:
+                try:
+                    sql_time = float(qry.get("time", 0)) * 1000
+                except (ValueError, TypeError):
+                    continue
+                if sql_time >= threshold_ms:
+                    logger.warning(
+                        "Slow DB query (%.1fms): %s",
+                        sql_time,
+                        qry.get("sql", "<unknown>"),
+                    )
+
+            return result
 
         timeout = getattr(settings, "SEARCH_CACHE_TIMEOUT", 3600)
         data = stampede_protected_get_or_set(cache_key, generate, timeout=timeout)
@@ -254,7 +291,18 @@ class UnifiedSearchView(generics.ListAPIView):
             .distinct()
         )
 
-        if fts_qs.exists():
+        threshold_ms = _get_slow_query_threshold_ms()
+        fts_start = time.monotonic()
+        fts_has_results = fts_qs.exists()
+        fts_elapsed_ms = (time.monotonic() - fts_start) * 1000
+        if fts_elapsed_ms >= threshold_ms:
+            logger.warning(
+                "Slow FTS exists() query: %.1fms (threshold %dms) q=%r",
+                fts_elapsed_ms,
+                threshold_ms,
+                q,
+            )
+        if fts_has_results:
             return fts_qs.order_by("-rank")
 
         # --- Trigram fallback (typo tolerance) ------------------------------

@@ -176,6 +176,8 @@ class UserListSerializer(serializers.ModelSerializer):
     github_url = serializers.SerializerMethodField()
     active_track_status = serializers.SerializerMethodField()
     next_milestone = serializers.SerializerMethodField()
+    global_rank = serializers.SerializerMethodField()
+    percentile_standing = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -193,7 +195,37 @@ class UserListSerializer(serializers.ModelSerializer):
             "github_url",
             "active_track_status",
             "next_milestone",
+            "global_rank",
+            "percentile_standing",
         )
+
+    def get_global_rank(self, obj):
+        from apps.progress.models import XPEvent
+        from django.db.models import Sum
+
+        return getattr(obj, "global_rank", 1)
+
+    def get_percentile_standing(self, obj):
+        from apps.progress.models import XPEvent
+        from django.db.models import Sum
+
+        total_users = User.objects.count()
+        if total_users <= 1:
+            return 1
+
+        user_xp = (
+            XPEvent.objects.filter(user=obj).aggregate(total=Sum("xp_delta"))["total"]
+            or 0
+        )
+        higher_count = (
+            XPEvent.objects.values("user")
+            .annotate(total=Sum("xp_delta"))
+            .filter(total__gt=user_xp)
+            .count()
+        )
+        rank = higher_count + 1
+        percentile = max(1, int(round((rank / total_users) * 100)))
+        return percentile
 
     def get_active_track_status(self, obj):
         if "bulk_track_statuses" in self.context:

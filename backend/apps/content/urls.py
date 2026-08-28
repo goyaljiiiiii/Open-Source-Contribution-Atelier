@@ -2,6 +2,7 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from .views import (
+    DraftRestoreView,
     LearningPathViewSet,
     LessonDraftViewSet,
     LessonFeedbackListCreateView,
@@ -28,6 +29,7 @@ router.register("published-lessons", LessonViewSet, basename="lesson")
 router.register("learning-paths", LearningPathViewSet, basename="learning-path")
 
 urlpatterns = router.urls + [
+    path("drafts/<int:pk>/restore/", DraftRestoreView.as_view(), name="draft-restore"),
     path("search/", SearchView.as_view(), name="search"),
     path("semantic-search/", SemanticSearchView.as_view(), name="semantic-search"),
     path("organizations/", OrganizationListView.as_view(), name="organization-list"),

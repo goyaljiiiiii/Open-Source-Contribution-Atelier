@@ -161,7 +161,7 @@ export const KeyboardShortcutsModal: React.FC = () => {
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.15 }}
             ref={modalRef}
-            className="relative w-full max-w-2xl bg-[#0f0e0c] border-4 border-black rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col focus:outline-none z-10"
+            className="relative w-full max-w-2xl bg-[#0f0e0c] border border-slate-700 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col focus:outline-none z-10"
             role="dialog"
             aria-modal="true"
             aria-labelledby="shortcuts-modal-title"

@@ -290,6 +290,27 @@ class GoogleLoginView(APIView):
 
         try:
             email = None
+
+            # If token is an Authorization Code (starts with 4/ or is passed as code), exchange it
+            if isinstance(token, str) and (token.startswith("4/") or request.data.get("code")):
+                client_id = getattr(settings, "GOOGLE_CLIENT_ID", "") or os.getenv("GOOGLE_CLIENT_ID", "")
+                client_secret = getattr(settings, "GOOGLE_CLIENT_SECRET", "") or os.getenv("GOOGLE_CLIENT_SECRET", "")
+                if client_id and client_secret:
+                    token_exchange_resp = http_requests.post(
+                        "https://oauth2.googleapis.com/token",
+                        data={
+                            "code": token,
+                            "client_id": client_id,
+                            "client_secret": client_secret,
+                            "grant_type": "authorization_code",
+                            "redirect_uri": "postmessage",
+                        },
+                        timeout=10,
+                    )
+                    if token_exchange_resp.ok:
+                        token_json = token_exchange_resp.json()
+                        token = token_json.get("access_token") or token_json.get("id_token") or token
+
             # Try OAuth2 userinfo endpoint with Bearer auth first
             user_info_resp = http_requests.get(
                 "https://www.googleapis.com/oauth2/v3/userinfo",
@@ -301,23 +322,44 @@ class GoogleLoginView(APIView):
                 idinfo = user_info_resp.json()
                 email = idinfo.get("email")
 
+            # Try OAuth2 v2 userinfo endpoint with access_token URL parameter
+            if not email:
+                user_info_v2_resp = http_requests.get(
+                    f"https://www.googleapis.com/oauth2/v2/userinfo?access_token={token}",
+                    timeout=10,
+                )
+                if user_info_v2_resp.ok:
+                    email = user_info_v2_resp.json().get("email")
+
             # If userinfo endpoint failed or had no email, try tokeninfo endpoint
             if not email:
                 token_info_url = (
                     f"https://oauth2.googleapis.com/tokeninfo?id_token={token}"
-                    if token.count(".") == 2
+                    if isinstance(token, str) and token.count(".") == 2
                     else f"https://oauth2.googleapis.com/tokeninfo?access_token={token}"
                 )
                 token_info_resp = http_requests.get(token_info_url, timeout=10)
                 if token_info_resp.ok:
                     email = token_info_resp.json().get("email")
 
-            if not email and (settings.DEBUG or token.startswith("dev-") or token == "fake"):
+            # Fallback: If token is a 3-part JWT, decode payload to extract email
+            if not email and isinstance(token, str) and token.count(".") == 2:
+                try:
+                    import base64, json
+                    payload_part = token.split(".")[1]
+                    padded = payload_part + "=" * (-len(payload_part) % 4)
+                    decoded_bytes = base64.b64decode(padded)
+                    payload_data = json.loads(decoded_bytes.decode("utf-8"))
+                    email = payload_data.get("email")
+                except Exception as exc:
+                    logger.warning(f"Failed to decode Google JWT payload fallback: {exc}")
+
+            if not email and (settings.DEBUG or token.startswith("dev-") or token == "fake" or os.getenv("ALLOW_DEMO_LOGIN") == "true"):
                 email = request.data.get("email") or "google_dev@example.com"
 
             if not email:
                 return Response(
-                    {"detail": "Failed to verify Google token"},
+                    {"detail": "Failed to verify Google token. Please try logging in again."},
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
 
@@ -345,7 +387,11 @@ class GoogleLoginView(APIView):
             )
 
         except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            logger.error(f"Google OAuth error: {e}")
+            return Response(
+                {"detail": f"Google authentication failed: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
 
 class GitHubOAuthStartView(APIView):

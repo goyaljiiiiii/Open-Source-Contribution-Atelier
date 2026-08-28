@@ -17,6 +17,7 @@ from django.utils import timezone
 from django.utils.http import content_disposition_header
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import permissions, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import BasePermission
@@ -32,7 +33,7 @@ from apps.core.throttling import SlidingWindowAnonThrottle, SlidingWindowScopedT
 from apps.deduplication.idempotency import idempotent
 from apps.progress.constants import XP_PER_LEVEL
 from apps.progress.models import XPEvent
-
+from apps.progress.services.xp_service import XPService
 from .models import UserNote  # ✅ ADD: UserNote model
 from .models import (
     Badge,
@@ -1854,6 +1855,8 @@ class StreakStatusView(APIView):
             "current_streak": data["current_streak"],
             "highest_streak": data["longest_streak"],
             "multiplier": data["current_multiplier"],
+            "effective_multiplier": data.get("effective_multiplier", data["current_multiplier"]),
+            "is_weekend_event": data.get("is_weekend_event", False),
             "next_milestone": (
                 data["next_milestone"]["days"] if data["next_milestone"] else None
             ),
@@ -2160,3 +2163,29 @@ class WeeklyGoalView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return self.get(request)
+
+
+class ClaimMultiTierRewardView(APIView):
+    """
+    POST /api/progress/rewards/claim/
+
+    Claims all reward tiers for a completed multi-stage challenge in a
+    single atomic transaction.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        tiers = request.data.get("tiers", [])
+        if not isinstance(tiers, list) or not tiers:
+            raise ValidationError("`tiers` must be a non-empty list.")
+
+        result = XPService.claim_multi_tier_rewards(request.user, tiers)
+        return Response(
+            {
+                "success": True,
+                "xp_events_awarded": len(result["xp_events"]),
+                "badges_awarded": len(result["badges"]),
+            },
+            status=status.HTTP_201_CREATED,
+        )

@@ -23,10 +23,14 @@ export function useCodeReviews(roomId: string) {
 
   // WebSocket listener
   useEffect(() => {
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const backendHost = import.meta.env.VITE_API_URL
-      ? new URL(import.meta.env.VITE_API_URL).host
-      : "localhost:8000";
+    let backendHost = "localhost:8000";
+    if (import.meta.env.VITE_API_URL) {
+      try {
+        backendHost = new URL(import.meta.env.VITE_API_URL).host;
+      } catch {
+        backendHost = "localhost:8000";
+      }
+    }
     const wsUrl = `${protocol}//${backendHost}/ws/collab/${roomId}/`;
 
     const socket = new WebSocket(wsUrl);

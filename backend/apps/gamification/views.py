@@ -232,6 +232,12 @@ class PurchaseItemView(views.APIView):
 
             Purchase.objects.create(user=request.user, item=item, xp_spent=item.cost)
 
+            if item.item_type == "streak_freeze":
+                from apps.progress.models import StreakProfile
+                streak_profile, _ = StreakProfile.objects.get_or_create(user=request.user)
+                streak_profile.streak_freezes += 1
+                streak_profile.save(update_fields=["streak_freezes"])
+
         return Response(
             {
                 "success": True,

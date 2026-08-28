@@ -419,3 +419,31 @@ class TOTPDevice(models.Model):
 
     def __str__(self):
         return f"TOTPDevice({self.user.username}, enabled={self.is_enabled})"
+
+
+class WebAuthnCredential(models.Model):
+    """
+    Stores WebAuthn (FIDO2) passkey credentials for a user.
+
+    Each credential is linked to the user who registered it and stores
+    the credential ID, public key, and sign count for replay-attack detection.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="webauthn_credentials",
+    )
+    credential_id = models.BinaryField(unique=True)
+    public_key = models.BinaryField()
+    sign_count = models.BigIntegerField(default=0)
+    nickname = models.CharField(max_length=255, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "accounts_webauthncredential"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"WebAuthnCredential(user={self.user.username}, nickname={self.nickname})"
