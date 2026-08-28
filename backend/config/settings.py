@@ -253,6 +253,7 @@ INSTALLED_APPS = [
     "apps.ml_triage",
     "apps.learning_analytics",
     "apps.flashcards",
+    "apps.study_groups",
 ]
 
 

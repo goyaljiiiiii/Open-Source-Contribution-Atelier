@@ -102,6 +102,8 @@ api_v1_patterns = [
     path("api/learning-analytics/", include("apps.learning_analytics.urls")),
     # ── Flashcards & Spaced Repetition ─────────────────────────────────────
     path("api/flashcards/", include("apps.flashcards.urls")),
+    # ── Study Groups & Collaborative Learning ──────────────────────────────
+    path("api/study-groups/", include("apps.study_groups.urls")),
     # ── AI Tutor ────────────────────────────────────────────────────────────────
     path("api/ai/tutor/", include("apps.ai_tutor.urls")),
     # ── Events & GraphQL ──────────────────────────────────────────────────────
