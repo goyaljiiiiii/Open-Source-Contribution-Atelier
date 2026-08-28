@@ -100,6 +100,8 @@ api_v1_patterns = [
     path("api/ml-triage/", include("apps.ml_triage.urls")),
     # ── Learning Analytics & Insights ──────────────────────────────────────
     path("api/learning-analytics/", include("apps.learning_analytics.urls")),
+    # ── Flashcards & Spaced Repetition ─────────────────────────────────────
+    path("api/flashcards/", include("apps.flashcards.urls")),
     # ── AI Tutor ────────────────────────────────────────────────────────────────
     path("api/ai/tutor/", include("apps.ai_tutor.urls")),
     # ── Events & GraphQL ──────────────────────────────────────────────────────

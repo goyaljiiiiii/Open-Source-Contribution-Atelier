@@ -252,6 +252,7 @@ INSTALLED_APPS = [
     "apps.issue_quality",
     "apps.ml_triage",
     "apps.learning_analytics",
+    "apps.flashcards",
 ]
 
 
