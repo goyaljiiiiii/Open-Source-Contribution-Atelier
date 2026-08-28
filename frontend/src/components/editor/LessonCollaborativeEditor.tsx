@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../../features/auth/AuthContext";
 import { useLessonEditorWS } from "../../hooks/useLessonEditorWS";
 import { RemoteCursorOverlay } from "./RemoteCursorOverlay";
+import { ActiveCursorStatusBadge } from "./ActiveCursorStatusBadge";
 
 type CursorInfo = {
   row: number;
@@ -146,15 +147,21 @@ export function LessonCollaborativeEditor({
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          {collaborators.map((c) => (
-            <span
-              key={c.id}
-              className="text-xs font-bold px-2 py-0.5 rounded-full bg-accent/10 text-accent"
-            >
-              {c.name}
-            </span>
-          ))}
+        <div className="flex items-center gap-2 flex-wrap">
+          {collaborators.map((c) => {
+            const cursorData = remoteCursors.find((rc) => rc.id === c.id);
+            return (
+              <ActiveCursorStatusBadge
+                key={c.id}
+                collaborator={{
+                  id: c.id,
+                  name: c.name,
+                  cursor: cursorData?.cursor,
+                  isSelf: user?.id === c.id,
+                }}
+              />
+            );
+          })}
         </div>
 
         <div className="flex items-center gap-2">
