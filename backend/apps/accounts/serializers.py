@@ -474,6 +474,89 @@ class UserSessionSerializer(serializers.ModelSerializer):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# OAuth Serializers
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class OAuthUserSerializer(serializers.Serializer):
+    """User information returned in OAuth token response."""
+
+    username = serializers.CharField(
+        help_text="The authenticated user's username"
+    )
+    email = serializers.EmailField(
+        help_text="The authenticated user's email address"
+    )
+    is_staff = serializers.BooleanField(
+        help_text="Whether the user has staff permissions"
+    )
+
+
+class OAuthTokenResponseSerializer(serializers.Serializer):
+    """
+    OAuth callback success response containing JWT access and refresh tokens.
+    
+    Example:
+        {
+            "access": "eyJhbGc...",
+            "refresh": "eyJhbGc...",
+            "user": {
+                "username": "john_doe",
+                "email": "john@example.com",
+                "is_staff": false
+            }
+        }
+    """
+
+    access = serializers.CharField(
+        help_text="JWT access token for API authentication"
+    )
+    refresh = serializers.CharField(
+        help_text="JWT refresh token for obtaining new access tokens"
+    )
+    user = OAuthUserSerializer(
+        help_text="Authenticated user information"
+    )
+
+
+class GoogleOAuthRequestSerializer(serializers.Serializer):
+    """
+    Google OAuth callback request containing the Google access/ID token.
+    
+    Accepts multiple token field names for flexibility:
+    - access_token: Standard OAuth2 access token
+    - id_token: OpenID Connect ID token
+    - credential: Google's Credential (from Sign-In with Google)
+    - token: Generic token field
+    """
+
+    access_token = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Google OAuth2 access token"
+    )
+    access = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Google access token (alternative field name)"
+    )
+    id_token = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Google OpenID Connect ID token"
+    )
+    credential = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Google Sign-In credential JWT"
+    )
+    token = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Generic token field"
+    )
+
+# ─────────────────────────────────────────────────────────────────────────────
 # OAuth Token Response Serializers
 # ─────────────────────────────────────────────────────────────────────────────
 
