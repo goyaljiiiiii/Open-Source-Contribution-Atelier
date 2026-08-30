@@ -55,7 +55,6 @@ class OAuthTokenSerializer(serializers.ModelSerializer):
             "scope",
             "access_token_expires_at",
             "created_at",
-            "last_sync",
             "is_revoked",
         ]
 

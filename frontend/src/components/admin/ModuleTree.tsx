@@ -19,8 +19,6 @@ interface ModuleTreeProps {
   onDeleteModule: (moduleId: number) => void;
   onDeleteLesson: (lessonId: number) => void;
   onReorder?: (modules: ModuleDraftData[]) => void;
-  collapsed?: Record<number, boolean>;
-  onToggleCollapse?: (moduleId: number) => void;
 }
 
 export function ModuleTree({
@@ -31,21 +29,11 @@ export function ModuleTree({
   onAddLesson,
   onDeleteModule,
   onDeleteLesson,
-  collapsed: collapsedProp,
-  onToggleCollapse,
 }: ModuleTreeProps) {
-  const [internalCollapsed, setInternalCollapsed] = useState<
-    Record<number, boolean>
-  >({});
-
-  const collapsed = collapsedProp ?? internalCollapsed;
+  const [collapsed, setCollapsed] = useState<Record<number, boolean>>({});
 
   const toggleCollapse = (modId: number) => {
-    if (onToggleCollapse) {
-      onToggleCollapse(modId);
-      return;
-    }
-    setInternalCollapsed((prev) => ({ ...prev, [modId]: !prev[modId] }));
+    setCollapsed((prev) => ({ ...prev, [modId]: !prev[modId] }));
   };
 
   return (

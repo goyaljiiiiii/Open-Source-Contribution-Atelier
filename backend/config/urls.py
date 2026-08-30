@@ -98,16 +98,6 @@ api_v1_patterns = [
     path("api/dx-analytics/", include("apps.dx_analytics.urls")),
     path("api/issue-quality/", include("apps.issue_quality.urls")),
     path("api/ml-triage/", include("apps.ml_triage.urls")),
-    # ── Learning Analytics & Insights ──────────────────────────────────────
-    path("api/learning-analytics/", include("apps.learning_analytics.urls")),
-    # ── Flashcards & Spaced Repetition ─────────────────────────────────────
-    path("api/flashcards/", include("apps.flashcards.urls")),
-    # ── Study Groups & Collaborative Learning ──────────────────────────────
-    path("api/study-groups/", include("apps.study_groups.urls")),
-    # ── Mentorship Matching & Tracking ─────────────────────────────────────
-    path("api/mentorship/", include("apps.mentorship.urls")),
-    # ── Learning Journal & Daily Reflection ─────────────────────────────────
-    path("api/journal/", include("apps.learning_journal.urls")),
     # ── AI Tutor ────────────────────────────────────────────────────────────────
     path("api/ai/tutor/", include("apps.ai_tutor.urls")),
     # ── Events & GraphQL ──────────────────────────────────────────────────────

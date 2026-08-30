@@ -373,11 +373,10 @@ def get_deck_stats(user, deck_id) -> dict[str, Any]:
             "total_reviews": 0,
         }
 
-    maturity_counts = dict(
-        schedules.values_list("maturity_label")
-        .annotate(count=Count("id"))
-        .values_list("maturity_label", "count")
-    )
+    maturity_counts: dict[str, int] = {}
+    for s in schedules:
+        label = s.maturity_label
+        maturity_counts[label] = maturity_counts.get(label, 0) + 1
 
     due_count = schedules.filter(
         next_review__lte=timezone.now()

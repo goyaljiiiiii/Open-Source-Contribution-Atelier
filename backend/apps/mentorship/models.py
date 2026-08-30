@@ -25,7 +25,7 @@ class MentorProfile(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="mentor_profile",
+        related_name="mentorship_mentor_profile",
     )
     bio = models.TextField(
         blank=True,
