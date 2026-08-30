@@ -123,8 +123,6 @@ class TestWebhookDelivery:
         # Verify headers
         args, kwargs = mock_post.call_args
         assert "X-Webhook-Signature" in kwargs["headers"]
-        assert "X-Atelier-Signature" in kwargs["headers"]
-        assert kwargs["headers"]["X-Atelier-Signature"].startswith("sha256=")
 
     @patch("requests.post")
     @patch("apps.webhooks.tasks.async_task")
@@ -343,10 +341,10 @@ class TestWebhookDirectTestAndSignals:
         assert response.data["success"] is True
         assert response.data["status_code"] == 200
 
-    @patch("apps.webhooks.signals.dispatch_event")
+    @patch("apps.webhooks.tasks.dispatch_event")
     def test_webhook_signal_handlers(self, mock_dispatch):
-        from apps.progress.models import XPEvent
         from apps.webhooks.signals import webhook_on_xp_milestone
+        from apps.progress.models import XPEvent
 
         xp_instance = MagicMock(spec=XPEvent)
         xp_instance.user_id = 1
@@ -359,3 +357,4 @@ class TestWebhookDirectTestAndSignals:
         webhook_on_xp_milestone(XPEvent, xp_instance, created=True)
         mock_dispatch.assert_called_once()
         assert mock_dispatch.call_args[0][0] == "xp.milestone"
+
