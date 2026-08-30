@@ -25,6 +25,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.permissions import IsMentor
+from apps.core.utils import parse_iso_datetime
 
 from apps.accounts.models import UserProfile
 from apps.content.models import Lesson
@@ -108,22 +109,22 @@ class ExportNotesView(APIView):
         start_date = None
         end_date = None
         if start_param:
-            try:
-                start_date = datetime.strptime(start_param, "%Y-%m-%d").date()
-            except ValueError:
+            parsed_start = parse_iso_datetime(start_param)
+            if parsed_start is None:
                 return Response(
                     {"error": "Invalid start_date format. Use YYYY-MM-DD."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+            start_date = parsed_start.date()
 
         if end_param:
-            try:
-                end_date = datetime.strptime(end_param, "%Y-%m-%d").date()
-            except ValueError:
+            parsed_end = parse_iso_datetime(end_param)
+            if parsed_end is None:
                 return Response(
                     {"error": "Invalid end_date format. Use YYYY-MM-DD."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+            end_date = parsed_end.date()
 
         if start_date and end_date:
             if start_date > end_date:
@@ -1748,18 +1749,18 @@ class HeatmapView(APIView):
         end_param = request.query_params.get("end_date")
 
         if start_param:
-            try:
-                start_date = datetime.datetime.strptime(start_param, "%Y-%m-%d").date()
-            except ValueError:
-                start_date = today - datetime.timedelta(days=365)
+            parsed_start = parse_iso_datetime(start_param)
+            start_date = (
+                parsed_start.date()
+                if parsed_start is not None
+                else today - datetime.timedelta(days=365)
+            )
         else:
             start_date = today - datetime.timedelta(days=365)
 
         if end_param:
-            try:
-                end_date = datetime.datetime.strptime(end_param, "%Y-%m-%d").date()
-            except ValueError:
-                end_date = today
+            parsed_end = parse_iso_datetime(end_param)
+            end_date = parsed_end.date() if parsed_end is not None else today
         else:
             end_date = today
 
@@ -1930,24 +1931,24 @@ class HeatmapCSVExportView(APIView):
             today = datetime.date.today()
 
         if start_param:
-            try:
-                start_date = datetime.datetime.strptime(start_param, "%Y-%m-%d").date()
-            except ValueError:
+            parsed_start = parse_iso_datetime(start_param)
+            if parsed_start is None:
                 return Response(
                     {"error": "Invalid start_date format. Use YYYY-MM-DD."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+            start_date = parsed_start.date()
         else:
             start_date = today - datetime.timedelta(days=365)
 
         if end_param:
-            try:
-                end_date = datetime.datetime.strptime(end_param, "%Y-%m-%d").date()
-            except ValueError:
+            parsed_end = parse_iso_datetime(end_param)
+            if parsed_end is None:
                 return Response(
                     {"error": "Invalid end_date format. Use YYYY-MM-DD."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+            end_date = parsed_end.date()
         else:
             end_date = today
 
