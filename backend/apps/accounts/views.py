@@ -32,8 +32,6 @@ from drf_spectacular.utils import (
     extend_schema_view,
 )
 from rest_framework import filters, generics, permissions, status
-
-from apps.core.serializers import StandardErrorSerializer
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -41,6 +39,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from .tokens import generate_tokens_for_user
 from apps.progress.models import LessonProgress, UserBadge
 from apps.progress.serializers import UserBadgeSerializer
 from schemas.user import (
@@ -61,13 +60,10 @@ from .serializers import (
     EmailOrUsernameTokenObtainPairSerializer,
     MagicLinkRequestSerializer,
     MagicLinkVerifySerializer,
-    OAuthTokenResponseSerializer,
-    OAuthUserSerializer,
     OtpRequestSerializer,
     OtpVerifySerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
-    GoogleOAuthRequestSerializer,
     SignupSerializer,
     UserListSerializer,
     UserUpdateSerializer,
@@ -271,28 +267,6 @@ class RefreshView(TokenRefreshView):
     throttle_classes = [TokenRefreshThrottle]
 
 
-@extend_schema_view(
-    post=extend_schema(
-        operation_id="google_oauth_login",
-        description="Google OAuth login endpoint. Accepts a Google access/ID token and returns JWT tokens.",
-        request=GoogleOAuthRequestSerializer,
-        responses={
-            200: OpenApiResponse(
-                response=OAuthTokenResponseSerializer,
-                description="OAuth authentication successful. Returns access and refresh tokens with user info.",
-            ),
-            400: OpenApiResponse(
-                response=StandardErrorSerializer,
-                description="Invalid or missing token, or Google authentication failed.",
-            ),
-            401: OpenApiResponse(
-                response=StandardErrorSerializer,
-                description="Google token verification failed.",
-            ),
-        },
-        tags=["Authentication"],
-    )
-)
 class GoogleLoginView(APIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [OAuthThrottle]
@@ -399,13 +373,12 @@ class GoogleLoginView(APIView):
                     password=secrets.token_urlsafe(24),
                 )
 
-            refresh = RefreshToken.for_user(user)
+            tokens = generate_tokens_for_user(user)
             return Response(
                 {
-                    "refresh": str(refresh),
-                    "access": str(refresh.access_token),
-                    "user": {
-                        "username": user.username,
+                    "refresh": tokens["refresh"],
+                    "access": tokens["access"],
+                    "user": {                        "username": user.username,
                         "email": user.email,
                         "is_staff": user.is_staff,
                     },
@@ -595,17 +568,16 @@ class GitHubOAuthCallbackView(APIView):
                     password=secrets.token_urlsafe(24),
                 )
 
-            refresh = RefreshToken.for_user(user)
+            tokens = generate_tokens_for_user(user)
             return redirect(
                 frontend_url(
                     "/auth/github/callback",
                     {
-                        "access": str(refresh.access_token),
-                        "refresh": str(refresh),
-                    },
+                        "access": tokens["access"],
+                        "refresh": tokens["refresh"],
+                    }
                 )
-            )
-        except CircuitOpenError:
+            )        except CircuitOpenError:
             return redirect(
                 frontend_url(
                     "/",
@@ -958,14 +930,13 @@ class MagicLinkVerifyView(APIView):
         magic_token.is_used = True
         magic_token.save(update_fields=["is_used"])
 
-        refresh = RefreshToken.for_user(user)
+        tokens = generate_tokens_for_user(user)
 
         return Response(
             {
-                "refresh": str(refresh),
-                "access": str(refresh.access_token),
-                "user": {
-                    "username": user.username,
+                "refresh": tokens["refresh"],
+                "access": tokens["access"],
+                "user": {                    "username": user.username,
                     "email": user.email,
                     "is_staff": user.is_staff,
                 },
@@ -1078,9 +1049,39 @@ class ExportDataView(APIView):
         )
 
 
+import json
+
+from django.core.serializers.json import DjangoJSONEncoder
+
+from .serializers import StudyActivityExportSerializer
+
+
+class StudyActivityExportView(APIView):
+    """
+    GET /api/v1/accounts/export-data/
+    Exports the authenticated user's study activity log (profile,
+    streak, earned badges, completed lessons) as downloadable JSON.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        responses={
+            200: OpenApiResponse(description="Study activity export file (JSON)"),
+        }
+    )
+    def get(self, request):
+        data = StudyActivityExportSerializer(request.user).data
+        json_data = json.dumps(data, cls=DjangoJSONEncoder, indent=2)
+        response = HttpResponse(json_data, content_type="application/json")
+        response["Content-Disposition"] = (
+            'attachment; filename="atelier_study_export.json"'
+        )
+        return response
+
+
 from apps.chat.models import Message
 from apps.content.models import Comment
-
 
 class SecureAccountDeleteView(APIView):
     """
