@@ -256,6 +256,11 @@ INSTALLED_APPS = [
     "apps.dependency_graph",
     "apps.issue_quality",
     "apps.ml_triage",
+    "apps.learning_analytics",
+    "apps.flashcards",
+    "apps.study_groups",
+    "apps.mentorship",
+    "apps.learning_journal",
 ]
 
 
@@ -370,11 +375,11 @@ if TESTING and not os.getenv("DATABASE_URL"):
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": ":memory:",
+            "NAME": BASE_DIR / "db.sqlite3",
         },
         "replica": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": ":memory:",
+            "NAME": BASE_DIR / "db.sqlite3",
         },
     }
 else:

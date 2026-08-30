@@ -16,6 +16,7 @@ import { useCurriculumLessons } from "../hooks/useCurriculum";
 import { BADGES } from "../constants/badges";
 
 import { DailyChallengeQuizCard } from "../components/ui/DailyChallengeQuizCard";
+import { RecentActivity } from "../components/RecentActivity";
 import { StreakMilestoneProgressBar } from "../components/dashboard/StreakMilestoneProgressBar";
 
 import { ContinueLearning } from "../components/ContinueLearning";
@@ -289,6 +290,11 @@ export function DashboardPage() {
             </p>
           </div>
         </div>
+      </section>
+
+      {/* Recent Activity Timeline */}
+      <section>
+        <RecentActivity />
       </section>
 
       {/* Daily Challenge Quiz Card */}

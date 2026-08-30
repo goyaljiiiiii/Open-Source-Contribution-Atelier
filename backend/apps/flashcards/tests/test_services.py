@@ -141,7 +141,7 @@ class ProcessReviewTest(TestCase):
     def test_process_perfect(self):
         result = process_review(self.user, self.card.id, quality=4)
         self.assertTrue(result["is_correct"])
-        self.assertGreaterEqual(result["new_interval_days"], 1)
+        self.assertGreater(result["new_interval_days"], 1)
 
     def test_invalid_quality(self):
         with self.assertRaises(ValueError):
