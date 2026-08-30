@@ -48,6 +48,18 @@ class WebhookEndpointViewSet(viewsets.ModelViewSet):
         endpoint.secret = new_secret
         endpoint.save()
 
+        from apps.cache.audit_logger import AuditLogger
+
+        AuditLogger.log(
+            user_id=str(request.user.id) if request.user else "system",
+            action="secret_rotated",
+            resource="webhook_endpoint",
+            resource_id=str(endpoint.id),
+            method="POST",
+            ip_address=request.META.get("REMOTE_ADDR", "127.0.0.1"),
+            status_code=200,
+        )
+
         return Response(
             {
                 "status": "success",
@@ -204,6 +216,7 @@ class TestWebhookView(APIView):
     POST /api/webhooks/test/ or /api/webhooks/test
     Sends a test event to a given endpoint URL with HMAC-SHA256 signature without persisting a delivery.
     """
+
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
