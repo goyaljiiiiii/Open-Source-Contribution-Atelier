@@ -376,8 +376,7 @@ if TESTING and not os.getenv("DATABASE_URL"):
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": ":memory:",
         },
-    }
-else:
+    }else:
     DATABASES = {
         "default": dj_database_url.config(
             default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
