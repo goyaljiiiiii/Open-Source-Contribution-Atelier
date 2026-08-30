@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Activity,
   BookOpen,
@@ -39,6 +39,7 @@ import { ThemeToggle } from "../ui/ThemeToggle";
 import { LanguageSwitcher } from "../ui/LanguageSwitcher";
 import { useTranslate } from "../../i18n/useTranslate";
 import { LessonSearchModal } from "../Search/LessonSearchModal";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
 
 const navGroups = [
   {
@@ -359,6 +360,9 @@ export function Navigation() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [isFullSearchOpen, setIsFullSearchOpen] = useState(false);
+  const mobileDrawerRef = useRef<HTMLDivElement>(null);
+
+  useFocusTrap(mobileDrawerRef, mobileOpen);
 
   useEffect(() => {
     const handleOpen = () => setIsFullSearchOpen(true);
@@ -728,15 +732,21 @@ export function Navigation() {
       {/* Mobile Navigation Drawer */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm lg:hidden animate-fade-in"
-          onClick={() => setMobileOpen(false)}
+          ref={mobileDrawerRef}
+          className="fixed inset-0 z-50 lg:hidden"
           onKeyDown={(e) => e.key === "Escape" && setMobileOpen(false)}
-          aria-hidden="true"
         >
+          {/* Backdrop overlay */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
+            onClick={() => setMobileOpen(false)}
+            aria-hidden="true"
+          />
+
+          {/* Interactive Navigation Drawer */}
           <div
             id="mobile-menu"
-            className="absolute left-0 top-0 h-full w-80 max-w-[85vw] bg-white dark:bg-[#151411] flex flex-col shadow-2xl border-r-4 border-black dark:border-[#2e2924]"
-            onClick={(e) => e.stopPropagation()}
+            className="absolute left-0 top-0 h-full w-80 max-w-[85vw] bg-white dark:bg-[#151411] flex flex-col shadow-2xl border-r-4 border-black dark:border-[#2e2924] z-10"
             role="dialog"
             aria-modal="true"
             aria-label="Mobile Navigation"

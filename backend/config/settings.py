@@ -256,6 +256,11 @@ INSTALLED_APPS = [
     "apps.dependency_graph",
     "apps.issue_quality",
     "apps.ml_triage",
+    "apps.learning_analytics",
+    "apps.flashcards",
+    "apps.study_groups",
+    "apps.mentorship",
+    "apps.learning_journal",
 ]
 
 
@@ -370,14 +375,13 @@ if TESTING and not os.getenv("DATABASE_URL"):
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
+            "NAME": ":memory:",
         },
         "replica": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
+            "NAME": ":memory:",
         },
-    }
-else:
+    }else:
     DATABASES = {
         "default": dj_database_url.config(
             default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
@@ -1052,3 +1056,7 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute=0, hour=3),
     },
 }
+
+# API Payload Configuration
+MAX_PAYLOAD_BYTES = 2 * 1024 * 1024  # 2MB Default Limit
+

@@ -1,7 +1,10 @@
+import glob
+import os
+
 import pytest
 from django.contrib.auth import get_user_model
+from django.db import connections
 from rest_framework.test import APIClient
-
 User = get_user_model()
 
 
@@ -87,3 +90,22 @@ def _configure_celery_test_settings(settings):
     )
     yield
     invalidate_tag_task.delay = original_delay
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """
+    Safety net: close all DB connections so file locks are released, then
+    remove any stray SQLite test artifacts (e.g. test_db_runner_<id>.sqlite3
+    and its -wal/-shm files) that may have been left in the repo root.
+    """
+    for conn in connections.all():
+        conn.close()
+
+    repo_root = os.path.dirname(os.path.abspath(__file__))
+    patterns = ["test_db_runner_*.sqlite3*", "db.sqlite3-wal", "db.sqlite3-shm"]
+    for pattern in patterns:
+        for stray_file in glob.glob(os.path.join(repo_root, pattern)):
+            try:
+                os.remove(stray_file)
+            except OSError:
+                pass

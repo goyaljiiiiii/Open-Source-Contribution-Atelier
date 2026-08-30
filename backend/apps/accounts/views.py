@@ -32,7 +32,8 @@ from drf_spectacular.utils import (
     extend_schema_view,
 )
 from rest_framework import filters, generics, permissions, status
-from rest_framework.pagination import LimitOffsetPagination
+
+from apps.core.serializers import StandardErrorSerializerfrom rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -60,15 +61,17 @@ from .serializers import (
     EmailOrUsernameTokenObtainPairSerializer,
     MagicLinkRequestSerializer,
     MagicLinkVerifySerializer,
+    OAuthTokenResponseSerializer,
+    OAuthUserSerializer,
     OtpRequestSerializer,
     OtpVerifySerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
+    GoogleOAuthRequestSerializer,
     SignupSerializer,
     UserListSerializer,
     UserUpdateSerializer,
-)
-from .tasks import (
+)from .tasks import (
     send_magic_link_email_task,
     send_otp_email_task,
     send_password_reset_email_task,
@@ -267,6 +270,28 @@ class RefreshView(TokenRefreshView):
     throttle_classes = [TokenRefreshThrottle]
 
 
+@extend_schema_view(
+    post=extend_schema(
+        operation_id="google_oauth_login",
+        description="Google OAuth login endpoint. Accepts a Google access/ID token and returns JWT tokens.",
+        request=GoogleOAuthRequestSerializer,
+        responses={
+            200: OpenApiResponse(
+                response=OAuthTokenResponseSerializer,
+                description="OAuth authentication successful. Returns access and refresh tokens with user info.",
+            ),
+            400: OpenApiResponse(
+                response=StandardErrorSerializer,
+                description="Invalid or missing token, or Google authentication failed.",
+            ),
+            401: OpenApiResponse(
+                response=StandardErrorSerializer,
+                description="Google token verification failed.",
+            ),
+        },
+        tags=["Authentication"],
+    )
+)
 class GoogleLoginView(APIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [OAuthThrottle]
@@ -275,8 +300,7 @@ class GoogleLoginView(APIView):
     def _unique_username_from_email(email: str) -> str:
         return unique_username_from_value(email)
 
-    def post(self, request):
-        token = (
+    def post(self, request):        token = (
             request.data.get("access_token")
             or request.data.get("access")
             or request.data.get("id_token")

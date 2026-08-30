@@ -6,7 +6,17 @@ from django.http import StreamingHttpResponse
 
 User = get_user_model()
 from django.db import models
-from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Sum, Value
+from django.db.models import (
+    Count,
+    F,
+    IntegerField,
+    OuterRef,
+    Prefetch,
+    Q,
+    Subquery,
+    Sum,
+    Value,
+)
 from django.db.models.functions import Coalesce, TruncDate
 from django.utils import timezone
 from rest_framework import permissions, serializers
@@ -24,6 +34,8 @@ from apps.dashboard.models import Issue, PullRequestfrom apps.progress.models im
     DailyActivity,
     LessonProgress,
     QuizAttempt,
+    StreakProfile,
+    UserBadge,
     XPEvent,
 )
 
@@ -277,23 +289,50 @@ class ContributorDashboardView(APIView):
 
     def _calculate_field(self, user, field):
         if field == "personal_stats":
-            issues_solved = Issue.objects.filter(
+            # Fetch the user's related progress and badge objects with a constant
+            # number of queries (select_related + prefetch_related) instead of one
+            # query per relation (N+1).
+            user_data = (
+                User.objects.select_related("profile", "streak_profile")
+                .prefetch_related(
+                    Prefetch(
+                        "lessonprogress_set",
+                        queryset=LessonProgress.objects.filter(completed=True),
+                    ),
+                    Prefetch(
+                        "earned_badges",
+                        queryset=UserBadge.objects.select_related("badge"),
+                    ),
+                )
+                .get(pk=user.pk)
+            )
+
+            # --- Compute values from prefetched relations ---
+            lesson_xp = sum(lp.score for lp in user_data.lessonprogress_set.all())
+            earned_badges = [ub.badge.slug for ub in user_data.earned_badges.all()]
+            try:
+                streak_profile = user_data.streak_profile
+            except StreakProfile.DoesNotExist:
+                streak_profile = None
+            if streak_profile is None:
+                # Avoid writing on a GET request; the empty defaults match the
+                # values a freshly created StreakProfile would expose.
+                streak_profile = StreakProfile(user=user_data)
+            streak_days = streak_profile.current_streak
+            longest_streak = streak_profile.longest_streak
+            # ------------------------------
+
+            # issues_solved and issue XP come from a single aggregate query.
+            issues_agg = Issue.objects.filter(
                 assigned_to=user, status=Issue.Status.SOLVED
-            ).count()
+            ).aggregate(
+                count=Count("id"), p_sum=Sum("points"), b_sum=Sum("bonus_points")
+            )
+            issues_solved = issues_agg["count"] or 0
+            issues_xp = (issues_agg["p_sum"] or 0) + (issues_agg["b_sum"] or 0)
             prs_merged = PullRequest.objects.filter(
                 user=user, status=PullRequest.Status.MERGED
             ).count()
-
-            lesson_xp = (
-                LessonProgress.objects.filter(user=user, completed=True).aggregate(
-                    total=Sum("score")
-                )["total"]
-                or 0
-            )
-            issues_agg = Issue.objects.filter(
-                assigned_to=user, status=Issue.Status.SOLVED
-            ).aggregate(p_sum=Sum("points"), b_sum=Sum("bonus_points"))
-            issues_xp = (issues_agg["p_sum"] or 0) + (issues_agg["b_sum"] or 0)
             challenge_bonus_xp = (
                 ChallengeCompletion.objects.filter(user=user).aggregate(
                     total=Sum("bonus_earned")
@@ -301,14 +340,6 @@ class ContributorDashboardView(APIView):
                 or 0
             )
             total_xp = lesson_xp + issues_xp + challenge_bonus_xp
-
-            # --- NEW CLEAN STREAK LOGIC ---
-            from apps.progress.models import StreakProfile
-
-            streak_profile, _ = StreakProfile.objects.get_or_create(user=user)
-            streak_days = streak_profile.current_streak
-            longest_streak = streak_profile.longest_streak
-            # ------------------------------
 
             # Determine Rank based on user XP vs others
             lesson_xp_sub = (
@@ -358,21 +389,10 @@ class ContributorDashboardView(APIView):
             )
             rank = better_users_count + 1
 
-            from apps.progress.models import UserBadge
-
-            earned_badges = list(
-                UserBadge.objects.filter(user=user).values_list(
-                    "badge__slug", flat=True
-                )
-            )
             # StreakFreeze has been migrated to StreakProfile.streak_freezes
             spent_points = 0
             available_points = total_xp - spent_points
-            unused_freezes_count = (
-                getattr(user, "streak_profile", None).streak_freezes
-                if hasattr(user, "streak_profile")
-                else 0
-            )
+            unused_freezes_count = streak_profile.streak_freezes
 
             return {
                 "issues_solved": issues_solved,
@@ -487,6 +507,7 @@ class ContributorDashboardView(APIView):
 
         elif field == "weekly_goal":
             from apps.progress.models import WeeklyGoal
+
             goal = WeeklyGoal.get_or_create_current(user)
             return {
                 "target_lessons": goal.target_lessons,
@@ -538,7 +559,6 @@ class ContributorDashboardView(APIView):
             data[field] = field_data
 
         return Response(data)
-
 
 
 class ModeratorAnalyticsView(APIView):
@@ -808,4 +828,3 @@ class AnalyticsExportCSVView(APIView):
         response = StreamingHttpResponse(csv_stream(), content_type="text/csv")
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
-

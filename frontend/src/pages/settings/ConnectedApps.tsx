@@ -1,20 +1,31 @@
 import React, { useState, useEffect } from "react";
-import { Shield, Key, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Shield, Key, Trash2, RefreshCw } from "lucide-react";
+import { toast } from "react-hot-toast";
 import api from "../../api";
+import { formatTimeAgo } from "../../lib/dates";
 
 interface UserAppToken {
   id: number;
-  clientId: string;
-  clientName: string;
+  client_id: string;
+  client_name: string;
   scope: string;
-  accessTokenExpiresAt: string;
-  createdAt: string;
-  isRevoked: boolean;
+  access_token_expires_at: string;
+  created_at: string;
+  is_revoked: boolean;
+  last_sync?: string | null;
+}
+
+function formatLastSyncedLabel(lastSync?: string | null): string {
+  if (!lastSync) return "Never synced";
+  const syncedAt = new Date(lastSync);
+  if (Number.isNaN(syncedAt.getTime())) return "Never synced";
+  return `Last synced ${formatTimeAgo(syncedAt)}`;
 }
 
 export function ConnectedApps() {
   const [tokens, setTokens] = useState<UserAppToken[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [syncingId, setSyncingId] = useState<number | null>(null);
 
   const fetchUserApps = async () => {
     try {
@@ -31,6 +42,27 @@ export function ConnectedApps() {
   useEffect(() => {
     fetchUserApps();
   }, []);
+
+  const handleSync = async (id: number) => {
+    setSyncingId(id);
+    try {
+      const res = await api.post<{ last_sync: string }>(
+        `/oauth/user-apps/${id}/sync/`,
+      );
+      const lastSync = res.data?.last_sync ?? new Date().toISOString();
+      setTokens((prev) =>
+        prev.map((token) =>
+          token.id === id ? { ...token, last_sync: lastSync } : token,
+        ),
+      );
+      toast.success("Sync completed successfully!");
+    } catch (err) {
+      console.error("Failed to sync application:", err);
+      toast.error("Failed to sync. Please try again.");
+    } finally {
+      setSyncingId(null);
+    }
+  };
 
   const handleRevoke = async (id: number) => {
     if (
@@ -81,10 +113,10 @@ export function ConnectedApps() {
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2">
                   <h3 className="text-base font-black text-text dark:text-[#f0ebe2]">
-                    {token.clientName}
+                    {token.client_name}
                   </h3>
                   <span className="text-xs font-mono text-muted">
-                    ({token.clientId})
+                    ({token.client_id})
                   </span>
                 </div>
 
@@ -102,17 +134,42 @@ export function ConnectedApps() {
                   ))}
                 </div>
 
+                <span
+                  className={`inline-flex w-fit items-center px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                    token.last_sync
+                      ? "bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-300"
+                      : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                  }`}
+                >
+                  {formatLastSyncedLabel(token.last_sync)}
+                </span>
+
                 <div className="text-[11px] text-muted dark:text-[#a0988c]">
-                  Authorized on {new Date(token.createdAt).toLocaleDateString()}
+                  Authorized on{" "}
+                  {new Date(token.created_at).toLocaleDateString()}
                 </div>
               </div>
 
-              <button
-                onClick={() => handleRevoke(token.id)}
-                className="flex items-center gap-1.5 text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 px-3 py-2 rounded-xl transition-colors border border-red-200 dark:border-red-900/50"
-              >
-                <Trash2 className="w-4 h-4" /> Revoke Access
-              </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => void handleSync(token.id)}
+                  disabled={syncingId === token.id}
+                  className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 px-3 py-2 rounded-xl transition-colors border border-indigo-200 dark:border-indigo-900/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <RefreshCw
+                    className={`w-4 h-4 ${syncingId === token.id ? "animate-spin" : ""}`}
+                  />
+                  {syncingId === token.id ? "Syncing..." : "Sync Now"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRevoke(token.id)}
+                  className="flex items-center gap-1.5 text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 px-3 py-2 rounded-xl transition-colors border border-red-200 dark:border-red-900/50"
+                >
+                  <Trash2 className="w-4 h-4" /> Revoke Access
+                </button>
+              </div>
             </div>
           ))}
         </div>

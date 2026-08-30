@@ -124,6 +124,7 @@ export const CertificatePage: React.FC = () => {
               {/* ✅ Share Buttons */}
               <CertificateShareButtons
                 certificateUrl={certificateUrl}
+                badgeUrl={`${window.location.origin}/api/progress/verify/${certificate.verification_hash}/badge.svg`}
                 certificateName={certificate.course_name}
                 userName={certificate.username || user?.username || "User"}
                 className="justify-center"

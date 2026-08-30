@@ -79,14 +79,54 @@ describe("CodeDiffViewer", () => {
     expect(splitViewElement).toHaveTextContent("true"); // Default is true
 
     // Click Unified View
-    const unifiedBtn = screen.getByTitle("Unified View");
+    const unifiedBtn = screen.getByTitle("Unified View (1-column)");
     fireEvent.click(unifiedBtn);
     expect(splitViewElement).toHaveTextContent("false");
 
     // Click Split View
-    const splitBtn = screen.getByTitle("Split View");
+    const splitBtn = screen.getByTitle("Split View (2-column)");
     fireEvent.click(splitBtn);
     expect(splitViewElement).toHaveTextContent("true");
+  });
+
+  it("should keep original and modified code aligned in both split and unified views", () => {
+    render(
+      <CodeDiffViewer
+        originalCode="const a = 1;"
+        modifiedCode="const b = 2;"
+      />,
+    );
+
+    const splitViewElement = screen.getByTestId("is-split-view");
+    expect(splitViewElement).toHaveTextContent("true");
+    expect(screen.getByTestId("old-value")).toHaveTextContent("const a = 1;");
+    expect(screen.getByTestId("new-value")).toHaveTextContent("const b = 2;");
+
+    // Switching to unified layout must preserve the exact same code lines
+    // so highlight alignment carries across both modes.
+    fireEvent.click(screen.getByTitle("Unified View (1-column)"));
+    expect(splitViewElement).toHaveTextContent("false");
+    expect(screen.getByTestId("old-value")).toHaveTextContent("const a = 1;");
+    expect(screen.getByTestId("new-value")).toHaveTextContent("const b = 2;");
+  });
+
+  it("should announce the active view mode with aria-pressed", () => {
+    render(<CodeDiffViewer originalCode="code A" modifiedCode="code B" />);
+
+    const splitBtn = screen.getByRole("button", {
+      name: /Split View/,
+    });
+    const unifiedBtn = screen.getByRole("button", {
+      name: /Unified View/,
+    });
+
+    expect(splitBtn).toHaveAttribute("aria-pressed", "true");
+    expect(unifiedBtn).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(unifiedBtn);
+
+    expect(splitBtn).toHaveAttribute("aria-pressed", "false");
+    expect(unifiedBtn).toHaveAttribute("aria-pressed", "true");
   });
 
   it("should correctly handle dark theme from useTheme", () => {
