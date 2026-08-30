@@ -383,11 +383,31 @@ const UsageAnalyticsPage = lazy(
   () => import("../pages/admin/UsageAnalyticsPage"),
 );
 
+
+const RegexPlaygroundPage = lazy(() =>
+  import("../pages/RegexPlaygroundPage").then((module) => ({
+    default: module.RegexPlaygroundPage,
+  })),
+);
+
+const RegexPlaygroundPage = lazy(() =>
+  import("../pages/RegexPlaygroundPage").then((module) => ({
+    default: module.RegexPlaygroundPage,
+  })),
+);
+
 const ConnectedAppsPage = lazy(() =>
   import("../pages/settings/ConnectedApps").then((module) => ({
     default: module.ConnectedApps,
   })),
 );
+
+const RegexPlaygroundPage = lazy(() =>
+  import("../pages/RegexPlaygroundPage").then((module) => ({
+    default: module.RegexPlaygroundPage,
+  })),
+);
+
 function RouteLoadingFallback() {
   return (
     <div
@@ -689,6 +709,15 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <GitSubmoduleSimulatorPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/sandbox/regex"
+          element={
+            <ProtectedRoute>
+              <RegexPlaygroundPage />
             </ProtectedRoute>
           }
         />
