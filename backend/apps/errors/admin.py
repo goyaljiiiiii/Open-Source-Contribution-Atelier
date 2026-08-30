@@ -8,14 +8,15 @@ from apps.errors.models import ErrorEvent, ErrorGroup
 class ErrorGroupAdmin(admin.ModelAdmin):
     list_display = (
         "module",
+        "exception_class",
         "message_preview",
         "count",
         "status",
         "first_seen",
         "last_seen",
     )
-    list_filter = ("status", "module", "last_seen")
-    search_fields = ("message", "fingerprint")
+    list_filter = ("status", "module", "exception_class", "last_seen")
+    search_fields = ("message", "fingerprint", "exception_class")
     ordering = ("-count",)
     actions = ["mark_acknowledged", "mark_resolved"]
 
@@ -39,16 +40,18 @@ class ErrorGroupAdmin(admin.ModelAdmin):
 class ErrorEventAdmin(admin.ModelAdmin):
     list_display = (
         "group",
+        "exception_class",
         "raw_message_preview",
         "request_id",
         "user_id",
         "timestamp",
     )
-    list_filter = ("timestamp", "group__module")
-    search_fields = ("raw_message", "request_id", "user_id")
+    list_filter = ("timestamp", "exception_class", "group__module")
+    search_fields = ("raw_message", "exception_class", "request_id", "user_id")
     readonly_fields = (
         "group",
         "raw_message",
+        "exception_class",
         "stacktrace",
         "request_id",
         "user_id",
