@@ -9,6 +9,8 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 from django.urls import reverse
+
+from apps.graphql_gateway.federation import extract_field_directives, preserve_field_directives
 from rest_framework.test import APITestCase
 
 
@@ -100,3 +102,87 @@ class GraphQLGatewayTest(APITestCase):
 
         self.assertIsNotNone(service)
         self.assertEqual(service["url"], "http://localhost:9999/graphql")
+
+
+class GraphQLDirectivePreservationTest(APITestCase):
+    """Integration coverage for nested custom directive propagation."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="directive-user", password="password123"
+        )
+
+    def test_deeply_nested_directives_survive_ast_transformation(self):
+        query = """
+        query DeepNested {
+          content(id: "1") @auth {
+            modules @complexity(value: 3) {
+              lessons @sensitiveData {
+                title
+                module @auth {
+                  content @complexity(value: 2) { id }
+                }
+              }
+            }
+          }
+        }
+        """
+
+        transformed = preserve_field_directives(query)
+        directives = extract_field_directives(transformed)
+
+        self.assertEqual(directives["content"], ["auth"])
+        self.assertEqual(directives["content.modules"], ["complexity"])
+        self.assertEqual(directives["content.modules.lessons"], ["sensitiveData"])
+        self.assertEqual(directives["content.modules.lessons.module"], ["auth"])
+        self.assertEqual(
+            directives["content.modules.lessons.module.content"], ["complexity"]
+        )
+
+    @patch("apps.graphql_gateway.gateway.requests.post")
+    def test_nested_directives_are_forwarded_to_downstream_service(self, mock_post):
+        self.client.force_authenticate(user=self.user)
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.json.return_value = {
+            "data": {"content": {"modules": [{"lessons": [{"title": "Secure"}]}]}}
+        }
+
+        query = """
+        query {
+          content(id: "1") @auth {
+            modules @complexity(value: 2) {
+              lessons @sensitiveData { title }
+            }
+          }
+        }
+        """
+
+        response = self.client.post(
+            reverse("graphql_gateway:graphql_gateway"),
+            {"query": query},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        forwarded_query = mock_post.call_args.kwargs["json"]["query"]
+        forwarded = extract_field_directives(forwarded_query)
+        self.assertEqual(forwarded["content"], ["auth"])
+        self.assertEqual(forwarded["content.modules"], ["complexity"])
+        self.assertEqual(forwarded["content.modules.lessons"], ["sensitiveData"])
+
+    def test_fragment_directives_are_preserved(self):
+        query = """
+        query {
+          content(id: "1") @auth {
+            ...ModuleFields @sensitiveData
+          }
+        }
+        fragment ModuleFields on Content {
+          modules @complexity(value: 4) { id }
+        }
+        """
+
+        transformed = preserve_field_directives(query)
+        self.assertIn("@auth", transformed)
+        self.assertIn("@sensitiveData", transformed)
+        self.assertIn("@complexity(value: 4)", transformed)

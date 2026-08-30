@@ -9,6 +9,8 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from graphql import parse
+
+from apps.graphql_gateway.federation import preserve_field_directives
 from graphql.language.ast import FieldNode, OperationDefinitionNode
 
 logger = logging.getLogger(__name__)
@@ -262,9 +264,10 @@ class GraphQLRouter:
             if headers:
                 req_headers.update(headers)
 
+            downstream_query = preserve_field_directives(query)
             response = requests.post(
                 url,
-                json={"query": query, "variables": variables or {}},
+                json={"query": downstream_query, "variables": variables or {}},
                 headers=req_headers,
                 timeout=10,
             )
