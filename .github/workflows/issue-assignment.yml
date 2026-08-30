@@ -156,6 +156,27 @@ jobs:
               }
             }
 
+            // Enforce max 5 assigned issues limit per user
+            try {
+              const assignedIssues = await github.rest.issues.listForRepo({
+                owner,
+                repo,
+                state: 'open',
+                assignee: commenter
+              });
+              if (assignedIssues.data.length >= 5) {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: issue.number,
+                  body: `⚠️ @${commenter}, you currently have **${assignedIssues.data.length} assigned open issues** (the maximum allowed per contributor is **5**). Please complete or unclaim your existing assigned issues before claiming new ones!`
+                });
+                return;
+              }
+            } catch (limitErr) {
+              console.warn('Could not check assignee issue count:', limitErr);
+            }
+
             // Assign the user
             try {
               await github.rest.issues.addAssignees({
