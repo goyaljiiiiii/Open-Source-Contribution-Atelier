@@ -32,8 +32,6 @@ from drf_spectacular.utils import (
     extend_schema_view,
 )
 from rest_framework import filters, generics, permissions, status
-
-from apps.core.serializers import StandardErrorSerializer
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -61,13 +59,10 @@ from .serializers import (
     EmailOrUsernameTokenObtainPairSerializer,
     MagicLinkRequestSerializer,
     MagicLinkVerifySerializer,
-    OAuthTokenResponseSerializer,
-    OAuthUserSerializer,
     OtpRequestSerializer,
     OtpVerifySerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
-    GoogleOAuthRequestSerializer,
     SignupSerializer,
     UserListSerializer,
     UserUpdateSerializer,
@@ -271,28 +266,6 @@ class RefreshView(TokenRefreshView):
     throttle_classes = [TokenRefreshThrottle]
 
 
-@extend_schema_view(
-    post=extend_schema(
-        operation_id="google_oauth_login",
-        description="Google OAuth login endpoint. Accepts a Google access/ID token and returns JWT tokens.",
-        request=GoogleOAuthRequestSerializer,
-        responses={
-            200: OpenApiResponse(
-                response=OAuthTokenResponseSerializer,
-                description="OAuth authentication successful. Returns access and refresh tokens with user info.",
-            ),
-            400: OpenApiResponse(
-                response=StandardErrorSerializer,
-                description="Invalid or missing token, or Google authentication failed.",
-            ),
-            401: OpenApiResponse(
-                response=StandardErrorSerializer,
-                description="Google token verification failed.",
-            ),
-        },
-        tags=["Authentication"],
-    )
-)
 class GoogleLoginView(APIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [OAuthThrottle]

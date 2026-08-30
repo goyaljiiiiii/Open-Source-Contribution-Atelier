@@ -370,11 +370,11 @@ if TESTING and not os.getenv("DATABASE_URL"):
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": ":memory:",
+            "NAME": BASE_DIR / "db.sqlite3",
         },
         "replica": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": ":memory:",
+            "NAME": BASE_DIR / "db.sqlite3",
         },
     }
 else:
@@ -1048,3 +1048,7 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute=0, hour=0, day_of_month="1"),
     },
 }
+
+# API Payload Configuration
+MAX_PAYLOAD_BYTES = 2 * 1024 * 1024  # 2MB Default Limit
+
