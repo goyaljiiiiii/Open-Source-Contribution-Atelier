@@ -6,11 +6,31 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django_q.tasks import async_task
 
-
 from apps.progress.models import Badge, ExerciseAttempt, LessonProgress, UserBadge
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
+
+
+import zoneinfo
+
+
+def _get_user_week_start(user, now_utc=None):
+    """
+    Returns Monday of the current ISO week in the user's local timezone.
+    Falls back to UTC if the timezone is invalid or unconfigured.
+    """
+    if now_utc is None:
+        now_utc = timezone.now()
+
+    tz_name = getattr(getattr(user, "user_profile", None), "timezone", None) or "UTC"
+    try:
+        user_tz = zoneinfo.ZoneInfo(tz_name)
+    except Exception:
+        user_tz = zoneinfo.ZoneInfo("UTC")
+
+    user_now = now_utc.astimezone(user_tz)
+    return user_now.date() - timedelta(days=user_now.weekday())
 
 
 def send_weekly_progress_summary():
@@ -18,51 +38,64 @@ def send_weekly_progress_summary():
     Django-Q scheduled task to calculate learning progress over the past 7 days
     for each active user, and dispatch an email summary.
 
-    Idempotent: uses WeeklyDigestLog to skip users who already received the
-    digest for the current ISO week.
+    Idempotent: uses WeeklyDigestLog and atomic transaction blocks to prevent
+    duplicate dispatches across concurrent/overlapping task runs.
     """
-    from apps.notifications.tasks import send_bulk_email
+    from django.db import IntegrityError, transaction
+
     from apps.progress.models import WeeklyDigestLog
     from apps.progress.services.digest_service import WeeklyDigestService
 
     now = timezone.now()
-    # Monday of the current ISO week
-    week_start = (now - timedelta(days=now.weekday())).date()
 
-    # Process active users in chunks who opted in for the digest
-    users = User.objects.filter(
-        is_active=True, user_profile__receive_weekly_digest=True
-    ).iterator(chunk_size=100)
+    # Process active users who opted in for the digest
+    users = list(
+        User.objects.filter(
+            is_active=True, user_profile__receive_weekly_digest=True
+        ).select_related("user_profile")
+    )
 
     for user in users:
-        # Skip if digest was already sent for this week
-        if WeeklyDigestLog.objects.filter(user=user, week_start=week_start).exists():
+        week_start = _get_user_week_start(user, now)
+
+        try:
+            with transaction.atomic():
+                log, created = WeeklyDigestLog.objects.get_or_create(
+                    user=user, week_start=week_start
+                )
+
+                if not created:
+                    logger.info(
+                        "Skipping digest for %s — already sent for week of %s",
+                        user.username,
+                        week_start,
+                    )
+                    continue
+
+                # Generate context using the digest service
+                context = WeeklyDigestService.get_user_digest_context(user)
+
+                if (
+                    context["lessons_completed"] > 0
+                    or len(context["badges_earned"]) > 0
+                    or context["xp_earned"] > 0
+                ):
+                    payload = {
+                        "template_id": "weekly_progress_summary",
+                        "recipients": [user.email],
+                        "data": context,
+                    }
+                    async_task("apps.notifications.tasks.send_bulk_email", payload)
+                else:
+                    # User has zero activity this week — remove log so we don't store empty log entries
+                    log.delete()
+        except IntegrityError:
             logger.info(
-                "Skipping digest for %s — already sent for week of %s",
+                "Skipping digest for %s — created concurrently for week of %s",
                 user.username,
                 week_start,
             )
             continue
-
-        # Generate context using the new service
-        context = WeeklyDigestService.get_user_digest_context(user)
-
-        if (
-            context["lessons_completed"] > 0
-            or len(context["badges_earned"]) > 0
-            or context["xp_earned"] > 0
-        ):
-            payload = {
-                "template_id": "weekly_progress_summary",
-                "recipients": [user.email],
-                "data": context,
-            }
-            async_task("apps.notifications.tasks.send_bulk_email", payload)
-
-            # Record that we sent the digest so re-runs won't duplicate
-            WeeklyDigestLog.objects.get_or_create(
-                user=user, week_start=week_start
-            )
 
 
 def _increment_badge_skip_metric(user_id=None, badge_id=None, reason=""):
@@ -318,7 +351,11 @@ def award_specific_badge(user_id, badge_id):
             "Skipping badge award: Recipient user id=%s not found (badge_id=%s)",
             user_id,
             badge_id,
-            extra={"user_id": user_id, "badge_id": badge_id, "reason": "user_not_found"},
+            extra={
+                "user_id": user_id,
+                "badge_id": badge_id,
+                "reason": "user_not_found",
+            },
         )
         _increment_badge_skip_metric(
             user_id=user_id, badge_id=badge_id, reason="user_not_found"
@@ -332,7 +369,11 @@ def award_specific_badge(user_id, badge_id):
             "Skipping badge award: Badge id=%s not found for recipient user_id=%s",
             badge_id,
             user_id,
-            extra={"user_id": user_id, "badge_id": badge_id, "reason": "badge_not_found"},
+            extra={
+                "user_id": user_id,
+                "badge_id": badge_id,
+                "reason": "badge_not_found",
+            },
         )
         _increment_badge_skip_metric(
             user_id=user_id, badge_id=badge_id, reason="badge_not_found"
@@ -398,7 +439,11 @@ def award_badge_to_users(user_ids, badge_id):
                 "Skipping badge award for recipient user_id=%s (badge_id=%s): User record missing",
                 uid,
                 badge_id,
-                extra={"user_id": uid, "badge_id": badge_id, "reason": "user_not_found"},
+                extra={
+                    "user_id": uid,
+                    "badge_id": badge_id,
+                    "reason": "user_not_found",
+                },
             )
             _increment_badge_skip_metric(
                 user_id=uid, badge_id=badge_id, reason="user_not_found"
@@ -418,5 +463,3 @@ def archive_monthly_leaderboard():
     from apps.progress.services.leaderboard_service import LeaderboardService
 
     return LeaderboardService.archive_and_reset_monthly_leaderboard()
-
-
