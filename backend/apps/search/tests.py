@@ -481,3 +481,81 @@ class SearchPaginationCacheTests(TestCase):
         self.assertEqual(resp2.status_code, 200)
         self.assertEqual(len(resp2.data["results"]), 5)
 
+
+class FuzzyTypoToleranceTests(TestCase):
+    """Test fuzzy matching and typo tolerance for search queries (#2737)."""
+
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.view = UnifiedSearchView.as_view()
+
+        from django.contrib.contenttypes.models import ContentType
+
+        content_type = ContentType.objects.get_for_model(SearchDocument)
+
+        SearchDocument.objects.create(
+            id=501,
+            content_type=content_type,
+            object_id=501,
+            title="Introduction to Python Basics",
+            description="Learn python programming fundamentals",
+            body_text="Python language features and syntax",
+            content_type_name="lesson",
+        )
+        SearchDocument.objects.create(
+            id=502,
+            content_type=content_type,
+            object_id=502,
+            title="GitHub Integration Guide",
+            description="Connecting GitHub repositories and webhooks",
+            body_text="GitHub actions and workflow automation",
+            content_type_name="lesson",
+        )
+        SearchDocument.objects.create(
+            id=503,
+            content_type=content_type,
+            object_id=503,
+            title="Dockerfile Best Practices",
+            description="Building optimized container images with Dockerfile",
+            body_text="Multi-stage Dockerfile builds",
+            content_type_name="lesson",
+        )
+
+    def test_typo_pythn_returns_python_document(self):
+        """Typo 'pythn' (1 deletion) should match Python document."""
+        request = self.factory.get("/api/search/", {"q": "pythn"})
+        response = self.view(request)
+        self.assertEqual(response.status_code, 200)
+        results = (
+            response.data["results"]
+            if isinstance(response.data, dict)
+            else response.data
+        )
+        self.assertGreater(len(results), 0)
+        self.assertIn("Python", results[0]["title"])
+
+    def test_typo_gitub_returns_github_document(self):
+        """Typo 'gitub' (1 deletion) should match GitHub document."""
+        request = self.factory.get("/api/search/", {"q": "gitub"})
+        response = self.view(request)
+        self.assertEqual(response.status_code, 200)
+        results = (
+            response.data["results"]
+            if isinstance(response.data, dict)
+            else response.data
+        )
+        self.assertGreater(len(results), 0)
+        self.assertIn("GitHub", results[0]["title"])
+
+    def test_typo_dockerfile_case_and_spelling(self):
+        """Query 'dockerfile' matches 'Dockerfile Best Practices'."""
+        request = self.factory.get("/api/search/", {"q": "dockerfile"})
+        response = self.view(request)
+        self.assertEqual(response.status_code, 200)
+        results = (
+            response.data["results"]
+            if isinstance(response.data, dict)
+            else response.data
+        )
+        self.assertGreater(len(results), 0)
+        self.assertIn("Dockerfile", results[0]["title"])
