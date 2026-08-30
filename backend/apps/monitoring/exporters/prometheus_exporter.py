@@ -16,7 +16,12 @@ from django.http import HttpRequest, HttpResponse
 _PROMETHEUS_AVAILABLE = False
 
 try:
-    from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
+    from prometheus_client import (
+        CONTENT_TYPE_LATEST,
+        Counter,
+        Histogram,
+        generate_latest,
+    )
 
     _PROMETHEUS_AVAILABLE = True
 except ImportError:
