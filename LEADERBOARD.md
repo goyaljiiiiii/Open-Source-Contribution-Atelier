@@ -8,8 +8,6 @@ Welcome to the official **ECSoC 2026** Contributor Leaderboard for **Open-Source
 
 | 1 | @Babin123456 | 💎 Diamond Contributor ⚡ | 36 | 900 | 2026-08-23 |
 
-| 1 | @revatikadam0607 | 💎 Diamond Contributor ⚡ | 10 | 250 | 2026-08-30 |
-
 ---
 
 ## 🎖️ Contributor Tiers & Badging System
@@ -28,7 +26,7 @@ Welcome to the official **ECSoC 2026** Contributor Leaderboard for **Open-Source
 
 | Rank | Contributor | Tier | Merged PRs | Points | Last Active |
 | :---: | :--- | :---: | :---: | :---: | :--- |
-| 1 | @aaryan06-collab | 💎 Diamond Contributor ⚡ | 10 | 250 | 2026-08-30 |
+| 1 | @aaryan06-collab | 🥉 Bronze Contributor ⚡ | 2 | 50 | 2026-08-21 |
 | 2 | @nandinigoyaldev | 💎 Diamond Contributor | 1 | 50 | 2026-08-02 |
 
 ---
