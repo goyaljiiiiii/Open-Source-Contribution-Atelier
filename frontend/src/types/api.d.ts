@@ -854,50 +854,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/auth/passkey/register/begin/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * @description POST /api/v1/auth/passkey/register/begin/
-         *
-         *     Initiates WebAuthn passkey registration by generating a challenge
-         *     for the client's authenticator.
-         */
-        post: operations["api_auth_passkey_register_begin_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/passkey/register/finish/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * @description POST /api/v1/auth/passkey/register/finish/
-         *
-         *     Completes WebAuthn passkey registration by verifying the
-         *     authenticator's response and storing the credential.
-         */
-        post: operations["api_auth_passkey_register_finish_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/auth/password-reset/": {
         parameters: {
             query?: never;
@@ -1834,22 +1790,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/content/drafts/{id}/restore/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["api_content_drafts_restore_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/content/feedback/{id}/": {
         parameters: {
             query?: never;
@@ -2002,22 +1942,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/content/lessons/{id}/restore/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["api_content_lessons_restore_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/content/modules/": {
         parameters: {
             query?: never;
@@ -2048,22 +1972,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["api_content_modules_partial_update"];
-        trace?: never;
-    };
-    "/api/content/modules/{id}/restore/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["api_content_modules_restore_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/api/content/modules/reorder/": {
@@ -5501,28 +5409,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/progress/rewards/claim/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * @description POST /api/progress/rewards/claim/
-         *
-         *     Claims all reward tiers for a completed multi-stage challenge in a
-         *     single atomic transaction.
-         */
-        post: operations["api_progress_rewards_claim_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/progress/streak/": {
         parameters: {
             query?: never;
@@ -8167,50 +8053,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/api/auth/passkey/register/begin/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * @description POST /api/v1/auth/passkey/register/begin/
-         *
-         *     Initiates WebAuthn passkey registration by generating a challenge
-         *     for the client's authenticator.
-         */
-        post: operations["api_v1_api_auth_passkey_register_begin_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/api/auth/passkey/register/finish/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * @description POST /api/v1/auth/passkey/register/finish/
-         *
-         *     Completes WebAuthn passkey registration by verifying the
-         *     authenticator's response and storing the credential.
-         */
-        post: operations["api_v1_api_auth_passkey_register_finish_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/api/auth/password-reset/": {
         parameters: {
             query?: never;
@@ -9147,22 +8989,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/api/content/drafts/{id}/restore/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["api_v1_api_content_drafts_restore_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/api/content/feedback/{id}/": {
         parameters: {
             query?: never;
@@ -9315,22 +9141,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/api/content/lessons/{id}/restore/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["api_v1_api_content_lessons_restore_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/api/content/modules/": {
         parameters: {
             query?: never;
@@ -9361,22 +9171,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["api_v1_api_content_modules_partial_update"];
-        trace?: never;
-    };
-    "/api/v1/api/content/modules/{id}/restore/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["api_v1_api_content_modules_restore_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/api/v1/api/content/modules/reorder/": {
@@ -12808,28 +12602,6 @@ export interface paths {
         get: operations["api_v1_api_progress_recommendations_list"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/api/progress/rewards/claim/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * @description POST /api/progress/rewards/claim/
-         *
-         *     Claims all reward tiers for a completed multi-stage challenge in a
-         *     single atomic transaction.
-         */
-        post: operations["api_v1_api_progress_rewards_claim_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -16564,8 +16336,6 @@ export interface components {
             readonly user: number | null;
             /** Format: uri */
             image?: string | null;
-            /** @description Designates whether this report is a verified issue. */
-            readonly is_verified: boolean;
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
@@ -16728,11 +16498,6 @@ export interface components {
         LessonDraft: {
             readonly id: number;
             readonly quizzes: components["schemas"]["QuizDraft"][];
-            is_deleted?: boolean;
-            /** Format: date-time */
-            deleted_at?: string | null;
-            /** @description Reason for deletion */
-            deletion_reason?: string;
             title: string;
             slug: string;
             description?: string;
@@ -16749,8 +16514,6 @@ export interface components {
             readonly created_at: string;
             /** Format: date-time */
             readonly updated_at: string;
-            /** @description User who soft-deleted this record. */
-            deleted_by?: number | null;
             module?: number | null;
         };
         /** @description Serializer for lesson feedback with star ratings and comments. */
@@ -16925,11 +16688,6 @@ export interface components {
         ModuleDraft: {
             readonly id: number;
             readonly lessons: components["schemas"]["LessonDraft"][];
-            is_deleted?: boolean;
-            /** Format: date-time */
-            deleted_at?: string | null;
-            /** @description Reason for deletion */
-            deletion_reason?: string;
             title: string;
             slug: string;
             description?: string;
@@ -16939,8 +16697,6 @@ export interface components {
             readonly created_at: string;
             /** Format: date-time */
             readonly updated_at: string;
-            /** @description User who soft-deleted this record. */
-            deleted_by?: number | null;
         };
         NewcomerFriendlinessScore: {
             readonly id: number;
@@ -17997,8 +17753,6 @@ export interface components {
             readonly user?: number | null;
             /** Format: uri */
             image?: string | null;
-            /** @description Designates whether this report is a verified issue. */
-            readonly is_verified?: boolean;
             /** Format: date-time */
             readonly created_at?: string;
             /** Format: date-time */
@@ -18119,11 +17873,6 @@ export interface components {
         PatchedLessonDraft: {
             readonly id?: number;
             readonly quizzes?: components["schemas"]["QuizDraft"][];
-            is_deleted?: boolean;
-            /** Format: date-time */
-            deleted_at?: string | null;
-            /** @description Reason for deletion */
-            deletion_reason?: string;
             title?: string;
             slug?: string;
             description?: string;
@@ -18140,8 +17889,6 @@ export interface components {
             readonly created_at?: string;
             /** Format: date-time */
             readonly updated_at?: string;
-            /** @description User who soft-deleted this record. */
-            deleted_by?: number | null;
             module?: number | null;
         };
         /** @description Serializer for lesson feedback with star ratings and comments. */
@@ -18200,11 +17947,6 @@ export interface components {
         PatchedModuleDraft: {
             readonly id?: number;
             readonly lessons?: components["schemas"]["LessonDraft"][];
-            is_deleted?: boolean;
-            /** Format: date-time */
-            deleted_at?: string | null;
-            /** @description Reason for deletion */
-            deletion_reason?: string;
             title?: string;
             slug?: string;
             description?: string;
@@ -18214,8 +17956,6 @@ export interface components {
             readonly created_at?: string;
             /** Format: date-time */
             readonly updated_at?: string;
-            /** @description User who soft-deleted this record. */
-            deleted_by?: number | null;
         };
         PatchedNewcomerFriendlinessScore: {
             readonly id?: number;
@@ -19400,8 +19140,6 @@ export interface components {
             readonly github_url: string;
             readonly active_track_status: string;
             readonly next_milestone: string;
-            readonly global_rank: string;
-            readonly percentile_standing: string;
         };
         UserSearchProfile: {
             readonly id: number;
@@ -20872,42 +20610,6 @@ export interface operations {
         };
         responses: {
             /** @description Email verified successfully. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    api_auth_passkey_register_begin_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    api_auth_passkey_register_finish_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22841,26 +22543,6 @@ export interface operations {
             };
         };
     };
-    api_content_drafts_restore_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     api_content_feedback_retrieve: {
         parameters: {
             query?: never;
@@ -23350,34 +23032,6 @@ export interface operations {
             };
         };
     };
-    api_content_lessons_restore_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this lesson draft. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LessonDraft"];
-                "application/x-www-form-urlencoded": components["schemas"]["LessonDraft"];
-                "multipart/form-data": components["schemas"]["LessonDraft"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LessonDraft"];
-                };
-            };
-        };
-    };
     api_content_modules_list: {
         parameters: {
             query?: never;
@@ -23508,34 +23162,6 @@ export interface operations {
                 "application/json": components["schemas"]["PatchedModuleDraft"];
                 "application/x-www-form-urlencoded": components["schemas"]["PatchedModuleDraft"];
                 "multipart/form-data": components["schemas"]["PatchedModuleDraft"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ModuleDraft"];
-                };
-            };
-        };
-    };
-    api_content_modules_restore_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this module draft. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ModuleDraft"];
-                "application/x-www-form-urlencoded": components["schemas"]["ModuleDraft"];
-                "multipart/form-data": components["schemas"]["ModuleDraft"];
             };
         };
         responses: {
@@ -31940,24 +31566,6 @@ export interface operations {
             };
         };
     };
-    api_progress_rewards_claim_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     api_progress_streak_retrieve: {
         parameters: {
             query?: never;
@@ -37372,42 +36980,6 @@ export interface operations {
             };
         };
     };
-    api_v1_api_auth_passkey_register_begin_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    api_v1_api_auth_passkey_register_finish_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     api_v1_api_auth_password_reset_create: {
         parameters: {
             query?: never;
@@ -39333,26 +38905,6 @@ export interface operations {
             };
         };
     };
-    api_v1_api_content_drafts_restore_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     api_v1_api_content_feedback_retrieve: {
         parameters: {
             query?: never;
@@ -39842,34 +39394,6 @@ export interface operations {
             };
         };
     };
-    api_v1_api_content_lessons_restore_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this lesson draft. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LessonDraft"];
-                "application/x-www-form-urlencoded": components["schemas"]["LessonDraft"];
-                "multipart/form-data": components["schemas"]["LessonDraft"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LessonDraft"];
-                };
-            };
-        };
-    };
     api_v1_api_content_modules_list: {
         parameters: {
             query?: never;
@@ -40000,34 +39524,6 @@ export interface operations {
                 "application/json": components["schemas"]["PatchedModuleDraft"];
                 "application/x-www-form-urlencoded": components["schemas"]["PatchedModuleDraft"];
                 "multipart/form-data": components["schemas"]["PatchedModuleDraft"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ModuleDraft"];
-                };
-            };
-        };
-    };
-    api_v1_api_content_modules_restore_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this module draft. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ModuleDraft"];
-                "application/x-www-form-urlencoded": components["schemas"]["ModuleDraft"];
-                "multipart/form-data": components["schemas"]["ModuleDraft"];
             };
         };
         responses: {
@@ -48429,24 +47925,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Lesson"][];
                 };
-            };
-        };
-    };
-    api_v1_api_progress_rewards_claim_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
