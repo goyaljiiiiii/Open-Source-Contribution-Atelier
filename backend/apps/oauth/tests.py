@@ -371,3 +371,31 @@ def test_drf_oauth2_bearer_authentication(test_user, oauth_client_obj):
     assert user == test_user
     assert token == token_obj
     assert "openid" in token.scopes
+
+
+@pytest.mark.django_db
+def test_user_connected_apps_list_and_sync(test_user, oauth_client_obj):
+    api_client = APIClient()
+    api_client.force_authenticate(user=test_user)
+
+    token_obj = OAuthToken.objects.create(
+        client=oauth_client_obj,
+        user=test_user,
+        access_token="at_connected_app_sync",
+        scope="openid profile",
+        access_token_expires_at=timezone.now() + timedelta(hours=1),
+    )
+
+    list_res = api_client.get("/oauth/api/oauth/user-apps/")
+    assert list_res.status_code == 200
+    apps = list_res.json()
+    assert len(apps) == 1
+    assert apps[0]["client_name"] == oauth_client_obj.name
+    assert apps[0]["last_sync"] is None
+
+    sync_res = api_client.post(f"/oauth/api/oauth/user-apps/{token_obj.id}/sync/")
+    assert sync_res.status_code == 200
+    assert sync_res.json()["last_sync"] is not None
+
+    token_obj.refresh_from_db()
+    assert token_obj.last_sync is not None
