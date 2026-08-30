@@ -67,6 +67,19 @@ vi.mock("../components/ui/ExecutionTimelineVisualizer", () => ({
 vi.mock("react-simple-code-editor", () => ({
   default: () => <div data-testid="mock-simple-editor" />,
 }));
+vi.mock("react-resizable-panels", () => ({
+  Group: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="resizable-group">{children}</div>
+  ),
+  Panel: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="resizable-panel">{children}</div>
+  ),
+  Separator: () => <div data-testid="resizable-separator" />,
+  useDefaultLayout: () => ({
+    defaultLayout: undefined,
+    onLayoutChange: vi.fn(),
+  }),
+}));
 
 describe("Sandbox ARIA live regions and accessibility", () => {
   beforeEach(() => {
@@ -81,6 +94,7 @@ describe("Sandbox ARIA live regions and accessibility", () => {
     const mockExercise = {
       id: "py-1",
       starterCode: "print('hello')",
+      testCode: "assert True",
       prompt: "Write Python code",
     };
 
