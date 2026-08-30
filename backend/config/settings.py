@@ -1052,3 +1052,7 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute=0, hour=0, day_of_month="1"),
     },
 }
+
+# API Payload Configuration
+MAX_PAYLOAD_BYTES = 2 * 1024 * 1024  # 2MB Default Limit
+

@@ -2,6 +2,8 @@ import logging
 import time
 
 from django.db import OperationalError, close_old_connections
+from django.http import JsonResponse
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -55,3 +57,23 @@ class DatabaseConnectionGuardMiddleware:
 
         if last_error is not None:
             raise last_error
+
+class PayloadSizeLimitMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.method in ["POST", "PUT", "PATCH"]:
+            content_length = request.META.get('HTTP_CONTENT_LENGTH') or request.headers.get('Content-Length')
+            
+            if content_length:
+                try:
+                    if int(content_length) > getattr(settings, 'MAX_PAYLOAD_BYTES', 2097152):
+                        return JsonResponse(
+                            {"error": "Payload Too Large", "detail": "Request body exceeds maximum allowed size."},
+                            status=413
+                        )
+                except ValueError:
+                    return JsonResponse({"error": "Bad Request", "detail": "Invalid Content-Length header."}, status=400)
+
+        return self.get_response(request)
