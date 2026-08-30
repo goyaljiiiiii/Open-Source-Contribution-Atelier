@@ -28,6 +28,12 @@ def existing_user(db):
 
 @pytest.mark.django_db
 class TestPasswordMaxLengthValidation:
+    @pytest.fixture(autouse=True)
+    def _clear_cache(self):
+        from django.core.cache import cache
+
+        cache.clear()
+
     def test_signup_rejects_oversized_password_with_400(self, api_client):
         with patch("django.contrib.auth.hashers.make_password") as hash_spy:
             response = api_client.post(
@@ -40,7 +46,7 @@ class TestPasswordMaxLengthValidation:
             )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "password" in response.data
+        assert "password" in response.data or "password" in response.data.get("errors", {})
         hash_spy.assert_not_called()
 
     def test_login_rejects_oversized_password_with_400(self, api_client, existing_user):

@@ -203,12 +203,30 @@ class UserListSerializer(serializers.ModelSerializer):
     def get_global_rank(self, obj):
         if "bulk_global_ranks" in self.context:
             return self.context["bulk_global_ranks"].get(obj.id, 1)
-        return getattr(obj, "global_rank", 1)
+        if hasattr(obj, "global_rank") and obj.global_rank is not None:
+            return obj.global_rank
+        from django.contrib.auth import get_user_model
+        from django.db.models import Sum
+        from apps.progress.models import XPEvent
+        User = get_user_model()
+        user_xp = XPEvent.objects.filter(user=obj).aggregate(total=Sum("xp_delta"))["total"] or 0
+        higher_users = User.objects.annotate(
+            total_xp=Sum("xp_events__xp_delta")
+        ).filter(total_xp__gt=user_xp).count()
+        return higher_users + 1
 
     def get_percentile_standing(self, obj):
         if "bulk_percentiles" in self.context:
             return self.context["bulk_percentiles"].get(obj.id, 1)
-        return getattr(obj, "percentile_standing", 1)
+        if hasattr(obj, "percentile_standing") and obj.percentile_standing is not None:
+            return obj.percentile_standing
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        rank = self.get_global_rank(obj)
+        total_users = User.objects.count()
+        if total_users <= 1:
+            return 1
+        return round((rank / total_users) * 100)
 
     def get_active_track_status(self, obj):
         if "bulk_track_statuses" in self.context:

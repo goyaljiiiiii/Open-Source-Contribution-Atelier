@@ -33,7 +33,8 @@ from drf_spectacular.utils import (
 )
 from rest_framework import filters, generics, permissions, status
 
-from apps.core.serializers import StandardErrorSerializerfrom rest_framework.pagination import LimitOffsetPagination
+from apps.core.serializers import StandardErrorSerializer
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -71,7 +72,8 @@ from .serializers import (
     SignupSerializer,
     UserListSerializer,
     UserUpdateSerializer,
-)from .tasks import (
+)
+from .tasks import (
     send_magic_link_email_task,
     send_otp_email_task,
     send_password_reset_email_task,
@@ -300,7 +302,8 @@ class GoogleLoginView(APIView):
     def _unique_username_from_email(email: str) -> str:
         return unique_username_from_value(email)
 
-    def post(self, request):        token = (
+    def post(self, request):
+        token = (
             request.data.get("access_token")
             or request.data.get("access")
             or request.data.get("id_token")
@@ -601,7 +604,8 @@ class GitHubOAuthCallbackView(APIView):
                         "refresh": tokens["refresh"],
                     }
                 )
-            )        except CircuitOpenError:
+            )
+        except CircuitOpenError:
             return redirect(
                 frontend_url(
                     "/",

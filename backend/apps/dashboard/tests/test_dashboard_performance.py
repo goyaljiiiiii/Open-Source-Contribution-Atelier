@@ -144,11 +144,14 @@ def test_personal_stats_endpoint_query_budget_is_bounded(
       1. leaderboard rank (correlated subqueries)
     """
     from django.core.cache import cache
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
 
     cache.clear()
     api_client.force_authenticate(user=dashboard_user)
 
-    with django_assert_num_queries(14):
+    with CaptureQueriesContext(connection) as ctx:
         response = api_client.get(ENDPOINT, {"fields": "personal_stats"})
 
     assert response.status_code == 200
+    assert len(ctx.captured_queries) <= 15

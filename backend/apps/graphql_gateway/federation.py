@@ -182,3 +182,42 @@ class SimpleQueryPlanner:
             )
 
         return QueryPlan(steps)
+
+
+def preserve_field_directives(query: str) -> str:
+    """
+    Preserve directives in GraphQL query string.
+    """
+    return query
+
+
+class DirectiveExtractor(Visitor):
+    def __init__(self):
+        super().__init__()
+        self.directives: Dict[str, List[str]] = {}
+        self.path: List[str] = []
+
+    def enter_field(self, node: FieldNode, *args):
+        field_name = node.name.value
+        self.path.append(field_name)
+        current_path = ".".join(self.path)
+        if node.directives:
+            self.directives[current_path] = [d.name.value for d in node.directives]
+
+    def leave_field(self, node: FieldNode, *args):
+        if self.path:
+            self.path.pop()
+
+
+def extract_field_directives(query: str) -> Dict[str, List[str]]:
+    """
+    Extract field directives mapped by path (e.g., 'content.modules': ['complexity']).
+    """
+    try:
+        ast = parse(query)
+        extractor = DirectiveExtractor()
+        visit(ast, extractor)
+        return extractor.directives
+    except Exception:
+        return {}
+

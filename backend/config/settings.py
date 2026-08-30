@@ -105,6 +105,10 @@ CSRF_COOKIE_SECURE = not DEBUG
 
 TESTING = "test" in sys.argv or "pytest" in sys.modules
 
+FIELD_ENCRYPTION_KEY = os.getenv(
+    "FIELD_ENCRYPTION_KEY", "MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI="
+)
+
 # Reverse Proxy Security Settings for Hugging Face Spaces & Vercel
 USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
@@ -381,7 +385,8 @@ if TESTING and not os.getenv("DATABASE_URL"):
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": ":memory:",
         },
-    }else:
+    }
+else:
     DATABASES = {
         "default": dj_database_url.config(
             default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",

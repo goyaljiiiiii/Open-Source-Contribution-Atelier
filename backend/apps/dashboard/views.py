@@ -29,7 +29,8 @@ from apps.challenges.models import ChallengeCompletion
 from apps.content.models import Lesson
 from apps.core.cache import multi_level_cache as cache
 from apps.core.throttling import AdminIPRateThrottle
-from apps.dashboard.models import Issue, PullRequestfrom apps.progress.models import (
+from apps.dashboard.models import Issue, PullRequest
+from apps.progress.models import (
     CodeSubmission,
     DailyActivity,
     LessonProgress,
@@ -166,7 +167,8 @@ class AdminDashboardView(APIView):
 
     throttle_classes = [AdminIPRateThrottle]
 
-    def get_permissions(self):        from rest_framework import permissions
+    def get_permissions(self):
+        from rest_framework import permissions
 
         from apps.core.permissions import HasAnyRole
 
