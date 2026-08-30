@@ -23,7 +23,7 @@ export function usePythonSandbox() {
       timeoutMs: number = 5000,
     ): Promise<PythonExecutionResult> => {
       return executeCode<PythonExecutionResult>(
-        { pythonCode: code },
+        { pythonCode: code, timeoutMs },
         timeoutMs,
         (data: any) => ({
           output: data.results || "",
