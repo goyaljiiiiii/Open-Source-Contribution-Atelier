@@ -8,6 +8,8 @@ Welcome to the official **ECSoC 2026** Contributor Leaderboard for **Open-Source
 
 | 1 | @Babin123456 | 💎 Diamond Contributor ⚡ | 36 | 900 | 2026-08-23 |
 
+| 1 | @revatikadam0607 | 💎 Diamond Contributor ⚡ | 10 | 250 | 2026-08-30 |
+
 ---
 
 ## 🎖️ Contributor Tiers & Badging System
