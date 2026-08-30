@@ -126,3 +126,76 @@ class ErrorAPIEndpointTests(APITestCase):
         self.assertEqual(response.status_code, 202)
         self.assertEqual(response.data, {"status": "queued"})
         mock_delay.assert_called_once_with(payload)
+
+
+class ErrorMonitoringFilterTests(APITestCase):
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+
+        User = get_user_model()
+        self.user = User.objects.create_user(
+            username="adminuser", password="password123", is_staff=True
+        )
+        self.client.force_authenticate(user=self.user)
+
+        self.group1 = ErrorGroup.objects.create(
+            fingerprint="fp1",
+            message="Zero Division Error",
+            module="math",
+            exception_class="ZeroDivisionError",
+        )
+        self.group2 = ErrorGroup.objects.create(
+            fingerprint="fp2",
+            message="Missing dictionary key",
+            module="core",
+            exception_class="KeyError",
+        )
+        self.group3 = ErrorGroup.objects.create(
+            fingerprint="fp3",
+            message="Invalid type passed",
+            module="core",
+            exception_class="TypeError",
+        )
+
+        self.event1 = ErrorEvent.objects.create(
+            group=self.group1,
+            raw_message="division by zero",
+            exception_class="ZeroDivisionError",
+        )
+        self.event2 = ErrorEvent.objects.create(
+            group=self.group2,
+            raw_message="key 'foo' not found",
+            exception_class="KeyError",
+        )
+
+    def test_filter_by_exception_class_exact_case(self):
+        url = reverse("error-groups-list")
+        response = self.client.get(url, {"exception_class": "ZeroDivisionError"})
+        self.assertEqual(response.status_code, 200)
+        results = response.data.get("results", response.data)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["exception_class"], "ZeroDivisionError")
+
+    def test_filter_by_exception_class_case_insensitive_substring(self):
+        url = reverse("error-groups-list")
+        # Substring 'err' case-insensitive matching ZeroDivisionError, KeyError, TypeError
+        response = self.client.get(url, {"exception_class": "error"})
+        self.assertEqual(response.status_code, 200)
+        results = response.data.get("results", response.data)
+        self.assertEqual(len(results), 3)
+
+        # Substring 'key' matching KeyError
+        response_key = self.client.get(url, {"exception_class": "KEY"})
+        self.assertEqual(response_key.status_code, 200)
+        results_key = response_key.data.get("results", response_key.data)
+        self.assertEqual(len(results_key), 1)
+        self.assertEqual(results_key[0]["exception_class"], "KeyError")
+
+    def test_events_filter_by_exception_class(self):
+        url = reverse("error-events-list")
+        response = self.client.get(url, {"exception_class": "zerodivision"})
+        self.assertEqual(response.status_code, 200)
+        results = response.data.get("results", response.data)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["exception_class"], "ZeroDivisionError")
+
