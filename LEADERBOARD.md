@@ -26,7 +26,7 @@ Welcome to the official **ECSoC 2026** Contributor Leaderboard for **Open-Source
 
 | Rank | Contributor | Tier | Merged PRs | Points | Last Active |
 | :---: | :--- | :---: | :---: | :---: | :--- |
-| 1 | @aaryan06-collab | 🥉 Bronze Contributor ⚡ | 2 | 50 | 2026-08-21 |
+| 1 | @aaryan06-collab | 💎 Diamond Contributor ⚡ | 10 | 250 | 2026-08-30 |
 | 2 | @nandinigoyaldev | 💎 Diamond Contributor | 1 | 50 | 2026-08-02 |
 
 ---
