@@ -1,10 +1,11 @@
+import subprocess
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
 from apps.uploads.models import UploadSession
-from apps.uploads.scanner import ScanResult
+from apps.uploads.scanner import ScanResult, ScanTimeout, scan_file
 from apps.uploads.tasks import scan_upload
 
 
@@ -61,3 +62,19 @@ def test_eicar_detection_deletes_quarantined_file(
     assert upload.status == UploadSession.Status.INFECTED
     assert not quarantined.exists()
     assert upload.scan_history.filter(signature="Eicar-Signature").exists()
+
+
+def test_scanner_subprocess_timeout_deletes_temp_file(settings, tmp_path):
+    settings.MEDIA_ROOT = tmp_path / "media"
+    source = tmp_path / "pending.bin"
+    source.write_bytes(b"unverified")
+
+    with patch(
+        "apps.uploads.scanner.subprocess.run",
+        side_effect=subprocess.TimeoutExpired(cmd=["clamscan"], timeout=15),
+    ):
+        with pytest.raises(ScanTimeout):
+            scan_file(str(source))
+
+    tmp_dir = Path(settings.MEDIA_ROOT) / "tmp_uploads"
+    assert not tmp_dir.exists() or not any(tmp_dir.iterdir())
