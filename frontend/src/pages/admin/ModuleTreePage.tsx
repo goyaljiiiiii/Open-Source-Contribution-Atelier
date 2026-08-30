@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useContentDraft, LessonDraftData } from "../../hooks/useContentDraft";
 import { ModuleTree } from "../../components/admin/ModuleTree";
 import { useNavigate } from "react-router-dom";
@@ -7,6 +8,21 @@ export function ModuleTreePage() {
   const { modules, activeLesson, setActiveLesson, refetchModules } =
     useContentDraft();
   const navigate = useNavigate();
+  const [collapsed, setCollapsed] = useState<Record<number, boolean>>({});
+
+  const handleExpandAll = () => {
+    setCollapsed({});
+  };
+
+  const handleCollapseAll = () => {
+    setCollapsed(
+      Object.fromEntries(modules.map((mod) => [mod.id, true] as const)),
+    );
+  };
+
+  const handleToggleCollapse = (moduleId: number) => {
+    setCollapsed((prev) => ({ ...prev, [moduleId]: !prev[moduleId] }));
+  };
 
   const handleAddModule = async () => {
     const title = prompt("Enter Module Title:", "New Module");
@@ -80,10 +96,31 @@ export function ModuleTreePage() {
         </p>
       </div>
 
-      <div className="max-w-3xl">
+      <div className="max-w-3xl flex flex-col gap-3">
+        {modules.length > 0 && (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleExpandAll}
+              className="text-xs font-bold px-3 py-1.5 bg-white dark:bg-[#151411] border border-black/10 dark:border-[#2e2924] text-text dark:text-[#f0ebe2] rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+            >
+              Expand All
+            </button>
+            <button
+              type="button"
+              onClick={handleCollapseAll}
+              className="text-xs font-bold px-3 py-1.5 bg-white dark:bg-[#151411] border border-black/10 dark:border-[#2e2924] text-text dark:text-[#f0ebe2] rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+            >
+              Collapse All
+            </button>
+          </div>
+        )}
+
         <ModuleTree
           modules={modules}
           activeLessonId={activeLesson?.id}
+          collapsed={collapsed}
+          onToggleCollapse={handleToggleCollapse}
           onSelectLesson={(les) => {
             setActiveLesson(les);
             if (les.id) navigate(`/admin/content-studio/lessons/${les.id}`);
