@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Loader2, RefreshCw, Database } from "lucide-react";
+import { Loader2, RefreshCw, Database, RotateCcw, AlertTriangle } from "lucide-react";
 import {
   AreaChart,
   Area,
@@ -12,6 +12,7 @@ import {
 import { fetchApi } from "../../lib/api";
 import { format } from "date-fns";
 import { toast } from "react-hot-toast";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
 
 interface BackupVerification {
   id: number;
@@ -26,6 +27,8 @@ export default function BackupDashboardPage() {
   const [data, setData] = useState<BackupVerification[]>([]);
   const [loading, setLoading] = useState(true);
   const [verifying, setVerifying] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const [backupToRestore, setBackupToRestore] = useState<BackupVerification | null>(null);
 
   const fetchStatus = async () => {
     try {
@@ -47,13 +50,14 @@ export default function BackupDashboardPage() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && selectedBackup) {
-        setSelectedBackup(null);
+      if (e.key === "Escape") {
+        if (selectedBackup) setSelectedBackup(null);
+        if (backupToRestore) setBackupToRestore(null);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedBackup]);
+  }, [selectedBackup, backupToRestore]);
 
   const handleVerifyNow = async () => {
     if (
@@ -75,6 +79,23 @@ export default function BackupDashboardPage() {
       setVerifying(false);
     }
   };
+
+  const executeRestore = async () => {
+    if (!backupToRestore) return;
+    try {
+      setRestoring(true);
+      await fetchApi(`/api/monitoring/backups/${backupToRestore.id}/restore/`, {
+        method: "POST",
+      });
+      toast.success("Database restoration started successfully.");
+    } catch (error) {
+      toast.error("Failed to trigger database restoration");
+    } finally {
+      setRestoring(false);
+      setBackupToRestore(null);
+    }
+  };
+
 
   const chartData = data
     .slice()
@@ -98,18 +119,34 @@ export default function BackupDashboardPage() {
             Monitor database backup integrity and history.
           </p>
         </div>
-        <button
-          onClick={handleVerifyNow}
-          disabled={verifying}
-          className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors disabled:opacity-50"
-        >
-          {verifying ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <RefreshCw className="mr-2 h-4 w-4" />
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleVerifyNow}
+            disabled={verifying || restoring}
+            className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors disabled:opacity-50 text-sm font-medium"
+          >
+            {verifying ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-2 h-4 w-4" />
+            )}
+            Verify Latest Backup Now
+          </button>
+          {latest && (
+            <button
+              onClick={() => setBackupToRestore(latest)}
+              disabled={restoring || verifying}
+              className="flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors disabled:opacity-50 text-sm font-medium"
+            >
+              {restoring ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <RotateCcw className="mr-2 h-4 w-4" />
+              )}
+              Restore Database Backup
+            </button>
           )}
-          Verify Latest Backup Now
-        </button>
+        </div>
       </div>
 
       {loading ? (
@@ -253,6 +290,30 @@ export default function BackupDashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Backup Restoration Confirmation Modal */}
+      <ConfirmDialog
+        isOpen={Boolean(backupToRestore)}
+        title="Confirm Database Backup Restoration"
+        message={
+          backupToRestore
+            ? `Restoring backup snapshot #${backupToRestore.id} (${(
+                backupToRestore.size_bytes /
+                1024 /
+                1024
+              ).toFixed(
+                2,
+              )} MB, created ${backupToRestore.backup_timestamp}) will overwrite all active database tables. Any unbacked-up data since this snapshot will be permanently lost. Are you sure you want to proceed?`
+            : "Are you sure you want to restore this database backup?"
+        }
+        confirmText="Restore Database"
+        cancelText="Cancel"
+        type="danger"
+        onConfirm={executeRestore}
+        onCancel={() => setBackupToRestore(null)}
+      />
     </div>
   );
 }
+
+
