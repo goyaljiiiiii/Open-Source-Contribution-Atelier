@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import Editor from "react-simple-code-editor";
 import Prism from "prismjs";
 import "prismjs/components/prism-python";
@@ -37,6 +37,21 @@ export function CodeEditor({
   placeholder,
   minHeight = "200px",
 }: CodeEditorProps) {
+  const [fontSize, setFontSize] = useState<number>(() => {
+    const saved = localStorage.getItem("sandbox_editor_font_size");
+    return saved ? parseInt(saved, 10) : 14;
+  });
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const saved = localStorage.getItem("sandbox_editor_font_size");
+      if (saved) setFontSize(parseInt(saved, 10));
+    };
+
+    window.addEventListener("sandbox_font_changed", handleStorageChange);
+    return () => window.removeEventListener("sandbox_font_changed", handleStorageChange);
+  }, []);
+
   const highlight = useCallback(
     (code: string) => {
       const grammar = getGrammar(language);
@@ -62,7 +77,7 @@ export function CodeEditor({
         placeholder={placeholder}
         style={{
           fontFamily: '"Fira Code", "JetBrains Mono", monospace',
-          fontSize: 14,
+          fontSize: fontSize,
           minHeight,
           backgroundColor: "transparent",
           outline: "none",
