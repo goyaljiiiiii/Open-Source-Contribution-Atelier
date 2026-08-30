@@ -1,320 +1,183 @@
----
-title: Open Source Contribution Atelier Backend
-emoji: 🚀
-colorFrom: blue
-colorTo: indigo
-sdk: docker
-app_port: 7860
-pinned: false
----
-
-
-![CI](https://github.com/MILAN-123865/Open-Source-Contribution-Atelier/actions/workflows/ci.yml/badge.svg)
-
-
-<br />
-
 <div align="center">
 
-<!-- Hero Banner -->
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:FF6B6B,50:4ECDC4,100:45B7D1&height=220&section=header&text=Open%20Source%20Contribution%20Atelier&fontSize=36&fontColor=ffffff&animation=fadeIn&fontAlignY=35&desc=From%20Zero%20to%20Open%20Source%20Hero%20🚀&descAlignY=55&descSize=18" width="100%" />
+# 🚀 Open Source Contribution Atelier
 
-<p><i>A complete Open Source Learning Platform designed to help beginners confidently transition from zero to real open-source contributions.</i></p>
-
-<!-- Badges -->
+### *Empowering developers to go from zero to confident open-source contributors.*
 
 [![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://open-source-contribution-atelier.vercel.app)
-[![Backend API](https://img.shields.io/badge/🤗_API-Hugging_Face-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black)](https://nandinigoyaldev-atelier-backend.hf.space)
-
-[![GitHub Stars](https://img.shields.io/github/stars/nandinigoyaldev/Open-Source-Contribution-Atelier?style=flat-square&logo=github&label=Stars&color=FFD700)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier)
-[![GitHub Forks](https://img.shields.io/github/forks/nandinigoyaldev/Open-Source-Contribution-Atelier?style=flat-square&logo=github&label=Forks&color=45B7D1)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/fork)
-[![GitHub Issues](https://img.shields.io/github/issues/nandinigoyaldev/Open-Source-Contribution-Atelier?style=flat-square&logo=github&label=Issues&color=FF6B6B)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/issues)
-[![GitHub PRs](https://img.shields.io/github/issues-pr/nandinigoyaldev/Open-Source-Contribution-Atelier?style=flat-square&logo=github&label=PRs&color=4ECDC4)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/pulls)
-[![License](https://img.shields.io/github/license/nandinigoyaldev/Open-Source-Contribution-Atelier?style=flat-square&color=purple)](LICENSE)
-
-[![CI Checks](https://img.shields.io/github/actions/workflow/status/nandinigoyaldev/Open-Source-Contribution-Atelier/ci.yml?style=flat-square&logo=githubactions&logoColor=white&label=CI%20Checks)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/actions)
-[![React](https://img.shields.io/badge/React_19-61DAFB?style=flat-square&logo=react&logoColor=black)](#)
-[![Django](https://img.shields.io/badge/Django_5.0-092E20?style=flat-square&logo=django&logoColor=white)](#)
-[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](#)
-[![Tailwind](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](#)
-[![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)](#)
-
-</div>
+[![GitHub Stars](https://img.shields.io/github/stars/nandinigoyaldev/Open-Source-Contribution-Atelier?style=for-the-badge&logo=github&color=FFD700)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/stargazers)
+[![License](https://img.shields.io/github/license/nandinigoyaldev/Open-Source-Contribution-Atelier?style=for-the-badge&color=8A2BE2)](LICENSE)
+[![ECSoC 2026](https://img.shields.io/badge/ECSoC_2026-Active_Program-4ECDC4?style=for-the-badge&logo=github)](LEADERBOARD.md)
 
 ---
 
-## 🏆 ECSoC 2026 Program & Quick Links
+</div>
+
+## 💡 About The Project
+
+Getting started in open-source can feel intimidating—navigating massive codebases, git merge conflicts, complex PR reviews, and unwritten community rules. 
+
+**Open Source Contribution Atelier** is an interactive, gamified learning platform built to bridge that gap. Designed with empathy and built for real-world impact, Atelier gives developers a safe, hands-on environment to practice version control, complete guided lessons, solve real sandbox exercises, track contribution streaks, and submit peer code reviews.
+
+Whether you're making your very first pull request or mentoring the next generation of contributors, Atelier is your launchpad into open source.
+
+---
+
+## 🛠️ Tech Stack
 
 <div align="center">
 
-[![ECSoC 2026 Active](https://img.shields.io/badge/Program-ECSoC_2026_Active-8A2BE2?style=for-the-badge&logo=github)](LEADERBOARD.md)
-[![Leaderboard](https://img.shields.io/badge/ECSoC-Leaderboard_🏆-4ECDC4?style=for-the-badge&logo=github)](LEADERBOARD.md)
+| Layer | Technologies & Tools |
+| :--- | :--- |
+| **Frontend** | ![React](https://img.shields.io/badge/React_19-61DAFB?style=flat-square&logo=react&logoColor=black) ![TypeScript](https://img.shields.io/badge/TypeScript_5.0-3178C6?style=flat-square&logo=typescript&logoColor=white) ![Vite](https://img.shields.io/badge/Vite_6.0-646CFF?style=flat-square&logo=vite&logoColor=white) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS_3.4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white) ![Redux Toolkit](https://img.shields.io/badge/Redux_Toolkit-764ABC?style=flat-square&logo=redux&logoColor=white) |
+| **Backend API** | ![Django](https://img.shields.io/badge/Django_5.0-092E20?style=flat-square&logo=django&logoColor=white) ![Django REST Framework](https://img.shields.io/badge/DRF-red?style=flat-square&logo=django&logoColor=white) ![Python](https://img.shields.io/badge/Python_3.11+-3776AB?style=flat-square&logo=python&logoColor=white) ![Simple JWT](https://img.shields.io/badge/JWT_Auth-black?style=flat-square&logo=jsonwebtokens&logoColor=white) |
+| **Real-Time & Tasks** | ![Django Channels](https://img.shields.io/badge/Django_Channels-092E20?style=flat-square&logo=django&logoColor=white) ![WebSockets](https://img.shields.io/badge/WebSockets-010101?style=flat-square&logo=socketdotio&logoColor=white) ![Celery](https://img.shields.io/badge/Celery-37814A?style=flat-square&logo=celery&logoColor=white) ![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white) |
+| **Database & Caching** | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white) ![SQLite](https://img.shields.io/badge/SQLite_Dev-003B57?style=flat-square&logo=sqlite&logoColor=white) |
+| **DevOps & Testing** | ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white) ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white) ![Pytest](https://img.shields.io/badge/Pytest-0A9EDC?style=flat-square&logo=pytest&logoColor=white) ![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=flat-square&logo=vitest&logoColor=white) |
 
 </div>
 
-Welcome to **ECSoC 2026** at Open-Source Contribution Atelier! Please review our program guides before contributing:
-- 📊 **[Official ECSoC '26 Leaderboard](LEADERBOARD.md)**
-- 📌 **[Participation & Claiming Guide (Issue #2498)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/issues/2498)**
-- 📌 **[PR Rules & Security Policy (Issue #2499)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/issues/2499)**
-- 📌 **[Rewards & Tiers (Issue #2500)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/issues/2500)**
+---
+
+## ✨ Key Features
+
+- 🎯 **Gamified Learning Paths**: Progress through bite-sized modules covering Git basics, branching strategies, PR etiquette, and issue tracking.
+- 💻 **Interactive In-Browser Terminal Sandbox**: Practice real Git commands in a sandboxed, zero-risk environment with instant output verification.
+- 🎴 **Spaced Repetition Flashcards**: Master open-source terminology, CLI flags, and workflow best practices using an SM-2 algorithmic memory engine.
+- 🤝 **Mentorship & Peer Code Review**: Request guidance from experienced mentors or review peer PR submissions to earn XP and badges.
+- 📊 **Streak & Burnout Analytics**: Stay motivated with daily streak tracking, XP leaderboards, milestone achievements, and health checks.
+- 🎓 **Verified Printable Certificates**: Earn a cryptographically verifiable A4 completion certificate upon mastering the core curriculum.
+- 💬 **Live Community Collaboration**: Connect with fellow learners via real-time WebSocket chat and collaborative session rooms.
 
 ---
 
-## ✨ Features
+## ⚡ Quick Start & Local Setup
 
-| Feature                         | Description                                                                |
-| ------------------------------- | -------------------------------------------------------------------------- |
-| 🎮 **Gamified Curriculum**      | 8 core modules going from mindset basics to advanced conflict resolution   |
-| 📝 **Interactive Quizzes**      | Multiple-choice testing dashboards with instant feedback                   |
-| 🏅 **Badges Cabinet**           | Earn milestone rewards mapping directly to module progress                 |
-| 📜 **Printable Certificates**   | Gorgeous A4 neobrutalist certificate with verification hashes              |
-| 🏆 **Hall of Fame**             | Cohort stats, active streak calendars, and GitHub contributor recognition  |
-| 📖 **Markdown-Driven Content**  | Lessons are parsed dynamically — adding content requires zero code changes |
-| 💬 **Real-Time Community Chat** | End-to-end encrypted WebSocket chat with typing indicators                 |
-| 👥 **Peer Review System**       | Submit code for review and earn XP by reviewing others                     |
-| 🔍 **Interactive Sandbox**      | Git terminal emulator with autocomplete and command replay                 |
+### 🐳 Option A: Running with Docker (Recommended)
 
----
-
-## 🛠️ Technical Stack
-
-<table>
-<tr>
-<td align="center" width="50%">
-
-### ⚡ Frontend
-
-React 19 · TypeScript · Vite · Tailwind CSS<br/>
-React Router 7 · TanStack React Query · Redux Toolkit
-
-</td>
-<td align="center" width="50%">
-
-### 🔧 Backend
-
-Django 5.0 · Django REST Framework · Simple JWT<br/>
-Django Channels · Celery · Redis · PostgreSQL
-
-</td>
-</tr>
-<tr>
-<td align="center">
-
-### ☁️ Deployment
-
-Vercel (Frontend) · Hugging Face (Backend API)<br/>
-Neon (PostgreSQL) · Upstash (Redis)
-
-</td>
-<td align="center">
-
-### 🧪 Testing & CI
-
-Vitest · Playwright · Pytest<br/>
-GitHub Actions CI · ESLint · Prettier · Black
-
-</td>
-</tr>
-</table>
-
----
-
-## 🚀 Quick Start (Local Development)
-
-### 1. Setup Environment
-
-You can automatically copy all missing `.env` and `docker-compose.override.yml` files using Make:
+Spin up the entire stack (Postgres, Redis, Django API, Celery Worker, and Vite Frontend) in seconds:
 
 ```bash
-make setup
-# or: make env
-```
+# 1. Clone the repository
+git clone https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier.git
+cd Open-Source-Contribution-Atelier
 
-Alternatively, copy them manually:
-
-```bash
+# 2. Copy configuration environment files
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
-cp docker-compose.override.yml.example docker-compose.override.yml
+
+# 3. Boot the stack with Docker Compose
+docker compose up --build
 ```
 
-> **Windows users:** If `cp` is unavailable in PowerShell, use `make setup` or:
->
-> ```powershell
-> Copy-Item backend/.env.example backend/.env
-> Copy-Item frontend/.env.example frontend/.env
-> Copy-Item docker-compose.override.yml.example docker-compose.override.yml
-> ```
+- 🌐 **Frontend SPA**: `http://localhost:5173`
+- ⚙️ **Backend REST API**: `http://localhost:8000/api/`
 
-> [!WARNING]
-> **Google OAuth login requires a valid `VITE_GOOGLE_CLIENT_ID` in `frontend/.env`.**
-> Create credentials in the [Google Cloud Console](https://console.cloud.google.com/) with authorized redirect URIs set to `http://localhost:5173`.
+---
 
-> [!WARNING]
-> **GitHub OAuth login requires GitHub OAuth credentials.**
->
-> 1. Go to [GitHub OAuth Apps Settings](https://github.com/settings/developers)
-> 2. Click "OAuth Apps" → "New OAuth App"
-> 3. Fill in:
->    - **Application name**: `Open Source Contribution Atelier`
->    - **Homepage URL**: `http://localhost:8000`
->    - **Authorization callback URL**: `http://localhost:8000/accounts/github/login/callback/`
-> 4. Copy `Client ID` and `Client Secret` to `backend/.env`:
->    ```
->    GITHUB_CLIENT_ID=your_client_id
->    GITHUB_CLIENT_SECRET=your_client_secret
->    ```
+### 💻 Option B: Manual Local Development Setup
 
-### 2. Run the Backend (Django)
+#### 1. Backend (Django REST API)
 
-Ensure Python 3.9+ is installed.
+> Requirements: **Python 3.9+**
 
 ```bash
 cd backend
+
+# Create and activate virtual environment
 python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# macOS/Linux
-source .venv/bin/activate
-
-# Windows PowerShell
-.\.venv\Scripts\Activate.ps1
-
-# Windows Command Prompt
-.\.venv\Scripts\activate.bat
-
+# Install dependencies
 pip install -r requirements.txt
 
-# Setup the local SQLite database
+# Run migrations and seed curriculum database
 python manage.py migrate
 python manage.py seed_lessons
 python manage.py seed_dashboard
 
-# Start the server
+# Start Django development server
 python manage.py runserver
 ```
 
-- API: `http://localhost:8000/api/`
+- API Endpoint: `http://localhost:8000/api/`
 
-### 3. Run the Frontend (React + Vite)
+#### 2. Frontend (React 19 + Vite)
 
-Ensure you are using **Node 20+**.
+> Requirements: **Node.js 20+**
 
 ```bash
 cd frontend
+
+# Install dependencies
 npm install
+
+# Start Vite hot-reloading development server
 npm run dev
 ```
 
-- SPA: `http://localhost:5173/`
+- Web App: `http://localhost:5173`
 
 ---
 
-## 🐳 Docker (Full Stack)
+## 🧪 Running Tests & Quality Checks
 
-Spin up the entire stack (Postgres, Redis, Django backend, Celery worker, Vite frontend) with a single command:
+Before pushing changes, run the test suites to ensure everything is green:
 
 ```bash
-docker compose up --build
+# Backend Pytest Suite
+cd backend
+python -m pytest
+
+# Frontend Vitest Suite
+cd frontend
+npm run test
+
+# Frontend ESLint & Formatting
+npm run lint
+npm run format:check
 ```
 
-> [!TIP]
-> **Developing inside Docker with live hot-reloading?**
-> Copy `docker-compose.override.yml.example` to `docker-compose.override.yml` to enable volume mounts, Vite HMR, and Django autoreloader inside containers.
-> See the complete **[Docker Compose Hot-Reload Guide](./docs/DOCKER_HOT_RELOAD.md)** for details.
+---
 
-This boots:
+## 🏆 ECSoC 2026 Program & Leaderboard
 
-| Service           | URL                          | Description                                       |
-| ----------------- | ---------------------------- | ------------------------------------------------- |
-| **postgres**      | `localhost:5432`             | Database                                          |
-| **redis**         | `localhost:6379`             | Celery broker + Channels cache                    |
-| **backend**       | `http://localhost:8000/api/` | Django REST API with hot-reload                   |
-| **celery_worker** | —                            | Background task processor for email notifications |
-| **frontend**      | `http://localhost:5173/`     | Vite dev server with hot-reload                   |
+Participating in **ECSoC 2026**? We are excited to have you!
 
-If you hit any setup issues, see [TROUBLESHOOTING.md](./docs/TROUBLESHOOTING.md).
-
-> [!TIP]
-> The Celery worker mounts the codebase as a volume (`./services/notifications_worker:/app`),
-> so code changes take effect immediately without rebuilding the image.
-> Restart the worker with `docker compose restart celery_worker` after editing `worker.py`.
-
-### Environment Variables
-
-The Docker backend reads these environment variables automatically. You can override them in `docker-compose.yml` or via a `.env` file:
-
-```bash
-cp backend/.env.example backend/.env
-```
-
-> **Windows users:** If `cp` is unavailable in PowerShell, use:
->
-> ```powershell
-> Copy-Item backend/.env.example backend/.env
-> ```
-
-Key variables for Docker:
-
-| Variable       | Default                                            | Notes            |
-| -------------- | -------------------------------------------------- | ---------------- |
-| `DATABASE_URL` | `postgres://atelier:atelier@postgres:5432/atelier` | Auto-configured  |
-| `REDIS_URL`    | `redis://redis:6379/0`                             | Auto-configured  |
-| `DEBUG`        | `True`                                             | Development mode |
+- 📊 **[Official ECSoC '26 Leaderboard](LEADERBOARD.md)**
+- 📌 **[Participation & Issue Claiming Guide](.github/CONTRIBUTING.md)**
+- 📌 **[Curriculum & Content Guide](docs/CONTENT_GUIDE.md)**
 
 ---
 
-## ☁️ Deployment (Vercel)
+## 🤝 Contributing
 
-This project is fully configured to be deployed on **Vercel** as a monorepo.
+Contributions of all kinds are welcome! Whether you are fixing a typo, adding a new lesson, improving UI accessibility, or squashing bugs:
 
-1. Import the repository into your Vercel dashboard.
-2. Vercel will automatically detect the configuration in `vercel.json` and deploy both the Vite frontend and the Django backend as a serverless API.
-3. Ensure you add all backend environment variables (from `backend/.env.example`) into your Vercel project settings.
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feat/amazing-feature`)
+3. Commit your Changes (`git commit -m 'feat: add amazing feature'`)
+4. Push to the Branch (`git push origin feat/amazing-feature`)
+5. Open a Pull Request
 
----
-
-## 🧑‍💻 Contributing
-
-We welcome contributions of all levels and long-term participation!
-
-> [!IMPORTANT]
-> **Before requesting an issue**, please read the pinned guide issues on the [Issues tab](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/issues) to understand the keyword assignment rules, CI checks, and the 3-day stale policy.
-
-### Quick Links
-
-| Resource                                            | Description                                                          |
-| --------------------------------------------------- | -------------------------------------------------------------------- |
-| 📋 [CONTRIBUTING.md](.github/CONTRIBUTING.md)       | Forking, branching guidelines, commit conventions, and review cycles |
-| 💬 [CODE_OF_CONDUCT.md](.github/CODE_OF_CONDUCT.md) | Community participation guidelines                                   |
-| 🔒 [SECURITY.md](.github/SECURITY.md)               | Responsible vulnerability disclosure policy                          |
-| 📖 [Content Guide](docs/CONTENT_GUIDE.md)           | How to add lessons, modules, and quizzes (zero code changes!)        |
+Please review our [Contributing Guidelines](.github/CONTRIBUTING.md) and [Code of Conduct](.github/CODE_OF_CONDUCT.md).
 
 ---
 
-## 🤝 Contributors
+## 💜 Community & Contributors
 
-Thanks to all the amazing people who have contributed to this project! 💜
+A huge thank you to everyone who has contributed to making this project better for learners worldwide!
 
 <a href="https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=nandinigoyaldev/Open-Source-Contribution-Atelier&max=100&columns=12" />
 </a>
 
-<br/>
-
-> Want to see your avatar here? Check the [Contributing Guide](.github/CONTRIBUTING.md) and pick an issue to get started!
-
 ---
 
 <div align="center">
 
-### 💖 Support the Project
+### 🌟 If you find this project inspiring, please give it a star!
 
-If you find this project helpful, please consider giving it a ⭐ star on GitHub!
-
-[![Star this repo](https://img.shields.io/badge/⭐_Star_this_Repo-FFD700?style=for-the-badge&logo=github&logoColor=black)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier)
-[![Fork this repo](https://img.shields.io/badge/🍴_Fork_this_Repo-45B7D1?style=for-the-badge&logo=github&logoColor=white)](https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier/fork)
-[![Sponsor](https://img.shields.io/badge/💖_Sponsor-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/nandinigoyaldev)
-
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:FF6B6B,50:4ECDC4,100:45B7D1&height=100&section=footer" width="100%" />
+Designed and built with ❤️ by the open-source community.
 
 </div>
