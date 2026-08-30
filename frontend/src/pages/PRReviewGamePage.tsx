@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { CodeDiffViewer } from "../components/ui/CodeDiffViewer";
-import { Check, X, MessageSquare, Trophy } from "lucide-react";
+import { Check, X, MessageSquare, Trophy, AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
 import { FOCUS_RING } from "../lib/a11yFocus";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 
 const LEVELS = [
   {
@@ -42,6 +43,24 @@ export function PRReviewGamePage() {
   const [currentLevel, setCurrentLevel] = useState(0);
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
+  const [reviewDraft, setReviewDraft] = useState("");
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+
+  // Warn user before navigating away or reloading if unsaved review draft exists
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (reviewDraft.trim().length > 0) {
+        e.preventDefault();
+        e.returnValue = "You have an unsaved review draft. Are you sure you want to leave?";
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [reviewDraft]);
 
   const handleAction = (action: "approve" | "request_changes" | "comment") => {
     const level = LEVELS[currentLevel];
@@ -56,6 +75,8 @@ export function PRReviewGamePage() {
       );
     }
 
+    setReviewDraft(""); // Clear draft on successful action
+
     if (currentLevel < LEVELS.length - 1) {
       setCurrentLevel(currentLevel + 1);
     } else {
@@ -63,11 +84,22 @@ export function PRReviewGamePage() {
     }
   };
 
+  const handleResetClick = () => {
+    if (reviewDraft.trim().length > 0) {
+      setShowDiscardConfirm(true);
+    } else {
+      resetGame();
+    }
+  };
+
   const resetGame = () => {
     setCurrentLevel(0);
     setScore(0);
     setGameOver(false);
+    setReviewDraft("");
+    setShowDiscardConfirm(false);
   };
+
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6 flex flex-col min-h-[calc(100vh-64px)]">
@@ -109,6 +141,32 @@ export function PRReviewGamePage() {
             />
           </div>
 
+          <div className="bg-white dark:bg-[#1f1c18] border-2 border-black dark:border-[#2e2924] rounded-xl p-4 shadow-sm flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <label
+                htmlFor="review-draft-input"
+                className="text-sm font-bold text-gray-800 dark:text-[#f0ebe2] flex items-center gap-1.5"
+              >
+                <MessageSquare size={16} />
+                <span>Review Draft Notes (optional)</span>
+              </label>
+              {reviewDraft.trim().length > 0 && (
+                <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
+                  <AlertTriangle size={12} />
+                  <span>Unsaved Draft</span>
+                </span>
+              )}
+            </div>
+            <textarea
+              id="review-draft-input"
+              value={reviewDraft}
+              onChange={(e) => setReviewDraft(e.target.value)}
+              placeholder="Write inline rationale or review notes before submitting your decision..."
+              rows={2}
+              className={`w-full p-2.5 text-xs font-mono bg-surface-low dark:bg-[#151411] border-2 border-black dark:border-[#2e2924] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${FOCUS_RING}`}
+            />
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <button
               type="button"
@@ -146,6 +204,16 @@ export function PRReviewGamePage() {
               </span>
             </button>
           </div>
+
+          <div className="flex justify-end pt-2">
+            <button
+              type="button"
+              onClick={handleResetClick}
+              className="text-xs font-bold text-gray-500 hover:text-red-600 underline"
+            >
+              Reset Challenge
+            </button>
+          </div>
         </div>
       ) : (
         <div className="flex-1 flex flex-col items-center justify-center bg-white dark:bg-[#1f1c18] border-4 border-black dark:border-[#2e2924] rounded-2xl p-12 shadow-card text-center gap-6">
@@ -167,6 +235,18 @@ export function PRReviewGamePage() {
           </button>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={showDiscardConfirm}
+        title="Discard Unsaved Review Draft?"
+        message="You have typed notes in your review draft. Resetting the challenge will discard your unsaved work. Are you sure you want to proceed?"
+        confirmText="Discard Draft"
+        cancelText="Keep Editing"
+        type="warning"
+        onConfirm={resetGame}
+        onCancel={() => setShowDiscardConfirm(false)}
+      />
     </div>
   );
 }
+

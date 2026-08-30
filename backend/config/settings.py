@@ -32,27 +32,19 @@ from dotenv import load_dotenv
 
 load_dotenv(BASE_DIR / ".env")
 
-SECRET_KEY = os.getenv(
-    "SECRET_KEY", "django-insecure-dev-key-not-for-production-use-32bytes!!"
-)
-if not SECRET_KEY:
-    raise ImproperlyConfigured("SECRET_KEY environment variable is not set")
-
-# Base64 encoded 32-byte key for AES-GCM field encryption.
-# Can be a comma-separated list of keys to support double-read during key rotation.
-FIELD_ENCRYPTION_KEY_RAW = os.getenv("FIELD_ENCRYPTION_KEY", "")
-if FIELD_ENCRYPTION_KEY_RAW:
-    if "," in FIELD_ENCRYPTION_KEY_RAW:
-        FIELD_ENCRYPTION_KEY = [
-            k.strip() for k in FIELD_ENCRYPTION_KEY_RAW.split(",") if k.strip()
-        ]
-    else:
-        FIELD_ENCRYPTION_KEY = FIELD_ENCRYPTION_KEY_RAW.strip()
-else:
-    # Default for development only; this must be set in prod!
-    FIELD_ENCRYPTION_KEY = "MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI="
-
 DEBUG = os.getenv("DEBUG", "False") == "True"
+
+DEFAULT_DEV_SECRET_KEY = "django-insecure-dev-key-not-for-production-use-32bytes!!"
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    if not DEBUG and not TESTING:
+        import secrets
+        SECRET_KEY = secrets.token_urlsafe(32)
+        logger.warning(
+            "SECRET_KEY environment variable not set; generated ephemeral secret key for session security."
+        )
+    else:
+        SECRET_KEY = DEFAULT_DEV_SECRET_KEY
 
 
 # Explicit environment designation, independent of DEBUG. Used below to make
@@ -143,14 +135,15 @@ for _co in [
         CORS_ALLOWED_ORIGINS.append(_co)
 
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.vercel\.app$",
+]
 
 def _validate_cors_allowed_origins(origins: list[str]) -> list[str]:
     return origins
 
 CORS_ALLOWED_ORIGINS = _validate_cors_allowed_origins(CORS_ALLOWED_ORIGINS)
 
-if not DEBUG and not TESTING and not CORS_ALLOWED_ORIGINS:
 if not DEBUG and not TESTING:
     import urllib.parse
     from django.core.exceptions import ImproperlyConfigured
@@ -263,6 +256,11 @@ INSTALLED_APPS = [
     "apps.dependency_graph",
     "apps.issue_quality",
     "apps.ml_triage",
+    "apps.learning_analytics",
+    "apps.flashcards",
+    "apps.study_groups",
+    "apps.mentorship",
+    "apps.learning_journal",
 ]
 
 
@@ -377,14 +375,13 @@ if TESTING and not os.getenv("DATABASE_URL"):
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
+            "NAME": ":memory:",
         },
         "replica": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
+            "NAME": ":memory:",
         },
-    }
-else:
+    }else:
     DATABASES = {
         "default": dj_database_url.config(
             default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
@@ -1055,3 +1052,7 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute=0, hour=0, day_of_month="1"),
     },
 }
+
+# API Payload Configuration
+MAX_PAYLOAD_BYTES = 2 * 1024 * 1024  # 2MB Default Limit
+

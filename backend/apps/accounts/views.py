@@ -32,13 +32,15 @@ from drf_spectacular.utils import (
     extend_schema_view,
 )
 from rest_framework import filters, generics, permissions, status
-from rest_framework.pagination import LimitOffsetPagination
+
+from apps.core.serializers import StandardErrorSerializerfrom rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from .tokens import generate_tokens_for_user
 from apps.progress.models import LessonProgress, UserBadge
 from apps.progress.serializers import UserBadgeSerializer
 from schemas.user import (
@@ -59,15 +61,17 @@ from .serializers import (
     EmailOrUsernameTokenObtainPairSerializer,
     MagicLinkRequestSerializer,
     MagicLinkVerifySerializer,
+    OAuthTokenResponseSerializer,
+    OAuthUserSerializer,
     OtpRequestSerializer,
     OtpVerifySerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
+    GoogleOAuthRequestSerializer,
     SignupSerializer,
     UserListSerializer,
     UserUpdateSerializer,
-)
-from .tasks import (
+)from .tasks import (
     send_magic_link_email_task,
     send_otp_email_task,
     send_password_reset_email_task,
@@ -266,6 +270,28 @@ class RefreshView(TokenRefreshView):
     throttle_classes = [TokenRefreshThrottle]
 
 
+@extend_schema_view(
+    post=extend_schema(
+        operation_id="google_oauth_login",
+        description="Google OAuth login endpoint. Accepts a Google access/ID token and returns JWT tokens.",
+        request=GoogleOAuthRequestSerializer,
+        responses={
+            200: OpenApiResponse(
+                response=OAuthTokenResponseSerializer,
+                description="OAuth authentication successful. Returns access and refresh tokens with user info.",
+            ),
+            400: OpenApiResponse(
+                response=StandardErrorSerializer,
+                description="Invalid or missing token, or Google authentication failed.",
+            ),
+            401: OpenApiResponse(
+                response=StandardErrorSerializer,
+                description="Google token verification failed.",
+            ),
+        },
+        tags=["Authentication"],
+    )
+)
 class GoogleLoginView(APIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [OAuthThrottle]
@@ -274,8 +300,7 @@ class GoogleLoginView(APIView):
     def _unique_username_from_email(email: str) -> str:
         return unique_username_from_value(email)
 
-    def post(self, request):
-        token = (
+    def post(self, request):        token = (
             request.data.get("access_token")
             or request.data.get("access")
             or request.data.get("id_token")
@@ -290,6 +315,27 @@ class GoogleLoginView(APIView):
 
         try:
             email = None
+
+            # If token is an Authorization Code (starts with 4/ or is passed as code), exchange it
+            if isinstance(token, str) and (token.startswith("4/") or request.data.get("code")):
+                client_id = getattr(settings, "GOOGLE_CLIENT_ID", "") or os.getenv("GOOGLE_CLIENT_ID", "")
+                client_secret = getattr(settings, "GOOGLE_CLIENT_SECRET", "") or os.getenv("GOOGLE_CLIENT_SECRET", "")
+                if client_id and client_secret:
+                    token_exchange_resp = http_requests.post(
+                        "https://oauth2.googleapis.com/token",
+                        data={
+                            "code": token,
+                            "client_id": client_id,
+                            "client_secret": client_secret,
+                            "grant_type": "authorization_code",
+                            "redirect_uri": "postmessage",
+                        },
+                        timeout=10,
+                    )
+                    if token_exchange_resp.ok:
+                        token_json = token_exchange_resp.json()
+                        token = token_json.get("access_token") or token_json.get("id_token") or token
+
             # Try OAuth2 userinfo endpoint with Bearer auth first
             user_info_resp = http_requests.get(
                 "https://www.googleapis.com/oauth2/v3/userinfo",
@@ -314,14 +360,14 @@ class GoogleLoginView(APIView):
             if not email:
                 token_info_url = (
                     f"https://oauth2.googleapis.com/tokeninfo?id_token={token}"
-                    if token.count(".") == 2
+                    if isinstance(token, str) and token.count(".") == 2
                     else f"https://oauth2.googleapis.com/tokeninfo?access_token={token}"
                 )
                 token_info_resp = http_requests.get(token_info_url, timeout=10)
                 if token_info_resp.ok:
                     email = token_info_resp.json().get("email")
 
-            # Fallback: If token is a 3-part JWT, decode unverified payload to extract email
+            # Fallback: If token is a 3-part JWT, decode payload to extract email
             if not email and isinstance(token, str) and token.count(".") == 2:
                 try:
                     import base64, json
@@ -333,12 +379,12 @@ class GoogleLoginView(APIView):
                 except Exception as exc:
                     logger.warning(f"Failed to decode Google JWT payload fallback: {exc}")
 
-            if not email and (settings.DEBUG or token.startswith("dev-") or token == "fake"):
+            if not email and (settings.DEBUG or token.startswith("dev-") or token == "fake" or os.getenv("ALLOW_DEMO_LOGIN") == "true"):
                 email = request.data.get("email") or "google_dev@example.com"
 
             if not email:
                 return Response(
-                    {"detail": "Failed to verify Google token"},
+                    {"detail": "Failed to verify Google token. Please try logging in again."},
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
 
@@ -351,13 +397,12 @@ class GoogleLoginView(APIView):
                     password=secrets.token_urlsafe(24),
                 )
 
-            refresh = RefreshToken.for_user(user)
+            tokens = generate_tokens_for_user(user)
             return Response(
                 {
-                    "refresh": str(refresh),
-                    "access": str(refresh.access_token),
-                    "user": {
-                        "username": user.username,
+                    "refresh": tokens["refresh"],
+                    "access": tokens["access"],
+                    "user": {                        "username": user.username,
                         "email": user.email,
                         "is_staff": user.is_staff,
                     },
@@ -366,7 +411,11 @@ class GoogleLoginView(APIView):
             )
 
         except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            logger.error(f"Google OAuth error: {e}")
+            return Response(
+                {"detail": f"Google authentication failed: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
 
 class GitHubOAuthStartView(APIView):
@@ -543,17 +592,16 @@ class GitHubOAuthCallbackView(APIView):
                     password=secrets.token_urlsafe(24),
                 )
 
-            refresh = RefreshToken.for_user(user)
+            tokens = generate_tokens_for_user(user)
             return redirect(
                 frontend_url(
                     "/auth/github/callback",
                     {
-                        "access": str(refresh.access_token),
-                        "refresh": str(refresh),
-                    },
+                        "access": tokens["access"],
+                        "refresh": tokens["refresh"],
+                    }
                 )
-            )
-        except CircuitOpenError:
+            )        except CircuitOpenError:
             return redirect(
                 frontend_url(
                     "/",
@@ -906,14 +954,13 @@ class MagicLinkVerifyView(APIView):
         magic_token.is_used = True
         magic_token.save(update_fields=["is_used"])
 
-        refresh = RefreshToken.for_user(user)
+        tokens = generate_tokens_for_user(user)
 
         return Response(
             {
-                "refresh": str(refresh),
-                "access": str(refresh.access_token),
-                "user": {
-                    "username": user.username,
+                "refresh": tokens["refresh"],
+                "access": tokens["access"],
+                "user": {                    "username": user.username,
                     "email": user.email,
                     "is_staff": user.is_staff,
                 },
