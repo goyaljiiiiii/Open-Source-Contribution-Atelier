@@ -8,9 +8,12 @@ from .models import (
     DailyLearningMetric,
     LearningGoal,
     LearningInsight,
+    LearningPath,
+    LearningPathStep,
     LearningSession,
     SessionSkillTag,
     SkillTag,
+    UserPathProgress,
     UserSkillProfile,
 )
 
@@ -112,3 +115,57 @@ class LearningGoalAdmin(admin.ModelAdmin):
     list_filter = ["goal_type", "is_completed", "is_archived"]
     search_fields = ["user__username", "title"]
     raw_id_fields = ["user", "skill_tag"]
+
+
+@admin.register(LearningPath)
+class LearningPathAdmin(admin.ModelAdmin):
+    list_display = [
+        "id",
+        "title",
+        "user",
+        "difficulty",
+        "status",
+        "total_steps",
+        "completed_steps",
+        "priority_score",
+        "xp_reward",
+        "generated_at",
+    ]
+    list_filter = ["status", "difficulty"]
+    search_fields = ["user__username", "title"]
+    raw_id_fields = ["user"]
+    readonly_fields = ["generated_at", "updated_at"]
+    filter_horizontal = ["target_skills"]
+
+
+@admin.register(LearningPathStep)
+class LearningPathStepAdmin(admin.ModelAdmin):
+    list_display = [
+        "id",
+        "path",
+        "step_number",
+        "step_type",
+        "status",
+        "title",
+        "estimated_minutes",
+        "xp_reward",
+        "is_milestone",
+    ]
+    list_filter = ["step_type", "status", "is_milestone"]
+    search_fields = ["title", "path__title"]
+    raw_id_fields = ["path", "skill_tag"]
+
+
+@admin.register(UserPathProgress)
+class UserPathProgressAdmin(admin.ModelAdmin):
+    list_display = [
+        "user",
+        "date",
+        "active_path_count",
+        "steps_completed_today",
+        "xp_earned_today",
+        "total_path_minutes_today",
+    ]
+    list_filter = ["date"]
+    search_fields = ["user__username"]
+    raw_id_fields = ["user"]
