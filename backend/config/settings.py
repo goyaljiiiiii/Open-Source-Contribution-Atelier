@@ -370,11 +370,11 @@ if TESTING and not os.getenv("DATABASE_URL"):
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": ":memory:",
+            "NAME": BASE_DIR / "db.sqlite3",
         },
         "replica": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": ":memory:",
+            "NAME": BASE_DIR / "db.sqlite3",
         },
     }
 else:
@@ -1046,5 +1046,9 @@ CELERY_BEAT_SCHEDULE = {
     "archive-monthly-leaderboard": {
         "task": "apps.progress.tasks.archive_monthly_leaderboard",
         "schedule": crontab(minute=0, hour=0, day_of_month="1"),
+    },
+    "cleanup-expired-sandbox-sessions": {
+        "task": "apps.sandbox.tasks.cleanup_expired_sandbox_sessions",
+        "schedule": crontab(minute=0, hour=3),
     },
 }

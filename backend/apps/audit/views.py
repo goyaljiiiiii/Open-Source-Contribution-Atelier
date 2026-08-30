@@ -116,15 +116,16 @@ class AuditEventListView(generics.ListAPIView):
 
         start_date = self.request.query_params.get("start_date")
         if start_date:
-            dt = parse_iso_datetime(start_date)
+            dt = parse_datetime(start_date)
             if dt:
                 queryset = queryset.filter(created_at__gte=dt)
 
         end_date = self.request.query_params.get("end_date")
         if end_date:
-            dt = parse_iso_datetime(end_date)
+            dt = parse_datetime(end_date)
             if dt:
                 queryset = queryset.filter(created_at__lte=dt)
+
         return queryset
 
     def list(self, request, *args, **kwargs):
