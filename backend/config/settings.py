@@ -238,6 +238,7 @@ INSTALLED_APPS = [
     "apps.gamification",
     "apps.ai_tutor",
     "apps.project_health",
+    "apps.flashcards",
     "django_q",
     "apps.monitoring",
     "waffle",
@@ -262,6 +263,10 @@ INSTALLED_APPS = [
     "apps.dependency_graph",
     "apps.issue_quality",
     "apps.ml_triage",
+    "apps.learning_analytics",
+    "apps.learning_journal",
+    "apps.study_groups",
+    "apps.mentorship",
 ]
 
 

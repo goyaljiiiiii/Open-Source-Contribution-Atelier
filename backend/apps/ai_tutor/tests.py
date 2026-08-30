@@ -91,6 +91,8 @@ class AiTutorTests(TestCase):
         }
     )
     def test_ask_view_is_rate_limited_per_user(self):
+        from django.core.cache import cache
+        cache.clear()
         with patch.object(AiTutorService, "get_response", return_value="answer"):
             first = self.client.post(
                 "/api/ai/tutor/ask/", {"question": "First?"}

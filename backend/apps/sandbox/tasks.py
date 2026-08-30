@@ -27,3 +27,6 @@ def cleanup_stale_sandbox_sessions():
 
     if cleaned_count > 0:
         logger.info(f"Cleaned up {cleaned_count} stale sandbox sessions.")
+
+
+cleanup_expired_sandbox_sessions = cleanup_stale_sandbox_sessions

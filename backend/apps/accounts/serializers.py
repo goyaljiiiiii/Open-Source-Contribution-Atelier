@@ -425,6 +425,8 @@ class MagicLinkRequestSerializer(serializers.Serializer):
 
     email = serializers.EmailField()
 def validate_strong_password(value):
+    if len(value) > 128:
+        raise serializers.ValidationError("Password cannot exceed 128 characters.")
     if not re.search(r"\d", value):
         raise serializers.ValidationError("Password must contain at least one number.")
     if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", value):
@@ -443,7 +445,7 @@ def validate_strong_password(value):
 
 
 class SignupSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=8)
+    password = serializers.CharField(write_only=True, min_length=8, max_length=128)
 
     class Meta:
         model = User
@@ -614,10 +616,24 @@ class UserListSerializer(serializers.ModelSerializer):
         )
 
     def get_global_rank(self, obj):
+        if hasattr(obj, "global_rank") and obj.global_rank is not None:
+            return obj.global_rank
+        if "bulk_global_ranks" in self.context:
+            return self.context["bulk_global_ranks"].get(obj.id, 1)
         from apps.progress.models import XPEvent
         from django.db.models import Sum
 
-        return getattr(obj, "global_rank", 1)
+        user_xp = (
+            XPEvent.objects.filter(user=obj).aggregate(total=Sum("xp_delta"))["total"]
+            or 0
+        )
+        higher_count = (
+            XPEvent.objects.values("user")
+            .annotate(total=Sum("xp_delta"))
+            .filter(total__gt=user_xp)
+            .count()
+        )
+        return higher_count + 1
 
     def get_percentile_standing(self, obj):
         from apps.progress.models import XPEvent
@@ -692,96 +708,6 @@ class UserListSerializer(serializers.ModelSerializer):
         return ""
 
 
-class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
-    """Allow login with either username or email in the username field, plus optional remember me lifetime and 2FA TOTP code validation."""
-
-    remember = serializers.BooleanField(required=False, default=False)
-    totp_code = serializers.CharField(required=False, allow_blank=True, write_only=True)
-
-    def validate(self, attrs):
-        username_key = self.username_field
-        identifier = attrs.get(username_key, "")
-
-        if isinstance(identifier, str) and "@" in identifier:
-            user = User.objects.filter(email__iexact=identifier.strip()).first()
-            if user:
-                attrs = {**attrs, username_key: user.username}
-
-        remember_me = self.initial_data.get("remember", False) or attrs.get("remember", False)
-
-        result = super().validate(attrs)
-
-        # Check optional 2FA TOTP enforcement
-        if hasattr(self.user, "totp_device") and self.user.totp_device.is_enabled:
-            totp_code = attrs.get("totp_code") or self.initial_data.get("totp_code")
-            if not totp_code:
-                raise AuthenticationFailed(
-                    {
-                        "requires_2fa": True,
-                        "message": "Two-factor authentication code required.",
-                    },
-                    code="2fa_required",
-                )
-
-            from .totp import verify_and_consume_backup_code, verify_totp_code
-
-            device = self.user.totp_device
-            is_valid_totp = verify_totp_code(device.secret, totp_code)
-            is_valid_backup = (
-                verify_and_consume_backup_code(device, totp_code)
-                if not is_valid_totp
-                else False
-            )
-
-            if not is_valid_totp and not is_valid_backup:
-                raise AuthenticationFailed(
-                    {"totp_code": "Invalid 2FA authentication code or recovery code."},
-                    code="invalid_2fa_code",
-                )
-
-            device.last_used_at = timezone.now()
-            device.save(update_fields=["last_used_at"])
-
-        if (
-            hasattr(self.user, "user_profile")
-            and self.user.user_profile.last_password_change
-        ):
-            if timezone.now() > self.user.user_profile.last_password_change + timedelta(
-                days=90
-            ):
-                raise AuthenticationFailed(
-                    "Password has expired. Please reset your password.",
-                    code="password_expired",
-                )
-
-        request = self.context.get("request")
-        ip_address = None
-        user_agent = ""
-        if request:
-            ip_address = request.META.get("REMOTE_ADDR")
-            user_agent = request.META.get("HTTP_USER_AGENT", "")
-
-        from .models import UserSession
-
-        session = UserSession.objects.create(
-            user=self.user, ip_address=ip_address, user_agent=user_agent
-        )
-
-        refresh = self.get_token(self.user)
-        if remember_me:
-            refresh.set_exp(lifetime=timedelta(days=30))
-            refresh.access_token.set_exp(lifetime=timedelta(days=7))
-
-        refresh["session_id"] = str(session.session_id)
-
-        access = refresh.access_token
-        access["session_id"] = str(session.session_id)
-
-        result["refresh"] = str(refresh)
-        result["access"] = str(access)
-        result["remember"] = bool(remember_me)
-
-        return result
 
 
 class TwoFactorVerifySerializer(serializers.Serializer):

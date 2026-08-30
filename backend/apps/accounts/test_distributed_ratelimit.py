@@ -51,10 +51,17 @@ def test_local_fallback_when_backend_local(settings):
     """
     Verify fallback to local cache throttling when RATE_LIMIT_BACKEND = 'local'.
     """
+    from django.core.cache import cache
+    cache.clear()
     settings.RATE_LIMIT_BACKEND = "local"
+    settings.REST_FRAMEWORK = {
+        **settings.REST_FRAMEWORK,
+        "DEFAULT_THROTTLE_RATES": {
+            **settings.REST_FRAMEWORK.get("DEFAULT_THROTTLE_RATES", {}),
+            "user": "5/minute",
+        },
+    }
     throttle = UserRateThrottle()
-    throttle.rate = "5/minute"
-    throttle.num_requests, throttle.duration = 5, 60
 
     class DummyRequest:
         user = type("User", (), {"is_authenticated": True, "pk": 9999})()
