@@ -138,28 +138,3 @@ class TestCeleryMonitoring:
         results = res.data.get("results") if isinstance(res.data, dict) else res.data
         assert len(results) == 1
         assert results[0]["task_name"] == "sync_repo"
-
-    def test_task_runs_exception_class_filtering(self):
-        self.client.force_authenticate(user=self.admin_user)
-        TaskRun.objects.create(
-            task_id="task-333",
-            task_name="export_pdf",
-            status="FAILURE",
-            error_message="ValueError: invalid PDF format",
-        )
-        TaskRun.objects.create(
-            task_id="task-444",
-            task_name="sync_git",
-            status="FAILURE",
-            error_message="ConnectionError: network unreachable",
-        )
-
-        url = reverse("celery-task-runs-list")
-
-        # Substring case-insensitive filter 'valueerror'
-        res = self.client.get(f"{url}?exception_class=valueerror")
-        assert res.status_code == status.HTTP_200_OK
-        results = res.data.get("results") if isinstance(res.data, dict) else res.data
-        assert len(results) == 1
-        assert results[0]["task_id"] == "task-333"
-

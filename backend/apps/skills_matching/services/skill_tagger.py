@@ -7,7 +7,7 @@ import re
 from typing import Any, Dict, List, Set
 
 from apps.ml_triage.models import Issue
-from apps.skills_matching.models import IssueSkillTag, SkillTag
+from apps.skill_matching.models import IssueSkillTag, SkillTag
 
 logger = logging.getLogger(__name__)
 

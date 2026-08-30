@@ -15,25 +15,10 @@ import {
   setSandboxSoundEnabled,
 } from "../hooks/useSandboxCore";
 
-const FONT_SIZE_OPTIONS = [12, 14, 16, 18, 20];
-
 export function SandboxPage() {
   const [runTour, setRunTour] = useState(false);
   const [demoCopied, setDemoCopied] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(isSandboxSoundEnabled);
-
-  const [soundEnabled, setSoundEnabled] = useState(isSandboxSoundEnabled);
-
-  const [currentSize, setCurrentSize] = useState<number>(() => {
-    const saved = localStorage.getItem("sandbox_editor_font_size");
-    return saved ? parseInt(saved, 10) : 14;
-  });
-
-  const handleFontSizeChange = (size: number) => {
-    setCurrentSize(size);
-    localStorage.setItem("sandbox_editor_font_size", size.toString());
-    window.dispatchEvent(new Event("sandbox_font_changed"));
-  };
 
   const toggleSound = () => {
     setSoundEnabled((prev) => {
@@ -129,19 +114,6 @@ export function SandboxPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-2 mr-2">
-            <label htmlFor="font-size-select" className="text-sm font-bold text-muted dark:text-[#c4bbae] hidden sm:block">Font Size:</label>
-            <select
-              id="font-size-select"
-              value={currentSize}
-              onChange={(e) => handleFontSizeChange(parseInt(e.target.value, 10))}
-              className="rounded-xl border-2 border-black dark:border-[#2e2924] px-2 py-1.5 text-sm font-bold bg-surface dark:bg-[#1a1a1a] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all outline-none cursor-pointer"
-            >
-              {FONT_SIZE_OPTIONS.map((size) => (
-                <option key={size} value={size}>{size}px</option>
-              ))}
-            </select>
-          </div>
           <button
             type="button"
             onClick={toggleSound}

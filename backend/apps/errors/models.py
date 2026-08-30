@@ -12,9 +12,6 @@ class ErrorGroup(models.Model):
     fingerprint = models.CharField(max_length=64, unique=True, db_index=True)
     message = models.TextField()
     module = models.CharField(max_length=255, db_index=True)
-    exception_class = models.CharField(
-        max_length=255, blank=True, default="", db_index=True
-    )
     count = models.PositiveIntegerField(default=0)
     first_seen = models.DateTimeField(auto_now_add=True)
     last_seen = models.DateTimeField(auto_now=True)
@@ -31,9 +28,6 @@ class ErrorEvent(models.Model):
         ErrorGroup, on_delete=models.CASCADE, related_name="events"
     )
     raw_message = models.TextField()
-    exception_class = models.CharField(
-        max_length=255, blank=True, default="", db_index=True
-    )
     stacktrace = models.TextField(blank=True)
     request_id = models.CharField(max_length=100, null=True, blank=True)
     user_id = models.CharField(max_length=100, null=True, blank=True)
