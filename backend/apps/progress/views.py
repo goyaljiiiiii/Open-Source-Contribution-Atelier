@@ -1925,19 +1925,13 @@ class HeatmapCSVExportView(APIView):
             try:
                 start_date_parsed = parse_iso_datetime(start_param, return_date=True)
                 start_date = start_date_parsed if start_date_parsed else today - datetime.timedelta(days=365)
-            except ValueError:
-                return Response(
-                    {"error": "Invalid start_date format. Use YYYY-MM-DD."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
         else:
             start_date = today - datetime.timedelta(days=365)
 
         if end_param:
             try:
                 end_date_parsed = parse_iso_datetime(end_param, return_date=True)
-                end_date = end_date_parsed if end_date_parsed else today
-            except ValueError:
+                end_date = end_date_parsed if end_date_parsed else today            except ValueError:
                 return Response(
                     {"error": "Invalid end_date format. Use YYYY-MM-DD."},
                     status=status.HTTP_400_BAD_REQUEST,

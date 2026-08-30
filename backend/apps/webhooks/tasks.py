@@ -30,15 +30,8 @@ def _exponential_backoff(attempt: int) -> int:
 
 
 def generate_signature(payload, secret):
-    if not secret:
-        return ""
-    if isinstance(payload, bytes):
-        payload_bytes = payload
-    elif isinstance(payload, str):
-        payload_bytes = payload.encode("utf-8")
-    else:
-        payload_bytes = json.dumps(payload, separators=(",", ":")).encode("utf-8")
-    secret_bytes = secret.encode("utf-8") if isinstance(secret, str) else secret
+    payload_bytes = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+    secret_bytes = secret.encode("utf-8")
     return hmac.new(secret_bytes, payload_bytes, hashlib.sha256).hexdigest()
 
 
@@ -93,14 +86,10 @@ def deliver_webhook(delivery_id, attempt=1):
         return
 
     endpoint = delivery.endpoint
-    secret = endpoint.secret or ""
-    signature = generate_signature(delivery.payload, secret)
-    atelier_signature = f"sha256={signature}" if signature else ""
+    signature = generate_signature(delivery.payload, endpoint.secret)
 
     headers = {
         "Content-Type": "application/json",
-        "X-Atelier-Signature": atelier_signature,
-        "X-Hub-Signature-256": atelier_signature,
         "X-Webhook-Signature": signature,
         "X-Webhook-Event": delivery.event_type,
         "X-Webhook-Attempt": str(attempt),
@@ -121,11 +110,7 @@ def deliver_webhook(delivery_id, attempt=1):
 
     active_key_id = None
     signing_keys = getattr(settings, "WEBHOOK_SIGNING_KEYS", None)
-    if (
-        signing_keys
-        and isinstance(signing_keys, (list, tuple))
-        and len(signing_keys) > 0
-    ):
+    if signing_keys and isinstance(signing_keys, (list, tuple)) and len(signing_keys) > 0:
         active_key_id = signing_keys[0][0]
 
     try:

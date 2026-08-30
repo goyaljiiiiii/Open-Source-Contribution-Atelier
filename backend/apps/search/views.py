@@ -247,40 +247,11 @@ class UnifiedSearchView(generics.ListAPIView):
 
         # 2. SQLite fallback (local dev)
         if connection.vendor == "sqlite":
-            exact_matches = base_qs.filter(
+            return base_qs.filter(
                 Q(title__icontains=q)
                 | Q(description__icontains=q)
                 | Q(body_text__icontains=q)
             ).distinct()
-            if exact_matches.exists():
-                return exact_matches
-
-            # Typo tolerance / fuzzy matching fallback for terms up to Levenshtein distance 2
-            import difflib
-
-            all_docs = list(base_qs)
-            q_lower = q.lower()
-            scored_docs = []
-
-            for doc in all_docs:
-                text_corpus = (
-                    f"{doc.title or ''} {doc.description or ''} {doc.body_text or ''}"
-                ).lower()
-                words = re.findall(r"\w+", text_corpus)
-                best_score = 0.0
-
-                for word in words:
-                    if abs(len(word) - len(q_lower)) > 2:
-                        continue
-                    score = difflib.SequenceMatcher(None, q_lower, word).ratio()
-                    if score > best_score:
-                        best_score = score
-
-                if best_score >= 0.60:
-                    scored_docs.append((doc, best_score))
-
-            scored_docs.sort(key=lambda item: item[1], reverse=True)
-            return [doc for doc, score in scored_docs]
 
         # 3. Postgres FTS / Trigram fallback paths
         search_query = SearchQuery(q, search_type="websearch")

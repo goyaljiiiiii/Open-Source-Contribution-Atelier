@@ -8,12 +8,12 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 
 from apps.ml_triage.models import Issue
-from apps.skills_matching.models import (
+from apps.skill_matching.models import (
     ContributorProfile,
     NewcomerFriendlinessScore,
     Recommendation,
 )
-from apps.skills_matching.services.skill_tagger import SkillTagger
+from apps.skill_matching.services.skill_tagger import SkillTagger
 
 logger = logging.getLogger(__name__)
 

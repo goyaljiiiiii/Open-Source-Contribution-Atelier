@@ -13,41 +13,6 @@ import {
 
 const DEBOUNCE_MS = 450;
 
-export const TOPIC_FILTERS = [
-  "All Topics",
-  "Python",
-  "React",
-  "Django",
-  "Docker",
-  "Documentation",
-] as const;
-
-export type TopicFilter = (typeof TOPIC_FILTERS)[number];
-
-/**
- * Client-side filter that instantly narrows already-fetched issues down
- * to a single topic chip, without triggering a new GitHub API search.
- */
-export function filterIssuesByTopic(
-  issues: RankedIssue[],
-  topic: TopicFilter,
-): RankedIssue[] {
-  if (topic === "All Topics") return issues;
-
-  const needle = topic.toLowerCase();
-  return issues.filter((issue) => {
-    const haystack = [
-      issue.title,
-      issue.body ?? "",
-      issue.repoFullName,
-      ...issue.labels.map((l) => l.name),
-    ]
-      .join(" ")
-      .toLowerCase();
-    return haystack.includes(needle);
-  });
-}
-
 export interface UseGoodFirstIssuesResult {
   issues: RankedIssue[];
   isLoading: boolean;

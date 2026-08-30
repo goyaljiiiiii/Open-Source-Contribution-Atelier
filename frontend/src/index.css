@@ -10,10 +10,6 @@
     --text-secondary: #4b5563;
     --border-color: #e5e7eb;
     --card-bg: #ffffff;
-    --tab-secondary-bg: transparent;
-    --tab-secondary-text: #6b7280;
-    --tab-secondary-text-hover: #374151;
-    --tab-secondary-text-disabled: #9ca3af;
   }
 
   .dark {
@@ -23,10 +19,6 @@
     --text-secondary: #cbd5e1;
     --border-color: #334155;
     --card-bg: #1e293b;
-    --tab-secondary-bg: #1f2937;
-    --tab-secondary-text: #9ca3af;
-    --tab-secondary-text-hover: #d1d5db;
-    --tab-secondary-text-disabled: #9ca3af;
   }
 
   body {
@@ -51,30 +43,6 @@
   }
   .border-theme {
     border-color: var(--border-color);
-  }
-
-  .tab-item-secondary {
-    color: var(--tab-secondary-text);
-    background-color: var(--tab-secondary-bg);
-  }
-
-  .tab-item-secondary:hover:not(:disabled):not(.active):not(
-      [aria-selected="true"]
-    ) {
-    color: var(--tab-secondary-text-hover);
-  }
-
-  .tab-item-secondary.active,
-  .tab-item-secondary[aria-selected="true"] {
-    color: var(--text-primary);
-    background-color: var(--bg-primary);
-  }
-
-  .tab-item-secondary:disabled,
-  .tab-item-secondary[aria-disabled="true"] {
-    color: var(--tab-secondary-text-disabled);
-    cursor: not-allowed;
-    opacity: 0.75;
   }
 }
 

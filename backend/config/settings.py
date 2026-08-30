@@ -105,10 +105,6 @@ CSRF_COOKIE_SECURE = not DEBUG
 
 TESTING = "test" in sys.argv or "pytest" in sys.modules
 
-FIELD_ENCRYPTION_KEY = os.getenv(
-    "FIELD_ENCRYPTION_KEY", "MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI="
-)
-
 # Reverse Proxy Security Settings for Hugging Face Spaces & Vercel
 USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
@@ -260,11 +256,6 @@ INSTALLED_APPS = [
     "apps.dependency_graph",
     "apps.issue_quality",
     "apps.ml_triage",
-    "apps.learning_analytics",
-    "apps.flashcards",
-    "apps.study_groups",
-    "apps.mentorship",
-    "apps.learning_journal",
 ]
 
 
@@ -385,8 +376,7 @@ if TESTING and not os.getenv("DATABASE_URL"):
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": ":memory:",
         },
-    }
-else:
+    }else:
     DATABASES = {
         "default": dj_database_url.config(
             default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
@@ -1056,12 +1046,4 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.progress.tasks.archive_monthly_leaderboard",
         "schedule": crontab(minute=0, hour=0, day_of_month="1"),
     },
-    "cleanup-expired-sandbox-sessions": {
-        "task": "apps.sandbox.tasks.cleanup_expired_sandbox_sessions",
-        "schedule": crontab(minute=0, hour=3),
-    },
 }
-
-# API Payload Configuration
-MAX_PAYLOAD_BYTES = 2 * 1024 * 1024  # 2MB Default Limit
-

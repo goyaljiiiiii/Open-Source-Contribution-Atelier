@@ -22,9 +22,7 @@ class HMACSignatureSigner:
             raise ValueError("Webhook secret key cannot be empty.")
 
         if isinstance(payload, dict):
-            payload_bytes = json.dumps(
-                payload, separators=(",", ":"), sort_keys=True
-            ).encode("utf-8")
+            payload_bytes = json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8")
         elif isinstance(payload, str):
             payload_bytes = payload.encode("utf-8")
         else:
@@ -35,9 +33,7 @@ class HMACSignatureSigner:
         return f"sha256={digest}"
 
     @staticmethod
-    def verify_signature(
-        secret: str, payload: Union[str, bytes, dict], signature_header: str
-    ) -> bool:
+    def verify_signature(secret: str, payload: Union[str, bytes, dict], signature_header: str) -> bool:
         """
         Verifies that an incoming header signature matches the expected HMAC-SHA256 signature.
         Uses constant-time comparison to protect against timing attacks.
@@ -51,16 +47,12 @@ class HMACSignatureSigner:
             if signature_header.startswith("sha256="):
                 return hmac.compare_digest(expected_sig, signature_header)
             else:
-                return hmac.compare_digest(
-                    expected_sig.replace("sha256=", ""), signature_header
-                )
+                return hmac.compare_digest(expected_sig.replace("sha256=", ""), signature_header)
         except Exception:
             return False
 
     @staticmethod
-    def generate_webhook_headers(
-        secret: str, event_type: str, payload: dict, attempt: int = 1
-    ) -> dict:
+    def generate_webhook_headers(secret: str, event_type: str, payload: dict, attempt: int = 1) -> dict:
         """
         Generates standard HTTP request headers for an outgoing webhook delivery.
         """
@@ -68,7 +60,6 @@ class HMACSignatureSigner:
         return {
             "Content-Type": "application/json",
             "User-Agent": "OpenSourceAtelier-Webhook/1.0",
-            "X-Atelier-Signature": signature,
             HMACSignatureSigner.HEADER_NAME: signature,
             "X-Webhook-Signature": signature.replace("sha256=", ""),
             "X-Webhook-Event": event_type,

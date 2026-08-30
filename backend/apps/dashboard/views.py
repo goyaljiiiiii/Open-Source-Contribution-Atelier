@@ -28,7 +28,6 @@ from rest_framework.views import APIView
 from apps.challenges.models import ChallengeCompletion
 from apps.content.models import Lesson
 from apps.core.cache import multi_level_cache as cache
-from apps.core.throttling import AdminIPRateThrottle
 from apps.dashboard.models import Issue, PullRequest
 from apps.progress.models import (
     CodeSubmission,
@@ -164,8 +163,6 @@ class AdminDashboardView(APIView):
     API view for Admin Dashboard stats.
     Only users with 'Admin' role can access this.
     """
-
-    throttle_classes = [AdminIPRateThrottle]
 
     def get_permissions(self):
         from rest_framework import permissions
@@ -564,14 +561,13 @@ class ContributorDashboardView(APIView):
 
 
 class ModeratorAnalyticsView(APIView):
-    throttle_classes = [AdminIPRateThrottle]
-
     def get_permissions(self):
         from rest_framework import permissions
 
         from apps.core.permissions import HasAnyRole
 
         return [permissions.IsAuthenticated(), HasAnyRole(["Admin", "Moderator"])]
+
     def get(self, request):
         thirty_days_ago = timezone.now() - timedelta(days=30)
 
@@ -625,8 +621,6 @@ from zoneinfo import available_timezones
 
 
 class UsageAnalyticsView(APIView):
-    throttle_classes = [AdminIPRateThrottle]
-
     def get_permissions(self):
         from rest_framework import permissions
 
@@ -752,7 +746,6 @@ class AnalyticsExportCSVView(APIView):
     """
 
     permission_classes = [permissions.IsAuthenticated]
-    throttle_classes = [AdminIPRateThrottle]
 
     def get(self, request):
         try:

@@ -205,26 +205,3 @@ class SlidingWindowScopedThrottle(SlidingWindowThrottle):
             ident = self.get_ident(request)
 
         return self.cache_format % {"scope": self.scope, "ident": ident}
-
-
-class AdminIPRateThrottle(SimpleRateThrottle):
-    """
-    IP-based throttle for sensitive admin endpoints (e.g. bulk database
-    backups, content indexing, analytics exports). Keyed purely on client
-    IP address, regardless of authentication state, so it applies a tighter
-    limit than the standard user/anon throttles.
-
-    Default limit: 30 requests/minute. Configurable via the
-    ADMIN_THROTTLE_RATE environment variable (DRF rate format, e.g. "30/min").
-    """
-
-    scope = "admin"
-
-    def get_rate(self):
-        import os
-
-        return os.environ.get("ADMIN_THROTTLE_RATE", "30/min")
-
-    def get_cache_key(self, request, view):
-        ident = self.get_ident(request)
-        return self.cache_format % {"scope": self.scope, "ident": ident}

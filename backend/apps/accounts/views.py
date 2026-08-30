@@ -33,15 +33,13 @@ from drf_spectacular.utils import (
 )
 from rest_framework import filters, generics, permissions, status
 
-from apps.core.serializers import StandardErrorSerializer
-from rest_framework.pagination import LimitOffsetPagination
+from apps.core.serializers import StandardErrorSerializerfrom rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from .tokens import generate_tokens_for_user
 from apps.progress.models import LessonProgress, UserBadge
 from apps.progress.serializers import UserBadgeSerializer
 from schemas.user import (
@@ -72,8 +70,7 @@ from .serializers import (
     SignupSerializer,
     UserListSerializer,
     UserUpdateSerializer,
-)
-from .tasks import (
+)from .tasks import (
     send_magic_link_email_task,
     send_otp_email_task,
     send_password_reset_email_task,
@@ -302,8 +299,7 @@ class GoogleLoginView(APIView):
     def _unique_username_from_email(email: str) -> str:
         return unique_username_from_value(email)
 
-    def post(self, request):
-        token = (
+    def post(self, request):        token = (
             request.data.get("access_token")
             or request.data.get("access")
             or request.data.get("id_token")
@@ -400,12 +396,13 @@ class GoogleLoginView(APIView):
                     password=secrets.token_urlsafe(24),
                 )
 
-            tokens = generate_tokens_for_user(user)
+            refresh = RefreshToken.for_user(user)
             return Response(
                 {
-                    "refresh": tokens["refresh"],
-                    "access": tokens["access"],
-                    "user": {                        "username": user.username,
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                    "user": {
+                        "username": user.username,
                         "email": user.email,
                         "is_staff": user.is_staff,
                     },
@@ -595,14 +592,14 @@ class GitHubOAuthCallbackView(APIView):
                     password=secrets.token_urlsafe(24),
                 )
 
-            tokens = generate_tokens_for_user(user)
+            refresh = RefreshToken.for_user(user)
             return redirect(
                 frontend_url(
                     "/auth/github/callback",
                     {
-                        "access": tokens["access"],
-                        "refresh": tokens["refresh"],
-                    }
+                        "access": str(refresh.access_token),
+                        "refresh": str(refresh),
+                    },
                 )
             )
         except CircuitOpenError:
@@ -958,13 +955,14 @@ class MagicLinkVerifyView(APIView):
         magic_token.is_used = True
         magic_token.save(update_fields=["is_used"])
 
-        tokens = generate_tokens_for_user(user)
+        refresh = RefreshToken.for_user(user)
 
         return Response(
             {
-                "refresh": tokens["refresh"],
-                "access": tokens["access"],
-                "user": {                    "username": user.username,
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+                "user": {
+                    "username": user.username,
                     "email": user.email,
                     "is_staff": user.is_staff,
                 },
@@ -1077,39 +1075,9 @@ class ExportDataView(APIView):
         )
 
 
-import json
-
-from django.core.serializers.json import DjangoJSONEncoder
-
-from .serializers import StudyActivityExportSerializer
-
-
-class StudyActivityExportView(APIView):
-    """
-    GET /api/v1/accounts/export-data/
-    Exports the authenticated user's study activity log (profile,
-    streak, earned badges, completed lessons) as downloadable JSON.
-    """
-
-    permission_classes = [permissions.IsAuthenticated]
-
-    @extend_schema(
-        responses={
-            200: OpenApiResponse(description="Study activity export file (JSON)"),
-        }
-    )
-    def get(self, request):
-        data = StudyActivityExportSerializer(request.user).data
-        json_data = json.dumps(data, cls=DjangoJSONEncoder, indent=2)
-        response = HttpResponse(json_data, content_type="application/json")
-        response["Content-Disposition"] = (
-            'attachment; filename="atelier_study_export.json"'
-        )
-        return response
-
-
 from apps.chat.models import Message
 from apps.content.models import Comment
+
 
 class SecureAccountDeleteView(APIView):
     """

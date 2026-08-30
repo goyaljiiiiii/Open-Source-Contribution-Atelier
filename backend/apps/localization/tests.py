@@ -1,24 +1,17 @@
 import pytest
 from django.core.cache import cache
-from django.test import RequestFactory, TestCase
+from django.test import RequestFactory
 from django.utils import translation
-from rest_framework.test import APIClient
 
-from apps.localization.middleware import (
-    LocaleMiddleware,
-    _resolve_locale_cached,
-    resolve_locale,
-)
-from apps.localization.models import LocalizedContent
-from apps.localization.views import DEFAULT_LANG
+from apps.localization.middleware import LocaleMiddleware, resolve_locale
 
 
 @pytest.fixture(autouse=True)
 def clear_caches():
-    _resolve_locale_cached.cache_clear()
+    resolve_locale.cache_clear()
     cache.clear()
     yield
-    _resolve_locale_cached.cache_clear()
+    resolve_locale.cache_clear()
     cache.clear()
 
 
@@ -106,79 +99,3 @@ def test_locale_switch_rate_limiting():
 
     # Since it is rate-limited, it keeps the previous active language ("zh-hans")
     assert request.LANGUAGE_CODE == "zh-hans"
-
-
-class TranslationDictionaryFallbackTests(TestCase):
-    """
-    Fallback to default (English) locale strings when a translation key is
-    missing or empty in the requested locale's dictionary.
-    """
-
-    @classmethod
-    def setUpTestData(cls):
-        LocalizedContent.objects.create(
-            key="greeting", language_code=DEFAULT_LANG, translation="Hello"
-        )
-        LocalizedContent.objects.create(
-            key="farewell", language_code=DEFAULT_LANG, translation="Goodbye"
-        )
-
-    def _client(self):
-        return APIClient()
-
-    def test_requested_locale_present_returns_translated(self):
-        LocalizedContent.objects.create(
-            key="greeting", language_code="es", translation="Hola"
-        )
-        response = self._client().get("/api/localization/dictionary/es/")
-        assert response.status_code == 200
-        data = response.json()
-        assert data["greeting"] == "Hola"
-        assert data["farewell"] == "Goodbye"  # falls back to English
-
-    def test_missing_key_falls_back_to_english(self):
-        # 'es' has no entries at all -> every English key is returned in English
-        response = self._client().get("/api/localization/dictionary/es/")
-        assert response.status_code == 200
-        data = response.json()
-        assert data["greeting"] == "Hello"
-        assert data["farewell"] == "Goodbye"
-
-    def test_empty_translation_falls_back_to_english(self):
-        LocalizedContent.objects.create(
-            key="greeting", language_code="fr", translation=""
-        )
-        response = self._client().get("/api/localization/dictionary/fr/")
-        assert response.status_code == 200
-        data = response.json()
-        assert data["greeting"] == "Hello"  # empty -> English fallback
-        assert data["farewell"] == "Goodbye"
-
-    def test_english_locale_no_double_lookup(self):
-        response = self._client().get("/api/localization/dictionary/en/")
-        assert response.status_code == 200
-        data = response.json()
-        assert data["greeting"] == "Hello"
-        assert data["farewell"] == "Goodbye"
-        assert data.keys() == {"greeting", "farewell"}
-
-    def test_unsupported_locale_returns_english_only(self):
-        # locale not present at all -> only English keys returned
-        response = self._client().get("/api/localization/dictionary/zh-hans/")
-        assert response.status_code == 200
-        data = response.json()
-        assert data["greeting"] == "Hello"
-        assert data["farewell"] == "Goodbye"
-
-    def test_partial_keys_with_empty_falls_back(self):
-        LocalizedContent.objects.create(
-            key="greeting", language_code="de", translation="Hallo"
-        )
-        LocalizedContent.objects.create(
-            key="farewell", language_code="de", translation=""
-        )
-        response = self._client().get("/api/localization/dictionary/de/")
-        assert response.status_code == 200
-        data = response.json()
-        assert data["greeting"] == "Hallo"  # present and non-empty
-        assert data["farewell"] == "Goodbye"  # empty -> English fallback

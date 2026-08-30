@@ -14,7 +14,6 @@ DEPRECATION_WARNING_HEADER = "X-API-Deprecation"
 DEPRECATION_WARNING_MESSAGE = (
     "This endpoint will require a version header after 90 days"
 )
-API_VERSION_HEADER = "X-API-Version"
 
 
 class APIVersionMiddleware(MiddlewareMixin):
@@ -71,16 +70,12 @@ class APIVersionMiddleware(MiddlewareMixin):
         if not request.path_info.startswith("/api/"):
             return response
 
-        # 1. Append standardized API version response header to all API responses.
-        default_version = getattr(settings, "DEFAULT_API_VERSION", "1.0")
-        response[API_VERSION_HEADER] = f"v{default_version}"
-
-        # 2. Unversioned request fallback deprecation warning
+        # 1. Unversioned request fallback deprecation warning
         version_source = getattr(request, "version_source", None)
         if version_source == "default":
             response[DEPRECATION_WARNING_HEADER] = DEPRECATION_WARNING_MESSAGE
 
-        # 3. Planned removal / deprecation & sunset headers for deprecated API versions or views
+        # 2. Planned removal / deprecation & sunset headers for deprecated API versions or views
         version = getattr(request, "version", None)
         deprecated_versions = getattr(settings, "DEPRECATED_API_VERSIONS", {})
 

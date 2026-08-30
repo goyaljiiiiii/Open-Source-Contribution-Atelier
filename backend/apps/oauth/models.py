@@ -81,7 +81,6 @@ class OAuthToken(models.Model):
     access_token_expires_at = models.DateTimeField()
     refresh_token_expires_at = models.DateTimeField(null=True, blank=True)
     is_revoked = models.BooleanField(default=False)
-    last_sync = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def is_access_token_valid(self) -> bool:

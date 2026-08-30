@@ -20,7 +20,4 @@ urlpatterns = [
         views.HandlerToggleView.as_view(),
         name="handler_toggle",
     ),
-    # Telemetry ingestion
-    path("telemetry/", views.TelemetryEventIngestView.as_view(), name="telemetry_ingest"),
 ]
-

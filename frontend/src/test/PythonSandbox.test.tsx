@@ -15,28 +15,6 @@ vi.mock("../hooks/usePythonSandbox", () => ({
   usePythonSandbox: vi.fn(),
 }));
 
-// react-resizable-panels relies on real DOM measurement (ResizeObserver) that
-// is unavailable in jsdom; mock it to a passthrough so sandbox UI tests can run.
-vi.mock("react-resizable-panels", () => ({
-  Group: ({ children, ...props }: { children: React.ReactNode }) => (
-    <div data-testid="resizable-group" {...props}>
-      {children}
-    </div>
-  ),
-  Panel: ({ children, ...props }: { children: React.ReactNode }) => (
-    <div data-testid="resizable-panel" {...props}>
-      {children}
-    </div>
-  ),
-  Separator: (props: Record<string, unknown>) => (
-    <div data-testid="resizable-separator" {...props} />
-  ),
-  useDefaultLayout: () => ({
-    defaultLayout: undefined,
-    onLayoutChange: vi.fn(),
-  }),
-}));
-
 describe("PythonSandbox UI", () => {
   const mockOnSuccess = vi.fn();
   const defaultExercise = {

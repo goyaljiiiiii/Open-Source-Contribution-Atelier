@@ -15,9 +15,6 @@ User = get_user_model()
 @override_settings(CELERY_TASK_ALWAYS_EAGER=True, CELERY_BROKER_URL="memory://")
 class AiTutorTests(TestCase):
     def setUp(self):
-        from django.core.cache import cache
-
-        cache.clear()
         self.patcher = patch("apps.core.cache.signals.invalidate_tag_task")
         self.mock_invalidate = self.patcher.start()
         self.addCleanup(self.patcher.stop)
@@ -94,20 +91,16 @@ class AiTutorTests(TestCase):
         }
     )
     def test_ask_view_is_rate_limited_per_user(self):
-        from django.core.cache import cache
-
-        cache.clear()
-        with patch("apps.ai_tutor.throttles.AiTutorRateThrottle.get_rate", return_value="2/minute"):
-            with patch.object(AiTutorService, "get_response", return_value="answer"):
-                first = self.client.post(
-                    "/api/ai/tutor/ask/", {"question": "First?"}
-                )
-                second = self.client.post(
-                    "/api/ai/tutor/ask/", {"question": "Second?"}
-                )
-                third = self.client.post(
-                    "/api/ai/tutor/ask/", {"question": "Third?"}
-                )
+        with patch.object(AiTutorService, "get_response", return_value="answer"):
+            first = self.client.post(
+                "/api/ai/tutor/ask/", {"question": "First?"}
+            )
+            second = self.client.post(
+                "/api/ai/tutor/ask/", {"question": "Second?"}
+            )
+            third = self.client.post(
+                "/api/ai/tutor/ask/", {"question": "Third?"}
+            )
 
         self.assertEqual(first.status_code, status.HTTP_200_OK)
         self.assertEqual(second.status_code, status.HTTP_200_OK)

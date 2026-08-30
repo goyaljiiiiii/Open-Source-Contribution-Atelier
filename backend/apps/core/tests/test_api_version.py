@@ -42,13 +42,6 @@ class APIVersioningIntegrationTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertNotIn("X-API-Deprecation", response)
 
-    def test_api_version_header_present(self):
-        response = self.client.get(
-            "/api/version/", HTTP_ACCEPT="application/json; version=1.0"
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.get("X-API-Version"), "v1.0")
-
     def test_url_prefix_negotiation_valid(self):
         response = self.client.get("/api/v1/version/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -97,8 +90,3 @@ class APIVersioningIntegrationTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.get("Deprecation"), "@1700000000")
         self.assertEqual(response.get("Sunset"), "Wed, 31 Dec 2026 23:59:59 GMT")
-
-    def test_api_version_header_on_url_prefix(self):
-        response = self.client.get("/api/v1/version/")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.get("X-API-Version"), "v1.0")

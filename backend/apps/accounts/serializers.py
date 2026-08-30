@@ -29,11 +29,12 @@ def validate_strong_password(value):
 
 
 class SignupSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=8, max_length=128)
+    password = serializers.CharField(write_only=True, min_length=8)
 
     class Meta:
         model = User
         fields = ("id", "username", "email", "password")
+
     def validate_username(self, value):
         """Reject duplicate usernames using a case-insensitive comparison."""
         normalized = value.strip()
@@ -59,9 +60,7 @@ class SignupSerializer(serializers.ModelSerializer):
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(
-        write_only=True, required=False, min_length=8, max_length=128
-    )
+    password = serializers.CharField(write_only=True, required=False, min_length=8)
     avatar = serializers.ImageField(required=False)
     cover_image = serializers.ImageField(required=False)
     timezone = serializers.CharField(required=False)
@@ -201,32 +200,32 @@ class UserListSerializer(serializers.ModelSerializer):
         )
 
     def get_global_rank(self, obj):
-        if "bulk_global_ranks" in self.context:
-            return self.context["bulk_global_ranks"].get(obj.id, 1)
-        if hasattr(obj, "global_rank") and obj.global_rank is not None:
-            return obj.global_rank
-        from django.contrib.auth import get_user_model
-        from django.db.models import Sum
         from apps.progress.models import XPEvent
-        User = get_user_model()
-        user_xp = XPEvent.objects.filter(user=obj).aggregate(total=Sum("xp_delta"))["total"] or 0
-        higher_users = User.objects.annotate(
-            total_xp=Sum("xp_events__xp_delta")
-        ).filter(total_xp__gt=user_xp).count()
-        return higher_users + 1
+        from django.db.models import Sum
+
+        return getattr(obj, "global_rank", 1)
 
     def get_percentile_standing(self, obj):
-        if "bulk_percentiles" in self.context:
-            return self.context["bulk_percentiles"].get(obj.id, 1)
-        if hasattr(obj, "percentile_standing") and obj.percentile_standing is not None:
-            return obj.percentile_standing
-        from django.contrib.auth import get_user_model
-        User = get_user_model()
-        rank = self.get_global_rank(obj)
+        from apps.progress.models import XPEvent
+        from django.db.models import Sum
+
         total_users = User.objects.count()
         if total_users <= 1:
             return 1
-        return round((rank / total_users) * 100)
+
+        user_xp = (
+            XPEvent.objects.filter(user=obj).aggregate(total=Sum("xp_delta"))["total"]
+            or 0
+        )
+        higher_count = (
+            XPEvent.objects.values("user")
+            .annotate(total=Sum("xp_delta"))
+            .filter(total__gt=user_xp)
+            .count()
+        )
+        rank = higher_count + 1
+        percentile = max(1, int(round((rank / total_users) * 100)))
+        return percentile
 
     def get_active_track_status(self, obj):
         if "bulk_track_statuses" in self.context:
@@ -285,22 +284,10 @@ class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
     remember = serializers.BooleanField(required=False, default=False)
     totp_code = serializers.CharField(required=False, allow_blank=True, write_only=True)
 
-    MAX_PASSWORD_LENGTH = 128
-
     def validate(self, attrs):
-        password = attrs.get("password", "")
-        if isinstance(password, str) and len(password) > self.MAX_PASSWORD_LENGTH:
-            raise serializers.ValidationError(
-                {
-                    "password": (
-                        f"Ensure this field has no more than "
-                        f"{self.MAX_PASSWORD_LENGTH} characters."
-                    )
-                }
-            )
-
         username_key = self.username_field
         identifier = attrs.get(username_key, "")
+
         if isinstance(identifier, str) and "@" in identifier:
             user = User.objects.filter(email__iexact=identifier.strip()).first()
             if user:
@@ -392,7 +379,8 @@ class TwoFactorVerifySerializer(serializers.Serializer):
 class TwoFactorDisableSerializer(serializers.Serializer):
     """Accept user password to confirm disabling 2FA."""
 
-    password = serializers.CharField(write_only=True, max_length=128)
+    password = serializers.CharField(write_only=True)
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -410,7 +398,8 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     """Accept a reset token and the new password to complete the reset."""
 
     token = serializers.UUIDField()
-    new_password = serializers.CharField(write_only=True, min_length=8, max_length=128)
+    new_password = serializers.CharField(write_only=True, min_length=8)
+
     def validate_new_password(self, value):
         return validate_strong_password(value)
 
@@ -451,8 +440,9 @@ class MagicLinkVerifySerializer(serializers.Serializer):
 
 
 class ChangePasswordSerializer(serializers.Serializer):
-    old_password = serializers.CharField(required=True, max_length=128)
-    new_password = serializers.CharField(required=True, min_length=8, max_length=128)
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True, min_length=8)
+
     def validate_new_password(self, value):
         return validate_strong_password(value)
 
@@ -481,64 +471,6 @@ class UserSessionSerializer(serializers.ModelSerializer):
             "last_activity",
         )
         read_only_fields = fields
-
-
-
-class StudyActivityExportSerializer(serializers.Serializer):
-    """Serializes a user's study activity log for JSON export."""
-
-    profile = serializers.SerializerMethodField()
-    streak = serializers.SerializerMethodField()
-    earned_badges = serializers.SerializerMethodField()
-    completed_lessons = serializers.SerializerMethodField()
-
-    def get_profile(self, user):
-        profile = getattr(user, "user_profile", None)
-        return {
-            "username": user.username,
-            "email": user.email,
-            "date_joined": user.date_joined,
-            "bio": getattr(profile, "bio", ""),
-            "timezone": getattr(profile, "timezone", "UTC"),
-        }
-
-    def get_streak(self, user):
-        from apps.progress.models import StreakProfile
-
-        try:
-            streak_profile = user.streak_profile
-        except StreakProfile.DoesNotExist:
-            return None
-
-        return {
-            "current_streak": streak_profile.current_streak,
-            "longest_streak": streak_profile.longest_streak,
-            "last_activity_date": streak_profile.last_activity_date,
-        }
-
-    def get_earned_badges(self, user):
-        from apps.progress.models import UserBadge
-
-        badges = UserBadge.objects.filter(user=user).select_related("badge")
-        return [
-            {"badge_name": ub.badge.name, "earned_at": ub.earned_at}
-            for ub in badges
-        ]
-
-    def get_completed_lessons(self, user):
-        from apps.progress.models import LessonProgress
-
-        lessons = LessonProgress.objects.filter(
-            user=user, completed=True
-        ).select_related("lesson")
-        return [
-            {
-                "lesson_title": lp.lesson.title,
-                "score": lp.score,
-                "completed_at": lp.updated_at,
-            }
-            for lp in lessons
-        ]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -624,3 +556,47 @@ class GoogleOAuthRequestSerializer(serializers.Serializer):
         help_text="Generic token field"
     )
 
+# ─────────────────────────────────────────────────────────────────────────────
+# OAuth Token Response Serializers
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class OAuthUserSerializer(serializers.Serializer):
+    """User information returned in OAuth token response."""
+
+    username = serializers.CharField(
+        help_text="The authenticated user's username"
+    )
+    email = serializers.EmailField(
+        help_text="The authenticated user's email address"
+    )
+    is_staff = serializers.BooleanField(
+        help_text="Whether the user has staff permissions"
+    )
+
+
+class OAuthTokenResponseSerializer(serializers.Serializer):
+    """
+    OAuth callback success response containing JWT access and refresh tokens.
+    
+    Example:
+        {
+            "access": "eyJhbGc...",
+            "refresh": "eyJhbGc...",
+            "user": {
+                "username": "john_doe",
+                "email": "john@example.com",
+                "is_staff": false
+            }
+        }
+    """
+
+    access = serializers.CharField(
+        help_text="JWT access token for API authentication"
+    )
+    refresh = serializers.CharField(
+        help_text="JWT refresh token for obtaining new access tokens"
+    )
+    user = OAuthUserSerializer(
+        help_text="Authenticated user information"
+    )

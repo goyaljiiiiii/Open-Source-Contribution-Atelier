@@ -123,8 +123,5 @@ class TaskRunViewSet(viewsets.ReadOnlyModelViewSet):
         status_param = self.request.query_params.get("status")
         if status_param and status_param.upper() != "ALL":
             qs = qs.filter(status=status_param.upper())
-        exception_class = self.request.query_params.get("exception_class")
-        if exception_class:
-            qs = qs.filter(models.Q(error_message__icontains=exception_class))
         return qs
 

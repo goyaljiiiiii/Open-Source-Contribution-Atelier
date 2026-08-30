@@ -26,6 +26,7 @@ describe("usePythonSandbox", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 
   it("initializes worker on mount", () => {
@@ -47,7 +48,6 @@ describe("usePythonSandbox", () => {
     expect(mockWorker.postMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         pythonCode: "print('Hello')",
-        timeoutMs: 5000,
       }),
     );
 
@@ -76,31 +76,26 @@ describe("usePythonSandbox", () => {
     expect(result.current.isExecuting).toBe(false);
   });
 
-  it("handles worker timeout and watchdog termination for infinite loops", async () => {
+  it("handles worker timeout", async () => {
+    vi.useFakeTimers();
     const { result } = renderHook(() => usePythonSandbox());
 
     let promise: any;
 
     act(() => {
-      promise = result.current.runPythonCode("while True: pass", 5000);
+      promise = result.current.runPythonCode("while True: pass", 1000);
     });
 
     expect(result.current.isExecuting).toBe(true);
-    expect(mockWorker.postMessage).toHaveBeenCalledWith(
-      expect.objectContaining({
-        pythonCode: "while True: pass",
-        timeoutMs: 5000,
-      }),
-    );
 
-    // Fast-forward time past the 5-second timeout
+    // Fast-forward time past the timeout
     act(() => {
-      vi.advanceTimersByTime(5500);
+      vi.advanceTimersByTime(1500);
     });
 
     const executionResult = await promise;
 
-    expect(executionResult.error).toMatch(/Execution Timeout/i);
+    expect(executionResult.error).toMatch(/Timeout/i);
     expect(mockWorker.terminate).toHaveBeenCalled();
     expect(result.current.isExecuting).toBe(false);
   });

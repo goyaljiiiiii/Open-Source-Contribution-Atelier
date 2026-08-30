@@ -20,9 +20,6 @@ def ingest_error_event_task(payload):
     raw_message = payload.get("message", "")
     stacktrace = payload.get("stacktrace", "")
     module = payload.get("module", "default")
-    exception_class = (
-        payload.get("exception_class") or payload.get("exception_type") or ""
-    )
     request_id = payload.get("request_id")
     user_id = payload.get("user_id")
     metadata = payload.get("metadata", {})
@@ -48,7 +45,6 @@ def ingest_error_event_task(payload):
         defaults={
             "message": normalized,
             "module": module,
-            "exception_class": exception_class,
             "status": "new",
             "first_seen": timestamp,
         },
@@ -68,11 +64,7 @@ def ingest_error_event_task(payload):
 
         group.count += 1
         group.last_seen = now
-        update_fields = ["count", "last_seen", "status", "resolved_at"]
-        if not group.exception_class and exception_class:
-            group.exception_class = exception_class
-            update_fields.append("exception_class")
-        group.save(update_fields=update_fields)
+        group.save(update_fields=["count", "last_seen", "status", "resolved_at"])
     else:
         group.count = 1
         group.save(update_fields=["count"])
@@ -81,7 +73,6 @@ def ingest_error_event_task(payload):
     event = ErrorEvent.objects.create(
         group=group,
         raw_message=raw_message,
-        exception_class=exception_class,
         stacktrace=stacktrace,
         request_id=request_id,
         user_id=user_id,

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-hot-toast";
 import {
   Search,
   FolderGit2,
@@ -9,11 +8,9 @@ import {
   X,
   FileCode,
   Users,
-  ClipboardCopy,
 } from "lucide-react";
 import api from "../api";
 import { DataStateWrapper } from "../components/ui/DataStateWrapper";
-import { copyText } from "../lib/clipboard";
 
 // Types based on backend serializers
 interface TemplateCategory {
@@ -39,15 +36,6 @@ interface ProjectTemplate {
   use_count: number;
   files: TemplateFile[];
   author?: { id: string; username: string };
-}
-
-function getDockerComposeContent(template: ProjectTemplate): string | null {
-  const composeFile = template.files?.find(
-    (file) =>
-      file.path === "docker-compose.yml" ||
-      file.path.endsWith("/docker-compose.yml"),
-  );
-  return composeFile?.content?.trim() ? composeFile.content : null;
 }
 
 const TemplateMarketplacePage: React.FC = () => {
@@ -83,26 +71,6 @@ const TemplateMarketplacePage: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
-
-  const handleCopyDockerCompose = async (
-    e: React.MouseEvent,
-    template: ProjectTemplate,
-  ) => {
-    e.stopPropagation();
-
-    const composeContent = getDockerComposeContent(template);
-    if (!composeContent) {
-      toast.error("No docker-compose.yml found for this template.");
-      return;
-    }
-
-    const result = await copyText(composeContent);
-    if (result.ok) {
-      toast.success("docker-compose.yml copied to clipboard!");
-    } else {
-      toast.error("Failed to copy docker-compose.yml.");
-    }
-  };
 
   const handleInstantiate = async (templateId: string) => {
     setIsInstantiating(true);
@@ -255,27 +223,14 @@ const TemplateMarketplacePage: React.FC = () => {
                     ))}
                   </div>
                 </div>
-                <div className="px-5 py-3 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700 space-y-2">
-                  {getDockerComposeContent(template) && (
-                    <button
-                      type="button"
-                      onClick={(e) => void handleCopyDockerCompose(e, template)}
-                      className="w-full inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
-                      aria-label="Copy docker-compose.yml"
-                    >
-                      <ClipboardCopy className="h-3.5 w-3.5 mr-1.5" />
-                      Copy docker-compose.yml
-                    </button>
-                  )}
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
-                      <Users className="h-3.5 w-3.5 mr-1" />
-                      {template.use_count} uses
-                    </div>
-                    <div className="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center">
-                      <Code2 className="h-3.5 w-3.5 mr-1" />
-                      {template.language}
-                    </div>
+                <div className="px-5 py-3 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                  <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                    <Users className="h-3.5 w-3.5 mr-1" />
+                    {template.use_count} uses
+                  </div>
+                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center">
+                    <Code2 className="h-3.5 w-3.5 mr-1" />
+                    {template.language}
                   </div>
                 </div>
               </div>

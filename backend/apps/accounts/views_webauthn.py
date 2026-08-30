@@ -3,6 +3,9 @@ import json
 
 from django.conf import settings
 from django.http import JsonResponse
+from django.views import View
+from fido2.server import Fido2Server
+from fido2.webauthn import PublicKeyCredentialRpEntity
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -10,19 +13,12 @@ from rest_framework.views import APIView
 
 from .models import WebAuthnCredential
 
-try:
-    from fido2.server import Fido2Server
-    from fido2.webauthn import PublicKeyCredentialRpEntity
+rp = PublicKeyCredentialRpEntity(
+    id=getattr(settings, "WEBAUTHN_RP_ID", "localhost"),
+    name=getattr(settings, "WEBAUTHN_RP_NAME", "Open Source Atelier"),
+)
 
-    rp = PublicKeyCredentialRpEntity(
-        id=getattr(settings, "WEBAUTHN_RP_ID", "localhost"),
-        name=getattr(settings, "WEBAUTHN_RP_NAME", "Open Source Atelier"),
-    )
-    fido2_server = Fido2Server(rp)
-except ImportError:
-    Fido2Server = None
-    PublicKeyCredentialRpEntity = None
-    fido2_server = None
+fido2_server = Fido2Server(rp)
 
 
 def _b64encode(data: bytes) -> str:
