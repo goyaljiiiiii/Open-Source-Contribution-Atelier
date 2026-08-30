@@ -128,19 +128,74 @@ class EventBus:
                 raise
 
     @classmethod
-    def emit(cls, event_type: str, data: Dict[str, Any], actor=None, target=None):
+    def _get_event_dedup_key(cls, event_type: str, actor, data: Dict[str, Any]) -> str:
+        """Generates a stable cache key for throttling duplicate client telemetry events."""
+        import hashlib
+        import json
+
+        actor_id = getattr(actor, "id", str(actor)) if actor else "anon"
+        try:
+            data_str = json.dumps(data, sort_keys=True, default=str)
+        except Exception:
+            data_str = str(data)
+        data_hash = hashlib.sha256(data_str.encode("utf-8")).hexdigest()[:16]
+        return f"telemetry_throttle:{event_type}:{actor_id}:{data_hash}"
+
+    @classmethod
+    def is_throttled(
+        cls,
+        event_type: str,
+        data: Dict[str, Any],
+        actor=None,
+        window_ms: int = 500,
+    ) -> bool:
         """
-        Create and emit a domain event.
+        Checks if an identical event was emitted within the throttle window (default 500ms).
+        """
+        if window_ms <= 0:
+            return False
+
+        dedup_key = cls._get_event_dedup_key(event_type, actor, data)
+        now_ts = timezone.now().timestamp()
+        last_ts = cache.get(dedup_key)
+
+        if last_ts is not None and (now_ts - float(last_ts)) < (window_ms / 1000.0):
+            logger.info(
+                f"Throttling duplicate client telemetry event '{event_type}' fired within {window_ms}ms window."
+            )
+            return True
+
+        # Cache timestamp with a safe TTL (5 seconds)
+        cache.set(dedup_key, now_ts, timeout=5)
+        return False
+
+    @classmethod
+    def emit(
+        cls,
+        event_type: str,
+        data: Dict[str, Any],
+        actor=None,
+        target=None,
+        throttle_window_ms: int = 500,
+    ) -> Optional[DomainEvent]:
+        """
+        Create and emit a domain event, throttling duplicate events within throttle_window_ms.
 
         Args:
             event_type: Type of event
             data: Event data
             actor: User who triggered the event
             target: Object the event is about
+            throttle_window_ms: Window in ms to throttle identical duplicate events (default 500ms).
 
         Returns:
-            DomainEvent: Created event instance
+            DomainEvent: Created event instance, or None if throttled.
         """
+        if throttle_window_ms > 0 and cls.is_throttled(
+            event_type, data, actor=actor, window_ms=throttle_window_ms
+        ):
+            return None
+
         with transaction.atomic():
             event = DomainEvent.objects.create(
                 event_type=event_type,
