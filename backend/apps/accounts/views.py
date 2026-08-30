@@ -32,8 +32,6 @@ from drf_spectacular.utils import (
     extend_schema_view,
 )
 from rest_framework import filters, generics, permissions, status
-
-from apps.core.serializers import StandardErrorSerializer
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -61,13 +59,10 @@ from .serializers import (
     EmailOrUsernameTokenObtainPairSerializer,
     MagicLinkRequestSerializer,
     MagicLinkVerifySerializer,
-    OAuthTokenResponseSerializer,
-    OAuthUserSerializer,
     OtpRequestSerializer,
     OtpVerifySerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
-    GoogleOAuthRequestSerializer,
     SignupSerializer,
     UserListSerializer,
     UserUpdateSerializer,
@@ -271,28 +266,6 @@ class RefreshView(TokenRefreshView):
     throttle_classes = [TokenRefreshThrottle]
 
 
-@extend_schema_view(
-    post=extend_schema(
-        operation_id="google_oauth_login",
-        description="Google OAuth login endpoint. Accepts a Google access/ID token and returns JWT tokens.",
-        request=GoogleOAuthRequestSerializer,
-        responses={
-            200: OpenApiResponse(
-                response=OAuthTokenResponseSerializer,
-                description="OAuth authentication successful. Returns access and refresh tokens with user info.",
-            ),
-            400: OpenApiResponse(
-                response=StandardErrorSerializer,
-                description="Invalid or missing token, or Google authentication failed.",
-            ),
-            401: OpenApiResponse(
-                response=StandardErrorSerializer,
-                description="Google token verification failed.",
-            ),
-        },
-        tags=["Authentication"],
-    )
-)
 class GoogleLoginView(APIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [OAuthThrottle]
@@ -317,27 +290,6 @@ class GoogleLoginView(APIView):
 
         try:
             email = None
-
-            # If token is an Authorization Code (starts with 4/ or is passed as code), exchange it
-            if isinstance(token, str) and (token.startswith("4/") or request.data.get("code")):
-                client_id = getattr(settings, "GOOGLE_CLIENT_ID", "") or os.getenv("GOOGLE_CLIENT_ID", "")
-                client_secret = getattr(settings, "GOOGLE_CLIENT_SECRET", "") or os.getenv("GOOGLE_CLIENT_SECRET", "")
-                if client_id and client_secret:
-                    token_exchange_resp = http_requests.post(
-                        "https://oauth2.googleapis.com/token",
-                        data={
-                            "code": token,
-                            "client_id": client_id,
-                            "client_secret": client_secret,
-                            "grant_type": "authorization_code",
-                            "redirect_uri": "postmessage",
-                        },
-                        timeout=10,
-                    )
-                    if token_exchange_resp.ok:
-                        token_json = token_exchange_resp.json()
-                        token = token_json.get("access_token") or token_json.get("id_token") or token
-
             # Try OAuth2 userinfo endpoint with Bearer auth first
             user_info_resp = http_requests.get(
                 "https://www.googleapis.com/oauth2/v3/userinfo",
@@ -362,14 +314,14 @@ class GoogleLoginView(APIView):
             if not email:
                 token_info_url = (
                     f"https://oauth2.googleapis.com/tokeninfo?id_token={token}"
-                    if isinstance(token, str) and token.count(".") == 2
+                    if token.count(".") == 2
                     else f"https://oauth2.googleapis.com/tokeninfo?access_token={token}"
                 )
                 token_info_resp = http_requests.get(token_info_url, timeout=10)
                 if token_info_resp.ok:
                     email = token_info_resp.json().get("email")
 
-            # Fallback: If token is a 3-part JWT, decode payload to extract email
+            # Fallback: If token is a 3-part JWT, decode unverified payload to extract email
             if not email and isinstance(token, str) and token.count(".") == 2:
                 try:
                     import base64, json
@@ -381,12 +333,12 @@ class GoogleLoginView(APIView):
                 except Exception as exc:
                     logger.warning(f"Failed to decode Google JWT payload fallback: {exc}")
 
-            if not email and (settings.DEBUG or token.startswith("dev-") or token == "fake" or os.getenv("ALLOW_DEMO_LOGIN") == "true"):
+            if not email and (settings.DEBUG or token.startswith("dev-") or token == "fake"):
                 email = request.data.get("email") or "google_dev@example.com"
 
             if not email:
                 return Response(
-                    {"detail": "Failed to verify Google token. Please try logging in again."},
+                    {"detail": "Failed to verify Google token"},
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
 
@@ -414,11 +366,7 @@ class GoogleLoginView(APIView):
             )
 
         except Exception as e:
-            logger.error(f"Google OAuth error: {e}")
-            return Response(
-                {"detail": f"Google authentication failed: {str(e)}"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class GitHubOAuthStartView(APIView):
