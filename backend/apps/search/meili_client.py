@@ -70,15 +70,6 @@ def setup_meilisearch_index():
                     "body_text",
                     "content_type_name",
                 ],
-                "typoTolerance": {
-                    "enabled": True,
-                    "minWordSizeForTypos": {
-                        "oneTypo": 4,
-                        "twoTypos": 8,
-                    },
-                    "disableOnWords": [],
-                    "disableOnAttributes": [],
-                },
             }
         )
         logger.info("Successfully configured Meilisearch index: %s", index_name)
