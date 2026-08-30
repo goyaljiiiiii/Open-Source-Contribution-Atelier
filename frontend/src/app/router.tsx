@@ -388,6 +388,13 @@ const ConnectedAppsPage = lazy(() =>
     default: module.ConnectedApps,
   })),
 );
+
+const JsonTreeViewerPage = lazy(() =>
+  import("../pages/JsonTreeViewerPage").then((module) => ({
+    default: module.JsonTreeViewerPage,
+  })),
+);
+
 function RouteLoadingFallback() {
   return (
     <div
@@ -689,6 +696,15 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <GitSubmoduleSimulatorPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/sandbox/json"
+          element={
+            <ProtectedRoute>
+              <JsonTreeViewerPage />
             </ProtectedRoute>
           }
         />
