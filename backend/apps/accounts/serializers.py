@@ -473,130 +473,58 @@ class UserSessionSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# OAuth Serializers
-# ─────────────────────────────────────────────────────────────────────────────
+class StudyActivityExportSerializer(serializers.Serializer):
+    """Serializes a user's study activity log for JSON export."""
 
+    profile = serializers.SerializerMethodField()
+    streak = serializers.SerializerMethodField()
+    earned_badges = serializers.SerializerMethodField()
+    completed_lessons = serializers.SerializerMethodField()
 
-class OAuthUserSerializer(serializers.Serializer):
-    """User information returned in OAuth token response."""
-
-    username = serializers.CharField(
-        help_text="The authenticated user's username"
-    )
-    email = serializers.EmailField(
-        help_text="The authenticated user's email address"
-    )
-    is_staff = serializers.BooleanField(
-        help_text="Whether the user has staff permissions"
-    )
-
-
-class OAuthTokenResponseSerializer(serializers.Serializer):
-    """
-    OAuth callback success response containing JWT access and refresh tokens.
-    
-    Example:
-        {
-            "access": "eyJhbGc...",
-            "refresh": "eyJhbGc...",
-            "user": {
-                "username": "john_doe",
-                "email": "john@example.com",
-                "is_staff": false
-            }
+    def get_profile(self, user):
+        profile = getattr(user, "user_profile", None)
+        return {
+            "username": user.username,
+            "email": user.email,
+            "date_joined": user.date_joined,
+            "bio": getattr(profile, "bio", ""),
+            "timezone": getattr(profile, "timezone", "UTC"),
         }
-    """
 
-    access = serializers.CharField(
-        help_text="JWT access token for API authentication"
-    )
-    refresh = serializers.CharField(
-        help_text="JWT refresh token for obtaining new access tokens"
-    )
-    user = OAuthUserSerializer(
-        help_text="Authenticated user information"
-    )
+    def get_streak(self, user):
+        from apps.progress.models import StreakProfile
 
+        try:
+            streak_profile = user.streak_profile
+        except StreakProfile.DoesNotExist:
+            return None
 
-class GoogleOAuthRequestSerializer(serializers.Serializer):
-    """
-    Google OAuth callback request containing the Google access/ID token.
-    
-    Accepts multiple token field names for flexibility:
-    - access_token: Standard OAuth2 access token
-    - id_token: OpenID Connect ID token
-    - credential: Google's Credential (from Sign-In with Google)
-    - token: Generic token field
-    """
-
-    access_token = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        help_text="Google OAuth2 access token"
-    )
-    access = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        help_text="Google access token (alternative field name)"
-    )
-    id_token = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        help_text="Google OpenID Connect ID token"
-    )
-    credential = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        help_text="Google Sign-In credential JWT"
-    )
-    token = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        help_text="Generic token field"
-    )
-
-# ─────────────────────────────────────────────────────────────────────────────
-# OAuth Token Response Serializers
-# ─────────────────────────────────────────────────────────────────────────────
-
-
-class OAuthUserSerializer(serializers.Serializer):
-    """User information returned in OAuth token response."""
-
-    username = serializers.CharField(
-        help_text="The authenticated user's username"
-    )
-    email = serializers.EmailField(
-        help_text="The authenticated user's email address"
-    )
-    is_staff = serializers.BooleanField(
-        help_text="Whether the user has staff permissions"
-    )
-
-
-class OAuthTokenResponseSerializer(serializers.Serializer):
-    """
-    OAuth callback success response containing JWT access and refresh tokens.
-    
-    Example:
-        {
-            "access": "eyJhbGc...",
-            "refresh": "eyJhbGc...",
-            "user": {
-                "username": "john_doe",
-                "email": "john@example.com",
-                "is_staff": false
-            }
+        return {
+            "current_streak": streak_profile.current_streak,
+            "longest_streak": streak_profile.longest_streak,
+            "last_activity_date": streak_profile.last_activity_date,
         }
-    """
 
-    access = serializers.CharField(
-        help_text="JWT access token for API authentication"
-    )
-    refresh = serializers.CharField(
-        help_text="JWT refresh token for obtaining new access tokens"
-    )
-    user = OAuthUserSerializer(
-        help_text="Authenticated user information"
-    )
+    def get_earned_badges(self, user):
+        from apps.progress.models import UserBadge
+
+        badges = UserBadge.objects.filter(user=user).select_related("badge")
+        return [
+            {"badge_name": ub.badge.name, "earned_at": ub.earned_at}
+            for ub in badges
+        ]
+
+    def get_completed_lessons(self, user):
+        from apps.progress.models import LessonProgress
+
+        lessons = LessonProgress.objects.filter(
+            user=user, completed=True
+        ).select_related("lesson")
+        return [
+            {
+                "lesson_title": lp.lesson.title,
+                "score": lp.score,
+                "completed_at": lp.updated_at,
+            }
+            for lp in lessons
+        ]

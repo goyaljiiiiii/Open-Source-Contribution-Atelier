@@ -7,8 +7,12 @@ import {
   loadFiltersFromStorage,
   saveFiltersToStorage,
 } from "../lib/goodFirstIssueFinder";
-import { useGoodFirstIssues } from "../hooks/useGoodFirstIssues";
-import { DataStateWrapper } from "../components/ui/DataStateWrapper";
+import {
+  useGoodFirstIssues,
+  TOPIC_FILTERS,
+  TopicFilter,
+  filterIssuesByTopic,
+} from "../hooks/useGoodFirstIssues";import { DataStateWrapper } from "../components/ui/DataStateWrapper";
 import {
   ExternalLink,
   Filter,
@@ -69,6 +73,10 @@ export function GoodFirstIssueFinderPage() {
 
   const { issues, isLoading, error, fromCache, totalCount, refetch } =
     useGoodFirstIssues(filters);
+
+  const [selectedTopic, setSelectedTopic] =
+    useState<TopicFilter>("All Topics");
+  const visibleIssues = filterIssuesByTopic(issues, selectedTopic);
 
   const toggleLabel = (label: string) => {
     setFilters((prev) => {
@@ -200,16 +208,39 @@ export function GoodFirstIssueFinderPage() {
         </div>
       </section>
 
+      {/* Topic chips */}
+      <div className="mb-6 flex flex-wrap gap-2">
+        {TOPIC_FILTERS.map((topic) => {
+          const active = selectedTopic === topic;
+          return (
+            <button
+              key={topic}
+              type="button"
+              onClick={() => setSelectedTopic(topic)}
+              aria-pressed={active}
+              className={`rounded-full border-2 border-black px-3 py-1.5 text-[11px] font-black uppercase transition ${
+                active
+                  ? "bg-primary text-black shadow-card-sm"
+                  : "bg-surface-low dark:bg-[#151411] dark:border-[#2e2924]"
+              }`}
+            >
+              {topic}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Status */}
       <div className="mb-4 flex flex-wrap items-center gap-3 text-xs font-bold text-muted dark:text-[#c4bbae]">
         {!isLoading && !error && (
           <span>
-            Showing {issues.length} ranked issue
-            {issues.length === 1 ? "" : "s"}
-            {totalCount > issues.length ? ` (from ${totalCount} matches)` : ""}
+            Showing {visibleIssues.length} ranked issue
+            {visibleIssues.length === 1 ? "" : "s"}
+            {totalCount > visibleIssues.length
+              ? ` (from ${totalCount} matches)`
+              : ""}
           </span>
-        )}
-        {fromCache && !isLoading && (
+        )}        {fromCache && !isLoading && (
           <span className="rounded-full border border-teal-600/40 bg-teal-50 px-2 py-0.5 text-teal-800 dark:bg-teal-900/30 dark:text-teal-200">
             Served from cache
           </span>
@@ -220,10 +251,10 @@ export function GoodFirstIssueFinderPage() {
       <DataStateWrapper
         loading={isLoading}
         error={error}
-        empty={issues.length === 0}
+        empty={visibleIssues.length === 0}
         onRetry={refetch}
         emptyTitle="No Matching Issues Found"
-        emptyDescription="Try lowering the beginner score threshold, reducing min stars, or selecting a different language."
+        emptyDescription="Try lowering the beginner score threshold, reducing min stars, selecting a different language, or choosing a different topic chip."
         skeleton={
           <div className="grid gap-4 md:grid-cols-2">
             <IssueSkeleton />
@@ -234,8 +265,7 @@ export function GoodFirstIssueFinderPage() {
         }
       >
         <div className="grid gap-4 md:grid-cols-2">
-          {issues.map((issue) => (
-            <a
+          {visibleIssues.map((issue) => (            <a
               key={issue.id}
               href={issue.html_url}
               target="_blank"
