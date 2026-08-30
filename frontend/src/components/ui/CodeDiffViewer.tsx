@@ -51,26 +51,28 @@ export function CodeDiffViewer({
           <button
             type="button"
             onClick={() => setSplitView(true)}
+            aria-pressed={splitView}
             className={`p-1 rounded ${
               splitView
                 ? "bg-white dark:bg-[#2e2924] shadow-sm text-primary"
                 : "text-muted hover:text-text"
             }`}
-            title="Split View"
-            aria-label="Split View"
+            title="Split View (2-column)"
+            aria-label="Split View (2-column)"
           >
             <Columns size={16} />
           </button>
           <button
             type="button"
             onClick={() => setSplitView(false)}
+            aria-pressed={!splitView}
             className={`p-1 rounded ${
               !splitView
                 ? "bg-white dark:bg-[#2e2924] shadow-sm text-primary"
                 : "text-muted hover:text-text"
             }`}
-            title="Unified View"
-            aria-label="Unified View"
+            title="Unified View (1-column)"
+            aria-label="Unified View (1-column)"
           >
             <List size={16} />
           </button>
