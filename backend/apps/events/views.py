@@ -178,3 +178,39 @@ class HandlerToggleView(generics.GenericAPIView):
         handler.save()
 
         return Response({"status": handler.status})
+
+
+class TelemetryEventIngestView(generics.GenericAPIView):
+    """
+    Ingest client telemetry events with automatic 500ms duplicate throttling.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        from apps.events.services.event_bus import EventBus
+
+        event_type = request.data.get("event_type", "client_telemetry")
+        payload_data = request.data.get("data", {})
+
+        event = EventBus.emit(
+            event_type=event_type,
+            data=payload_data,
+            actor=request.user,
+            throttle_window_ms=500,
+        )
+
+        if event is None:
+            return Response(
+                {
+                    "status": "throttled",
+                    "message": "Duplicate telemetry event throttled within 500ms window.",
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(
+            {"status": "accepted", "event_id": str(event.id)},
+            status=status.HTTP_202_ACCEPTED,
+        )
+
