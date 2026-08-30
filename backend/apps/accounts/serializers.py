@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import re
 from datetime import timedelta
 
@@ -62,7 +61,8 @@ class SignupSerializer(serializers.ModelSerializer):
 class UserUpdateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         write_only=True, required=False, min_length=8, max_length=128
-    )    avatar = serializers.ImageField(required=False)
+    )
+    avatar = serializers.ImageField(required=False)
     cover_image = serializers.ImageField(required=False)
     timezone = serializers.CharField(required=False)
     twitter_url = serializers.URLField(required=False, allow_blank=True)
@@ -424,58 +424,6 @@ class MagicLinkRequestSerializer(serializers.Serializer):
     """Accept an email address to trigger a magic link login email."""
 
     email = serializers.EmailField()
-
-
-class MagicLinkVerifySerializer(serializers.Serializer):
-    """Accept a magic link token to verify and login the user."""
-
-    token = serializers.UUIDField()
-
-
-class ChangePasswordSerializer(serializers.Serializer):
-    old_password = serializers.CharField(required=True, max_length=128)
-    new_password = serializers.CharField(required=True, min_length=8, max_length=128)
-    def validate_new_password(self, value):
-        return validate_strong_password(value)
-
-
-class AvatarUploadSerializer(serializers.Serializer):
-    avatar = serializers.ImageField(required=True)
-
-
-class PasswordResetValidateTokenSerializer(serializers.Serializer):
-    token = serializers.UUIDField(required=True)
-
-
-from .models import UserSession
-
-
-class UserSessionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UserSession
-        fields = (
-            "id",
-            "session_id",
-            "ip_address",
-            "user_agent",
-            "device_name",
-            "created_at",
-            "last_activity",
-        )
-        read_only_fields = fields
-=======
-import re
-from datetime import timedelta
-
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
-from django.utils import timezone
-from rest_framework import serializers
-from rest_framework.exceptions import AuthenticationFailed
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-
-
 def validate_strong_password(value):
     if not re.search(r"\d", value):
         raise serializers.ValidationError("Password must contain at least one number.")
@@ -937,4 +885,3 @@ class UserSessionSerializer(serializers.ModelSerializer):
             "last_activity",
         )
         read_only_fields = fields
->>>>>>> feat/2817-global-rank-percentile-badge

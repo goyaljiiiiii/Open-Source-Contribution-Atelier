@@ -260,8 +260,8 @@ class WebSocketBenchmark:
         """
         import psutil
 
-            process = psutil.Process()
-            with memory_profiler() as prof:
+        process = psutil.Process()
+        with memory_profiler() as prof:
                 start_time = time.time()
                 success_count = 0
                 failure_count = 0

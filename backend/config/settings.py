@@ -150,7 +150,6 @@ def _validate_cors_allowed_origins(origins: list[str]) -> list[str]:
 
 CORS_ALLOWED_ORIGINS = _validate_cors_allowed_origins(CORS_ALLOWED_ORIGINS)
 
-if not DEBUG and not TESTING and not CORS_ALLOWED_ORIGINS:
 if not DEBUG and not TESTING:
     import urllib.parse
     from django.core.exceptions import ImproperlyConfigured
