@@ -79,7 +79,7 @@ class NotificationTaskTests(TestCase):
             message_body="Important system maintenance scheduled.",
         )
 
-       self.assertEqual(
+        self.assertEqual(
             result, f"Email sent successfully to {user_without_profile.email}"
         )
         mock_send_mail.assert_called_once()

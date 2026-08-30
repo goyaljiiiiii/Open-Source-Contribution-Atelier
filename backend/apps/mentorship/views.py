@@ -240,8 +240,8 @@ class MatchRecommendationsView(views.APIView):
 
         try:
             match = MentorshipMatch.objects.get(
-                Q(mentor=request.user) | Q(mentee=request.user),
                 id=match_id,
+                Q(mentor=request.user) | Q(mentee=request.user),
             )
         except MentorshipMatch.DoesNotExist:
             return Response(
