@@ -6,6 +6,7 @@ from .views import (
     BurnoutSignalViewSet,
     ContributorActivityViewSet,
     InterventionViewSet,
+    UserWeeklyBurnoutTrendsView,
 )
 
 router = DefaultRouter()
@@ -15,5 +16,8 @@ router.register(r"intervention", InterventionViewSet, basename="intervention")
 router.register(r"burnout-metric", BurnoutMetricViewSet, basename="burnout-metric")
 
 urlpatterns = [
+    path("user-trends/", UserWeeklyBurnoutTrendsView.as_view(), name="user_burnout_trends"),
+    path("trends/", UserWeeklyBurnoutTrendsView.as_view(), name="burnout_trends"),
     path("", include(router.urls)),
 ]
+
