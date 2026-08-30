@@ -570,15 +570,24 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
 class BulkUserListSerializer(serializers.ListSerializer):
     def to_representation(self, data):
+        from apps.progress.models import StreakProfile
         from apps.progress.services.milestone_track_service import MilestoneTrackService
 
         users = list(data)
+        user_ids = [user.id for user in users]
         self.context["bulk_track_statuses"] = (
             MilestoneTrackService.get_users_active_track_statuses(users)
         )
         self.context["bulk_next_milestones"] = (
             MilestoneTrackService.get_users_next_milestones(users)
         )
+
+        self.context["bulk_streaks"] = {
+            row["user_id"]: row
+            for row in StreakProfile.objects.filter(user_id__in=user_ids).values(
+                "user_id", "current_streak", "longest_streak"
+            )
+        }
 
         return super().to_representation(data)
 
@@ -594,6 +603,8 @@ class UserListSerializer(serializers.ModelSerializer):
     next_milestone = serializers.SerializerMethodField()
     global_rank = serializers.SerializerMethodField()
     percentile_standing = serializers.SerializerMethodField()
+    streak_days = serializers.SerializerMethodField()
+    longest_streak = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -613,6 +624,8 @@ class UserListSerializer(serializers.ModelSerializer):
             "next_milestone",
             "global_rank",
             "percentile_standing",
+            "streak_days",
+            "longest_streak",
         )
 
     def get_global_rank(self, obj):
@@ -670,6 +683,18 @@ class UserListSerializer(serializers.ModelSerializer):
         from apps.progress.services.milestone_track_service import MilestoneTrackService
 
         return MilestoneTrackService.get_user_next_milestone(obj)
+
+    def get_streak_days(self, obj):
+        if "bulk_streaks" in self.context:
+            return self.context["bulk_streaks"].get(obj.id, {}).get("current_streak", 0)
+        streak = getattr(obj, "streak_profile", None)
+        return streak.current_streak if streak else 0
+
+    def get_longest_streak(self, obj):
+        if "bulk_streaks" in self.context:
+            return self.context["bulk_streaks"].get(obj.id, {}).get("longest_streak", 0)
+        streak = getattr(obj, "streak_profile", None)
+        return streak.longest_streak if streak else 0
 
     def get_avatar_url(self, obj):
         if hasattr(obj, "user_profile") and obj.user_profile.avatar:
