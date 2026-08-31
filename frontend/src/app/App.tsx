@@ -18,6 +18,7 @@ import { OfflineBanner } from "../components/ui/OfflineBanner";
 import { InstallAppBanner } from "../components/ui/InstallAppBanner";
 import { UpdateAvailableBanner } from "../components/ui/UpdateAvailableBanner";
 import { ConflictResolutionModal } from "../components/ui/ConflictResolutionModal";
+import { useSlowConnection } from "../hooks/useSlowConnection";
 
 // ✅ Import BackToTop Component
 import BackToTop from "../components/BackToTop";
@@ -60,6 +61,7 @@ const TOUR_STEPS: TourStep[] = [
 export function App({ children }: { children?: React.ReactNode }) {
   const location = useLocation();
   const dispatch = useAppDispatch();
+  const { isConnectionSlow } = useSlowConnection(1500);
 
   useEffect(() => {
     dispatch({
@@ -147,6 +149,23 @@ export function App({ children }: { children?: React.ReactNode }) {
           <InstallAppBanner />
           <UpdateAvailableBanner />
           <ConflictResolutionModal />
+          {/* Reactive High-Latency Unstable Quality Toast Alert Banner */}
+          {isConnectionSlow && (
+            <div 
+              role="alert" 
+              className="fixed bottom-6 left-6 z-50 p-4 max-w-md bg-amber-500/10 border border-amber-500/30 rounded-xl backdrop-blur-md shadow-2xl transition-all duration-300 transform scale-100 ease-out animate-fade-in"
+            >
+              <div className="flex items-start space-x-3">
+                <span className="text-lg" aria-hidden="true">⚠️</span>
+                <div>
+                  <h4 className="text-sm font-bold text-amber-400">Unstable Network Detected</h4>
+                  <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                    Your changes will sync automatically when your internet connection stabilizes.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
           {/* Global Toast Configuration */}
           <Toaster
             position="top-right"
