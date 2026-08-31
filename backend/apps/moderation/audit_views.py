@@ -24,7 +24,9 @@ class ModerationAuditTrailListView(generics.ListAPIView):
     pagination_class = ModerationAuditPagination
 
     def get_queryset(self):
-        qs = ModerationAuditEvent.objects.select_related("content_report", "moderator")
+        qs = ModerationAuditEvent.objects.select_related(
+            "content_report", "moderator", "target_user"
+        )
 
         status_param = self.request.query_params.get("status")
         if status_param and status_param != "ALL":
@@ -37,7 +39,10 @@ class ModerationAuditTrailListView(generics.ListAPIView):
                 | Q(reason__icontains=q)
                 | Q(content_report__category__icontains=q)
                 | Q(content_report__object_id__icontains=q)
+                | Q(target_user__username__icontains=q)
+                | Q(moderator__username__icontains=q)
             )
+
 
         from_str = self.request.query_params.get("from")
         to_str = self.request.query_params.get("to")

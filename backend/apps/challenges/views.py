@@ -17,6 +17,7 @@ from apps.progress.streak_engine import get_user_local_date
 
 from .models import Challenge, ChallengeCompletion, ChallengeOfTheDay
 from .serializers import ChallengeSerializer
+from .services import calculate_daily_challenge_xp
 from .throttles import SandboxAnonRateThrottle, SandboxUserRateThrottle
 
 logger = logging.getLogger(__name__)
@@ -354,11 +355,27 @@ class CompleteChallengeOfTheDayView(APIView):
         today = get_user_local_date(request.user)
         cotd = get_object_or_404(ChallengeOfTheDay, date=today)
 
+        # Record this challenge completion as a learning activity so the
+        # active streak (and its XP multiplier) reflects today's work.
+        try:
+            from apps.progress.streak_engine import StreakEngine
+
+            streak_data = StreakEngine.record_activity(
+                request.user, activity_date=today
+            )
+            current_streak = streak_data.get("current_streak", 0)
+        except Exception:
+            current_streak = None
+
+        bonus_earned = calculate_daily_challenge_xp(
+            request.user, cotd.bonus_points, current_streak=current_streak
+        )
+
         with transaction.atomic():
             _, created = ChallengeCompletion.objects.get_or_create(
                 user=request.user,
                 challenge=cotd.challenge,
-                defaults={"bonus_earned": cotd.bonus_points},
+                defaults={"bonus_earned": bonus_earned},
             )
 
         if not created:
@@ -376,6 +393,6 @@ class CompleteChallengeOfTheDayView(APIView):
             pass
 
         return Response(
-            {"bonus_earned": cotd.bonus_points},
+            {"bonus_earned": bonus_earned},
             status=status.HTTP_201_CREATED,
         )

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Copy, Check, FileDiff, Sparkles } from "lucide-react";
 import {
   summarizeDiff,
@@ -19,19 +19,31 @@ export type PrDiffSummarizerProps = {
   compact?: boolean;
   className?: string;
   defaultIssueNumber?: string;
+  onDirtyChange?: (isDirty: boolean) => void;
 };
 
 export function PrDiffSummarizer({
   compact = false,
   className = "",
   defaultIssueNumber = "",
+  onDirtyChange,
 }: PrDiffSummarizerProps) {
   const [raw, setRaw] = useState("");
   const [issueNumber, setIssueNumber] = useState(defaultIssueNumber);
   const [titleHint, setTitleHint] = useState("");
   const [copied, setCopied] = useState(false);
 
+  useEffect(() => {
+    const isDirty = Boolean(
+      raw.trim() ||
+        (issueNumber && issueNumber !== defaultIssueNumber) ||
+        titleHint.trim(),
+    );
+    onDirtyChange?.(isDirty);
+  }, [raw, issueNumber, titleHint, defaultIssueNumber, onDirtyChange]);
+
   const summary = useMemo(() => summarizeDiff(raw), [raw]);
+
   const checklist = useMemo(() => buildChecklist(summary), [summary]);
   const prBody = useMemo(
     () =>

@@ -154,4 +154,37 @@ describe("gitSimulator", () => {
 
     expect(resolveRes.newState.conflicts.length).toBe(0);
   });
+
+  it("should handle git commit --amend -m <msg>", () => {
+    let current = state;
+    current = parseGitCommand("git commit -m \"added stuff\"", current).newState;
+    const initialCommitCount = current.commits.length;
+    const tipIdBefore = current.commits[current.commits.length - 1].id;
+
+    const result = parseGitCommand("git commit --amend -m \"updated stuff\"", current);
+    expect(result.error).toBeUndefined();
+    expect(result.newState.commits.length).toBe(initialCommitCount);
+    expect(result.newState.commits[result.newState.commits.length - 1].id).toBe(tipIdBefore);
+    expect(result.newState.commits[result.newState.commits.length - 1].message).toBe("updated stuff");
+  });
+
+  it("should handle git commit --amend without -m keeping previous message", () => {
+    let current = state;
+    current = parseGitCommand("git commit -m \"original message\"", current).newState;
+    const initialCommitCount = current.commits.length;
+
+    const result = parseGitCommand("git commit --amend", current);
+    expect(result.error).toBeUndefined();
+    expect(result.newState.commits.length).toBe(initialCommitCount);
+    expect(result.newState.commits[result.newState.commits.length - 1].message).toBe("original message");
+  });
+
+  it("should handle git commit -m <msg> --amend with flag order reversed", () => {
+    let current = state;
+    current = parseGitCommand("git commit -m \"first\"", current).newState;
+
+    const result = parseGitCommand("git commit -m \"second amended\" --amend", current);
+    expect(result.error).toBeUndefined();
+    expect(result.newState.commits[result.newState.commits.length - 1].message).toBe("second amended");
+  });
 });

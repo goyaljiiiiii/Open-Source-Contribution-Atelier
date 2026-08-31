@@ -740,6 +740,67 @@ export function GitBisectGame() {
                 <div>Message: "{foundBadCommit.message}"</div>
                 <div>Author: {foundBadCommit.author}</div>
               </div>
+
+              {/* O(log N) vs O(N) Step Count Performance Comparison Chart */}
+              <div className="bg-surface-low dark:bg-[#12110e] border-2 border-black p-4 rounded-xl text-left space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-mono font-black uppercase text-text dark:text-[#f0ebe2] flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5 text-amber-400" />
+                    Performance: O(log N) vs O(N)
+                  </h4>
+                  <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded bg-emerald-400 text-black border border-black">
+                    {Math.round(((commits.length - (stepsCount + 1)) / commits.length) * 100)}% Faster
+                  </span>
+                </div>
+
+                {/* Comparative Bar Visualization */}
+                <div className="space-y-2 text-xs font-mono font-bold">
+                  {/* Git Bisect (Binary Search) */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-emerald-600 dark:text-emerald-400 font-black">
+                        git bisect (Binary Search)
+                      </span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-black">
+                        {stepsCount + 1} steps
+                      </span>
+                    </div>
+                    <div className="w-full h-4 bg-gray-200 dark:bg-gray-800 rounded-md border border-black overflow-hidden relative">
+                      <div
+                        className="h-full bg-emerald-400 border-r border-black transition-all duration-500"
+                        style={{
+                          width: `${Math.max(
+                            ((stepsCount + 1) / commits.length) * 100,
+                            8,
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Linear Commit Check */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-slate-500 dark:text-slate-400">
+                        Linear Check (Step-by-step)
+                      </span>
+                      <span className="text-slate-500 dark:text-slate-400">
+                        {commits.length} steps
+                      </span>
+                    </div>
+                    <div className="w-full h-4 bg-gray-200 dark:bg-gray-800 rounded-md border border-black overflow-hidden relative">
+                      <div
+                        className="h-full bg-rose-400 border-r border-black transition-all duration-500"
+                        style={{ width: "100%" }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-[11px] font-bold text-muted dark:text-[#c4bbae] border-t border-black/10 dark:border-white/10 pt-2">
+                  ⚡ <strong>{(commits.length / Math.max(stepsCount + 1, 1)).toFixed(1)}x Efficiency Boost!</strong> Binary search eliminated {commits.length - (stepsCount + 1)} unnecessary commit test cycles.
+                </p>
+              </div>
               <button
                 onClick={() => setFoundBadCommit(null)}
                 className="w-full bg-primary hover:bg-primary/90 text-black font-black py-3 rounded-xl border-2 border-black shadow-card-sm transition-all"

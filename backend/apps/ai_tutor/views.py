@@ -1,12 +1,14 @@
 import logging
 
-logger = logging.getLogger(__name__)
+from django.http import StreamingHttpResponse
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .services import AiTutorService
 from .throttles import AiTutorRateThrottle
+
+logger = logging.getLogger(__name__)
 
 
 class TutorAskView(APIView):
@@ -40,10 +42,14 @@ class TutorAskView(APIView):
             except Exception as e:
                 logger.warning("Caught exception: %s", e)
 
-        answer = AiTutorService.get_response(
+        stream_generator = AiTutorService.get_streaming_response(
             question=question,
             lesson_context=lesson_context,
             history=history,
         )
 
-        return Response({"answer": answer})
+        return StreamingHttpResponse(
+            stream_generator,
+            content_type="text/event-stream",
+        )
+

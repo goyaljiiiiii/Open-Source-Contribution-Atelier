@@ -1,10 +1,3 @@
-/**
- * Search page with category filter pills.
- *
- * @file SearchPage.tsx
- * @location frontend/src/pages/SearchPage.tsx
- */
-
 import React, { useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { SearchWithFilters } from "../components/Search/SearchWithFilters";
@@ -48,7 +41,6 @@ export const SearchPage: React.FC = () => {
           </p>
         )}
       </div>
-
 
       <div className="search-page-content">
         <SearchWithFilters

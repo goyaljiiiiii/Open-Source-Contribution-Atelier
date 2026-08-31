@@ -1,6 +1,7 @@
 import { LessonDraftData } from "../../hooks/useContentDraft";
 import { MarkdownRenderer } from "../ui/MarkdownRenderer";
 import { Clock, HelpCircle, CheckCircle2 } from "lucide-react";
+import { calculateReadingTime, formatReadingTime } from "../../lib/readingTime";
 
 interface LessonPreviewProps {
   lesson: LessonDraftData;
@@ -38,7 +39,10 @@ export function LessonPreview({ lesson }: LessonPreviewProps) {
           </span>
           <span className="flex items-center gap-1 px-2.5 py-1 bg-surface-low dark:bg-black/30 rounded border border-black/10 dark:border-[#2e2924]">
             <Clock className="w-3.5 h-3.5" />
-            {lesson.estimatedMinutes || 15} mins
+            {formatReadingTime(
+              lesson.estimatedMinutes ??
+                calculateReadingTime(lesson.content || 300),
+            )}
           </span>
           {lesson.tags && lesson.tags.length > 0 && (
             <div className="flex items-center gap-1">

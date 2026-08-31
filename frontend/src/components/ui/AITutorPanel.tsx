@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { fetchApi } from "../../lib/api";
+import { fetchStreamApi } from "../../lib/api";
 import {
   Sparkles,
   Send,
@@ -35,61 +34,76 @@ export function AITutorFloatingPanel({
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const tutorMutation = useMutation({
-    mutationFn: (question: string) => {
-      const historyPairs: { question: string; answer: string }[] = [];
-      for (let i = 0; i < messages.length - 1; i++) {
-        if (
-          messages[i].role === "user" &&
-          messages[i + 1]?.role === "assistant"
-        ) {
-          historyPairs.push({
-            question: messages[i].content,
-            answer: messages[i + 1].content,
-          });
-        }
-      }
+  const sendQuestion = async (qText: string) => {
+    const q = qText.trim();
+    if (!q || isStreaming) return;
 
-      return fetchApi<{ answer: string }>("/ai/tutor/ask/", {
+    const historyPairs: { question: string; answer: string }[] = [];
+    for (let i = 0; i < messages.length - 1; i++) {
+      if (
+        messages[i].role === "user" &&
+        messages[i + 1]?.role === "assistant"
+      ) {
+        historyPairs.push({
+          question: messages[i].content,
+          answer: messages[i + 1].content,
+        });
+      }
+    }
+
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: q },
+      { role: "assistant", content: "" },
+    ]);
+    setInput("");
+    setIsStreaming(true);
+
+    try {
+      await fetchStreamApi("/ai/tutor/ask/", {
         method: "POST",
         body: JSON.stringify({
-          question,
+          question: q,
           lesson_slug: lessonSlug,
           history: historyPairs,
         }),
-        headers: { "Content-Type": "application/json" },
-      });
-    },
-    onSuccess: (data) => {
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: data.answer },
-      ]);
-    },
-    onError: () => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content:
-            "Sorry, I couldn't process that right now. Please try again.",
+        onChunk: (chunkText) => {
+          setMessages((prev) => {
+            const next = [...prev];
+            const last = next[next.length - 1];
+            if (last && last.role === "assistant") {
+              next[next.length - 1] = {
+                ...last,
+                content: last.content + chunkText,
+              };
+            }
+            return next;
+          });
         },
-      ]);
-    },
-  });
-
-  const sendQuestion = (qText: string) => {
-    const q = qText.trim();
-    if (!q || tutorMutation.isPending) return;
-    setMessages((prev) => [...prev, { role: "user", content: q }]);
-    setInput("");
-    tutorMutation.mutate(q);
+      });
+    } catch {
+      setMessages((prev) => {
+        const next = [...prev];
+        const last = next[next.length - 1];
+        if (last && last.role === "assistant" && !last.content) {
+          next[next.length - 1] = {
+            ...last,
+            content:
+              "Sorry, I couldn't process that right now. Please try again.",
+          };
+        }
+        return next;
+      });
+    } finally {
+      setIsStreaming(false);
+    }
   };
 
   const handleSend = () => {
@@ -220,7 +234,7 @@ export function AITutorFloatingPanel({
                     <button
                       key={promptText}
                       onClick={() => sendQuestion(promptText)}
-                      disabled={tutorMutation.isPending}
+                      disabled={isStreaming}
                       className="text-left text-xs bg-surface-low border border-black/20 hover:border-accent hover:bg-accent/10 px-2.5 py-1 rounded-xl transition-all dark:bg-[#1a1815] dark:border-[#2e2924] dark:text-[#c4bbae]"
                     >
                       {promptText}
@@ -230,7 +244,7 @@ export function AITutorFloatingPanel({
               </div>
             )}
 
-            {tutorMutation.isPending && (
+            {isStreaming && (
               <div className="flex justify-start">
                 <div className="bg-surface-low border-2 border-black/10 dark:border-[#2e2924] rounded-2xl px-4 py-3 flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin text-accent" />
@@ -257,11 +271,11 @@ export function AITutorFloatingPanel({
                 }}
                 placeholder="Ask a question..."
                 className="flex-1 px-3 py-2 text-sm border-2 border-black/20 rounded-xl bg-surface-low focus:outline-none focus:border-accent dark:bg-[#0f0e0c] dark:border-[#2e2924] dark:text-[#f0ebe2] dark:focus:border-accent"
-                disabled={tutorMutation.isPending}
+                disabled={isStreaming}
               />
               <button
                 onClick={handleSend}
-                disabled={!input.trim() || tutorMutation.isPending}
+                disabled={!input.trim() || isStreaming}
                 className="p-2 bg-accent text-white border-2 border-black rounded-xl hover:bg-accent/90 disabled:opacity-50 transition-colors"
                 aria-label="Send question"
               >
@@ -278,3 +292,4 @@ export function AITutorFloatingPanel({
     </>
   );
 }
+

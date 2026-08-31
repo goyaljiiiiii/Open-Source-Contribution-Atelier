@@ -102,11 +102,18 @@ export function parseGitCommand(
 
   switch (parts[1]) {
     case "commit": {
-      let msg = "Update";
+      const isAmend = parts.includes("--amend");
       const mIndex = parts.indexOf("-m");
-      if (mIndex !== -1 && parts.length > mIndex + 1) {
-        msg = parts
-          .slice(mIndex + 1)
+      const hasM = mIndex !== -1 && parts.length > mIndex + 1;
+
+      let msg = "Update";
+      if (hasM) {
+        const msgParts = [];
+        for (let i = mIndex + 1; i < parts.length; i++) {
+          if (parts[i] === "--amend") continue;
+          msgParts.push(parts[i]);
+        }
+        msg = msgParts
           .join(" ")
           .replace(/"/g, "")
           .replace(/'/g, "");
@@ -116,8 +123,28 @@ export function parseGitCommand(
         newState.conflicts = [];
       }
 
-      const newCommitId = generateCommitId();
       const currentBranchName = headBranch ? headBranch.name : "detached";
+
+      if (isAmend) {
+        const tipCommit = newState.commits.find((c) => c.id === headCommitId);
+        if (!tipCommit) {
+          return {
+            newState: state,
+            error: "fatal: You have nothing to amend.",
+          };
+        }
+
+        if (hasM) {
+          tipCommit.message = msg;
+        }
+
+        return {
+          newState,
+          output: `[${currentBranchName} ${tipCommit.id}] ${tipCommit.message}`,
+        };
+      }
+
+      const newCommitId = generateCommitId();
 
       newState.commits.push({
         id: newCommitId,
