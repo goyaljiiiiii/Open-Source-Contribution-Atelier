@@ -1,53 +1,42 @@
-/**
- * Search page with category filter pills.
- *
- * @file SearchPage.tsx
- * @location frontend/src/pages/SearchPage.tsx
- */
+import React, { useState } from 'react';
+import SearchResultItem from '../components/search/SearchResultItem';
 
-import React, { useEffect, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
-import { SearchWithFilters } from "../components/Search/SearchWithFilters";
-import { useSearchWithCategories } from "../hooks/useSearchWithCategories";
-
-export const SearchPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
-  const { results, isLoading, error, isDegraded, categories, search, retry } =
-    useSearchWithCategories();
-  const hasInitializedRef = useRef(false);
-
-  // Initial search from URL params
-  useEffect(() => {
-    if (hasInitializedRef.current) return;
-    hasInitializedRef.current = true;
-
-    const query = searchParams.get("q") || "";
-    const category = searchParams.get("category") || null;
-    if (query || category) {
-      search(query, category);
-    }
-  }, [searchParams, search]);
+export function SearchPage() {
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Mock data representing standard catalog listings
+  const [results] = useState([
+    { id: 1, title: "Big O Time Complexity Notation", snippet: "Learn how to analyze algorithm performance using mathematical notation and worst-case profiling metrics." },
+    { id: 2, title: "Data Structures Foundations", snippet: "An introductory review of linear data architectures, array buffers, stacks, queues, and continuous lists." }
+  ]);
 
   return (
-    <div className="search-page">
-      <div className="search-page-header">
-        <h1>🔍 Search</h1>
-        <p className="search-subtitle">Find lessons, modules, and resources</p>
-      </div>
+    <div className="min-h-screen bg-slate-950 text-white p-6 max-w-4xl mx-auto">
+      <header className="mb-8">
+        <h1 className="text-xl font-bold tracking-tight">Curriculum Search Workspace</h1>
+        <div className="mt-4">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search lessons, terms, or algorithms..."
+            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          />
+        </div>
+      </header>
 
-      <div className="search-page-content">
-        <SearchWithFilters
-          categories={categories}
-          results={results}
-          isLoading={isLoading}
-          error={error}
-          isDegraded={isDegraded}
-          onSearch={search}
-          onRetry={retry}
-        />
-      </div>
+      <main className="space-y-4">
+        {results.map((item) => (
+          <SearchResultItem
+            key={item.id}
+            title={item.title}
+            snippet={item.snippet}
+            searchQuery={searchQuery}
+          />
+        ))}
+      </main>
     </div>
   );
-};
+}
 
 export default SearchPage;
