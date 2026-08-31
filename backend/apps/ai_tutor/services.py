@@ -1,5 +1,7 @@
+import json
 import logging
 import re
+from typing import Generator
 
 from django.conf import settings
 
@@ -85,6 +87,68 @@ MARKDOWN_TEMPLATES = {
 
 
 class AiTutorService:
+    @staticmethod
+    def get_streaming_response(
+        question: str, lesson_context: str = "", history: list | None = None
+    ) -> Generator[str, None, None]:
+        if not question.strip():
+            yield f"data: {json.dumps({'text': 'Please ask a question!'})}\n\n"
+            return
+
+        if getattr(settings, "OPENAI_API_KEY", None):
+            try:
+                import openai
+
+                openai.api_key = settings.OPENAI_API_KEY
+                model = getattr(settings, "LLM_MODEL", "gpt-3.5-turbo")
+
+                messages = [
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a friendly tutor helping a student learn open source contribution. "
+                            "The student is currently studying a lesson. Answer concisely (2-4 sentences), "
+                            "use code examples when helpful, and encourage the student. "
+                            + (
+                                f"\n\nLesson context:\n{lesson_context}"
+                                if lesson_context
+                                else ""
+                            )
+                        ),
+                    },
+                ]
+
+                for entry in (history or [])[-6:]:
+                    messages.append({"role": "user", "content": entry.get("question", "")})
+                    messages.append(
+                        {"role": "assistant", "content": entry.get("answer", "")}
+                    )
+
+                messages.append({"role": "user", "content": question})
+
+                stream = openai.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    max_tokens=300,
+                    temperature=0.7,
+                    stream=True,
+                )
+
+                for chunk in stream:
+                    if chunk.choices and len(chunk.choices) > 0:
+                        delta = chunk.choices[0].delta
+                        content = getattr(delta, "content", None)
+                        if content:
+                            yield f"data: {json.dumps({'text': content})}\n\n"
+                return
+            except Exception as e:
+                logger.warning("AI tutor streaming LLM call failed: %s", e)
+
+        fallback_text = AiTutorService._fallback_response(question)
+        tokens = re.findall(r"\S+|\s+", fallback_text)
+        for token in tokens:
+            yield f"data: {json.dumps({'text': token})}\n\n"
+
     @staticmethod
     def get_response(
         question: str, lesson_context: str = "", history: list | None = None

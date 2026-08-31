@@ -51,8 +51,9 @@ class AiTutorTests(TestCase):
             {"question": "How does git work?", "lesson_slug": self.lesson.slug},
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("answer", response.data)
-        self.assertIn("version control", response.data["answer"].lower())
+        self.assertEqual(response["Content-Type"], "text/event-stream")
+        content = b"".join(response.streaming_content).decode("utf-8")
+        self.assertIn("version control", content.lower())
 
     def test_fallback_commit_response(self):
         answer = AiTutorService.get_response(question="What is a commit?")
@@ -81,6 +82,27 @@ class AiTutorTests(TestCase):
                 )
                 mock_openai.chat.completions.create.assert_called_once()
 
+    def test_streaming_llm_response_mocked(self):
+        mock_openai = MagicMock()
+        mock_chunk = MagicMock()
+        mock_chunk.choices = [MagicMock()]
+        mock_chunk.choices[0].delta.content = "Git commits track changes."
+        mock_openai.chat.completions.create.return_value = [mock_chunk]
+
+        with self.settings(OPENAI_API_KEY="sk-fake-key-for-test"):
+            with patch.dict("sys.modules", {"openai": mock_openai}):
+                chunks = list(
+                    AiTutorService.get_streaming_response(
+                        question="Explain commits",
+                        lesson_context="Lesson title: Git Basics",
+                        history=[{"question": "Hi", "answer": "Hello!"}],
+                    )
+                )
+
+                combined = "".join(chunks)
+                self.assertIn("Git commits track changes.", combined)
+                mock_openai.chat.completions.create.assert_called_once()
+
     @override_settings(
         REST_FRAMEWORK={
             **settings.REST_FRAMEWORK,
@@ -94,7 +116,8 @@ class AiTutorTests(TestCase):
         from django.core.cache import cache
 
         cache.clear()
-        with patch.object(AiTutorService, "get_response", return_value="answer"):
+        dummy_stream = (x for x in ["data: {\"text\": \"answer\"}\n\n"])
+        with patch.object(AiTutorService, "get_streaming_response", side_effect=lambda *a, **k: (x for x in ["data: {\"text\": \"answer\"}\n\n"])):
             first = self.client.post("/api/ai/tutor/ask/", {"question": "First?"})
             second = self.client.post("/api/ai/tutor/ask/", {"question": "Second?"})
             third = self.client.post("/api/ai/tutor/ask/", {"question": "Third?"})
@@ -102,3 +125,4 @@ class AiTutorTests(TestCase):
         self.assertEqual(first.status_code, status.HTTP_200_OK)
         self.assertEqual(second.status_code, status.HTTP_200_OK)
         self.assertEqual(third.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
