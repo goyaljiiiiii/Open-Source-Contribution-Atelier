@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   GitBranch,
   GitCommit,
@@ -6,6 +6,8 @@ import {
   CheckCircle2,
   Terminal,
   Zap,
+  RotateCcw,
+  RotateCw,
 } from "lucide-react";
 import {
   RebaseCommitGraph,
@@ -151,6 +153,9 @@ export function GitRebaseVisualizerPage() {
   const [commits, setCommits] = useState<RebaseCommit[]>(
     REAL_WORLD_SCENARIOS[0].initial_commits,
   );
+  const [past, setPast] = useState<RebaseCommit[][]>([]);
+  const [future, setFuture] = useState<RebaseCommit[][]>([]);
+
   const [executionLogs, setExecutionLogs] = useState<string[]>([]);
   const [showConflictModal, setShowConflictModal] = useState<boolean>(false);
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
@@ -160,8 +165,16 @@ export function GitRebaseVisualizerPage() {
   const handleSelectScenario = (sc: RebaseScenario) => {
     setActiveScenario(sc);
     setCommits(sc.initial_commits);
+    setPast([]);
+    setFuture([]);
     setExecutionLogs([]);
     setIsCompleted(false);
+  };
+
+  const updateCommitsWithHistory = (newCommits: RebaseCommit[]) => {
+    setPast((prevPast) => [...prevPast, commits]);
+    setCommits(newCommits);
+    setFuture([]);
   };
 
   const handleCommitActionChange = (
@@ -169,13 +182,12 @@ export function GitRebaseVisualizerPage() {
     action: RebaseCommit["action"],
     newMessage?: string,
   ) => {
-    setCommits((prev) =>
-      prev.map((c, i) =>
-        i === index
-          ? { ...c, action, new_message: newMessage || c.new_message }
-          : c,
-      ),
+    const updated = commits.map((c, i) =>
+      i === index
+        ? { ...c, action, new_message: newMessage || c.new_message }
+        : c,
     );
+    updateCommitsWithHistory(updated);
   };
 
   const handleMoveCommit = (fromIndex: number, toIndex: number) => {
@@ -183,8 +195,54 @@ export function GitRebaseVisualizerPage() {
     const updated = [...commits];
     const [moved] = updated.splice(fromIndex, 1);
     updated.splice(toIndex, 0, moved);
-    setCommits(updated);
+    updateCommitsWithHistory(updated);
   };
+
+  const handleUndo = () => {
+    if (past.length === 0) return;
+    const previous = past[past.length - 1];
+    const newPast = past.slice(0, past.length - 1);
+    setFuture((prevFuture) => [commits, ...prevFuture]);
+    setPast(newPast);
+    setCommits(previous);
+  };
+
+  const handleRedo = () => {
+    if (future.length === 0) return;
+    const next = future[0];
+    const newFuture = future.slice(1);
+    setPast((prevPast) => [...prevPast, commits]);
+    setFuture(newFuture);
+    setCommits(next);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target &&
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA")
+      ) {
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+        if (e.shiftKey) {
+          e.preventDefault();
+          handleRedo();
+        } else {
+          e.preventDefault();
+          handleUndo();
+        }
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [past, future, commits]);
 
   const handleExecuteRebase = () => {
     setIsExecuting(true);
@@ -334,9 +392,31 @@ export function GitRebaseVisualizerPage() {
               <GitCommit className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />{" "}
               Interactive Commit TODO List
             </h2>
-            <span className="text-xs font-mono font-bold text-slate-500">
-              Pick / Reword / Squash / Drop
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-mono font-bold text-slate-500 hidden sm:inline">
+                Pick / Reword / Squash / Drop
+              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={handleUndo}
+                  disabled={past.length === 0}
+                  title="Undo step (Ctrl+Z)"
+                  aria-label="Undo"
+                  className="p-1.5 bg-gray-100 dark:bg-slate-800 text-black dark:text-white rounded-lg border border-black dark:border-slate-700 hover:bg-gray-200 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={handleRedo}
+                  disabled={future.length === 0}
+                  title="Redo step (Ctrl+Y)"
+                  aria-label="Redo"
+                  className="p-1.5 bg-gray-100 dark:bg-slate-800 text-black dark:text-white rounded-lg border border-black dark:border-slate-700 hover:bg-gray-200 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                >
+                  <RotateCw className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
           </div>
 
           <RebaseCommitGraph
