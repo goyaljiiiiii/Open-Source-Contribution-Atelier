@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchApi, API_BASE } from "../lib/api";
 import {
@@ -35,6 +35,280 @@ interface AnalyticsData {
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
+/* Memoized Heavy Recharts Subcomponents */
+
+export const RegistrationTrendsChart = React.memo(function RegistrationTrendsChart({
+  data,
+  theme,
+}: {
+  data: { date: string; count: number }[];
+  theme: string;
+}) {
+  if (!data || data.length === 0) {
+    return (
+      <p className="font-bold text-muted dark:text-[#c4bbae]">
+        No data for the selected period
+      </p>
+    );
+  }
+
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <AreaChart
+        data={data}
+        margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+      >
+        <defs>
+          <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.8} />
+            <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <XAxis
+          dataKey="date"
+          stroke="#888888"
+          fontSize={12}
+          tickLine={false}
+          axisLine={false}
+        />
+        <YAxis
+          stroke="#888888"
+          fontSize={12}
+          tickLine={false}
+          axisLine={false}
+        />
+        <CartesianGrid
+          strokeDasharray="3 3"
+          vertical={false}
+          stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"}
+        />
+        <Tooltip
+          contentStyle={{
+            borderRadius: "8px",
+            border:
+              theme === "dark"
+                ? "2px solid #2e2924"
+                : "2px solid black",
+            fontWeight: "bold",
+            backgroundColor: theme === "dark" ? "#1f1c18" : "#fff",
+            color: theme === "dark" ? "#f0ebe2" : "#000",
+          }}
+        />
+        <Area
+          type="monotone"
+          dataKey="count"
+          stroke="#4f46e5"
+          fillOpacity={1}
+          fill="url(#colorUsers)"
+        />
+      </AreaChart>
+    </ResponsiveContainer>
+  );
+});
+
+export const CourseEngagementChart = React.memo(function CourseEngagementChart({
+  data,
+  theme,
+}: {
+  data: { date: string; enrolled: number; completed: number }[];
+  theme: string;
+}) {
+  if (!data || data.length === 0) {
+    return (
+      <p className="font-bold text-muted dark:text-[#c4bbae]">
+        No data for the selected period
+      </p>
+    );
+  }
+
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart
+        data={data}
+        margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+      >
+        <CartesianGrid
+          strokeDasharray="3 3"
+          vertical={false}
+          stroke="#e0e0e0"
+        />
+        <XAxis
+          dataKey="date"
+          stroke="#888888"
+          fontSize={12}
+          tickLine={false}
+          axisLine={false}
+        />
+        <YAxis
+          stroke="#888888"
+          fontSize={12}
+          tickLine={false}
+          axisLine={false}
+        />
+        <Tooltip
+          contentStyle={{
+            borderRadius: "8px",
+            border:
+              theme === "dark"
+                ? "2px solid #2e2924"
+                : "2px solid black",
+            fontWeight: "bold",
+            backgroundColor: theme === "dark" ? "#1f1c18" : "#fff",
+            color: theme === "dark" ? "#f0ebe2" : "#000",
+          }}
+        />
+        <Legend
+          iconType="circle"
+          wrapperStyle={{ fontWeight: "bold" }}
+        />
+        <Bar
+          dataKey="enrolled"
+          name="Enrolled"
+          fill="#FFBB28"
+          radius={[4, 4, 0, 0]}
+        />
+        <Bar
+          dataKey="completed"
+          name="Completed"
+          fill="#00C49F"
+          radius={[4, 4, 0, 0]}
+        />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+});
+
+export const QuizAccuracyChart = React.memo(function QuizAccuracyChart({
+  quizData,
+  totalQuizCount,
+  theme,
+}: {
+  quizData: { name: string; value: number }[];
+  totalQuizCount: number;
+  theme: string;
+}) {
+  if (!quizData || quizData.length === 0 || totalQuizCount === 0) {
+    return (
+      <p className="font-bold text-muted dark:text-[#c4bbae]">
+        No data for the selected period
+      </p>
+    );
+  }
+
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <PieChart>
+        <Pie
+          data={quizData}
+          cx="50%"
+          cy="50%"
+          innerRadius={80}
+          outerRadius={120}
+          paddingAngle={5}
+          dataKey="value"
+          label={({ name, percent }: any) => {
+            const pct =
+              percent && !isNaN(percent) ? percent * 100 : 0;
+            return `${name} ${pct.toFixed(0)}%`;
+          }}
+          labelLine={false}
+        >
+          {quizData.map((entry, index) => (
+            <Cell
+              key={`cell-${index}`}
+              fill={COLORS[index % COLORS.length]}
+              stroke={theme === "dark" ? "#1f1c18" : "black"}
+              strokeWidth={2}
+            />
+          ))}
+        </Pie>
+        <Tooltip
+          contentStyle={{
+            borderRadius: "8px",
+            border:
+              theme === "dark"
+                ? "2px solid #2e2924"
+                : "2px solid black",
+            fontWeight: "bold",
+            backgroundColor: theme === "dark" ? "#1f1c18" : "#fff",
+            color: theme === "dark" ? "#f0ebe2" : "#000",
+          }}
+        />
+        <Legend
+          iconType="circle"
+          wrapperStyle={{ fontWeight: "bold" }}
+        />
+      </PieChart>
+    </ResponsiveContainer>
+  );
+});
+
+export const ChallengeStatusChart = React.memo(function ChallengeStatusChart({
+  data,
+  totalChallengeCount,
+  theme,
+}: {
+  data: { status: string; count: number }[];
+  totalChallengeCount: number;
+  theme: string;
+}) {
+  if (!data || data.length === 0 || totalChallengeCount === 0) {
+    return (
+      <p className="font-bold text-muted dark:text-[#c4bbae]">
+        No data for the selected period
+      </p>
+    );
+  }
+
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <PieChart>
+        <Pie
+          data={data}
+          cx="50%"
+          cy="50%"
+          outerRadius={120}
+          dataKey="count"
+          nameKey="status"
+          label={({ status, percent }: any) => {
+            const pct =
+              percent && !isNaN(percent) ? percent * 100 : 0;
+            return `${status} ${pct.toFixed(0)}%`;
+          }}
+        >
+          {data.map((entry, index) => (
+            <Cell
+              key={`cell-${index}`}
+              fill={COLORS[(index + 2) % COLORS.length]}
+              stroke={theme === "dark" ? "#1f1c18" : "black"}
+              strokeWidth={2}
+            />
+          ))}
+        </Pie>
+        <Tooltip
+          contentStyle={{
+            borderRadius: "8px",
+            border:
+              theme === "dark"
+                ? "2px solid #2e2924"
+                : "2px solid black",
+            fontWeight: "bold",
+            backgroundColor: theme === "dark" ? "#1f1c18" : "#fff",
+            color: theme === "dark" ? "#f0ebe2" : "#000",
+          }}
+        />
+        <Legend
+          iconType="circle"
+          wrapperStyle={{
+            fontWeight: "bold",
+            textTransform: "capitalize",
+          }}
+        />
+      </PieChart>
+    </ResponsiveContainer>
+  );
+});
+
 export default function AnalyticsDashboardPage() {
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = React.useState<"overview" | "engagement" | "quizzes" | "challenges">("overview");
@@ -43,10 +317,29 @@ export default function AnalyticsDashboardPage() {
     queryFn: () => fetchApi("/dashboard/analytics/"),
   });
 
-  const handleExportCSV = (dataset = "all", days = 30) => {
+  const handleExportCSV = useCallback((dataset = "all", days = 30) => {
     const url = `${API_BASE}/dashboard/analytics/export/?dataset=${dataset}&days=${days}`;
     window.open(url, "_blank");
-  };
+  }, []);
+
+  // Memoize quiz data for Pie Chart
+  const quizData = useMemo(() => {
+    return (data?.quiz_stats || []).map((item) => ({
+      name: item.is_correct ? "Correct" : "Incorrect",
+      value: item.count,
+    }));
+  }, [data?.quiz_stats]);
+
+  const totalQuizCount = useMemo(() => {
+    return quizData.reduce((acc, curr) => acc + curr.value, 0);
+  }, [quizData]);
+
+  const totalChallengeCount = useMemo(() => {
+    return (data?.challenge_stats || []).reduce(
+      (acc, curr) => acc + curr.count,
+      0,
+    );
+  }, [data?.challenge_stats]);
 
   if (isLoading) {
     return (
@@ -69,17 +362,6 @@ export default function AnalyticsDashboardPage() {
       </div>
     );
   }
-
-  // Format quiz data for Pie Chart
-  const quizData = (data.quiz_stats || []).map((item) => ({
-    name: item.is_correct ? "Correct" : "Incorrect",
-    value: item.count,
-  }));
-  const totalQuizCount = quizData.reduce((acc, curr) => acc + curr.value, 0);
-  const totalChallengeCount = (data.challenge_stats || []).reduce(
-    (acc, curr) => acc + curr.count,
-    0,
-  );
 
 
   return (
@@ -169,7 +451,7 @@ export default function AnalyticsDashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Registration Trends Widget */}
-        {(activeTab === "overview") && (
+        {activeTab === "overview" && (
           <div className="bg-white p-6 rounded-2xl border-4 border-black shadow-card dark:bg-[#151411] dark:border-[#2e2924] dark:shadow-none">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-black flex items-center gap-2">
@@ -185,62 +467,10 @@ export default function AnalyticsDashboardPage() {
               </button>
             </div>
             <div className="h-80 w-full flex items-center justify-center">
-              {data.registrations && data.registrations.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={data.registrations}
-                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                  >
-                    <defs>
-                      <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.8} />
-                        <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis
-                      dataKey="date"
-                      stroke="#888888"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis
-                      stroke="#888888"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      vertical={false}
-                      stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        borderRadius: "8px",
-                        border:
-                          theme === "dark"
-                            ? "2px solid #2e2924"
-                            : "2px solid black",
-                        fontWeight: "bold",
-                        backgroundColor: theme === "dark" ? "#1f1c18" : "#fff",
-                        color: theme === "dark" ? "#f0ebe2" : "#000",
-                      }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="count"
-                      stroke="#4f46e5"
-                      fillOpacity={1}
-                      fill="url(#colorUsers)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              ) : (
-                <p className="font-bold text-muted dark:text-[#c4bbae]">
-                  No data for the selected period
-                </p>
-              )}
+              <RegistrationTrendsChart
+                data={data.registrations}
+                theme={theme}
+              />
             </div>
           </div>
         )}
@@ -262,65 +492,10 @@ export default function AnalyticsDashboardPage() {
               </button>
             </div>
             <div className="h-80 w-full flex items-center justify-center">
-              {data.progress_stats && data.progress_stats.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={data.progress_stats}
-                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                  >
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      vertical={false}
-                      stroke="#e0e0e0"
-                    />
-                    <XAxis
-                      dataKey="date"
-                      stroke="#888888"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis
-                      stroke="#888888"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        borderRadius: "8px",
-                        border:
-                          theme === "dark"
-                            ? "2px solid #2e2924"
-                            : "2px solid black",
-                        fontWeight: "bold",
-                        backgroundColor: theme === "dark" ? "#1f1c18" : "#fff",
-                        color: theme === "dark" ? "#f0ebe2" : "#000",
-                      }}
-                    />
-                    <Legend
-                      iconType="circle"
-                      wrapperStyle={{ fontWeight: "bold" }}
-                    />
-                    <Bar
-                      dataKey="enrolled"
-                      name="Enrolled"
-                      fill="#FFBB28"
-                      radius={[4, 4, 0, 0]}
-                    />
-                    <Bar
-                      dataKey="completed"
-                      name="Completed"
-                      fill="#00C49F"
-                      radius={[4, 4, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <p className="font-bold text-muted dark:text-[#c4bbae]">
-                  No data for the selected period
-                </p>
-              )}
+              <CourseEngagementChart
+                data={data.progress_stats}
+                theme={theme}
+              />
             </div>
           </div>
         )}
@@ -342,56 +517,11 @@ export default function AnalyticsDashboardPage() {
               </button>
             </div>
             <div className="h-80 w-full flex items-center justify-center">
-              {quizData.length > 0 && totalQuizCount > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={quizData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={80}
-                      outerRadius={120}
-                      paddingAngle={5}
-                      dataKey="value"
-                      label={({ name, percent }: any) => {
-                        const pct =
-                          percent && !isNaN(percent) ? percent * 100 : 0;
-                        return `${name} ${pct.toFixed(0)}%`;
-                      }}
-                      labelLine={false}
-                    >
-                      {quizData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={COLORS[index % COLORS.length]}
-                          stroke={theme === "dark" ? "#1f1c18" : "black"}
-                          strokeWidth={2}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        borderRadius: "8px",
-                        border:
-                          theme === "dark"
-                            ? "2px solid #2e2924"
-                            : "2px solid black",
-                        fontWeight: "bold",
-                        backgroundColor: theme === "dark" ? "#1f1c18" : "#fff",
-                        color: theme === "dark" ? "#f0ebe2" : "#000",
-                      }}
-                    />
-                    <Legend
-                      iconType="circle"
-                      wrapperStyle={{ fontWeight: "bold" }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <p className="font-bold text-muted dark:text-[#c4bbae]">
-                  No data for the selected period
-                </p>
-              )}
+              <QuizAccuracyChart
+                quizData={quizData}
+                totalQuizCount={totalQuizCount}
+                theme={theme}
+              />
             </div>
           </div>
         )}
@@ -413,59 +543,11 @@ export default function AnalyticsDashboardPage() {
               </button>
             </div>
             <div className="h-80 w-full flex items-center justify-center">
-              {data.challenge_stats &&
-              data.challenge_stats.length > 0 &&
-              totalChallengeCount > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={data.challenge_stats}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={120}
-                      dataKey="count"
-                      nameKey="status"
-                      label={({ status, percent }: any) => {
-                        const pct =
-                          percent && !isNaN(percent) ? percent * 100 : 0;
-                        return `${status} ${pct.toFixed(0)}%`;
-                      }}
-                    >
-                      {data.challenge_stats.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={COLORS[(index + 2) % COLORS.length]}
-                          stroke={theme === "dark" ? "#1f1c18" : "black"}
-                          strokeWidth={2}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        borderRadius: "8px",
-                        border:
-                          theme === "dark"
-                            ? "2px solid #2e2924"
-                            : "2px solid black",
-                        fontWeight: "bold",
-                        backgroundColor: theme === "dark" ? "#1f1c18" : "#fff",
-                        color: theme === "dark" ? "#f0ebe2" : "#000",
-                      }}
-                    />
-                    <Legend
-                      iconType="circle"
-                      wrapperStyle={{
-                        fontWeight: "bold",
-                        textTransform: "capitalize",
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <p className="font-bold text-muted dark:text-[#c4bbae]">
-                  No data for the selected period
-                </p>
-              )}
+              <ChallengeStatusChart
+                data={data.challenge_stats}
+                totalChallengeCount={totalChallengeCount}
+                theme={theme}
+              />
             </div>
           </div>
         )}
