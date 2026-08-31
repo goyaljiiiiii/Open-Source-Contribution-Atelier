@@ -2,6 +2,11 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { fetchApi, getMediaUrl } from "../lib/api";
 import { StreakFlameBadge } from "../components/ui/StreakFlameBadge";
+import { ShareProfileModal } from "../components/ui/ShareProfileModal";
+import { ProfileSettingsForm } from "../features/auth/ProfileSettingsForm";
+import { TwoFactorSetupSection } from "../features/auth/TwoFactorSetupSection";
+import { NotificationPrefsToggle } from "../components/ui/NotificationPrefsToggle";
+import { useAuth } from "../features/auth/AuthContext";
 import {
   Github,
   Linkedin,
@@ -14,6 +19,17 @@ import {
   Check,
   Trophy,
   TrendingUp,
+  Share2,
+  Settings,
+  Sparkles,
+  UserCheck,
+  Shield,
+  Layers,
+  Activity,
+  Flame,
+  ExternalLink,
+  Edit3,
+  Image as ImageIcon,
 } from "lucide-react";
 
 interface UserProfileData {
@@ -49,12 +65,60 @@ interface UserProfileData {
   longest_streak?: number;
 }
 
+const BANNER_PRESETS = [
+  {
+    id: "preset:cyberpunk",
+    name: "Cyberpunk",
+    style: "bg-gradient-to-r from-slate-950 via-purple-950 to-indigo-950",
+  },
+  {
+    id: "preset:aurora",
+    name: "Aurora Glow",
+    style: "bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600",
+  },
+  {
+    id: "preset:emerald",
+    name: "Matrix Emerald",
+    style: "bg-gradient-to-r from-emerald-950 via-teal-900 to-slate-950",
+  },
+  {
+    id: "preset:sunset",
+    name: "Sunset Neon",
+    style: "bg-gradient-to-r from-orange-600 via-rose-600 to-purple-700",
+  },
+  {
+    id: "preset:obsidian",
+    name: "Obsidian Grid",
+    style: "bg-gradient-to-r from-zinc-900 via-neutral-900 to-slate-900",
+  },
+];
+
 export function UserProfilePage() {
-  const { username } = useParams<{ username: string }>();
+  const { username: paramUsername } = useParams<{ username: string }>();
+  let currentUser = null;
+  let checkUser = async () => {};
+
+  try {
+    const auth = useAuth();
+    currentUser = auth.user;
+    checkUser = auth.checkUser;
+  } catch {
+    // Fallback for isolated unit tests without AuthProvider wrapper
+  }
+
+  const activeUsername = paramUsername || currentUser?.username || "";
+  const isOwner =
+    Boolean(currentUser?.username) &&
+    (!paramUsername || paramUsername.toLowerCase() === currentUser?.username.toLowerCase());
+
   const [profile, setProfile] = useState<UserProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"overview" | "badges" | "activity" | "settings">(
+    "overview",
+  );
 
   const getPercentileLabel = (standing?: number, score: number = 0) => {
     if (standing !== undefined && standing !== null) {
@@ -66,23 +130,41 @@ export function UserProfilePage() {
     return "Top 50% Contributor";
   };
 
-  const handleCopyLink = () => {
-    const profileLink = `${window.location.origin}/u/${username}`;
-    navigator.clipboard.writeText(profileLink);
+  const handleCopyLink = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+    const linkTarget = activeUsername ? activeUsername : "user";
+    const profileLink = `${window.location.origin}/u/${encodeURIComponent(linkTarget)}`;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        void navigator.clipboard.writeText(profileLink);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = profileLink;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        textArea.remove();
+      }
+    } catch {
+      // Ignored clipboard error
+    }
   };
 
   useEffect(() => {
     const fetchProfile = async () => {
+      if (!activeUsername) {
+        setLoading(false);
+        setError("User profile not specified.");
+        return;
+      }
       try {
         setLoading(true);
         setError(null);
         const data = await fetchApi(
-          `/accounts/profile/${encodeURIComponent(username || "")}/`,
-          {
-            requireAuth: false,
-          },
+          `/accounts/profile/${encodeURIComponent(activeUsername)}/`,
+          { requireAuth: false },
         );
         setProfile(data);
       } catch (err: unknown) {
@@ -94,35 +176,36 @@ export function UserProfilePage() {
       }
     };
 
-    if (username) {
-      fetchProfile();
-    }
-  }, [username]);
+    fetchProfile();
+  }, [activeUsername]);
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-surface dark:bg-[#0a0a0f]">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      <div className="flex min-h-[70vh] items-center justify-center bg-slate-50 dark:bg-[#0a0a0f]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+          <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Loading Profile...</p>
+        </div>
       </div>
     );
   }
 
   if (error || !profile) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-surface p-6 dark:bg-[#0a0a0f]">
-        <div className="max-w-md rounded-2xl border-4 border-black bg-white p-8 text-center shadow-card dark:bg-[#121218] dark:border-[#3a3a45]">
-          <div className="text-6xl mb-4">🔍</div>
-          <h2 className="text-2xl font-black text-black dark:text-white uppercase mb-2">
+      <div className="flex min-h-[70vh] flex-col items-center justify-center p-6 bg-slate-50 dark:bg-[#0a0a0f]">
+        <div className="max-w-md w-full rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-xl dark:bg-[#121218] dark:border-slate-800">
+          <div className="text-5xl mb-4">🔍</div>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-2">
             Profile Not Found
           </h2>
-          <p className="text-muted mb-6">
-            {error || "The user you are looking for does not exist."}
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-6">
+            {error || "The user profile you are looking for does not exist or has been moved."}
           </p>
           <Link
             to="/"
-            className="inline-block px-6 py-3 bg-primary text-black font-bold rounded-xl border-4 border-black shadow-card-sm hover:-translate-y-0.5 transition-all"
+            className="inline-flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl shadow-md transition-all text-xs"
           >
-            Go back Home
+            Go Back Home
           </Link>
         </div>
       </div>
@@ -131,270 +214,543 @@ export function UserProfilePage() {
 
   const { user, badges, total_score, completed_lessons } = profile;
 
+  const renderBannerContent = () => {
+    const coverUrl = user.cover_image_url;
+    if (coverUrl && coverUrl.startsWith("preset:")) {
+      const preset = BANNER_PRESETS.find((p) => p.id === coverUrl);
+      return preset?.style || BANNER_PRESETS[0].style;
+    }
+    if (coverUrl && !coverUrl.startsWith("preset:")) {
+      return null;
+    }
+    return BANNER_PRESETS[0].style;
+  };
+
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      {/* HEADER WITH SHARE BUTTON */}
-      <div className="flex items-center justify-between mb-8 pb-4 border-b border-outline">
-        <div>
-          <h1 className="text-4xl font-black text-black dark:text-white uppercase tracking-tight">
-            User Profile
-          </h1>
-          <p className="mt-1 text-sm font-medium text-muted">
-            Viewing {user.username}'s public stats and badges
-          </p>
-        </div>
-        <button
-          onClick={handleCopyLink}
-          className="flex items-center gap-1.5 px-4 py-2 text-sm font-black border-4 border-black rounded-xl bg-surface hover:bg-black hover:text-white transition-all dark:bg-[#1c1c24] dark:border-[#3a3a45] shadow-card-sm active:translate-y-0 hover:-translate-y-0.5"
-          title="Copy profile link"
-        >
-          {copied ? (
-            <Check size={16} className="text-green-500" />
-          ) : (
-            <Copy size={16} />
+    <div className="min-h-screen bg-slate-50 dark:bg-[#09090e] pb-16 transition-colors">
+      {/* 1. HERO COVER BANNER */}
+      <div className="relative w-full h-44 sm:h-56 md:h-64 overflow-hidden shadow-inner">
+        {user.cover_image_url && !user.cover_image_url.startsWith("preset:") ? (
+          <img
+            src={getMediaUrl(user.cover_image_url) || ""}
+            alt={`${user.username}'s cover banner`}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className={`w-full h-full ${renderBannerContent()} relative`}>
+            {/* SVG GRID OVERLAY PATTERN */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff0a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0a_1px,transparent_1px)] bg-[size:24px_24px]" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+          </div>
+        )}
+
+        {/* QUICK SHARE OVERLAY BUTTON ON BANNER */}
+        <div className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-2 z-10">
+          <button
+            onClick={() => setShareModalOpen(true)}
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-black/40 hover:bg-black/60 text-white border border-white/20 text-xs font-bold backdrop-blur-md transition-all shadow-lg hover:scale-105"
+          >
+            <Share2 size={14} />
+            <span className="hidden sm:inline">Share</span>
+          </button>
+          {isOwner && (
+            <button
+              onClick={() => setActiveTab("settings")}
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-indigo-600/80 hover:bg-indigo-600 text-white border border-indigo-400/30 text-xs font-bold backdrop-blur-md transition-all shadow-lg hover:scale-105"
+            >
+              <Settings size={14} />
+              <span className="hidden sm:inline">Edit Profile</span>
+            </button>
           )}
-          <span>{copied ? "Copied Link!" : "Share Profile"}</span>
-        </button>
+        </div>
       </div>
 
-      {/* USER INFORMATION */}
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-        {/* Left Column: Stats & Socials */}
-        <div className="space-y-6 md:col-span-1">
-          <div className="rounded-3xl border-4 border-black bg-white p-6 shadow-card dark:bg-[#121218] dark:border-[#3a3a45]">
-            {/* COVER IMAGE */}
-            <div className="h-28 w-full border-4 border-black rounded-xl overflow-hidden bg-slate-100 mb-6 relative">
-              {user.cover_image_url ? (
-                <img
-                  src={getMediaUrl(user.cover_image_url) || ""}
-                  alt="User cover"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-60 flex items-center justify-center font-bold text-white text-xs uppercase tracking-wider">
-                  No Cover Image
+      {/* 2. PROFILE CONTAINER & MAIN CARD */}
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <div className="relative -mt-16 sm:-mt-20 mb-8 rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-7 shadow-xl dark:border-slate-800 dark:bg-[#12121c]">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            {/* AVATAR + BASIC DETAILS */}
+            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-5 text-center sm:text-left">
+              {/* AVATAR WRAPPER */}
+              <div className="relative group shrink-0">
+                <div className="h-28 w-28 sm:h-32 sm:w-32 rounded-2xl border-4 border-white dark:border-[#12121c] bg-slate-100 dark:bg-[#1c1c28] overflow-hidden shadow-2xl flex items-center justify-center">
+                  {user.avatar_url ? (
+                    <img
+                      src={getMediaUrl(user.avatar_url) || ""}
+                      alt={user.username}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-4xl font-black uppercase text-indigo-600 dark:text-indigo-400">
+                      {user.username.charAt(0)}
+                    </span>
+                  )}
                 </div>
-              )}
+
+                {/* ONLINE STATUS BADGE */}
+                <div
+                  className="absolute bottom-1 right-1 h-5 w-5 rounded-full border-2 border-white dark:border-[#12121c] bg-emerald-500 shadow-md"
+                  title="Active Open Source Contributor"
+                />
+              </div>
+
+              {/* USERNAME & BADGES */}
+              <div>
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
+                  <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                    {user.username}
+                  </h1>
+
+                  {user.is_staff && (
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase bg-slate-900 text-white dark:bg-white dark:text-slate-900 tracking-wider">
+                      Staff
+                    </span>
+                  )}
+                </div>
+
+                {/* RANK PERCENTILE BADGE */}
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-3">
+                  <span
+                    data-testid="rank-percentile-badge"
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 shadow-sm"
+                  >
+                    <Trophy size={13} className="stroke-[2.5]" />
+                    {getPercentileLabel(profile.percentile_standing, total_score)}
+                  </span>
+                </div>
+
+                {/* METADATA (JOINED, TIMEZONE) */}
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs font-bold text-slate-500 dark:text-slate-400">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar size={14} className="text-slate-400" />
+                    <span>
+                      Joined{" "}
+                      {new Date(
+                        user.timezone
+                          ? new Date().toLocaleString("en-US", { timeZone: user.timezone })
+                          : new Date(),
+                      ).toLocaleDateString(undefined, {
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </span>
+                  </div>
+
+                  {user.timezone && (
+                    <div className="flex items-center gap-1.5">
+                      <MapPin size={14} className="text-slate-400" />
+                      <span>{user.timezone}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
-            {/* AVATAR */}
-            <div className="flex justify-center mb-6">
-              <div className="h-32 w-32 rounded-2xl border-4 border-black bg-slate-50 overflow-hidden shadow-card dark:border-[#3a3a45] dark:bg-[#1c1c24] flex items-center justify-center">
-                {user.avatar_url ? (
-                  <img
-                    src={getMediaUrl(user.avatar_url) || ""}
-                    alt={user.username}
-                    className="h-full w-full object-cover"
-                  />
+            {/* ACTION BUTTONS (SHARE PROFILE & COPY LINK) */}
+            <div className="flex items-center justify-center sm:justify-end gap-2.5 shrink-0">
+              <button
+                type="button"
+                onClick={(e) => {
+                  handleCopyLink(e);
+                  setShareModalOpen(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2 text-xs font-extrabold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition-all hover:scale-105 active:scale-95"
+              >
+                <Share2 size={14} />
+                <span>{copied ? "Copied Link!" : "Share Profile"}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-extrabold rounded-xl border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95"
+                title="Copy direct profile link"
+              >
+                {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                <span>{copied ? "Copied!" : "Copy Direct Link"}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* SOCIAL LINKS ROW */}
+          <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wide mr-2">
+              Connect:
+            </span>
+            {user.github_url ? (
+              <a
+                href={user.github_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="GitHub Profile"
+                className="p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-900 hover:text-white dark:border-slate-800 dark:bg-slate-800/50 dark:hover:bg-white dark:hover:text-black transition-all"
+              >
+                <Github size={16} />
+              </a>
+            ) : null}
+            {user.linkedin_url ? (
+              <a
+                href={user.linkedin_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="LinkedIn Profile"
+                className="p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-[#0A66C2] hover:text-white dark:border-slate-800 dark:bg-slate-800/50 transition-all"
+              >
+                <Linkedin size={16} />
+              </a>
+            ) : null}
+            {user.twitter_url ? (
+              <a
+                href={user.twitter_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Twitter Profile"
+                className="p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-[#1DA1F2] hover:text-white dark:border-slate-800 dark:bg-slate-800/50 transition-all"
+              >
+                <Twitter size={16} />
+              </a>
+            ) : null}
+            {!user.github_url && !user.linkedin_url && !user.twitter_url && (
+              <span className="text-xs font-semibold text-slate-400 italic">
+                No social profiles added yet.
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* 3. KEY METRICS STATS CARDS */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          {/* STREAK CARD */}
+          <div className="rounded-2xl border border-orange-200/80 bg-gradient-to-br from-orange-50/80 to-amber-50/50 p-4 dark:border-orange-900/30 dark:from-orange-950/20 dark:to-amber-950/10">
+            <div className="flex items-center gap-3">
+              <StreakFlameBadge
+                streakDays={profile.streak_days ?? 0}
+                longestStreak={profile.longest_streak ?? 0}
+                size={34}
+              />
+              <div>
+                <div className="text-xl font-black text-slate-900 dark:text-white leading-tight">
+                  {profile.streak_days ?? 0} Days
+                </div>
+                <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                  Best: {profile.longest_streak ?? profile.streak_days ?? 0} d
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* COMPLETED LESSONS CARD */}
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-4 dark:border-slate-800 dark:bg-[#12121c]">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400">
+                <BookOpen size={20} />
+              </div>
+              <div>
+                <div className="text-xl font-black text-slate-900 dark:text-white leading-tight">
+                  {completed_lessons}
+                </div>
+                <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                  Lessons Completed
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* TOTAL XP CARD */}
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-4 dark:border-slate-800 dark:bg-[#12121c]">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-950/60 dark:text-purple-400">
+                <Award size={20} />
+              </div>
+              <div>
+                <div className="text-xl font-black text-slate-900 dark:text-white leading-tight">
+                  {total_score}
+                </div>
+                <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                  XP Points
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* GLOBAL RANK STANDING CARD */}
+          <div className="rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50/80 to-yellow-50/40 p-4 dark:border-amber-900/30 dark:from-amber-950/20 dark:to-yellow-950/10">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400">
+                <TrendingUp size={20} />
+              </div>
+              <div>
+                <div className="text-xl font-black text-amber-700 dark:text-amber-400 leading-tight">
+                  Top {profile.percentile_standing ?? 5}%
+                </div>
+                <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                  Global Rank Standing
+                </div>
+              </div>
+          </div>
+        </div>
+      </div>
+
+        {/* 4. NAVIGATION TABS */}
+        <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 mb-8 overflow-x-auto">
+          <button
+            onClick={() => setActiveTab("overview")}
+            className={`flex items-center gap-2 py-3 px-4 text-xs font-extrabold border-b-2 transition-all shrink-0 ${
+              activeTab === "overview"
+                ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
+                : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+            }`}
+          >
+            <UserCheck size={16} /> Overview
+          </button>
+
+          <button
+            onClick={() => setActiveTab("badges")}
+            className={`flex items-center gap-2 py-3 px-4 text-xs font-extrabold border-b-2 transition-all shrink-0 ${
+              activeTab === "badges"
+                ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
+                : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+            }`}
+          >
+            <Trophy size={16} /> Badges & Trophies ({badges.length})
+          </button>
+
+          <button
+            onClick={() => setActiveTab("activity")}
+            className={`flex items-center gap-2 py-3 px-4 text-xs font-extrabold border-b-2 transition-all shrink-0 ${
+              activeTab === "activity"
+                ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
+                : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+            }`}
+          >
+            <Activity size={16} /> Activity & Stats
+          </button>
+
+          {isOwner && (
+            <button
+              onClick={() => setActiveTab("settings")}
+              className={`flex items-center gap-2 py-3 px-4 text-xs font-extrabold border-b-2 transition-all shrink-0 ml-auto ${
+                activeTab === "settings"
+                  ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
+                  : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+              }`}
+            >
+              <Settings size={16} /> Settings & Preferences
+            </button>
+          )}
+        </div>
+
+        {/* 5. TAB CONTENT PANELS */}
+        {activeTab === "overview" && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* MAIN BIO & ACHIEVEMENTS */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* ABOUT ME SECTION */}
+              <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#12121c]">
+                <h3 className="text-base font-extrabold uppercase tracking-wide text-slate-900 dark:text-white mb-3">
+                  About Me
+                </h3>
+                <p className="text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300 whitespace-pre-line">
+                  {user.bio ||
+                    "This open source contributor hasn't added a custom bio yet, but is actively completing modules & merging code!"}
+                </p>
+              </div>
+
+              {/* ACHIEVEMENTS / BADGES SUMMARY */}
+              <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#12121c]">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-base font-extrabold uppercase tracking-wide text-slate-900 dark:text-white">
+                    Achievements & Badges
+                  </h3>
+                  {badges.length > 0 && (
+                    <button
+                      onClick={() => setActiveTab("badges")}
+                      className="text-xs font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
+                    >
+                      View All ({badges.length}) →
+                    </button>
+                  )}
+                </div>
+
+                {badges.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {badges.slice(0, 4).map((b) => (
+                      <div
+                        key={b.id}
+                        className="flex items-center gap-3.5 rounded-2xl border border-slate-200/70 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-[#1a1a26]"
+                      >
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-400/20 text-2xl">
+                          🏅
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black text-slate-900 dark:text-white">
+                            {b.badge.name}
+                          </h4>
+                          <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 line-clamp-1">
+                            {b.badge.description}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
-                  <span className="text-5xl font-black uppercase text-black dark:text-white">
-                    {user.username.charAt(0)}
-                  </span>
+                  <div className="py-8 text-center bg-slate-50 dark:bg-[#181824] rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+                    <span className="text-3xl">🌟</span>
+                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-2">
+                      No badges earned yet. Keep solving challenges to unlock badges!
+                    </p>
+                  </div>
                 )}
               </div>
             </div>
 
-            <h2 className="text-3xl font-black text-center text-black dark:text-white mb-1">
-              {user.username}
-            </h2>
-
-            {/* Global Rank Percentile Standing Badge */}
-            <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
-              <span
-                data-testid="rank-percentile-badge"
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r from-amber-400 to-orange-500 text-black border-2 border-black shadow-card-sm"
-              >
-                <Trophy size={14} className="stroke-[2.5]" />
-                {getPercentileLabel(profile.percentile_standing, total_score)}
-              </span>
-              {user.is_staff && (
-                <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-black bg-black text-white dark:bg-[#e2e8f0] dark:text-black">
-                  STAFF
-                </span>
-              )}
-            </div>
-
-            <div className="space-y-3 mt-4 text-sm font-bold text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Calendar size={18} />
-                <span>
-                  Joined{" "}
-                  {new Date(
-                    user.timezone
-                      ? new Date().toLocaleString("en-US", {
-                          timeZone: user.timezone,
-                        })
-                      : new Date(),
-                  ).toLocaleDateString(undefined, {
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </span>
-              </div>
-              {user.timezone && (
-                <div className="flex items-center gap-2">
-                  <MapPin size={18} />
-                  <span>Timezone: {user.timezone}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Social Links */}
-            <div className="flex items-center gap-3 mt-6 pt-6 border-t-2 border-dashed border-gray-200 dark:border-gray-800">
-              {user.github_url && (
-                <a
-                  href={user.github_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2.5 rounded-xl border-2 border-black bg-surface hover:bg-black hover:text-white transition-all dark:bg-[#1c1c24] dark:border-[#3a3a45]"
-                  aria-label="GitHub Profile"
-                >
-                  <Github size={20} />
-                </a>
-              )}
-              {user.linkedin_url && (
-                <a
-                  href={user.linkedin_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2.5 rounded-xl border-2 border-black bg-surface hover:bg-[#0077b5] hover:text-white transition-all dark:bg-[#1c1c24] dark:border-[#3a3a45]"
-                  aria-label="LinkedIn Profile"
-                >
-                  <Linkedin size={20} />
-                </a>
-              )}
-              {user.twitter_url && (
-                <a
-                  href={user.twitter_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2.5 rounded-xl border-2 border-black bg-surface hover:bg-[#1da1f2] hover:text-white transition-all dark:bg-[#1c1c24] dark:border-[#3a3a45]"
-                  aria-label="Twitter Profile"
-                >
-                  <Twitter size={20} />
-                </a>
-              )}
-              {!user.github_url && !user.linkedin_url && !user.twitter_url && (
-                <span className="text-xs font-semibold text-muted">
-                  No social links set
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Quick Stats Widget */}
-          <div className="rounded-3xl border-4 border-black bg-[#E8F0FE] p-6 shadow-card dark:bg-[#182235] dark:border-[#7790bf]">
-            <h3 className="text-lg font-black uppercase text-black dark:text-white mb-4">
-              Statistics & Global Rank
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2 rounded-2xl border-2 border-black bg-gradient-to-r from-orange-50 to-amber-100 p-3.5 text-center dark:bg-[#241a10] dark:border-[#3a3a45]">
-                <div className="flex items-center justify-center gap-3">
-                  <StreakFlameBadge
-                    streakDays={profile.streak_days ?? 0}
-                    longestStreak={profile.longest_streak ?? 0}
-                    size={38}
-                  />
-                  <div className="text-left">
-                    <div className="font-black text-sm text-black dark:text-white">
-                      {profile.streak_days ?? 0} Day Streak
+            {/* RIGHT WIDGET: GLOBAL RANKING DETAILS */}
+            <div className="space-y-6">
+              <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#12121c]">
+                <h3 className="text-base font-extrabold uppercase tracking-wide text-slate-900 dark:text-white mb-4">
+                  Statistics & Global Rank
+                </h3>
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 dark:border-amber-900/40 dark:bg-amber-950/20 text-center">
+                    <div className="text-xs font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wide">
+                      Global Standing: Top{" "}
+                      {profile.percentile_standing ??
+                        (total_score >= 1000
+                          ? 5
+                          : total_score >= 500
+                          ? 10
+                          : total_score >= 100
+                          ? 25
+                          : 50)}
+                      %
                     </div>
-                    <div className="text-[11px] font-bold text-muted">
-                      Best: {profile.longest_streak ?? profile.streak_days ?? 0}{" "}
-                      days
+                    <p className="text-[11px] font-medium text-slate-600 dark:text-slate-400 mt-1">
+                      Calculated against all active open source contributors
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-center">
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-[#1a1a26]">
+                      <div className="text-lg font-black text-slate-900 dark:text-white">
+                        {completed_lessons} Done
+                      </div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase">Modules</div>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-[#1a1a26]">
+                      <div className="text-lg font-black text-slate-900 dark:text-white">
+                        {total_score} XP
+                      </div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase">Points</div>
                     </div>
                   </div>
                 </div>
-                <p className="text-[11px] font-bold text-muted mt-1">
-                  Keep contributing daily to unlock higher flame tiers
-                </p>
-              </div>
-              <div className="rounded-2xl border-2 border-black bg-white p-4 text-center dark:bg-[#121218] dark:border-[#3a3a45]">
-                <BookOpen size={24} className="mx-auto mb-2 text-primary" />
-                <div className="text-2xl font-black text-black dark:text-white">
-                  {completed_lessons}
-                </div>
-                <div className="text-xs font-bold text-muted">Lessons</div>
-              </div>
-              <div className="rounded-2xl border-2 border-black bg-white p-4 text-center dark:bg-[#121218] dark:border-[#3a3a45]">
-                <Award size={24} className="mx-auto mb-2 text-accent" />
-                <div className="text-2xl font-black text-black dark:text-white">
-                  {total_score}
-                </div>
-                <div className="text-xs font-bold text-muted">XP Points</div>
-              </div>
-              <div className="col-span-2 rounded-2xl border-2 border-black bg-gradient-to-r from-amber-50 to-orange-50 p-3.5 text-center dark:bg-[#1d1b18] dark:border-[#3a3a45]">
-                <div className="flex items-center justify-center gap-2 text-amber-600 dark:text-amber-400 font-black text-sm">
-                  <TrendingUp size={16} />
-                  <span>
-                    Global Standing: Top{" "}
-                    {profile.percentile_standing ??
-                      (total_score >= 1000
-                        ? 5
-                        : total_score >= 500
-                          ? 10
-                          : total_score >= 100
-                            ? 25
-                            : 50)}
-                    %
-                  </span>
-                </div>
-                <p className="text-[11px] font-bold text-muted mt-0.5">
-                  Calculated against all active open source contributors
-                </p>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Right Column: Bio & Badges */}
-        <div className="space-y-6 md:col-span-2">
-          {/* Bio Section */}
-          <div className="rounded-3xl border-4 border-black bg-white p-6 shadow-card dark:bg-[#121218] dark:border-[#3a3a45]">
-            <h3 className="text-xl font-black uppercase text-black dark:text-white mb-4">
-              About Me
-            </h3>
-            <p className="text-lg font-medium leading-relaxed text-black/80 dark:text-[#94a3b8]">
-              {user.bio ||
-                "This user is too busy contributing to write a bio yet."}
-            </p>
-          </div>
-
-          {/* Achievements / Earned Badges */}
-          <div className="rounded-3xl border-4 border-black bg-[#FFF0E5] p-6 shadow-card dark:bg-[#302319] dark:border-[#b47c3f]">
-            <h3 className="text-xl font-black uppercase text-black dark:text-white mb-4">
-              Achievements
+        {/* TAB: BADGES */}
+        {activeTab === "badges" && (
+          <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#12121c]">
+            <h3 className="text-lg font-black uppercase text-slate-900 dark:text-white mb-6">
+              All Earned Badges & Trophies ({badges.length})
             </h3>
             {badges.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {badges.map((badgeItem) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {badges.map((b) => (
                   <div
-                    key={badgeItem.id}
-                    className="flex items-center gap-4 rounded-2xl border-2 border-black bg-white p-4 shadow-card-sm dark:bg-[#121218] dark:border-[#3a3a45]"
+                    key={b.id}
+                    className="flex items-start gap-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-[#181826]"
                   >
-                    <div className="text-3xl">🏅</div>
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-400/20 text-3xl shadow-sm">
+                      🏅
+                    </div>
                     <div>
-                      <h4 className="font-black text-black dark:text-white text-sm">
-                        {badgeItem.badge.name}
+                      <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                        {b.badge.name}
                       </h4>
-                      <p className="text-xs font-bold text-muted leading-tight">
-                        {badgeItem.badge.description}
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">
+                        {b.badge.description}
                       </p>
+                      <span className="inline-block mt-2 text-[10px] font-extrabold text-slate-400 uppercase">
+                        Earned: {new Date(b.earned_at).toLocaleDateString()}
+                      </span>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-6 bg-white dark:bg-[#121218] rounded-2xl border-2 border-black dark:border-[#3a3a45]">
-                <span className="text-4xl">🌟</span>
-                <p className="text-sm font-bold text-muted mt-2">
-                  No badges earned yet. Keep learning!
+              <div className="py-12 text-center">
+                <span className="text-4xl">🏆</span>
+                <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mt-2">
+                  No badges unlocked yet. Start completing challenges to earn your first badge!
                 </p>
               </div>
             )}
           </div>
-        </div>
+        )}
+
+        {/* TAB: ACTIVITY */}
+        {activeTab === "activity" && (
+          <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#12121c]">
+            <h3 className="text-lg font-black uppercase text-slate-900 dark:text-white mb-4">
+              Contribution & Learning History
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
+              Track your open source progress, streak milestones, and completed learning modules.
+            </p>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-[#181826]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/20 text-orange-600 dark:text-orange-400 font-black">
+                  <Flame size={20} />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-slate-900 dark:text-white">
+                    {profile.streak_days ?? 0} Day Active Contribution Streak
+                  </h4>
+                  <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                    Highest streak recorded: {profile.longest_streak ?? profile.streak_days ?? 0} days
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB: SETTINGS & PREFERENCES (FOR OWNER) */}
+        {activeTab === "settings" && isOwner && (
+          <div className="space-y-8">
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm dark:border-slate-800 dark:bg-[#12121c]">
+              <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+                <div>
+                  <h2 className="text-xl font-black uppercase text-slate-900 dark:text-white flex items-center gap-2">
+                    <Settings size={20} className="text-indigo-600 dark:text-indigo-400" />
+                    Account & Profile Settings
+                  </h2>
+                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">
+                    Update your public profile, cover banner, bio, and security preferences
+                  </p>
+                </div>
+              </div>
+
+              {/* COMPACT SETTINGS FORM */}
+              <ProfileSettingsForm onChange={() => checkUser()} />
+            </div>
+
+            <TwoFactorSetupSection />
+          </div>
+        )}
       </div>
+
+      {/* SHARE PROFILE MODAL */}
+      <ShareProfileModal
+        username={user.username}
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        bio={user.bio}
+        avatarUrl={user.avatar_url ? getMediaUrl(user.avatar_url) : null}
+      />
     </div>
   );
 }
