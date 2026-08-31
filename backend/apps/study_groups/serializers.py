@@ -10,8 +10,8 @@ from .models import (
     GroupChallengeParticipant,
     GroupGoal,
     GroupInvite,
-    GroupMessage,
     GroupMembership,
+    GroupMessage,
     GroupResource,
     StudyGroup,
 )
@@ -21,7 +21,8 @@ class StudyGroupSerializer(serializers.ModelSerializer):
     is_member = serializers.SerializerMethodField()
     my_role = serializers.SerializerMethodField()
     owner_username = serializers.CharField(
-        source="owner.username", read_only=True,
+        source="owner.username",
+        read_only=True,
     )
 
     class Meta:
@@ -91,7 +92,8 @@ class StudyGroupCreateSerializer(serializers.ModelSerializer):
 
 class GroupMembershipSerializer(serializers.ModelSerializer):
     username = serializers.CharField(
-        source="user.username", read_only=True,
+        source="user.username",
+        read_only=True,
     )
 
     class Meta:
@@ -123,7 +125,8 @@ class GroupMembershipSerializer(serializers.ModelSerializer):
 
 class GroupResourceSerializer(serializers.ModelSerializer):
     shared_by_username = serializers.CharField(
-        source="shared_by.username", read_only=True,
+        source="shared_by.username",
+        read_only=True,
     )
 
     class Meta:
@@ -146,7 +149,8 @@ class GroupResourceSerializer(serializers.ModelSerializer):
 
 class GroupActivitySerializer(serializers.ModelSerializer):
     username = serializers.CharField(
-        source="user.username", read_only=True,
+        source="user.username",
+        read_only=True,
     )
 
     class Meta:
@@ -166,7 +170,8 @@ class GroupActivitySerializer(serializers.ModelSerializer):
 
 class GroupInviteSerializer(serializers.ModelSerializer):
     invited_by_username = serializers.CharField(
-        source="invited_by.username", read_only=True,
+        source="invited_by.username",
+        read_only=True,
     )
 
     class Meta:
@@ -194,7 +199,8 @@ class GroupInviteSerializer(serializers.ModelSerializer):
 
 class GroupChallengeSerializer(serializers.ModelSerializer):
     created_by_username = serializers.CharField(
-        source="created_by.username", read_only=True,
+        source="created_by.username",
+        read_only=True,
     )
     participant_count = serializers.SerializerMethodField()
 
@@ -222,7 +228,8 @@ class GroupChallengeSerializer(serializers.ModelSerializer):
 
 class GroupChallengeParticipantSerializer(serializers.ModelSerializer):
     username = serializers.CharField(
-        source="user.username", read_only=True,
+        source="user.username",
+        read_only=True,
     )
     progress_pct = serializers.IntegerField(read_only=True)
 
@@ -268,7 +275,8 @@ class GroupGoalSerializer(serializers.ModelSerializer):
 
 class GroupMessageSerializer(serializers.ModelSerializer):
     username = serializers.CharField(
-        source="user.username", read_only=True,
+        source="user.username",
+        read_only=True,
     )
     reply_count = serializers.SerializerMethodField()
 
@@ -322,9 +330,7 @@ class InviteCreateSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if not attrs.get("user_id") and not attrs.get("email"):
-            raise serializers.ValidationError(
-                "Either user_id or email is required."
-            )
+            raise serializers.ValidationError("Either user_id or email is required.")
         return attrs
 
 

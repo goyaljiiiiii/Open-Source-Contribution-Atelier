@@ -205,7 +205,10 @@ class WebSocketBenchmark:
                 # Send broadcast message
                 await self.channel_layer.group_send(
                     "benchmark_group",
-                    {"type": "benchmark_message", "data": {"timestamp": broadcast_start}},
+                    {
+                        "type": "benchmark_message",
+                        "data": {"timestamp": broadcast_start},
+                    },
                 )
 
                 # Wait for responses

@@ -34,7 +34,11 @@ class ScanReportView(APIView):
             )
 
         for item in files:
-            if not isinstance(item, dict) or "path" not in item or "content" not in item:
+            if (
+                not isinstance(item, dict)
+                or "path" not in item
+                or "content" not in item
+            ):
                 return Response(
                     {"error": "Each file must have 'path' and 'content' keys"},
                     status=status.HTTP_400_BAD_REQUEST,

@@ -48,9 +48,7 @@ async def test_revoked_event_closes_with_4001():
     pubsub = MagicMock()
     pubsub.subscribe = AsyncMock()
     pubsub.get_message = AsyncMock(
-        side_effect=[
-            {"type": "message", "data": json.dumps({"type": "token_revoked"})}
-        ]
+        side_effect=[{"type": "message", "data": json.dumps({"type": "token_revoked"})}]
     )
     pubsub.unsubscribe = AsyncMock()
     pubsub.close = AsyncMock()
@@ -83,9 +81,10 @@ async def test_refreshed_event_with_new_jti_closes_with_4001():
     pubsub.subscribe = AsyncMock()
     pubsub.get_message = AsyncMock(
         side_effect=[
-            {"type": "message", "data": json.dumps(
-                {"type": "token_refreshed", "jti": "different-jti"}
-            )}
+            {
+                "type": "message",
+                "data": json.dumps({"type": "token_refreshed", "jti": "different-jti"}),
+            }
         ]
     )
     pubsub.unsubscribe = AsyncMock()

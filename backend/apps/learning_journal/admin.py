@@ -16,8 +16,14 @@ from .models import (
 @admin.register(JournalEntry)
 class JournalEntryAdmin(admin.ModelAdmin):
     list_display = [
-        "id", "user", "date", "title", "mood",
-        "productivity_score", "word_count", "xp_earned",
+        "id",
+        "user",
+        "date",
+        "title",
+        "mood",
+        "productivity_score",
+        "word_count",
+        "xp_earned",
     ]
     list_filter = ["mood", "visibility"]
     search_fields = ["user__username", "title", "what_i_learned"]
@@ -27,7 +33,11 @@ class JournalEntryAdmin(admin.ModelAdmin):
 @admin.register(JournalComment)
 class JournalCommentAdmin(admin.ModelAdmin):
     list_display = [
-        "id", "entry", "user", "is_mentor_note", "created_at",
+        "id",
+        "entry",
+        "user",
+        "is_mentor_note",
+        "created_at",
     ]
     raw_id_fields = ["entry", "user"]
 
@@ -42,8 +52,12 @@ class JournalReactionAdmin(admin.ModelAdmin):
 @admin.register(ReflectionPrompt)
 class ReflectionPromptAdmin(admin.ModelAdmin):
     list_display = [
-        "id", "text", "prompt_type", "category",
-        "is_active", "times_used",
+        "id",
+        "text",
+        "prompt_type",
+        "category",
+        "is_active",
+        "times_used",
     ]
     list_filter = ["prompt_type", "is_active"]
 
@@ -51,8 +65,11 @@ class ReflectionPromptAdmin(admin.ModelAdmin):
 @admin.register(UserReflectionStreak)
 class UserReflectionStreakAdmin(admin.ModelAdmin):
     list_display = [
-        "user", "current_streak", "longest_streak",
-        "total_entries", "total_words_written",
+        "user",
+        "current_streak",
+        "longest_streak",
+        "total_entries",
+        "total_words_written",
     ]
     raw_id_fields = ["user"]
 
@@ -60,8 +77,12 @@ class UserReflectionStreakAdmin(admin.ModelAdmin):
 @admin.register(WeeklyReflection)
 class WeeklyReflectionAdmin(admin.ModelAdmin):
     list_display = [
-        "user", "week_start", "entries_count",
-        "mood_trend", "total_words", "is_read",
+        "user",
+        "week_start",
+        "entries_count",
+        "mood_trend",
+        "total_words",
+        "is_read",
     ]
     list_filter = ["mood_trend", "is_read"]
     raw_id_fields = ["user"]
@@ -70,8 +91,11 @@ class WeeklyReflectionAdmin(admin.ModelAdmin):
 @admin.register(JournalTemplate)
 class JournalTemplateAdmin(admin.ModelAdmin):
     list_display = [
-        "name", "created_by", "is_public",
-        "clone_count", "created_at",
+        "name",
+        "created_by",
+        "is_public",
+        "clone_count",
+        "created_at",
     ]
     list_filter = ["is_public"]
     raw_id_fields = ["created_by"]

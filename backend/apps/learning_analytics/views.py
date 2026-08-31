@@ -57,7 +57,6 @@ from .services import (
 )
 from .utils import compute_velocity, predict_completion
 
-
 # ---------------------------------------------------------------------------
 #  Learning Sessions
 # ---------------------------------------------------------------------------
@@ -80,7 +79,7 @@ class LearningSessionListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         return (
             LearningSession.objects.filter(user=self.request.user)
-            .select_related("skill_tags__skill_tag")
+            .prefetch_related("skill_tags__skill_tag")
             .order_by("-started_at")
         )
 
@@ -160,9 +159,13 @@ class UserSkillProfileListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return UserSkillProfile.objects.filter(
-            user=self.request.user,
-        ).select_related("skill_tag").order_by("-level")
+        return (
+            UserSkillProfile.objects.filter(
+                user=self.request.user,
+            )
+            .select_related("skill_tag")
+            .order_by("-level")
+        )
 
 
 class SkillLevelRefreshView(views.APIView):
@@ -302,7 +305,9 @@ class DailyMetricsListView(generics.ListAPIView):
     def get_queryset(self):
         return DailyLearningMetric.objects.filter(
             user=self.request.user,
-        ).order_by("-date")[:90]
+        ).order_by(
+            "-date"
+        )[:90]
 
 
 class VelocityView(views.APIView):
@@ -564,10 +569,14 @@ class LearningGoalListCreateView(generics.ListCreateAPIView):
         return LearningGoalSerializer
 
     def get_queryset(self):
-        return LearningGoal.objects.filter(
-            user=self.request.user,
-            is_archived=False,
-        ).select_related("skill_tag").order_by("-created_at")
+        return (
+            LearningGoal.objects.filter(
+                user=self.request.user,
+                is_archived=False,
+            )
+            .select_related("skill_tag")
+            .order_by("-created_at")
+        )
 
 
 class LearningGoalDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -588,9 +597,13 @@ class LearningGoalDetailView(generics.RetrieveUpdateDestroyAPIView):
         if request.data.get("action") == "complete":
             instance.is_completed = True
             instance.current_value = instance.target_value
-            instance.save(update_fields=[
-                "is_completed", "current_value", "updated_at",
-            ])
+            instance.save(
+                update_fields=[
+                    "is_completed",
+                    "current_value",
+                    "updated_at",
+                ]
+            )
             return Response(self.get_serializer(instance).data)
 
         # Handle archive action
@@ -610,7 +623,8 @@ class GoalPredictionView(views.APIView):
     def get(self, request, goal_id):
         try:
             goal = LearningGoal.objects.get(
-                id=goal_id, user=request.user,
+                id=goal_id,
+                user=request.user,
             )
         except LearningGoal.DoesNotExist:
             return Response(

@@ -4,7 +4,10 @@ Tests for Mentorship API views.
 
 from datetime import timedelta
 
+from django.utils import timezone
+
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
@@ -22,12 +25,9 @@ class BaseMentorshipTest(TestCase):
     """Shared setup."""
 
     def setUp(self):
-        self.mentor = User.objects.create_user(
-            username="mentor", password="pass123"
-        )
-        self.mentee = User.objects.create_user(
-            username="mentee", password="pass123"
-        )
+        cache.clear()
+        self.mentor = User.objects.create_user(username="mentor", password="pass123")
+        self.mentee = User.objects.create_user(username="mentee", password="pass123")
         self.client = APIClient()
         self.client.force_authenticate(user=self.mentor)
         self.profile = MentorProfile.objects.create(
@@ -50,9 +50,7 @@ class MentorProfileListCreateViewTest(BaseMentorshipTest):
         self.client.force_authenticate(user=None)
         url = reverse("mentorship:mentor-list")
         response = self.client.get(url)
-        self.assertEqual(
-            response.status_code, status.HTTP_401_UNAUTHORIZED
-        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
 class MyMentorProfileViewTest(BaseMentorshipTest):
@@ -164,9 +162,7 @@ class RespondToRequestViewTest(BaseMentorshipTest):
             "mentorship:respond-to-request",
             args=[self.request_obj.id],
         )
-        response = self.client.post(
-            url, {"accept": False}, format="json"
-        )
+        response = self.client.post(url, {"accept": False}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
@@ -195,19 +191,13 @@ class MatchDetailViewTest(BaseMentorshipTest):
         )
 
     def test_retrieve_match(self):
-        url = reverse(
-            "mentorship:match-detail", args=[self.match.id]
-        )
+        url = reverse("mentorship:match-detail", args=[self.match.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_update_notes(self):
-        url = reverse(
-            "mentorship:match-detail", args=[self.match.id]
-        )
-        response = self.client.patch(
-            url, {"notes": "Updated notes"}, format="json"
-        )
+        url = reverse("mentorship:match-detail", args=[self.match.id])
+        response = self.client.patch(url, {"notes": "Updated notes"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
@@ -231,9 +221,7 @@ class SessionListCreateViewTest(BaseMentorshipTest):
             "match": self.match.id,
             "mentee": self.mentee.id,
             "title": "Git Basics",
-            "scheduled_at": (
-                timezone.now() + timedelta(days=1)
-            ).isoformat(),
+            "scheduled_at": (timezone.now() + timedelta(days=1)).isoformat(),
         }
         response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -256,9 +244,7 @@ class SessionStartCompleteViewTest(BaseMentorshipTest):
         )
 
     def test_start_session(self):
-        url = reverse(
-            "mentorship:session-start", args=[self.session.id]
-        )
+        url = reverse("mentorship:session-start", args=[self.session.id])
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.session.refresh_from_db()
@@ -266,9 +252,7 @@ class SessionStartCompleteViewTest(BaseMentorshipTest):
 
     def test_complete_session(self):
         self.session.start_session()
-        url = reverse(
-            "mentorship:session-complete", args=[self.session.id]
-        )
+        url = reverse("mentorship:session-complete", args=[self.session.id])
         data = {
             "mentor_rating": 5,
             "topics_covered": ["git", "python"],
@@ -289,22 +273,16 @@ class MatchGoalListCreateViewTest(BaseMentorshipTest):
         )
 
     def test_list_goals(self):
-        url = reverse(
-            "mentorship:match-goals", args=[self.match.id]
-        )
+        url = reverse("mentorship:match-goals", args=[self.match.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_create_goal(self):
-        url = reverse(
-            "mentorship:match-goals", args=[self.match.id]
-        )
+        url = reverse("mentorship:match-goals", args=[self.match.id])
         data = {
             "title": "Master Django ORM",
             "description": "Learn all ORM operations",
-            "target_date": (
-                timezone.now() + timedelta(days=30)
-            ).date().isoformat(),
+            "target_date": (timezone.now() + timedelta(days=30)).date().isoformat(),
         }
         response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -320,16 +298,12 @@ class FeedbackListCreateViewTest(BaseMentorshipTest):
         )
 
     def test_list_feedback(self):
-        url = reverse(
-            "mentorship:match-feedback", args=[self.match.id]
-        )
+        url = reverse("mentorship:match-feedback", args=[self.match.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_submit_feedback(self):
-        url = reverse(
-            "mentorship:match-feedback", args=[self.match.id]
-        )
+        url = reverse("mentorship:match-feedback", args=[self.match.id])
         data = {
             "overall_rating": 5,
             "communication_rating": 4,
@@ -392,10 +366,6 @@ class MatchRecommendationsViewTest(BaseMentorshipTest):
         self.assertGreater(len(response.data["recommendations"]), 0)
 
     def test_nonexistent_match(self):
-        url = reverse(
-            "mentorship:match-recommendations", args=[9999]
-        )
+        url = reverse("mentorship:match-recommendations", args=[9999])
         response = self.client.get(url)
-        self.assertEqual(
-            response.status_code, status.HTTP_404_NOT_FOUND
-        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

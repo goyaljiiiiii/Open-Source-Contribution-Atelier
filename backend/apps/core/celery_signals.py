@@ -12,6 +12,7 @@ def add_request_id_to_task(headers=None, **kwargs):
     # Propagate trace context if OpenTelemetry is enabled
     try:
         from opentelemetry import trace
+
         span = trace.get_current_span()
         if span and span.get_span_context().is_valid and headers is not None:
             ctx = span.get_span_context()
@@ -42,4 +43,3 @@ def set_request_id_in_task(task_id, task, *args, **kwargs):
 def cleanup_request_id_in_task(task_id, task, *args, **kwargs):
     if hasattr(_thread_locals, "request_id"):
         _thread_locals.request_id = None
-

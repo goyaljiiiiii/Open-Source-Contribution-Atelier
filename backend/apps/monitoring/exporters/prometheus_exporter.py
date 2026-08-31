@@ -16,7 +16,12 @@ from django.http import HttpRequest, HttpResponse
 _PROMETHEUS_AVAILABLE = False
 
 try:
-    from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
+    from prometheus_client import (
+        CONTENT_TYPE_LATEST,
+        Counter,
+        Histogram,
+        generate_latest,
+    )
 
     _PROMETHEUS_AVAILABLE = True
 except ImportError:
@@ -90,9 +95,7 @@ class _InMemoryMetrics:
         with self._lock:
             lines.append("# HELP http_requests_total Total HTTP requests processed")
             lines.append("# TYPE http_requests_total counter")
-            for (method, path, status), count in sorted(
-                self.request_counts.items()
-            ):
+            for (method, path, status), count in sorted(self.request_counts.items()):
                 lines.append(
                     f'http_requests_total{{method="{method}",path="{path}",status="{status}"}} {count}'
                 )
@@ -153,9 +156,7 @@ def _normalize_path(path: str) -> str:
     parts = path.strip("/").split("/")
     normalized: list[str] = []
     for part in parts:
-        if part.isdigit() or (
-            len(part) == 36 and part.count("-") == 4
-        ):  # UUID-like
+        if part.isdigit() or (len(part) == 36 and part.count("-") == 4):  # UUID-like
             normalized.append("{id}")
         else:
             normalized.append(part)

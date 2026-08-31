@@ -23,14 +23,26 @@ SKILL_TREE_NODES = [
         "difficulty": "Beginner",
         "position": {"x": 100, "y": 300},
         "recommended_lessons": [
-            {"id": "git-101", "title": "Introduction to Git Version Control", "duration": "15 min"},
-            {"id": "git-102", "title": "Configuring SSH Keys and User Credentials", "duration": "10 min"}
+            {
+                "id": "git-101",
+                "title": "Introduction to Git Version Control",
+                "duration": "15 min",
+            },
+            {
+                "id": "git-102",
+                "title": "Configuring SSH Keys and User Credentials",
+                "duration": "10 min",
+            },
         ],
         "related_challenges": [
             {"id": "c-git-01", "title": "First Commit Sandbox", "xp": 50}
         ],
-        "badge_reward": {"name": "Git Initiate", "icon": "GitBranch", "color": "#4ECDC4"},
-        "progress_percent": 100
+        "badge_reward": {
+            "name": "Git Initiate",
+            "icon": "GitBranch",
+            "color": "#4ECDC4",
+        },
+        "progress_percent": 100,
     },
     {
         "id": "branching-strategies",
@@ -44,13 +56,25 @@ SKILL_TREE_NODES = [
         "difficulty": "Beginner",
         "position": {"x": 280, "y": 300},
         "recommended_lessons": [
-            {"id": "git-201", "title": "Creating & Managing Feature Branches", "duration": "20 min"}
+            {
+                "id": "git-201",
+                "title": "Creating & Managing Feature Branches",
+                "duration": "20 min",
+            }
         ],
         "related_challenges": [
-            {"id": "c-git-02", "title": "Branch Switching & Fast-Forward Merges", "xp": 75}
+            {
+                "id": "c-git-02",
+                "title": "Branch Switching & Fast-Forward Merges",
+                "xp": 75,
+            }
         ],
-        "badge_reward": {"name": "Branch Master", "icon": "GitFork", "color": "#45B7D1"},
-        "progress_percent": 60
+        "badge_reward": {
+            "name": "Branch Master",
+            "icon": "GitFork",
+            "color": "#45B7D1",
+        },
+        "progress_percent": 60,
     },
     {
         "id": "conflict-resolution",
@@ -64,13 +88,21 @@ SKILL_TREE_NODES = [
         "difficulty": "Intermediate",
         "position": {"x": 480, "y": 300},
         "recommended_lessons": [
-            {"id": "git-301", "title": "Handling Merge Conflicts step-by-step", "duration": "25 min"}
+            {
+                "id": "git-301",
+                "title": "Handling Merge Conflicts step-by-step",
+                "duration": "25 min",
+            }
         ],
         "related_challenges": [
             {"id": "c-git-03", "title": "3-Way Merge Conflict Challenge", "xp": 150}
         ],
-        "badge_reward": {"name": "Conflict Tamer", "icon": "GitPullRequest", "color": "#FF6B6B"},
-        "progress_percent": 20
+        "badge_reward": {
+            "name": "Conflict Tamer",
+            "icon": "GitPullRequest",
+            "color": "#FF6B6B",
+        },
+        "progress_percent": 20,
     },
     {
         "id": "ci-cd-pipelines",
@@ -84,13 +116,21 @@ SKILL_TREE_NODES = [
         "difficulty": "Advanced",
         "position": {"x": 680, "y": 300},
         "recommended_lessons": [
-            {"id": "cicd-101", "title": "Writing GitHub Actions Workflows", "duration": "30 min"}
+            {
+                "id": "cicd-101",
+                "title": "Writing GitHub Actions Workflows",
+                "duration": "30 min",
+            }
         ],
         "related_challenges": [
             {"id": "c-cicd-01", "title": "Automated Matrix Build Runner", "xp": 200}
         ],
-        "badge_reward": {"name": "Automation Wizard", "icon": "Cpu", "color": "#A78BFA"},
-        "progress_percent": 0
+        "badge_reward": {
+            "name": "Automation Wizard",
+            "icon": "Cpu",
+            "color": "#A78BFA",
+        },
+        "progress_percent": 0,
     },
     {
         "id": "open-source-maintainer",
@@ -104,15 +144,22 @@ SKILL_TREE_NODES = [
         "difficulty": "Expert",
         "position": {"x": 900, "y": 300},
         "recommended_lessons": [
-            {"id": "os-401", "title": "Maintainer Playbook & Community Triage", "duration": "45 min"}
+            {
+                "id": "os-401",
+                "title": "Maintainer Playbook & Community Triage",
+                "duration": "45 min",
+            }
         ],
         "related_challenges": [
             {"id": "c-os-01", "title": "Project Release Governance", "xp": 300}
         ],
-        "badge_reward": {"name": "Maintainer Vanguard", "icon": "Award", "color": "#F59E0B"},
-        "progress_percent": 0
+        "badge_reward": {
+            "name": "Maintainer Vanguard",
+            "icon": "Award",
+            "color": "#F59E0B",
+        },
+        "progress_percent": 0,
     },
-
     # Frontend Track
     {
         "id": "react-basics",
@@ -132,7 +179,7 @@ SKILL_TREE_NODES = [
             {"id": "c-react-01", "title": "Interactive Counter & State", "xp": 80}
         ],
         "badge_reward": {"name": "React Novice", "icon": "Code", "color": "#61DAFB"},
-        "progress_percent": 100
+        "progress_percent": 100,
     },
     {
         "id": "typescript-mastery",
@@ -146,13 +193,21 @@ SKILL_TREE_NODES = [
         "difficulty": "Intermediate",
         "position": {"x": 480, "y": 140},
         "recommended_lessons": [
-            {"id": "ts-101", "title": "Generics & Advanced TS Patterns", "duration": "25 min"}
+            {
+                "id": "ts-101",
+                "title": "Generics & Advanced TS Patterns",
+                "duration": "25 min",
+            }
         ],
         "related_challenges": [
             {"id": "c-ts-01", "title": "Strongly Typed API Adapter", "xp": 120}
         ],
-        "badge_reward": {"name": "Type Guardian", "icon": "ShieldCheck", "color": "#3178C6"},
-        "progress_percent": 40
+        "badge_reward": {
+            "name": "Type Guardian",
+            "icon": "ShieldCheck",
+            "color": "#3178C6",
+        },
+        "progress_percent": 40,
     },
     {
         "id": "state-management",
@@ -166,15 +221,22 @@ SKILL_TREE_NODES = [
         "difficulty": "Intermediate",
         "position": {"x": 680, "y": 140},
         "recommended_lessons": [
-            {"id": "state-101", "title": "TanStack Query & Redux RTK Query", "duration": "30 min"}
+            {
+                "id": "state-101",
+                "title": "TanStack Query & Redux RTK Query",
+                "duration": "30 min",
+            }
         ],
         "related_challenges": [
             {"id": "c-state-01", "title": "Optimistic Cache Updates", "xp": 160}
         ],
-        "badge_reward": {"name": "State Architect", "icon": "Layers", "color": "#764ABC"},
-        "progress_percent": 0
+        "badge_reward": {
+            "name": "State Architect",
+            "icon": "Layers",
+            "color": "#764ABC",
+        },
+        "progress_percent": 0,
     },
-
     # Backend Track
     {
         "id": "django-rest",
@@ -188,13 +250,21 @@ SKILL_TREE_NODES = [
         "difficulty": "Beginner",
         "position": {"x": 280, "y": 460},
         "recommended_lessons": [
-            {"id": "django-101", "title": "Django ORM & DRF ViewSets", "duration": "25 min"}
+            {
+                "id": "django-101",
+                "title": "Django ORM & DRF ViewSets",
+                "duration": "25 min",
+            }
         ],
         "related_challenges": [
             {"id": "c-django-01", "title": "CRUD API Serializer Challenge", "xp": 100}
         ],
-        "badge_reward": {"name": "Python Craftsman", "icon": "Server", "color": "#092E20"},
-        "progress_percent": 100
+        "badge_reward": {
+            "name": "Python Craftsman",
+            "icon": "Server",
+            "color": "#092E20",
+        },
+        "progress_percent": 100,
     },
     {
         "id": "async-workers",
@@ -208,13 +278,21 @@ SKILL_TREE_NODES = [
         "difficulty": "Intermediate",
         "position": {"x": 480, "y": 460},
         "recommended_lessons": [
-            {"id": "celery-101", "title": "Task Queue Architecture with Redis", "duration": "25 min"}
+            {
+                "id": "celery-101",
+                "title": "Task Queue Architecture with Redis",
+                "duration": "25 min",
+            }
         ],
         "related_challenges": [
-            {"id": "c-celery-01", "title": "Background Mailer & Retry Policy", "xp": 140}
+            {
+                "id": "c-celery-01",
+                "title": "Background Mailer & Retry Policy",
+                "xp": 140,
+            }
         ],
         "badge_reward": {"name": "Queue Master", "icon": "Zap", "color": "#DC2626"},
-        "progress_percent": 50
+        "progress_percent": 50,
     },
     {
         "id": "pr-review-mastery",
@@ -228,28 +306,95 @@ SKILL_TREE_NODES = [
         "difficulty": "Advanced",
         "position": {"x": 680, "y": 460},
         "recommended_lessons": [
-            {"id": "review-101", "title": "Constructive Peer Review Etiquette", "duration": "20 min"}
+            {
+                "id": "review-101",
+                "title": "Constructive Peer Review Etiquette",
+                "duration": "20 min",
+            }
         ],
         "related_challenges": [
-            {"id": "c-review-01", "title": "Find the Security Vulnerability PR", "xp": 180}
+            {
+                "id": "c-review-01",
+                "title": "Find the Security Vulnerability PR",
+                "xp": 180,
+            }
         ],
-        "badge_reward": {"name": "Sentinel Inspector", "icon": "CheckCircle2", "color": "#10B981"},
-        "progress_percent": 30
-    }
+        "badge_reward": {
+            "name": "Sentinel Inspector",
+            "icon": "CheckCircle2",
+            "color": "#10B981",
+        },
+        "progress_percent": 30,
+    },
 ]
 
 SKILL_TREE_EDGES = [
-    {"id": "e1", "source": "git-basics", "target": "branching-strategies", "status": "completed"},
-    {"id": "e2", "source": "branching-strategies", "target": "conflict-resolution", "status": "active"},
-    {"id": "e3", "source": "conflict-resolution", "target": "ci-cd-pipelines", "status": "locked"},
-    {"id": "e4", "source": "ci-cd-pipelines", "target": "open-source-maintainer", "status": "locked"},
-    {"id": "e5", "source": "git-basics", "target": "react-basics", "status": "completed"},
-    {"id": "e6", "source": "react-basics", "target": "typescript-mastery", "status": "active"},
-    {"id": "e7", "source": "typescript-mastery", "target": "state-management", "status": "locked"},
-    {"id": "e8", "source": "git-basics", "target": "django-rest", "status": "completed"},
-    {"id": "e9", "source": "django-rest", "target": "async-workers", "status": "active"},
-    {"id": "e10", "source": "conflict-resolution", "target": "pr-review-mastery", "status": "active"},
-    {"id": "e11", "source": "pr-review-mastery", "target": "open-source-maintainer", "status": "locked"},
+    {
+        "id": "e1",
+        "source": "git-basics",
+        "target": "branching-strategies",
+        "status": "completed",
+    },
+    {
+        "id": "e2",
+        "source": "branching-strategies",
+        "target": "conflict-resolution",
+        "status": "active",
+    },
+    {
+        "id": "e3",
+        "source": "conflict-resolution",
+        "target": "ci-cd-pipelines",
+        "status": "locked",
+    },
+    {
+        "id": "e4",
+        "source": "ci-cd-pipelines",
+        "target": "open-source-maintainer",
+        "status": "locked",
+    },
+    {
+        "id": "e5",
+        "source": "git-basics",
+        "target": "react-basics",
+        "status": "completed",
+    },
+    {
+        "id": "e6",
+        "source": "react-basics",
+        "target": "typescript-mastery",
+        "status": "active",
+    },
+    {
+        "id": "e7",
+        "source": "typescript-mastery",
+        "target": "state-management",
+        "status": "locked",
+    },
+    {
+        "id": "e8",
+        "source": "git-basics",
+        "target": "django-rest",
+        "status": "completed",
+    },
+    {
+        "id": "e9",
+        "source": "django-rest",
+        "target": "async-workers",
+        "status": "active",
+    },
+    {
+        "id": "e10",
+        "source": "conflict-resolution",
+        "target": "pr-review-mastery",
+        "status": "active",
+    },
+    {
+        "id": "e11",
+        "source": "pr-review-mastery",
+        "target": "open-source-maintainer",
+        "status": "locked",
+    },
 ]
 
 TRACKS = [
@@ -265,6 +410,7 @@ class SkillTreeViewSet(viewsets.ViewSet):
     """
     API ViewSet for Interactive Contributor Skill Tree & Dynamic Mastery Graph UI (#2323).
     """
+
     permission_classes = [AllowAny]
 
     def list(self, request):
@@ -272,8 +418,12 @@ class SkillTreeViewSet(viewsets.ViewSet):
         Get full skill tree structure with node progression, parent prerequisites, and user XP stats.
         """
         user_xp = 1250
-        mastered_nodes = [node for node in SKILL_TREE_NODES if node["status"] == "completed"]
-        unlocked_nodes = [node for node in SKILL_TREE_NODES if node["status"] == "unlocked"]
+        mastered_nodes = [
+            node for node in SKILL_TREE_NODES if node["status"] == "completed"
+        ]
+        unlocked_nodes = [
+            node for node in SKILL_TREE_NODES if node["status"] == "unlocked"
+        ]
 
         data = {
             "user_xp": user_xp,
@@ -302,7 +452,10 @@ class SkillTreeViewSet(viewsets.ViewSet):
         target_node = next((n for n in SKILL_TREE_NODES if n["id"] == node_id), None)
 
         if not target_node:
-            return Response({"error": f"Node with ID '{node_id}' not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": f"Node with ID '{node_id}' not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
         # Validate prerequisites
         unfulfilled_prereqs = []
@@ -315,9 +468,9 @@ class SkillTreeViewSet(viewsets.ViewSet):
             return Response(
                 {
                     "error": "Prerequisites unfulfilled.",
-                    "missing_prerequisites": unfulfilled_prereqs
+                    "missing_prerequisites": unfulfilled_prereqs,
                 },
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Mark node completed & update children
@@ -330,7 +483,14 @@ class SkillTreeViewSet(viewsets.ViewSet):
             if node["status"] == "locked":
                 # Check if all prereqs completed now
                 all_done = all(
-                    next((p["status"] == "completed" for p in SKILL_TREE_NODES if p["id"] == req), False)
+                    next(
+                        (
+                            p["status"] == "completed"
+                            for p in SKILL_TREE_NODES
+                            if p["id"] == req
+                        ),
+                        False,
+                    )
                     for req in node["prerequisites"]
                 )
                 if all_done:
@@ -343,7 +503,7 @@ class SkillTreeViewSet(viewsets.ViewSet):
                 "node_id": node_id,
                 "xp_gained": target_node["xp_reward"],
                 "badge_awarded": target_node.get("badge_reward"),
-                "newly_unlocked": unlocked_children
+                "newly_unlocked": unlocked_children,
             },
-            status=status.HTTP_200_OK
+            status=status.HTTP_200_OK,
         )

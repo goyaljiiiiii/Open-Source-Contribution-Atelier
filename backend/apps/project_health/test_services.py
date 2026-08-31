@@ -1,6 +1,5 @@
 from unittest.mock import patch
 
-
 from apps.project_health.services import analyze_repository, calculate_commit_frequency
 
 

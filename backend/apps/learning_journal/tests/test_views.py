@@ -23,12 +23,8 @@ class BaseJournalTest(TestCase):
     """Shared setup."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="testuser", password="pass123"
-        )
-        self.other = User.objects.create_user(
-            username="other", password="pass123"
-        )
+        self.user = User.objects.create_user(username="testuser", password="pass123")
+        self.other = User.objects.create_user(username="other", password="pass123")
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
 
@@ -68,16 +64,12 @@ class JournalEntryDetailViewTest(BaseJournalTest):
         )
 
     def test_retrieve(self):
-        url = reverse(
-            "learning_journal:entry-detail", args=[self.entry.id]
-        )
+        url = reverse("learning_journal:entry-detail", args=[self.entry.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_update(self):
-        url = reverse(
-            "learning_journal:entry-detail", args=[self.entry.id]
-        )
+        url = reverse("learning_journal:entry-detail", args=[self.entry.id])
         response = self.client.patch(
             url,
             {"what_i_learned": "Updated"},
@@ -86,9 +78,7 @@ class JournalEntryDetailViewTest(BaseJournalTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_delete(self):
-        url = reverse(
-            "learning_journal:entry-detail", args=[self.entry.id]
-        )
+        url = reverse("learning_journal:entry-detail", args=[self.entry.id])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
@@ -98,9 +88,7 @@ class JournalEntryDetailViewTest(BaseJournalTest):
             date=timezone.now().date() - timedelta(days=1),
             what_i_learned="Other's",
         )
-        url = reverse(
-            "learning_journal:entry-detail", args=[other_entry.id]
-        )
+        url = reverse("learning_journal:entry-detail", args=[other_entry.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
@@ -139,9 +127,7 @@ class TodayEntryViewTest(BaseJournalTest):
         data = {"what_i_learned": "First"}
         self.client.post(url, data, format="json")
         response = self.client.post(url, data, format="json")
-        self.assertEqual(
-            response.status_code, status.HTTP_400_BAD_REQUEST
-        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class JournalCommentListCreateViewTest(BaseJournalTest):
@@ -186,34 +172,22 @@ class JournalReactionViewTest(BaseJournalTest):
         )
 
     def test_add_reaction(self):
-        url = reverse(
-            "learning_journal:entry-react", args=[self.entry.id]
-        )
+        url = reverse("learning_journal:entry-react", args=[self.entry.id])
         data = {"reaction_type": "like"}
         response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_toggle_reaction(self):
-        url = reverse(
-            "learning_journal:entry-react", args=[self.entry.id]
-        )
-        self.client.post(
-            url, {"reaction_type": "like"}, format="json"
-        )
-        response = self.client.post(
-            url, {"reaction_type": "like"}, format="json"
-        )
+        url = reverse("learning_journal:entry-react", args=[self.entry.id])
+        self.client.post(url, {"reaction_type": "like"}, format="json")
+        response = self.client.post(url, {"reaction_type": "like"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data["removed"])
 
     def test_missing_type(self):
-        url = reverse(
-            "learning_journal:entry-react", args=[self.entry.id]
-        )
+        url = reverse("learning_journal:entry-react", args=[self.entry.id])
         response = self.client.post(url, {}, format="json")
-        self.assertEqual(
-            response.status_code, status.HTTP_400_BAD_REQUEST
-        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class JournalStreakViewTest(BaseJournalTest):
@@ -248,9 +222,7 @@ class WeeklySummaryViewTest(BaseJournalTest):
     def test_invalid_date(self):
         url = reverse("learning_journal:weekly-summary")
         response = self.client.get(url, {"week_start": "bad"})
-        self.assertEqual(
-            response.status_code, status.HTTP_400_BAD_REQUEST
-        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class JournalSocialFeedViewTest(BaseJournalTest):
@@ -272,9 +244,7 @@ class ReflectionPromptViewTest(BaseJournalTest):
         self.assertIn("text", response.data)
 
     def test_with_custom_prompt(self):
-        ReflectionPrompt.objects.create(
-            text="Custom?", prompt_type="daily"
-        )
+        ReflectionPrompt.objects.create(text="Custom?", prompt_type="daily")
         url = reverse("learning_journal:reflection-prompt")
         response = self.client.get(url)
         self.assertEqual(response.data["text"], "Custom?")

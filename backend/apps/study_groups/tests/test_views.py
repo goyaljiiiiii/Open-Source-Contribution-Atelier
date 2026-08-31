@@ -40,9 +40,7 @@ class BaseStudyGroupTest(TestCase):
             owner=self.user,
             visibility="public",
         )
-        GroupMembership.objects.create(
-            user=self.user, group=self.group, role="owner"
-        )
+        GroupMembership.objects.create(user=self.user, group=self.group, role="owner")
 
 
 class StudyGroupListCreateViewTest(BaseStudyGroupTest):
@@ -77,20 +75,14 @@ class StudyGroupDetailViewTest(BaseStudyGroupTest):
     """Tests for StudyGroupDetailView."""
 
     def test_retrieve(self):
-        url = reverse(
-            "study_groups:group-detail", args=[self.group.id]
-        )
+        url = reverse("study_groups:group-detail", args=[self.group.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data["is_member"])
 
     def test_update_as_owner(self):
-        url = reverse(
-            "study_groups:group-detail", args=[self.group.id]
-        )
-        response = self.client.patch(
-            url, {"description": "Updated"}, format="json"
-        )
+        url = reverse("study_groups:group-detail", args=[self.group.id])
+        response = self.client.patch(url, {"description": "Updated"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_update_as_non_owner(self):
@@ -98,15 +90,9 @@ class StudyGroupDetailViewTest(BaseStudyGroupTest):
         GroupMembership.objects.create(
             user=self.other_user, group=self.group, role="member"
         )
-        url = reverse(
-            "study_groups:group-detail", args=[self.group.id]
-        )
-        response = self.client.patch(
-            url, {"description": "Hacked"}, format="json"
-        )
-        self.assertEqual(
-            response.status_code, status.HTTP_403_FORBIDDEN
-        )
+        url = reverse("study_groups:group-detail", args=[self.group.id])
+        response = self.client.patch(url, {"description": "Hacked"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
 class JoinGroupViewTest(BaseStudyGroupTest):
@@ -122,20 +108,14 @@ class JoinGroupViewTest(BaseStudyGroupTest):
         )
 
     def test_join_public_group(self):
-        url = reverse(
-            "study_groups:join-group", args=[self.public_group.id]
-        )
+        url = reverse("study_groups:join-group", args=[self.public_group.id])
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_join_already_member(self):
-        url = reverse(
-            "study_groups:join-group", args=[self.group.id]
-        )
+        url = reverse("study_groups:join-group", args=[self.group.id])
         response = self.client.post(url)
-        self.assertEqual(
-            response.status_code, status.HTTP_400_BAD_REQUEST
-        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_join_private_group(self):
         private = StudyGroup.objects.create(
@@ -144,13 +124,9 @@ class JoinGroupViewTest(BaseStudyGroupTest):
             owner=self.other_user,
             visibility="private",
         )
-        url = reverse(
-            "study_groups:join-group", args=[private.id]
-        )
+        url = reverse("study_groups:join-group", args=[private.id])
         response = self.client.post(url)
-        self.assertEqual(
-            response.status_code, status.HTTP_403_FORBIDDEN
-        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_join_full_group(self):
         full = StudyGroup.objects.create(
@@ -160,52 +136,36 @@ class JoinGroupViewTest(BaseStudyGroupTest):
             max_members=2,
             member_count=2,
         )
-        url = reverse(
-            "study_groups:join-group", args=[full.id]
-        )
+        url = reverse("study_groups:join-group", args=[full.id])
         response = self.client.post(url)
-        self.assertEqual(
-            response.status_code, status.HTTP_400_BAD_REQUEST
-        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class LeaveGroupViewTest(BaseStudyGroupTest):
     """Tests for LeaveGroupView."""
 
     def test_leave_group(self):
-        url = reverse(
-            "study_groups:leave-group", args=[self.group.id]
-        )
+        url = reverse("study_groups:leave-group", args=[self.group.id])
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_owner_cannot_leave(self):
-        url = reverse(
-            "study_groups:leave-group", args=[self.group.id]
-        )
+        url = reverse("study_groups:leave-group", args=[self.group.id])
         response = self.client.post(url)
-        self.assertEqual(
-            response.status_code, status.HTTP_400_BAD_REQUEST
-        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_leave_not_member(self):
         self.client.force_authenticate(user=self.other_user)
-        url = reverse(
-            "study_groups:leave-group", args=[self.group.id]
-        )
+        url = reverse("study_groups:leave-group", args=[self.group.id])
         response = self.client.post(url)
-        self.assertEqual(
-            response.status_code, status.HTTP_404_NOT_FOUND
-        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
 class GroupMemberListViewTest(BaseStudyGroupTest):
     """Tests for GroupMemberListView."""
 
     def test_list_members(self):
-        url = reverse(
-            "study_groups:member-list", args=[self.group.id]
-        )
+        url = reverse("study_groups:member-list", args=[self.group.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
@@ -215,16 +175,12 @@ class GroupResourceListCreateViewTest(BaseStudyGroupTest):
     """Tests for GroupResourceListCreateView."""
 
     def test_list_resources(self):
-        url = reverse(
-            "study_groups:resource-list", args=[self.group.id]
-        )
+        url = reverse("study_groups:resource-list", args=[self.group.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_create_resource(self):
-        url = reverse(
-            "study_groups:resource-list", args=[self.group.id]
-        )
+        url = reverse("study_groups:resource-list", args=[self.group.id])
         data = {
             "resource_type": "link",
             "title": "Django Docs",
@@ -264,9 +220,7 @@ class GroupActivityListViewTest(BaseStudyGroupTest):
             activity_type="join",
             title="Joined",
         )
-        url = reverse(
-            "study_groups:activity-list", args=[self.group.id]
-        )
+        url = reverse("study_groups:activity-list", args=[self.group.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), 1)
@@ -276,9 +230,7 @@ class GroupInviteCreateViewTest(BaseStudyGroupTest):
     """Tests for GroupInviteCreateView."""
 
     def test_create_invite_as_owner(self):
-        url = reverse(
-            "study_groups:invite-create", args=[self.group.id]
-        )
+        url = reverse("study_groups:invite-create", args=[self.group.id])
         data = {"email": "new@example.com"}
         response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -288,15 +240,9 @@ class GroupInviteCreateViewTest(BaseStudyGroupTest):
         GroupMembership.objects.create(
             user=self.other_user, group=self.group, role="member"
         )
-        url = reverse(
-            "study_groups:invite-create", args=[self.group.id]
-        )
-        response = self.client.post(
-            url, {"email": "a@b.com"}, format="json"
-        )
-        self.assertEqual(
-            response.status_code, status.HTTP_403_FORBIDDEN
-        )
+        url = reverse("study_groups:invite-create", args=[self.group.id])
+        response = self.client.post(url, {"email": "a@b.com"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
 class AcceptInviteViewTest(BaseStudyGroupTest):
@@ -312,9 +258,7 @@ class AcceptInviteViewTest(BaseStudyGroupTest):
         )
         self.client.force_authenticate(user=self.other_user)
         url = reverse("study_groups:invite-accept")
-        response = self.client.post(
-            url, {"token": "validtoken123"}, format="json"
-        )
+        response = self.client.post(url, {"token": "validtoken123"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data["success"])
 
@@ -340,16 +284,12 @@ class GroupChallengeListCreateViewTest(BaseStudyGroupTest):
     """Tests for GroupChallengeListCreateView."""
 
     def test_list_challenges(self):
-        url = reverse(
-            "study_groups:challenge-list", args=[self.group.id]
-        )
+        url = reverse("study_groups:challenge-list", args=[self.group.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_create_challenge(self):
-        url = reverse(
-            "study_groups:challenge-list", args=[self.group.id]
-        )
+        url = reverse("study_groups:challenge-list", args=[self.group.id])
         data = {
             "title": "Sprint",
             "description": "10 lessons",
@@ -393,9 +333,7 @@ class ChallengeJoinViewTest(BaseStudyGroupTest):
         )
         self.client.post(url)
         response = self.client.post(url)
-        self.assertEqual(
-            response.status_code, status.HTTP_400_BAD_REQUEST
-        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class ChallengeLeaderboardViewTest(BaseStudyGroupTest):
@@ -429,16 +367,12 @@ class GroupGoalListCreateViewTest(BaseStudyGroupTest):
     """Tests for GroupGoalListCreateView."""
 
     def test_list_goals(self):
-        url = reverse(
-            "study_groups:goal-list", args=[self.group.id]
-        )
+        url = reverse("study_groups:goal-list", args=[self.group.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_create_goal(self):
-        url = reverse(
-            "study_groups:goal-list", args=[self.group.id]
-        )
+        url = reverse("study_groups:goal-list", args=[self.group.id])
         data = {
             "goal_type": "total_xp",
             "title": "1000 XP",
@@ -457,16 +391,12 @@ class GroupMessageListCreateViewTest(BaseStudyGroupTest):
             user=self.user,
             content="Hello",
         )
-        url = reverse(
-            "study_groups:message-list", args=[self.group.id]
-        )
+        url = reverse("study_groups:message-list", args=[self.group.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_post_message(self):
-        url = reverse(
-            "study_groups:message-list", args=[self.group.id]
-        )
+        url = reverse("study_groups:message-list", args=[self.group.id])
         data = {"content": "Study tips?"}
         response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -487,9 +417,7 @@ class MessageReplyListViewTest(BaseStudyGroupTest):
             content="A!",
             parent=parent,
         )
-        url = reverse(
-            "study_groups:message-replies", args=[parent.id]
-        )
+        url = reverse("study_groups:message-replies", args=[parent.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), 1)
@@ -499,9 +427,7 @@ class GroupStatsViewTest(BaseStudyGroupTest):
     """Tests for GroupStatsView."""
 
     def test_get_stats(self):
-        url = reverse(
-            "study_groups:group-stats", args=[self.group.id]
-        )
+        url = reverse("study_groups:group-stats", args=[self.group.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("member_count", response.data)
@@ -509,26 +435,20 @@ class GroupStatsViewTest(BaseStudyGroupTest):
     def test_nonexistent_group(self):
         url = reverse("study_groups:group-stats", args=[9999])
         response = self.client.get(url)
-        self.assertEqual(
-            response.status_code, status.HTTP_404_NOT_FOUND
-        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
 class GroupLeaderboardViewTest(BaseStudyGroupTest):
     """Tests for GroupLeaderboardView."""
 
     def test_get_leaderboard(self):
-        url = reverse(
-            "study_groups:group-leaderboard", args=[self.group.id]
-        )
+        url = reverse("study_groups:group-leaderboard", args=[self.group.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("entries", response.data)
 
     def test_weekly_leaderboard(self):
-        url = reverse(
-            "study_groups:group-leaderboard", args=[self.group.id]
-        )
+        url = reverse("study_groups:group-leaderboard", args=[self.group.id])
         response = self.client.get(url, {"period": "weekly"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 

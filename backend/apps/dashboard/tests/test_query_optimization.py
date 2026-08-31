@@ -93,6 +93,7 @@ class TestContributorDashboardStats:
 
     def test_personal_stats_accuracy(self, api_client, user, setup_activity):
         from django.core.cache import cache
+
         cache.clear()
         api_client.force_authenticate(user=user)
         stats = api_client.get(ENDPOINT).json()["personal_stats"]

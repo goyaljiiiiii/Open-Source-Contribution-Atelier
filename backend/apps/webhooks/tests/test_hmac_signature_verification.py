@@ -1,4 +1,5 @@
 import json
+
 import pytest
 from cryptography.fernet import InvalidToken
 from django.http import JsonResponse
@@ -95,15 +96,21 @@ class TestHMACSignatureVerification:
         key_tuples = [("v1", "revoked_secret"), ("v2", secret_key)]
         assert verify_signature(key_tuples, sample_payload, sig) is True
 
-    def test_verify_signature_tampered_payload_returns_false(self, secret_key, sample_payload):
+    def test_verify_signature_tampered_payload_returns_false(
+        self, secret_key, sample_payload
+    ):
         sig = compute_signature(secret_key, sample_payload)
         assert verify_signature(secret_key, sample_payload + b"!", sig) is False
 
-    def test_verify_signature_invalid_sig_returns_false(self, secret_key, sample_payload):
+    def test_verify_signature_invalid_sig_returns_false(
+        self, secret_key, sample_payload
+    ):
         assert verify_signature(secret_key, sample_payload, "deadbeef" * 8) is False
 
     @pytest.mark.parametrize("empty_val", ["", None])
-    def test_verify_signature_empty_signature_returns_false(self, secret_key, sample_payload, empty_val):
+    def test_verify_signature_empty_signature_returns_false(
+        self, secret_key, sample_payload, empty_val
+    ):
         assert verify_signature(secret_key, sample_payload, empty_val) is False
 
 
@@ -124,17 +131,23 @@ class TestRequireWebhookSignatureDecorator:
         assert resp.status_code == 200
         assert json.loads(resp.content) == {"ok": True}
 
-    def test_decorator_missing_signature_header_returns_403(self, rf, secret_key, sample_payload):
+    def test_decorator_missing_signature_header_returns_403(
+        self, rf, secret_key, sample_payload
+    ):
         @require_webhook_signature(secret_key)
         def my_view(request):
             return JsonResponse({"ok": True})
 
-        req = rf.post("/api/webhooks/", data=sample_payload, content_type="application/json")
+        req = rf.post(
+            "/api/webhooks/", data=sample_payload, content_type="application/json"
+        )
         resp = my_view(req)
         assert resp.status_code == 403
         assert json.loads(resp.content) == {"error": "Missing signature header"}
 
-    def test_decorator_invalid_signature_returns_403(self, rf, secret_key, sample_payload):
+    def test_decorator_invalid_signature_returns_403(
+        self, rf, secret_key, sample_payload
+    ):
         @require_webhook_signature(secret_key)
         def my_view(request):
             return JsonResponse({"ok": True})
@@ -198,7 +211,9 @@ class TestRequireWebhookSignatureDecorator:
         )
         resp = my_view(req)
         assert resp.status_code == 500
-        assert json.loads(resp.content) == {"error": "Configuration error: Missing secret"}
+        assert json.loads(resp.content) == {
+            "error": "Configuration error: Missing secret"
+        }
 
     def test_decorator_custom_header_name(self, rf, secret_key, sample_payload):
         @require_webhook_signature(secret_key, header_name="HTTP_X_HUB_SIGNATURE_256")

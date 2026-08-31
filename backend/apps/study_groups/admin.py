@@ -10,8 +10,8 @@ from .models import (
     GroupChallengeParticipant,
     GroupGoal,
     GroupInvite,
-    GroupMessage,
     GroupMembership,
+    GroupMessage,
     GroupResource,
     StudyGroup,
 )

@@ -24,8 +24,16 @@ class SkillTagSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "slug", "description", "icon_emoji"]
 
 
+class SessionSkillTagSerializer(serializers.ModelSerializer):
+    skill_tag = SkillTagSerializer(read_only=True)
+
+    class Meta:
+        model = SessionSkillTag
+        fields = ["skill_tag", "confidence"]
+
+
 class LearningSessionSerializer(serializers.ModelSerializer):
-    skill_tags = SkillTagSerializer(many=True, read_only=True)
+    skill_tags = SessionSkillTagSerializer(many=True, read_only=True)
     duration_display = serializers.SerializerMethodField()
 
     class Meta:
@@ -60,7 +68,10 @@ class LearningSessionCreateSerializer(serializers.Serializer):
     activity_id = serializers.IntegerField(required=False, allow_null=True)
     xp_earned = serializers.IntegerField(default=0)
     score = serializers.IntegerField(
-        required=False, allow_null=True, min_value=0, max_value=100,
+        required=False,
+        allow_null=True,
+        min_value=0,
+        max_value=100,
     )
     completed = serializers.BooleanField(default=True)
     skill_slugs = serializers.ListField(
@@ -71,18 +82,11 @@ class LearningSessionCreateSerializer(serializers.Serializer):
     metadata = serializers.DictField(default=dict)
 
 
-class SessionSkillTagSerializer(serializers.ModelSerializer):
-    skill_tag = SkillTagSerializer(read_only=True)
-
-    class Meta:
-        model = SessionSkillTag
-        fields = ["skill_tag", "confidence"]
-
-
 class UserSkillProfileSerializer(serializers.ModelSerializer):
     skill_tag = SkillTagSerializer(read_only=True)
     skill_tag_slug = serializers.SlugField(
-        source="skill_tag.slug", read_only=True,
+        source="skill_tag.slug",
+        read_only=True,
     )
 
     class Meta:
@@ -149,7 +153,9 @@ class LearningGoalSerializer(serializers.ModelSerializer):
     is_overdue = serializers.BooleanField(read_only=True)
     skill_tag = SkillTagSerializer(read_only=True)
     skill_tag_slug = serializers.SlugField(
-        source="skill_tag.slug", read_only=True, required=False,
+        source="skill_tag.slug",
+        read_only=True,
+        required=False,
     )
 
     class Meta:
@@ -181,7 +187,9 @@ class LearningGoalSerializer(serializers.ModelSerializer):
 
 class LearningGoalCreateSerializer(serializers.ModelSerializer):
     skill_slug = serializers.SlugField(
-        write_only=True, required=False, allow_blank=True,
+        write_only=True,
+        required=False,
+        allow_blank=True,
     )
 
     class Meta:
@@ -195,9 +203,7 @@ class LearningGoalCreateSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, attrs):
-        if attrs["goal_type"] == "skill_level" and not attrs.get(
-            "skill_slug"
-        ):
+        if attrs["goal_type"] == "skill_level" and not attrs.get("skill_slug"):
             raise serializers.ValidationError(
                 {"skill_slug": "Required for skill_level goals."}
             )
@@ -259,7 +265,8 @@ class InsightDismissSerializer(serializers.Serializer):
 
 class InsightBulkReadSerializer(serializers.Serializer):
     insight_ids = serializers.ListField(
-        child=serializers.IntegerField(), min_length=1,
+        child=serializers.IntegerField(),
+        min_length=1,
     )
 
 

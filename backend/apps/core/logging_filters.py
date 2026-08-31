@@ -21,8 +21,17 @@ class SensitiveDataFilter(logging.Filter):
     """
 
     SENSITIVE_PATTERNS = [
-        (re.compile(r'(password|secret|token|api_key|access_token)=["\']?[^\s"\'&]+["\']?', re.IGNORECASE), r'\1=[REDACTED]'),
-        (re.compile(r'Bearer\s+[A-Za-z0-9\-\._~\+\/]+=*', re.IGNORECASE), r'Bearer [REDACTED]'),
+        (
+            re.compile(
+                r'(password|secret|token|api_key|access_token)=["\']?[^\s"\'&]+["\']?',
+                re.IGNORECASE,
+            ),
+            r"\1=[REDACTED]",
+        ),
+        (
+            re.compile(r"Bearer\s+[A-Za-z0-9\-\._~\+\/]+=*", re.IGNORECASE),
+            r"Bearer [REDACTED]",
+        ),
     ]
 
     def filter(self, record):
@@ -30,4 +39,3 @@ class SensitiveDataFilter(logging.Filter):
             for pattern, replacement in self.SENSITIVE_PATTERNS:
                 record.msg = pattern.sub(replacement, record.msg)
         return True
-

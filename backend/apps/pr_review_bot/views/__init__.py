@@ -65,6 +65,14 @@ class PRImpactAnalysisViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        try:
+            pr_number = int(pr_number)
+        except (ValueError, TypeError):
+            return Response(
+                {"error": "Field 'pr_number' must be an integer."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         if async_run:
             analyze_pr_impact_task.delay(
                 pr_number=int(pr_number),

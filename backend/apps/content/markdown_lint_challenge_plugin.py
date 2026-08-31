@@ -62,7 +62,9 @@ def _check_link_syntax(lines: List[str]) -> List[str]:
                 # looks like it was meant to be inline (has no matching
                 # trailing "]:" reference-definition pattern either)
                 rest_of_line = line[end:]
-                if not rest_of_line.startswith(":") and not line.strip().startswith("[" + match.group(1) + "]:"):
+                if not rest_of_line.startswith(":") and not line.strip().startswith(
+                    "[" + match.group(1) + "]:"
+                ):
                     errors.append(
                         f"line {i + 1}: '[{match.group(1)}]' not followed by '(url)' or a reference definition"
                     )

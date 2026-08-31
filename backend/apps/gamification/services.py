@@ -47,4 +47,3 @@ def award_badge_service(user, badge_name="Bug Hunter"):
         badge=badge,
     )
     return achievement, created
-

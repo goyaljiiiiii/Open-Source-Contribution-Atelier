@@ -61,7 +61,7 @@ class PluginToggleView(APIView):
 class DynamicPluginRouterView(APIView):
     permission_classes = [AllowAny]
 
-    def dispatch(self, request, plugin_name, subpath="", *args, **kwargs):
+    def handle_plugin_request(self, request, plugin_name, subpath="", *args, **kwargs):
         manifest = registry.active_plugins.get(plugin_name)
         if not manifest:
             return Response(
@@ -91,12 +91,19 @@ class DynamicPluginRouterView(APIView):
             module = importlib.import_module(module_path)
             view_cls = getattr(module, view_name)
 
+            raw_req = request._request if hasattr(request, "_request") else request
             if hasattr(view_cls, "as_view"):
-                return view_cls.as_view()(request, *args, **kwargs)
+                return view_cls.as_view()(raw_req, *args, **kwargs)
             else:
-                return view_cls(request, *args, **kwargs)
+                return view_cls(raw_req, *args, **kwargs)
         except Exception as e:
             logger.exception(f"Error executing plugin view '{matched_view_path}': {e}")
             return Response(
                 {"error": f"Plugin view execution error: {str(e)}"}, status=500
             )
+
+    get = handle_plugin_request
+    post = handle_plugin_request
+    put = handle_plugin_request
+    patch = handle_plugin_request
+    delete = handle_plugin_request

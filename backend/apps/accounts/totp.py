@@ -10,7 +10,7 @@ import secrets
 import struct
 import time
 import urllib.parse
-from typing import List, Tuple, Optional
+from typing import List, Optional, Tuple
 
 
 def generate_totp_secret(length: int = 32) -> str:
@@ -44,9 +44,9 @@ def generate_totp_code(
 
     hmac_hash = hmac.new(key, msg, hashlib.sha1).digest()
     offset = hmac_hash[-1] & 0x0F
-    code_int = (
-        struct.unpack(">I", hmac_hash[offset : offset + 4])[0] & 0x7FFFFFFF
-    ) % (10**digits)
+    code_int = (struct.unpack(">I", hmac_hash[offset : offset + 4])[0] & 0x7FFFFFFF) % (
+        10**digits
+    )
 
     return str(code_int).zfill(digits)
 

@@ -28,10 +28,7 @@ def compute_journal_streak(user, up_to=None) -> dict[str, Any]:
     if up_to is None:
         up_to = timezone.now().date()
 
-    dates = set(
-        JournalEntry.objects.filter(user=user)
-        .values_list("date", flat=True)
-    )
+    dates = set(JournalEntry.objects.filter(user=user).values_list("date", flat=True))
 
     # Current streak: walk backwards from up_to
     current = 0
@@ -57,10 +54,14 @@ def compute_journal_streak(user, up_to=None) -> dict[str, Any]:
     streak.current_streak = current
     streak.longest_streak = max(streak.longest_streak, longest)
     streak.last_entry_date = sorted_dates[-1] if sorted_dates else None
-    streak.save(update_fields=[
-        "current_streak", "longest_streak",
-        "last_entry_date", "updated_at",
-    ])
+    streak.save(
+        update_fields=[
+            "current_streak",
+            "longest_streak",
+            "last_entry_date",
+            "updated_at",
+        ]
+    )
 
     return {
         "current_streak": current,
@@ -89,8 +90,14 @@ def generate_weekly_summary(user, week_start=None) -> dict[str, Any]:
     if count == 0:
         return {
             "week_start": week_start.isoformat(),
-            "entries_count": 0,
             "summary": "No entries this week. Start writing today!",
+            "entries_count": 0,
+            "total_words": 0,
+            "total_hours": 0.0,
+            "average_mood": 0.0,
+            "mood_trend": "stable",
+            "top_tags": [],
+            "highlights": [],
         }
 
     agg = entries.aggregate(
@@ -102,12 +109,8 @@ def generate_weekly_summary(user, week_start=None) -> dict[str, Any]:
 
     # Mood trend (first half vs second half)
     mid = week_start + timedelta(days=3)
-    first_half = entries.filter(date__lt=mid).aggregate(
-        avg=Avg("mood")
-    )["avg"]
-    second_half = entries.filter(date__gte=mid).aggregate(
-        avg=Avg("mood")
-    )["avg"]
+    first_half = entries.filter(date__lt=mid).aggregate(avg=Avg("mood"))["avg"]
+    second_half = entries.filter(date__gte=mid).aggregate(avg=Avg("mood"))["avg"]
 
     if first_half and second_half:
         diff = second_half - first_half
@@ -124,21 +127,20 @@ def generate_weekly_summary(user, week_start=None) -> dict[str, Any]:
     all_tags = []
     for t in entries.values_list("tags", flat=True):
         all_tags.extend(t or [])
-    top_tags = [
-        {"tag": tag, "count": c}
-        for tag, c in Counter(all_tags).most_common(5)
-    ]
+    top_tags = [{"tag": tag, "count": c} for tag, c in Counter(all_tags).most_common(5)]
 
     # Highlights: entries with highest mood or most words
     highlights = []
     best_entries = entries.order_by("-mood", "-word_count")[:3]
     for e in best_entries:
-        highlights.append({
-            "date": e.date.isoformat(),
-            "mood": e.mood,
-            "words": e.word_count,
-            "snippet": e.what_i_learned[:200],
-        })
+        highlights.append(
+            {
+                "date": e.date.isoformat(),
+                "mood": e.mood,
+                "words": e.word_count,
+                "snippet": e.what_i_learned[:200],
+            }
+        )
 
     # Build summary text
     summary_parts = [
@@ -149,13 +151,10 @@ def generate_weekly_summary(user, week_start=None) -> dict[str, Any]:
     if agg["avg_mood"]:
         mood_label = _mood_label(agg["avg_mood"])
         summary_parts.append(
-            f"Your average mood was {mood_label} "
-            f"(trend: {mood_trend})."
+            f"Your average mood was {mood_label} " f"(trend: {mood_trend})."
         )
     if agg["avg_prod"]:
-        summary_parts.append(
-            f"Average productivity: {agg['avg_prod']:.1f}/10."
-        )
+        summary_parts.append(f"Average productivity: {agg['avg_prod']:.1f}/10.")
     if top_tags:
         tag_names = [t["tag"] for t in top_tags[:3]]
         summary_parts.append(f"Focus areas: {', '.join(tag_names)}.")
@@ -237,7 +236,7 @@ def get_journal_stats(user) -> dict[str, Any]:
     )
 
     now = timezone.now()
-    week_start = (now - timedelta(days=now.weekday())).date()
+    week_start = (now - timedelta(days=7)).date()
     month_start = now.replace(day=1).date()
 
     entries_this_week = entries.filter(date__gte=week_start).count()
@@ -245,9 +244,7 @@ def get_journal_stats(user) -> dict[str, Any]:
 
     # Mood distribution
     mood_dist = dict(
-        entries.values("mood").annotate(count=Count("id")).values_list(
-            "mood", "count"
-        )
+        entries.values("mood").annotate(count=Count("id")).values_list("mood", "count")
     )
 
     # Top tags
@@ -268,6 +265,7 @@ def get_journal_stats(user) -> dict[str, Any]:
 
     # Busiest day of week
     from django.db.models.functions import ExtractWeekDay
+
     day_counts = (
         entries.annotate(day_of_week=ExtractWeekDay("date"))
         .values("day_of_week")
@@ -276,8 +274,13 @@ def get_journal_stats(user) -> dict[str, Any]:
     )
     busiest = day_counts.first()
     day_names = {
-        1: "Sunday", 2: "Monday", 3: "Tuesday",
-        4: "Wednesday", 5: "Thursday", 6: "Friday", 7: "Saturday",
+        1: "Sunday",
+        2: "Monday",
+        3: "Tuesday",
+        4: "Wednesday",
+        5: "Thursday",
+        6: "Friday",
+        7: "Saturday",
     }
     busiest_day = day_names.get(busiest["day_of_week"]) if busiest else None
 
@@ -290,9 +293,7 @@ def get_journal_stats(user) -> dict[str, Any]:
         "favorite_tag": favorite_tag,
         "entries_this_week": entries_this_week,
         "entries_this_month": entries_this_month,
-        "mood_distribution": {
-            _mood_label(k): v for k, v in mood_dist.items()
-        },
+        "mood_distribution": {_mood_label(k): v for k, v in mood_dist.items()},
         "productivity_trend": [
             {"date": d.isoformat(), "productivity": round(p or 0, 1)}
             for d, p in trend_data
@@ -305,11 +306,16 @@ def get_social_feed(user, limit=20) -> list[dict[str, Any]]:
     """Get public journal entries from users the given user follows."""
     from .models import JournalEntry
 
-    entries = JournalEntry.objects.filter(
-        visibility="public",
-    ).exclude(
-        user=user,
-    ).select_related("user").order_by("-date")[:limit]
+    entries = (
+        JournalEntry.objects.filter(
+            visibility="public",
+        )
+        .exclude(
+            user=user,
+        )
+        .select_related("user")
+        .order_by("-date")[:limit]
+    )
 
     return [
         {
@@ -341,8 +347,10 @@ def get_reflection_prompt(user=None) -> dict[str, Any]:
     count = prompts.count()
     if count == 0:
         return {
+            "id": None,
             "text": "What did you learn today that surprised you?",
             "type": "daily",
+            "category": "general",
         }
 
     idx = day_of_week % count

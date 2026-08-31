@@ -77,6 +77,383 @@ import {
   GitBranchSimulatorPage,
 } from "./routeComponents";
 
+<<<<<<< HEAD
+=======
+const ChallengePage = lazy(() =>
+  import("../pages/ChallengePage").then((module) => ({
+    default: module.ChallengePage,
+  })),
+);
+
+const A11yLinterSandbox = lazy(() =>
+  import("../components/ui/A11yLinterSandbox").then((module) => ({
+    default: module.A11yLinterSandbox,
+  })),
+);
+
+const ChatPage = lazy(() =>
+  import("../pages/ChatPage").then((module) => ({
+    default: module.ChatPage,
+  })),
+);
+
+const CommunityPage = lazy(() =>
+  import("../pages/CommunityPage").then((module) => ({
+    default: module.CommunityPage,
+  })),
+);
+
+const DashboardPage = lazy(() =>
+  import("../pages/DashboardPage").then((module) => ({
+    default: module.DashboardPage,
+  })),
+);
+
+const GitHubAuthCallbackPage = lazy(() =>
+  import("../pages/GitHubAuthCallbackPage").then((module) => ({
+    default: module.GitHubAuthCallbackPage,
+  })),
+);
+
+const LandingPage = lazy(() =>
+  import("../pages/LandingPage").then((module) => ({
+    default: module.LandingPage,
+  })),
+);
+
+const LoginPage = lazy(() =>
+  import("../pages/LoginPage").then((module) => ({
+    default: module.LoginPage,
+  })),
+);
+
+const SignupPage = lazy(() =>
+  import("../pages/SignupPage").then((module) => ({
+    default: module.SignupPage,
+  })),
+);
+
+const LessonPage = lazy(() =>
+  import("../pages/LessonPage").then((module) => ({
+    default: module.LessonPage,
+  })),
+);
+
+const LessonCollaboratePage = lazy(() =>
+  import("../pages/LessonCollaboratePage").then((module) => ({
+    default: module.LessonCollaboratePage,
+  })),
+);
+
+const NotFoundPage = lazy(() =>
+  import("../pages/NotFoundPage").then((module) => ({
+    default: module.NotFoundPage,
+  })),
+);
+
+const ServerErrorPage = lazy(() =>
+  import("../pages/ServerErrorPage").then((module) => ({
+    default: module.ServerErrorPage,
+  })),
+);
+
+const ModerationDashboard = lazy(() =>
+  import("../pages/ModerationDashboard").then((module) => ({
+    default: module.ModerationDashboard,
+  })),
+);
+
+const BackupDashboardPage = lazy(() =>
+  import("../pages/admin/BackupDashboardPage").then((module) => ({
+    default: module.default,
+  })),
+);
+
+const AuditLogViewerPage = lazy(() =>
+  import("../pages/admin/AuditLogViewerPage").then((module) => ({
+    default: module.AuditLogViewerPage,
+  })),
+);
+
+const CeleryDashboardPage = lazy(() =>
+  import("../pages/admin/CeleryDashboardPage").then((module) => ({
+    default: module.default,
+  })),
+);
+
+const ApiPerformanceDashboardPage = lazy(() =>
+  import("../pages/admin/ApiPerformanceDashboardPage").then((module) => ({
+    default: module.default,
+  })),
+);
+
+const VulnerabilityDashboard = lazy(() =>
+  import("../pages/admin/VulnerabilityDashboard").then((module) => ({
+    default: module.VulnerabilityDashboard,
+  })),
+);
+
+const SecurityDashboardPage = lazy(() =>
+  import("../pages/SecurityDashboardPage").then((module) => ({
+    default: module.SecurityDashboardPage,
+  })),
+);
+
+const SandboxPage = lazy(() =>
+  import("../pages/SandboxPage").then((module) => ({
+    default: module.SandboxPage,
+  })),
+);
+
+const ContributorSandboxPage = lazy(() =>
+  import("../pages/ContributorSandboxPage").then((module) => ({
+    default: module.ContributorSandboxPage,
+  })),
+);
+
+const GitSubmoduleSimulatorPage = lazy(() =>
+  import("../pages/GitSubmoduleSimulatorPage").then((module) => ({
+    default: module.GitSubmoduleSimulatorPage,
+  })),
+);
+
+const GitStashManagerPage = lazy(() =>
+  import("../pages/GitStashManagerPage").then((module) => ({
+    default: module.GitStashManagerPage,
+  })),
+);
+
+const GitRebaseVisualizerPage = lazy(() =>
+  import("../pages/GitRebaseVisualizerPage").then((module) => ({
+    default: module.GitRebaseVisualizerPage,
+  })),
+);
+
+const MonorepoVisualizerPage = lazy(() =>
+  import("../pages/MonorepoVisualizerPage").then((module) => ({
+    default: module.MonorepoVisualizerPage,
+  })),
+);
+
+const DockerfileLinterPage = lazy(() =>
+  import("../pages/DockerfileLinterPage").then((module) => ({
+    default: module.DockerfileLinterPage,
+  })),
+);
+
+const GitBisectGamePage = lazy(() =>
+  import("../pages/GitBisectGamePage").then((module) => ({
+    default: module.GitBisectGamePage,
+  })),
+);
+
+const CollabSessionPage = lazy(() =>
+  import("../pages/CollabSessionPage").then((module) => ({
+    default: module.CollabSessionPage,
+  })),
+);
+
+const CollabNotesPage = lazy(() =>
+  import("../pages/CollabNotesPage").then((module) => ({
+    default: module.CollabNotesPage,
+  })),
+);
+
+const PrDiffSummarizerPage = lazy(() =>
+  import("../pages/PrDiffSummarizerPage").then((module) => ({
+    default: module.PrDiffSummarizerPage,
+  })),
+);
+
+const ProfileSettingsPage = lazy(() =>
+  import("../pages/ProfileSettingsPage").then((module) => ({
+    default: module.ProfileSettingsPage,
+  })),
+);
+
+const NotificationPreferencesPage = lazy(() =>
+  import("../pages/settings/NotificationPreferencesPage").then((module) => ({
+    default: module.NotificationPreferencesPage,
+  })),
+);
+
+const DigestPage = lazy(() =>
+  import("../pages/notifications/DigestPage").then((module) => ({
+    default: module.default,
+  })),
+);
+
+const PricingPage = lazy(() =>
+  import("../pages/PricingPage").then((module) => ({
+    default: module.PricingPage,
+  })),
+);
+
+const BillingPage = lazy(() =>
+  import("../pages/settings/BillingPage").then((module) => ({
+    default: module.BillingPage,
+  })),
+);
+
+const InvoiceHistoryPage = lazy(() =>
+  import("../pages/settings/InvoiceHistoryPage").then((module) => ({
+    default: module.InvoiceHistoryPage,
+  })),
+);
+
+const WebhookSettingsPage = lazy(() =>
+  import("../pages/WebhookSettingsPage").then((module) => ({
+    default: module.WebhookSettingsPage,
+  })),
+);
+
+const UserProfilePage = lazy(() =>
+  import("../pages/UserProfilePage").then((module) => ({
+    default: module.UserProfilePage,
+  })),
+);
+
+const LeaderboardPage = lazy(() =>
+  import("../pages/LeaderboardPage").then((module) => ({
+    default: module.LeaderboardPage,
+  })),
+);
+
+const ShopPage = lazy(() =>
+  import("../pages/ShopPage").then((module) => ({
+    default: module.ShopPage,
+  })),
+);
+
+const VerifyCertificatePage = lazy(() =>
+  import("../pages/VerifyCertificatePage").then((module) => ({
+    default: module.VerifyCertificatePage,
+  })),
+);
+
+const PeerReviewPage = lazy(() =>
+  import("../pages/PeerReviewPage").then((module) => ({
+    default: module.PeerReviewPage,
+  })),
+);
+
+const PathwayPage = lazy(() =>
+  import("../pages/PathwayPage").then((module) => ({
+    default: module.PathwayPage,
+  })),
+);
+
+const SkillTreePage = lazy(() =>
+  import("../pages/SkillTreePage").then((module) => ({
+    default: module.SkillTreePage,
+  })),
+);
+
+const LearningPathPage = lazy(() =>
+  import("../pages/LearningPathPage").then((module) => ({
+    default: module.LearningPathPage,
+  })),
+);
+
+const BountiesPage = lazy(() =>
+  import("../pages/BountiesPage").then((module) => ({
+    default: module.BountiesPage,
+  })),
+);
+
+const GoodFirstIssueFinderPage = lazy(() =>
+  import("../pages/GoodFirstIssueFinderPage").then((module) => ({
+    default: module.GoodFirstIssueFinderPage,
+  })),
+);
+
+const MaintainerReplyToneCoachPage = lazy(() =>
+  import("../pages/MaintainerReplyToneCoachPage").then((module) => ({
+    default: module.MaintainerReplyToneCoachPage,
+  })),
+);
+
+const MergeConflictScenarioBuilderPage = lazy(() =>
+  import("../pages/MergeConflictScenarioBuilderPage").then((module) => ({
+    default: module.MergeConflictScenarioBuilderPage,
+  })),
+);
+
+const PerformanceDashboardPage = lazy(() =>
+  import("../pages/admin/PerformanceDashboardPage").then((module) => ({
+    default: module.PerformanceDashboardPage,
+  })),
+);
+
+const ContentStudioPage = lazy(() =>
+  import("../pages/admin/ContentStudioPage").then((module) => ({
+    default: module.ContentStudioPage,
+  })),
+);
+
+const QuizBuilderPage = lazy(() =>
+  import("../pages/admin/QuizBuilderPage").then((module) => ({
+    default: module.QuizBuilderPage,
+  })),
+);
+
+const ModuleTreePage = lazy(() =>
+  import("../pages/admin/ModuleTreePage").then((module) => ({
+    default: module.ModuleTreePage,
+  })),
+);
+
+/*
+ * These pages use default exports, so they can be passed directly
+ * to React.lazy().
+ */
+const AnalyticsDashboardPage = lazy(
+  () => import("../pages/AnalyticsDashboardPage"),
+);
+
+const TemplateMarketplacePage = lazy(
+  () => import("../pages/TemplateMarketplacePage"),
+);
+
+const PortfolioPage = lazy(() => import("../pages/PortfolioPage"));
+
+const ApiDocsPage = lazy(() =>
+  import("../pages/ApiDocsPage").then((module) => ({
+    default: module.ApiDocsPage,
+  })),
+);
+
+const EnvConfigGeneratorPage = lazy(
+  () => import("../pages/EnvConfigGeneratorPage"),
+);
+
+const WebSocketSimulatorPage = lazy(
+  () => import("../pages/docs/WebSocketSimulatorPage"),
+);
+
+const OAuthClientsPage = lazy(() =>
+  import("../pages/admin/OAuthClients").then((module) => ({
+    default: module.OAuthClients,
+  })),
+);
+
+const UsageAnalyticsPage = lazy(
+  () => import("../pages/admin/UsageAnalyticsPage"),
+);
+
+const ConnectedAppsPage = lazy(() =>
+  import("../pages/settings/ConnectedApps").then((module) => ({
+    default: module.ConnectedApps,
+  })),
+);
+
+const ColorPaletteGeneratorPage = lazy(() =>
+  import("../pages/ColorPaletteGeneratorPage").then((module) => ({
+    default: module.ColorPaletteGeneratorPage,
+  })),
+);
+
+>>>>>>> origin/main
 function RouteLoadingFallback() {
   return (
     <div
@@ -383,10 +760,17 @@ export function AppRouter() {
         />
 
         <Route
+<<<<<<< HEAD
           path="/sandbox/branches"
           element={
             <ProtectedRoute>
               <GitBranchSimulatorPage />
+=======
+          path="/sandbox/color-palette"
+          element={
+            <ProtectedRoute>
+              <ColorPaletteGeneratorPage />
+>>>>>>> origin/main
             </ProtectedRoute>
           }
         />

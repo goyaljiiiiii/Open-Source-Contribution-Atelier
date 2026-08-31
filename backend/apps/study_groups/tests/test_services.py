@@ -33,15 +33,11 @@ class RecordGroupActivityTest(TestCase):
     """Tests for record_group_activity service."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="user1", password="pass123"
-        )
+        self.user = User.objects.create_user(username="user1", password="pass123")
         self.group = StudyGroup.objects.create(
             name="Test", slug="test", owner=self.user
         )
-        GroupMembership.objects.create(
-            user=self.user, group=self.group
-        )
+        GroupMembership.objects.create(user=self.user, group=self.group)
 
     def test_record_lesson_activity(self):
         a = record_group_activity(
@@ -52,9 +48,7 @@ class RecordGroupActivityTest(TestCase):
         )
         self.assertEqual(a.activity_type, "lesson")
         self.user.study_group_memberships.first().refresh_from_db()
-        m = GroupMembership.objects.get(
-            user=self.user, group=self.group
-        )
+        m = GroupMembership.objects.get(user=self.user, group=self.group)
         self.assertEqual(m.lessons_completed, 1)
 
     def test_record_xp_activity(self):
@@ -69,12 +63,8 @@ class RecordGroupActivityTest(TestCase):
         self.assertEqual(self.group.total_xp, 50)
 
     def test_record_quiz_activity(self):
-        record_group_activity(
-            self.group, self.user, "quiz", "Quiz passed"
-        )
-        m = GroupMembership.objects.get(
-            user=self.user, group=self.group
-        )
+        record_group_activity(self.group, self.user, "quiz", "Quiz passed")
+        m = GroupMembership.objects.get(user=self.user, group=self.group)
         self.assertEqual(m.quizzes_passed, 1)
 
     def test_record_join_activity(self):
@@ -87,12 +77,8 @@ class RecordGroupActivityTest(TestCase):
         self.assertEqual(a.activity_type, "join")
 
     def test_accumulates_xp(self):
-        record_group_activity(
-            self.group, self.user, "xp", "First", xp_value=30
-        )
-        record_group_activity(
-            self.group, self.user, "xp", "Second", xp_value=20
-        )
+        record_group_activity(self.group, self.user, "xp", "First", xp_value=30)
+        record_group_activity(self.group, self.user, "xp", "Second", xp_value=20)
         self.group.refresh_from_db()
         self.assertEqual(self.group.total_xp, 50)
 
@@ -101,27 +87,17 @@ class CreateInviteTest(TestCase):
     """Tests for create_invite service."""
 
     def setUp(self):
-        self.owner = User.objects.create_user(
-            username="owner", password="pass123"
-        )
-        self.group = StudyGroup.objects.create(
-            name="G", slug="g", owner=self.owner
-        )
+        self.owner = User.objects.create_user(username="owner", password="pass123")
+        self.group = StudyGroup.objects.create(name="G", slug="g", owner=self.owner)
 
     def test_create_email_invite(self):
-        result = create_invite(
-            self.group, self.owner, email="test@example.com"
-        )
+        result = create_invite(self.group, self.owner, email="test@example.com")
         self.assertIn("token", result)
         self.assertIn("expires_at", result)
 
     def test_create_user_invite(self):
-        target = User.objects.create_user(
-            username="target", password="pass123"
-        )
-        result = create_invite(
-            self.group, self.owner, invited_user=target
-        )
+        target = User.objects.create_user(username="target", password="pass123")
+        result = create_invite(self.group, self.owner, invited_user=target)
         self.assertIn("token", result)
 
     def test_invite_record_created(self):
@@ -133,18 +109,12 @@ class AcceptInviteTest(TestCase):
     """Tests for accept_invite service."""
 
     def setUp(self):
-        self.owner = User.objects.create_user(
-            username="owner", password="pass123"
-        )
-        self.new_user = User.objects.create_user(
-            username="newbie", password="pass123"
-        )
+        self.owner = User.objects.create_user(username="owner", password="pass123")
+        self.new_user = User.objects.create_user(username="newbie", password="pass123")
         self.group = StudyGroup.objects.create(
             name="G", slug="g", owner=self.owner, max_members=10
         )
-        GroupMembership.objects.create(
-            user=self.owner, group=self.group, role="owner"
-        )
+        GroupMembership.objects.create(user=self.owner, group=self.group, role="owner")
 
     def test_accept_valid_invite(self):
         invite = GroupInvite.objects.create(
@@ -207,15 +177,9 @@ class GetGroupStatsTest(TestCase):
     """Tests for get_group_stats service."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="user1", password="pass123"
-        )
-        self.group = StudyGroup.objects.create(
-            name="G", slug="g", owner=self.user
-        )
-        GroupMembership.objects.create(
-            user=self.user, group=self.group
-        )
+        self.user = User.objects.create_user(username="user1", password="pass123")
+        self.group = StudyGroup.objects.create(name="G", slug="g", owner=self.user)
+        GroupMembership.objects.create(user=self.user, group=self.group)
 
     def test_empty_group_stats(self):
         stats = get_group_stats(self.group)
@@ -238,15 +202,9 @@ class GetGroupLeaderboardTest(TestCase):
     """Tests for get_group_leaderboard service."""
 
     def setUp(self):
-        self.user1 = User.objects.create_user(
-            username="user1", password="pass123"
-        )
-        self.user2 = User.objects.create_user(
-            username="user2", password="pass123"
-        )
-        self.group = StudyGroup.objects.create(
-            name="G", slug="g", owner=self.user1
-        )
+        self.user1 = User.objects.create_user(username="user1", password="pass123")
+        self.user2 = User.objects.create_user(username="user2", password="pass123")
+        self.group = StudyGroup.objects.create(name="G", slug="g", owner=self.user1)
         GroupMembership.objects.create(
             user=self.user1,
             group=self.group,
@@ -279,9 +237,7 @@ class DiscoverGroupsTest(TestCase):
     """Tests for discover_groups service."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="user1", password="pass123"
-        )
+        self.user = User.objects.create_user(username="user1", password="pass123")
 
     def test_discover_public(self):
         StudyGroup.objects.create(
@@ -348,21 +304,15 @@ class GetPlatformGroupStatsTest(TestCase):
     """Tests for get_platform_group_stats."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="user1", password="pass123"
-        )
+        self.user = User.objects.create_user(username="user1", password="pass123")
 
     def test_empty_stats(self):
         stats = get_platform_group_stats()
         self.assertEqual(stats["total_groups"], 0)
 
     def test_with_groups(self):
-        StudyGroup.objects.create(
-            name="G1", slug="g1", owner=self.user
-        )
-        StudyGroup.objects.create(
-            name="G2", slug="g2", owner=self.user
-        )
+        StudyGroup.objects.create(name="G1", slug="g1", owner=self.user)
+        StudyGroup.objects.create(name="G2", slug="g2", owner=self.user)
         stats = get_platform_group_stats()
         self.assertEqual(stats["total_groups"], 2)
         self.assertEqual(stats["total_members"], 2)

@@ -8,49 +8,63 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('content', '0012_learningpath'),
+        ("content", "0012_learningpath"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='lessondraft',
-            name='deleted_at',
+            model_name="lessondraft",
+            name="deleted_at",
             field=models.DateTimeField(blank=True, db_index=True, null=True),
         ),
         migrations.AddField(
-            model_name='lessondraft',
-            name='deleted_by',
-            field=models.ForeignKey(blank=True, help_text='User who soft-deleted this record.', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL),
+            model_name="lessondraft",
+            name="deleted_by",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="User who soft-deleted this record.",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="+",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='lessondraft',
-            name='deletion_reason',
-            field=models.TextField(blank=True, help_text='Reason for deletion'),
+            model_name="lessondraft",
+            name="deletion_reason",
+            field=models.TextField(blank=True, help_text="Reason for deletion"),
         ),
         migrations.AddField(
-            model_name='lessondraft',
-            name='is_deleted',
+            model_name="lessondraft",
+            name="is_deleted",
             field=models.BooleanField(db_index=True, default=False),
         ),
         migrations.AddField(
-            model_name='moduledraft',
-            name='deleted_at',
+            model_name="moduledraft",
+            name="deleted_at",
             field=models.DateTimeField(blank=True, db_index=True, null=True),
         ),
         migrations.AddField(
-            model_name='moduledraft',
-            name='deleted_by',
-            field=models.ForeignKey(blank=True, help_text='User who soft-deleted this record.', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL),
+            model_name="moduledraft",
+            name="deleted_by",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="User who soft-deleted this record.",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="+",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='moduledraft',
-            name='deletion_reason',
-            field=models.TextField(blank=True, help_text='Reason for deletion'),
+            model_name="moduledraft",
+            name="deletion_reason",
+            field=models.TextField(blank=True, help_text="Reason for deletion"),
         ),
         migrations.AddField(
-            model_name='moduledraft',
-            name='is_deleted',
+            model_name="moduledraft",
+            name="is_deleted",
             field=models.BooleanField(db_index=True, default=False),
         ),
     ]

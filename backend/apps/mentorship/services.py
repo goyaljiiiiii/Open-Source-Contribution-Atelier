@@ -30,6 +30,7 @@ User = get_user_model()
 #  Matching Algorithm
 # ---------------------------------------------------------------------------
 
+
 def find_mentors(
     user,
     skill_slug: str = "",
@@ -46,12 +47,16 @@ def find_mentors(
     """
     from .models import MentorProfile
 
-    candidates = MentorProfile.objects.filter(
-        is_active=True,
-        availability__in=["available", "busy"],
-    ).exclude(
-        user=user,
-    ).select_related("user")
+    candidates = (
+        MentorProfile.objects.filter(
+            is_active=True,
+            availability__in=["available", "busy"],
+        )
+        .exclude(
+            user=user,
+        )
+        .select_related("user")
+    )
 
     if min_rating > 0:
         candidates = candidates.filter(average_rating__gte=min_rating)
@@ -64,22 +69,22 @@ def find_mentors(
 
         # 1. Expertise match (40 points)
         expertise = profile.expertise_areas or []
-        if skill_slug and skill_slug in expertise:
-            score += 40
-        elif skill_slug:
-            # Partial match: check if any expertise area overlaps
-            overlap = set(expertise) & set(_expand_skill_parents(skill_slug))
-            if overlap:
-                score += 20
+        if skill_slug:
+            if skill_slug in expertise:
+                score += 40
+            else:
+                overlap = set(expertise) & set(_expand_skill_parents(skill_slug))
+                if overlap:
+                    score += 20
+                else:
+                    continue
 
         # 2. Rating (30 points)
         score += (profile.average_rating / 5.0) * 30
 
         # 3. Availability capacity (20 points)
         if not profile.is_full:
-            capacity_ratio = 1 - (
-                profile.current_mentee_count / profile.max_mentees
-            )
+            capacity_ratio = 1 - (profile.current_mentee_count / profile.max_mentees)
             score += capacity_ratio * 20
 
         # 4. Activity recency (10 points)
@@ -92,18 +97,18 @@ def find_mentors(
         if recent:
             score += 10
 
-        results.append({
-            "mentor_profile": profile,
-            "user": profile.user,
-            "score": round(score, 1),
-            "expertise": expertise,
-            "rating": profile.average_rating,
-            "sessions": profile.total_sessions_mentored,
-            "capacity": (
-                profile.max_mentees - profile.current_mentee_count
-            ),
-            "is_full": profile.is_full,
-        })
+        results.append(
+            {
+                "mentor_profile": profile,
+                "user": profile.user,
+                "score": round(score, 1),
+                "expertise": expertise,
+                "rating": profile.average_rating,
+                "sessions": profile.total_sessions_mentored,
+                "capacity": (profile.max_mentees - profile.current_mentee_count),
+                "is_full": profile.is_full,
+            }
+        )
 
     results.sort(key=lambda x: x["score"], reverse=True)
     return results[:limit]
@@ -125,6 +130,7 @@ def _expand_skill_parents(slug: str) -> list[str]:
 # ---------------------------------------------------------------------------
 #  Request Processing
 # ---------------------------------------------------------------------------
+
 
 def create_mentorship_request(
     mentee,
@@ -204,9 +210,13 @@ def respond_to_request(
         req.status = "accepted"
         req.response_message = response_message
         req.responded_at = timezone.now()
-        req.save(update_fields=[
-            "status", "response_message", "responded_at",
-        ])
+        req.save(
+            update_fields=[
+                "status",
+                "response_message",
+                "responded_at",
+            ]
+        )
 
         # Create the match
         match = MentorshipMatch.objects.create(
@@ -230,15 +240,20 @@ def respond_to_request(
         req.status = "declined"
         req.response_message = response_message
         req.responded_at = timezone.now()
-        req.save(update_fields=[
-            "status", "response_message", "responded_at",
-        ])
+        req.save(
+            update_fields=[
+                "status",
+                "response_message",
+                "responded_at",
+            ]
+        )
         return {"success": True, "status": "declined"}
 
 
 # ---------------------------------------------------------------------------
 #  Session Management
 # ---------------------------------------------------------------------------
+
 
 def complete_session(
     session_id: int,
@@ -288,9 +303,12 @@ def complete_session(
         match = session.match
         match.mentor_xp_earned += mentor_xp
         match.mentee_xp_earned += mentee_xp
-        match.save(update_fields=[
-            "mentor_xp_earned", "mentee_xp_earned",
-        ])
+        match.save(
+            update_fields=[
+                "mentor_xp_earned",
+                "mentee_xp_earned",
+            ]
+        )
 
     return {
         "success": True,
@@ -305,15 +323,14 @@ def complete_session(
 #  Analytics
 # ---------------------------------------------------------------------------
 
+
 def get_mentor_analytics(mentor) -> dict[str, Any]:
     """Comprehensive analytics for a mentor's program."""
     from .models import MentorProfile, MentorshipMatch, MentorshipSession
 
     profile = MentorProfile.objects.get(user=mentor)
     matches = MentorshipMatch.objects.filter(mentor=mentor)
-    sessions = MentorshipSession.objects.filter(
-        mentor=mentor, status="completed"
-    )
+    sessions = MentorshipSession.objects.filter(mentor=mentor, status="completed")
 
     active_matches = matches.filter(status="active").count()
     total_sessions = sessions.count()
@@ -334,9 +351,7 @@ def get_mentor_analytics(mentor) -> dict[str, Any]:
 
     # Sessions this month
     month_ago = timezone.now() - timedelta(days=30)
-    sessions_this_month = sessions.filter(
-        created_at__gte=month_ago
-    ).count()
+    sessions_this_month = sessions.filter(created_at__gte=month_ago).count()
 
     # Top topics
     all_topics = []
@@ -345,9 +360,7 @@ def get_mentor_analytics(mentor) -> dict[str, Any]:
     topic_counts = defaultdict(int)
     for t in all_topics:
         topic_counts[t] += 1
-    top_topics = sorted(
-        topic_counts.items(), key=lambda x: x[1], reverse=True
-    )[:10]
+    top_topics = sorted(topic_counts.items(), key=lambda x: x[1], reverse=True)[:10]
 
     agg = sessions.aggregate(
         avg_duration=Avg("duration_minutes"),
@@ -373,9 +386,7 @@ def get_mentee_analytics(mentee) -> dict[str, Any]:
     from .models import MentorshipMatch, MentorshipSession
 
     matches = MentorshipMatch.objects.filter(mentee=mentee)
-    sessions = MentorshipSession.objects.filter(
-        mentee=mentee, status="completed"
-    )
+    sessions = MentorshipSession.objects.filter(mentee=mentee, status="completed")
 
     active = matches.filter(status="active")
     total = sessions.count()
@@ -391,18 +402,12 @@ def get_mentee_analytics(mentee) -> dict[str, Any]:
         }
 
     month_ago = timezone.now() - timedelta(days=30)
-    sessions_this_month = sessions.filter(
-        created_at__gte=month_ago
-    ).count()
+    sessions_this_month = sessions.filter(created_at__gte=month_ago).count()
 
-    skills = list(
-        matches.values_list("skill_focus", flat=True).distinct()
-    )
+    skills = list(matches.values_list("skill_focus", flat=True).distinct())
     skills = [s for s in skills if s]
 
-    total_minutes = sessions.aggregate(
-        total=Sum("duration_minutes")
-    )["total"] or 0
+    total_minutes = sessions.aggregate(total=Sum("duration_minutes"))["total"] or 0
     xp = sessions.aggregate(total=Sum("xp_awarded_mentee"))["total"] or 0
 
     return {
@@ -431,16 +436,13 @@ def get_program_stats() -> dict[str, Any]:
 
     return {
         "total_mentors": profiles.count(),
-        "available_mentors": profiles.filter(
-            availability="available"
-        ).count(),
+        "available_mentors": profiles.filter(availability="available").count(),
         "verified_mentors": profiles.filter(is_verified=True).count(),
         "total_matches": matches.count(),
         "active_matches": matches.filter(status="active").count(),
         "total_sessions": sessions.count(),
         "total_hours": round(
-            sessions.aggregate(t=Sum("duration_minutes"))["t"] or 0
-            / 60, 1
+            sessions.aggregate(t=Sum("duration_minutes"))["t"] or 0 / 60, 1
         ),
         "total_requests": requests.count(),
         "accepted_requests": requests.filter(status="accepted").count(),
@@ -449,9 +451,7 @@ def get_program_stats() -> dict[str, Any]:
             sessions.aggregate(a=Avg("mentor_rating"))["a"] or 0, 1
         ),
         "top_skills": list(
-            MentorProfile.objects.values_list(
-                "expertise_areas", flat=True
-            )
+            MentorProfile.objects.values_list("expertise_areas", flat=True)
         ),
     }
 
@@ -459,6 +459,7 @@ def get_program_stats() -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 #  Recommendations
 # ---------------------------------------------------------------------------
+
 
 def get_session_recommendations(match) -> list[str]:
     """Generate session topic recommendations based on match history."""
@@ -484,8 +485,6 @@ def get_session_recommendations(match) -> list[str]:
     # Add topic-specific suggestions from covered topics
     if topic_counts:
         most_common = max(topic_counts, key=topic_counts.get)
-        suggestions.append(
-            f"Deep-dive into {most_common} (most discussed topic)"
-        )
+        suggestions.append(f"Deep-dive into {most_common} (most discussed topic)")
 
     return suggestions[:5]

@@ -385,3 +385,9 @@ export const GitBranchSimulatorPage = lazy(() =>
     default: module.GitBranchSimulatorPage,
   })),
 );
+
+export const ColorPaletteGeneratorPage = lazy(() =>
+  import("../pages/ColorPaletteGeneratorPage").then((module) => ({
+    default: module.ColorPaletteGeneratorPage,
+  })),
+);

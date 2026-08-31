@@ -220,10 +220,7 @@ class ReviewSchedule(models.Model):
 
     def __str__(self):
         status = "new" if self.is_new else f"EF={self.easiness_factor:.1f}"
-        return (
-            f"{self.user.username} — card {self.flashcard_id} "
-            f"({status})"
-        )
+        return f"{self.user.username} — card {self.flashcard_id} " f"({status})"
 
     @property
     def accuracy_pct(self) -> float:
@@ -332,10 +329,7 @@ class DeckShare(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return (
-            f"{self.cloned_by.username} cloned "
-            f"deck {self.source_deck_id}"
-        )
+        return f"{self.cloned_by.username} cloned " f"deck {self.source_deck_id}"
 
 
 class StudySession(models.Model):

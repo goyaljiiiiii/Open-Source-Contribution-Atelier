@@ -82,13 +82,14 @@ _WEIGHT_SCORE = 0.30
 _WEIGHT_RECENCY = 0.10
 
 # Thresholds for trend detection
-_RISING_THRESHOLD = 1.2   # >20% week-over-week increase
+_RISING_THRESHOLD = 1.2  # >20% week-over-week increase
 _DECLINING_THRESHOLD = 0.8  # >20% decrease
 
 
 # ---------------------------------------------------------------------------
 #  Skill Level Computation
 # ---------------------------------------------------------------------------
+
 
 def compute_skill_level(user, skill_tag) -> dict[str, Any]:
     """Compute the skill level for a single (user, skill_tag) pair.
@@ -119,11 +120,7 @@ def compute_skill_level(user, skill_tag) -> dict[str, Any]:
         }
 
     total_xp = sum(s.session.xp_earned for s in sessions_qs)
-    scores = [
-        s.session.score
-        for s in sessions_qs
-        if s.session.score is not None
-    ]
+    scores = [s.session.score for s in sessions_qs if s.session.score is not None]
     average_score = statistics.mean(scores) if scores else 0.0
 
     last_practiced = sessions_qs.first().session.started_at
@@ -202,6 +199,7 @@ def compute_all_skill_levels(user) -> list[dict[str, Any]]:
 #  Daily Metrics
 # ---------------------------------------------------------------------------
 
+
 def compute_daily_metrics(user, date=None) -> dict[str, Any]:
     """Compute or refresh daily metrics for *user* on *date*.
 
@@ -235,11 +233,7 @@ def compute_daily_metrics(user, date=None) -> dict[str, Any]:
 
     total_minutes = (agg["total_duration"] or 0) // 60
 
-    unique_skills = (
-        sessions.values("skill_tags__skill_tag_id")
-        .distinct()
-        .count()
-    )
+    unique_skills = sessions.values("skill_tags__skill_tag_id").distinct().count()
 
     # Simple focus score heuristic: sessions with score or completed / total
     completed_or_scored = sessions.filter(
@@ -275,6 +269,7 @@ def compute_daily_metrics(user, date=None) -> dict[str, Any]:
 #  Insight Generation
 # ---------------------------------------------------------------------------
 
+
 def generate_insights(user, force=False) -> list[dict[str, Any]]:
     """Generate fresh learning insights for the user.
 
@@ -306,9 +301,7 @@ def generate_insights(user, force=False) -> list[dict[str, Any]]:
 
     # 2. Skill Gap Insights
     gaps = _generate_skill_gap_insights(user, now)
-    insights.extend(
-        g for g in gaps if g["insight_type"] not in existing_types
-    )
+    insights.extend(g for g in gaps if g["insight_type"] not in existing_types)
 
     # 3. Momentum Insight
     momentum = _generate_momentum_insight(user, now)
@@ -326,9 +319,7 @@ def generate_insights(user, force=False) -> list[dict[str, Any]]:
         insights.append(tip)
 
     # Bulk-create all new insights
-    objs = [
-        LearningInsight(user=user, **data) for data in insights
-    ]
+    objs = [LearningInsight(user=user, **data) for data in insights]
     if objs:
         LearningInsight.objects.bulk_create(objs)
 
@@ -407,17 +398,13 @@ def _generate_skill_gap_insights(user, now) -> list[dict[str, Any]]:
     stale_threshold = now - timedelta(days=14)
 
     for profile in profiles:
-        if (
-            profile.last_practiced
-            and profile.last_practiced < stale_threshold
-        ):
+        if profile.last_practiced and profile.last_practiced < stale_threshold:
             days_since = (now - profile.last_practiced).days
             insights.append(
                 {
                     "insight_type": "skill_gap",
                     "title": (
-                        f"📖 Revisit {profile.skill_tag.name} "
-                        f"(Lv. {profile.level})"
+                        f"📖 Revisit {profile.skill_tag.name} " f"(Lv. {profile.level})"
                     ),
                     "body": (
                         f"You haven't practised {profile.skill_tag.name} "
@@ -444,7 +431,8 @@ def _generate_momentum_insight(user, now) -> dict[str, Any] | None:
     two_weeks_ago = (now - timedelta(days=14)).date()
 
     this_week = DailyLearningMetric.objects.filter(
-        user=user, date__gte=week_ago,
+        user=user,
+        date__gte=week_ago,
     ).aggregate(total=Sum("total_minutes"), xp=Sum("xp_earned"))
 
     last_week = DailyLearningMetric.objects.filter(
@@ -544,18 +532,14 @@ def _generate_tip(user, now) -> dict[str, Any] | None:
     )
 
     total = recent_sessions.count()
-    quiz_avg = (
-        recent_sessions.filter(
-            activity_type="quiz", score__isnull=False
-        ).aggregate(avg=Avg("score"))["avg"]
-    )
+    quiz_avg = recent_sessions.filter(
+        activity_type="quiz", score__isnull=False
+    ).aggregate(avg=Avg("score"))["avg"]
 
     tips = []
 
     # Tip: diversify activities
-    activity_counts = Counter(
-        recent_sessions.values_list("activity_type", flat=True)
-    )
+    activity_counts = Counter(recent_sessions.values_list("activity_type", flat=True))
     if len(activity_counts) <= 2 and total > 5:
         tips.append(
             {
@@ -591,7 +575,8 @@ def _generate_tip(user, now) -> dict[str, Any] | None:
     # Tip: no activity today
     today = now.date()
     today_activity = DailyLearningMetric.objects.filter(
-        user=user, date=today,
+        user=user,
+        date=today,
     ).exists()
     if not today_activity and now.hour >= 18:
         tips.append(
@@ -614,6 +599,7 @@ def _generate_tip(user, now) -> dict[str, Any] | None:
 #  Analytics Dashboard Data
 # ---------------------------------------------------------------------------
 
+
 def get_analytics_dashboard(user, days=30) -> dict[str, Any]:
     """Return a comprehensive analytics dashboard payload."""
     from .models import DailyLearningMetric, LearningSession, SkillTag
@@ -635,11 +621,7 @@ def get_analytics_dashboard(user, days=30) -> dict[str, Any]:
     total_xp = sum(xp_per_day)
     total_lessons = sum(m.lessons_completed for m in metrics)
     total_quizzes = sum(m.quizzes_taken for m in metrics)
-    avg_focus = (
-        sum(m.focus_score for m in metrics) / len(metrics)
-        if metrics
-        else 0.0
-    )
+    avg_focus = sum(m.focus_score for m in metrics) / len(metrics) if metrics else 0.0
 
     # --- Activity breakdown ---
     sessions = LearningSession.objects.filter(
@@ -662,7 +644,9 @@ def get_analytics_dashboard(user, days=30) -> dict[str, Any]:
     from .models import LearningGoal
 
     active_goals = LearningGoal.objects.filter(
-        user=user, is_completed=False, is_archived=False,
+        user=user,
+        is_completed=False,
+        is_archived=False,
     )
     goals_data = [
         {
@@ -735,6 +719,7 @@ def _compute_session_heatmap(sessions) -> list[dict[str, Any]]:
 #  Weekly / Monthly Summaries
 # ---------------------------------------------------------------------------
 
+
 def generate_weekly_summary(user) -> dict[str, Any]:
     """Generate a weekly learning summary."""
     from .models import DailyLearningMetric, LearningSession
@@ -754,9 +739,7 @@ def generate_weekly_summary(user) -> dict[str, Any]:
     total_lessons = sum(m.lessons_completed for m in metrics)
     active_days = metrics.filter(total_minutes__gt=0).count()
 
-    avg_score = (
-        metrics.aggregate(avg=Avg("average_quiz_score"))["avg"] or 0
-    )
+    avg_score = metrics.aggregate(avg=Avg("average_quiz_score"))["avg"] or 0
 
     # Best day
     best_day = metrics.order_by("-xp_earned").first()
@@ -775,16 +758,17 @@ def generate_weekly_summary(user) -> dict[str, Any]:
             "active_days": active_days,
             "average_quiz_score": round(avg_score, 1),
         },
-        "best_day": {
-            "date": best_day.date.isoformat() if best_day else None,
-            "xp": best_day.xp_earned if best_day else 0,
-        }
-        if best_day
-        else None,
+        "best_day": (
+            {
+                "date": best_day.date.isoformat() if best_day else None,
+                "xp": best_day.xp_earned if best_day else 0,
+            }
+            if best_day
+            else None
+        ),
         "skill_highlights": {
             "rising": [
-                {"skill": s["skill_tag"].name, "level": s["level"]}
-                for s in rising[:3]
+                {"skill": s["skill_tag"].name, "level": s["level"]} for s in rising[:3]
             ],
             "declining": [
                 {"skill": s["skill_tag"].name, "level": s["level"]}
@@ -801,21 +785,13 @@ def _weekly_recommendations(minutes, active_days, avg_score):
     """Simple rule-based weekly recommendations."""
     recs = []
     if active_days < 4:
-        recs.append(
-            "Try to study at least 4 days a week for best retention."
-        )
+        recs.append("Try to study at least 4 days a week for best retention.")
     if minutes < 60:
-        recs.append(
-            "Aim for 60+ minutes of learning per week for steady progress."
-        )
+        recs.append("Aim for 60+ minutes of learning per week for steady progress.")
     if avg_score < 70:
-        recs.append(
-            "Your quiz scores suggest reviewing lesson material more closely."
-        )
+        recs.append("Your quiz scores suggest reviewing lesson material more closely.")
     if not recs:
-        recs.append(
-            "Great week! Keep the momentum going."
-        )
+        recs.append("Great week! Keep the momentum going.")
     return recs
 
 
@@ -866,15 +842,9 @@ def generate_monthly_recap(user) -> dict[str, Any]:
         "this_month": this_sum,
         "last_month": prev_sum,
         "growth": {
-            "minutes": _growth(
-                this_sum["total_minutes"], prev_sum["total_minutes"]
-            ),
+            "minutes": _growth(this_sum["total_minutes"], prev_sum["total_minutes"]),
             "xp": _growth(this_sum["total_xp"], prev_sum["total_xp"]),
-            "lessons": _growth(
-                this_sum["total_lessons"], prev_sum["total_lessons"]
-            ),
-            "active_days": _growth(
-                this_sum["active_days"], prev_sum["active_days"]
-            ),
+            "lessons": _growth(this_sum["total_lessons"], prev_sum["total_lessons"]),
+            "active_days": _growth(this_sum["active_days"], prev_sum["active_days"]),
         },
     }

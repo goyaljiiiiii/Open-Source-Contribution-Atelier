@@ -32,9 +32,7 @@ class MentorProfileModelTest(TestCase):
     """Tests for MentorProfile model."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="mentor1", password="pass123"
-        )
+        self.user = User.objects.create_user(username="mentor1", password="pass123")
 
     def test_create_profile(self):
         p = MentorProfile.objects.create(
@@ -64,18 +62,14 @@ class MentorProfileModelTest(TestCase):
     def test_acceptance_rate(self):
         MentorProfile.objects.create(user=self.user)
         MentorshipRequest.objects.create(
-            mentee=User.objects.create_user(
-                username="u1", password="p"
-            ),
+            mentee=User.objects.create_user(username="u1", password="p"),
             mentor=self.user,
             subject="Help",
             status="accepted",
             expires_at=timezone.now() + timedelta(days=1),
         )
         MentorshipRequest.objects.create(
-            mentee=User.objects.create_user(
-                username="u2", password="p"
-            ),
+            mentee=User.objects.create_user(username="u2", password="p"),
             mentor=self.user,
             subject="Help2",
             status="declined",
@@ -94,12 +88,8 @@ class MentorshipRequestModelTest(TestCase):
     """Tests for MentorshipRequest model."""
 
     def setUp(self):
-        self.mentor = User.objects.create_user(
-            username="mentor", password="p"
-        )
-        self.mentee = User.objects.create_user(
-            username="mentee", password="p"
-        )
+        self.mentor = User.objects.create_user(username="mentor", password="p")
+        self.mentee = User.objects.create_user(username="mentee", password="p")
 
     def test_create_request(self):
         r = MentorshipRequest.objects.create(
@@ -145,12 +135,8 @@ class MentorshipMatchModelTest(TestCase):
     """Tests for MentorshipMatch model."""
 
     def setUp(self):
-        self.mentor = User.objects.create_user(
-            username="mentor", password="p"
-        )
-        self.mentee = User.objects.create_user(
-            username="mentee", password="p"
-        )
+        self.mentor = User.objects.create_user(username="mentor", password="p")
+        self.mentee = User.objects.create_user(username="mentee", password="p")
 
     def test_create_match(self):
         m = MentorshipMatch.objects.create(
@@ -175,12 +161,8 @@ class MentorshipSessionModelTest(TestCase):
     """Tests for MentorshipSession model."""
 
     def setUp(self):
-        self.mentor = User.objects.create_user(
-            username="mentor", password="p"
-        )
-        self.mentee = User.objects.create_user(
-            username="mentee", password="p"
-        )
+        self.mentor = User.objects.create_user(username="mentor", password="p")
+        self.mentee = User.objects.create_user(username="mentee", password="p")
         self.match = MentorshipMatch.objects.create(
             mentor=self.mentor, mentee=self.mentee
         )
@@ -235,12 +217,8 @@ class MentorshipGoalModelTest(TestCase):
     """Tests for MentorshipGoal model."""
 
     def setUp(self):
-        self.mentor = User.objects.create_user(
-            username="mentor", password="p"
-        )
-        self.mentee = User.objects.create_user(
-            username="mentee", password="p"
-        )
+        self.mentor = User.objects.create_user(username="mentor", password="p")
+        self.mentee = User.objects.create_user(username="mentee", password="p")
         self.match = MentorshipMatch.objects.create(
             mentor=self.mentor, mentee=self.mentee
         )
@@ -260,12 +238,8 @@ class MentorshipFeedbackModelTest(TestCase):
     """Tests for MentorshipFeedback model."""
 
     def setUp(self):
-        self.mentor = User.objects.create_user(
-            username="mentor", password="p"
-        )
-        self.mentee = User.objects.create_user(
-            username="mentee", password="p"
-        )
+        self.mentor = User.objects.create_user(username="mentor", password="p")
+        self.mentee = User.objects.create_user(username="mentee", password="p")
         self.match = MentorshipMatch.objects.create(
             mentor=self.mentor, mentee=self.mentee
         )
@@ -289,12 +263,8 @@ class MentorshipMilestoneModelTest(TestCase):
     """Tests for MentorshipMilestone model."""
 
     def setUp(self):
-        self.mentor = User.objects.create_user(
-            username="mentor", password="p"
-        )
-        self.mentee = User.objects.create_user(
-            username="mentee", password="p"
-        )
+        self.mentor = User.objects.create_user(username="mentor", password="p")
+        self.mentee = User.objects.create_user(username="mentee", password="p")
         self.match = MentorshipMatch.objects.create(
             mentor=self.mentor, mentee=self.mentee
         )
@@ -318,12 +288,8 @@ class FindMentorsTest(TestCase):
     """Tests for find_mentors service."""
 
     def setUp(self):
-        self.seeker = User.objects.create_user(
-            username="seeker", password="p"
-        )
-        self.mentor_user = User.objects.create_user(
-            username="mentor1", password="p"
-        )
+        self.seeker = User.objects.create_user(username="seeker", password="p")
+        self.mentor_user = User.objects.create_user(username="mentor1", password="p")
         self.profile = MentorProfile.objects.create(
             user=self.mentor_user,
             expertise_areas=["python", "django"],
@@ -354,16 +320,12 @@ class FindMentorsTest(TestCase):
 
     def test_find_with_min_rating(self):
         MentorProfile.objects.create(
-            user=User.objects.create_user(
-                username="low_rated", password="p"
-            ),
+            user=User.objects.create_user(username="low_rated", password="p"),
             expertise_areas=["python"],
             availability="available",
             average_rating=2.0,
         )
-        results = find_mentors(
-            self.seeker, skill_slug="python", min_rating=4.0
-        )
+        results = find_mentors(self.seeker, skill_slug="python", min_rating=4.0)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["user"].username, "mentor1")
 
@@ -372,41 +334,27 @@ class CreateMentorshipRequestTest(TestCase):
     """Tests for create_mentorship_request service."""
 
     def setUp(self):
-        self.mentor = User.objects.create_user(
-            username="mentor", password="p"
-        )
-        self.mentee = User.objects.create_user(
-            username="mentee", password="p"
-        )
-        MentorProfile.objects.create(
-            user=self.mentor, max_mentees=3
-        )
+        self.mentor = User.objects.create_user(username="mentor", password="p")
+        self.mentee = User.objects.create_user(username="mentee", password="p")
+        MentorProfile.objects.create(user=self.mentor, max_mentees=3)
 
     def test_create_request(self):
-        result = create_mentorship_request(
-            self.mentee, self.mentor.id, "Learn Django"
-        )
+        result = create_mentorship_request(self.mentee, self.mentor.id, "Learn Django")
         self.assertIn("request_id", result)
 
     def test_self_request(self):
-        result = create_mentorship_request(
-            self.mentor, self.mentor.id, "Self"
-        )
+        result = create_mentorship_request(self.mentor, self.mentor.id, "Self")
         self.assertIn("error", result)
 
     def test_mentor_not_found(self):
-        result = create_mentorship_request(
-            self.mentee, 9999, "X"
-        )
+        result = create_mentorship_request(self.mentee, 9999, "X")
         self.assertIn("error", result)
 
     def test_full_mentor(self):
         MentorProfile.objects.filter(user=self.mentor).update(
-            current_mentees=3, max_mentees=3
+            current_mentee_count=3, max_mentees=3
         )
-        result = create_mentorship_request(
-            self.mentee, self.mentor.id, "X"
-        )
+        result = create_mentorship_request(self.mentee, self.mentor.id, "X")
         self.assertIn("error", result)
 
 
@@ -414,15 +362,9 @@ class RespondToRequestTest(TestCase):
     """Tests for respond_to_request service."""
 
     def setUp(self):
-        self.mentor = User.objects.create_user(
-            username="mentor", password="p"
-        )
-        self.mentee = User.objects.create_user(
-            username="mentee", password="p"
-        )
-        self.profile = MentorProfile.objects.create(
-            user=self.mentor, max_mentees=3
-        )
+        self.mentor = User.objects.create_user(username="mentor", password="p")
+        self.mentee = User.objects.create_user(username="mentee", password="p")
+        self.profile = MentorProfile.objects.create(user=self.mentor, max_mentees=3)
         self.request = MentorshipRequest.objects.create(
             mentee=self.mentee,
             mentor=self.mentor,
@@ -432,9 +374,7 @@ class RespondToRequestTest(TestCase):
         )
 
     def test_accept(self):
-        result = respond_to_request(
-            self.mentor, self.request.id, accept=True
-        )
+        result = respond_to_request(self.mentor, self.request.id, accept=True)
         self.assertTrue(result.get("success"))
         self.assertIn("match_id", result)
         self.assertTrue(
@@ -444,9 +384,7 @@ class RespondToRequestTest(TestCase):
         )
 
     def test_decline(self):
-        result = respond_to_request(
-            self.mentor, self.request.id, accept=False
-        )
+        result = respond_to_request(self.mentor, self.request.id, accept=False)
         self.assertTrue(result.get("success"))
         self.assertFalse(
             MentorshipMatch.objects.filter(
@@ -457,17 +395,13 @@ class RespondToRequestTest(TestCase):
     def test_already_processed(self):
         self.request.status = "accepted"
         self.request.save()
-        result = respond_to_request(
-            self.mentor, self.request.id, accept=True
-        )
+        result = respond_to_request(self.mentor, self.request.id, accept=True)
         self.assertIn("error", result)
 
     def test_expired_request(self):
         self.request.expires_at = timezone.now() - timedelta(hours=1)
         self.request.save()
-        result = respond_to_request(
-            self.mentor, self.request.id, accept=True
-        )
+        result = respond_to_request(self.mentor, self.request.id, accept=True)
         self.assertIn("error", result)
 
 
@@ -475,12 +409,8 @@ class CompleteSessionTest(TestCase):
     """Tests for complete_session service."""
 
     def setUp(self):
-        self.mentor = User.objects.create_user(
-            username="mentor", password="p"
-        )
-        self.mentee = User.objects.create_user(
-            username="mentee", password="p"
-        )
+        self.mentor = User.objects.create_user(username="mentor", password="p")
+        self.mentee = User.objects.create_user(username="mentee", password="p")
         self.match = MentorshipMatch.objects.create(
             mentor=self.mentor, mentee=self.mentee
         )
@@ -521,9 +451,7 @@ class GetMentorAnalyticsTest(TestCase):
     """Tests for get_mentor_analytics service."""
 
     def setUp(self):
-        self.mentor = User.objects.create_user(
-            username="mentor", password="p"
-        )
+        self.mentor = User.objects.create_user(username="mentor", password="p")
         MentorProfile.objects.create(
             user=self.mentor, average_rating=4.2, rating_count=5
         )
@@ -533,12 +461,8 @@ class GetMentorAnalyticsTest(TestCase):
         self.assertEqual(analytics["total_sessions"], 0)
 
     def test_with_sessions(self):
-        mentee = User.objects.create_user(
-            username="mentee", password="p"
-        )
-        match = MentorshipMatch.objects.create(
-            mentor=self.mentor, mentee=mentee
-        )
+        mentee = User.objects.create_user(username="mentee", password="p")
+        match = MentorshipMatch.objects.create(mentor=self.mentor, mentee=mentee)
         MentorshipSession.objects.create(
             match=match,
             mentor=self.mentor,
@@ -556,9 +480,7 @@ class GetMenteeAnalyticsTest(TestCase):
     """Tests for get_mentee_analytics service."""
 
     def setUp(self):
-        self.mentee = User.objects.create_user(
-            username="mentee", password="p"
-        )
+        self.mentee = User.objects.create_user(username="mentee", password="p")
 
     def test_empty_analytics(self):
         analytics = get_mentee_analytics(self.mentee)
@@ -574,9 +496,7 @@ class GetProgramStatsTest(TestCase):
         self.assertEqual(stats["total_sessions"], 0)
 
     def test_with_data(self):
-        mentor = User.objects.create_user(
-            username="mentor", password="p"
-        )
+        mentor = User.objects.create_user(username="mentor", password="p")
         MentorProfile.objects.create(user=mentor)
         stats = get_program_stats()
         self.assertEqual(stats["total_mentors"], 1)

@@ -31,7 +31,7 @@ def test_signup_rejects_case_insensitive_duplicate_username():
     assert serializer.errors["username"][0] == "Username is already taken."
 
 
-from django.db import connection, IntegrityError, transaction
+from django.db import IntegrityError, connection, transaction
 
 
 @pytest.mark.django_db

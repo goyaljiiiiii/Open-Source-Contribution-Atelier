@@ -1,4 +1,5 @@
 import logging
+
 from django.core.cache import cache
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
@@ -24,12 +25,14 @@ def invalidate_user_organization_rbac_cache(user_id, organization_id=None):
     ]
 
     if organization_id:
-        cache_keys.extend([
-            f"org:membership:{user_id}:{organization_id}",
-            f"org:user_role:{user_id}:{organization_id}",
-            f"user_org_membership:{user_id}:{organization_id}",
-            f"rbac:user_org_role:{user_id}:{organization_id}",
-        ])
+        cache_keys.extend(
+            [
+                f"org:membership:{user_id}:{organization_id}",
+                f"org:user_role:{user_id}:{organization_id}",
+                f"user_org_membership:{user_id}:{organization_id}",
+                f"rbac:user_org_role:{user_id}:{organization_id}",
+            ]
+        )
 
     cache.delete_many(cache_keys)
     logger.debug(

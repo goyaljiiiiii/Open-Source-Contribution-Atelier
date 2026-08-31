@@ -30,6 +30,7 @@ User = get_user_model()
 #  Group Analytics
 # ---------------------------------------------------------------------------
 
+
 def get_group_stats(group) -> dict[str, Any]:
     """Compute comprehensive stats for a study group."""
     from .models import GroupActivity, GroupChallenge, GroupMembership
@@ -38,9 +39,7 @@ def get_group_stats(group) -> dict[str, Any]:
     week_ago = now - timedelta(days=7)
     month_ago = now - timedelta(days=30)
 
-    members = GroupMembership.objects.filter(
-        group=group, status="active"
-    )
+    members = GroupMembership.objects.filter(group=group, status="active")
 
     # Activity in the last 7 days
     recent_activities = GroupActivity.objects.filter(
@@ -48,9 +47,7 @@ def get_group_stats(group) -> dict[str, Any]:
     )
 
     # Active members this week (users who had any activity)
-    active_this_week = (
-        recent_activities.values("user").distinct().count()
-    )
+    active_this_week = recent_activities.values("user").distinct().count()
 
     # Member contributions leaderboard
     leaderboard = list(
@@ -69,9 +66,9 @@ def get_group_stats(group) -> dict[str, Any]:
 
     # XP earned this week
     weekly_xp = (
-        recent_activities.filter(activity_type="xp").aggregate(
-            total=Sum("xp_value")
-        )["total"]
+        recent_activities.filter(activity_type="xp").aggregate(total=Sum("xp_value"))[
+            "total"
+        ]
         or 0
     )
 
@@ -79,9 +76,7 @@ def get_group_stats(group) -> dict[str, Any]:
     from .models import GroupResource
 
     top_resource = (
-        GroupResource.objects.filter(group=group)
-        .order_by("-upvotes")
-        .first()
+        GroupResource.objects.filter(group=group).order_by("-upvotes").first()
     )
 
     # Active challenges
@@ -95,24 +90,25 @@ def get_group_stats(group) -> dict[str, Any]:
         "total_xp": group.total_xp,
         "weekly_xp": weekly_xp,
         "streak_days": group.streak_days,
-        "lessons_completed": sum(
-            m.lessons_completed for m in members
-        ),
+        "lessons_completed": sum(m.lessons_completed for m in members),
         "leaderboard": leaderboard,
         "active_challenges": active_challenges,
-        "top_resource": {
-            "id": top_resource.id,
-            "title": top_resource.title,
-            "upvotes": top_resource.upvotes,
-        }
-        if top_resource
-        else None,
+        "top_resource": (
+            {
+                "id": top_resource.id,
+                "title": top_resource.title,
+                "upvotes": top_resource.upvotes,
+            }
+            if top_resource
+            else None
+        ),
     }
 
 
 # ---------------------------------------------------------------------------
 #  Activity Tracking
 # ---------------------------------------------------------------------------
+
 
 def record_group_activity(
     group,
@@ -137,9 +133,7 @@ def record_group_activity(
     )
 
     # Update member contribution stats
-    membership = GroupMembership.objects.filter(
-        group=group, user=user
-    ).first()
+    membership = GroupMembership.objects.filter(group=group, user=user).first()
     if membership:
         update_fields = ["last_active"]
         if activity_type == "lesson":
@@ -149,9 +143,7 @@ def record_group_activity(
             membership.quizzes_passed = F("quizzes_passed") + 1
             update_fields.append("quizzes_passed")
         elif activity_type == "xp":
-            membership.total_xp_contributed = F(
-                "total_xp_contributed"
-            ) + xp_value
+            membership.total_xp_contributed = F("total_xp_contributed") + xp_value
             update_fields.append("total_xp_contributed")
         membership.save(update_fields=update_fields)
 
@@ -159,9 +151,7 @@ def record_group_activity(
     if xp_value > 0:
         from .models import StudyGroup
 
-        StudyGroup.objects.filter(id=group.id).update(
-            total_xp=F("total_xp") + xp_value
-        )
+        StudyGroup.objects.filter(id=group.id).update(total_xp=F("total_xp") + xp_value)
 
     # Check group goals
     _check_group_goals(group)
@@ -173,9 +163,7 @@ def _check_group_goals(group):
     """Check and update group goals after an activity."""
     from .models import GroupGoal
 
-    active_goals = GroupGoal.objects.filter(
-        group=group, is_completed=False
-    )
+    active_goals = GroupGoal.objects.filter(group=group, is_completed=False)
 
     for goal in active_goals:
         _update_goal_progress(group, goal)
@@ -188,17 +176,18 @@ def _update_goal_progress(group, goal):
     if goal.goal_type == "total_xp":
         goal.current_value = group.total_xp
     elif goal.goal_type == "lesson_count":
-        goal.current_value = GroupMembership.objects.filter(
-            group=group
-        ).aggregate(total=Sum("lessons_completed"))["total"] or 0
+        goal.current_value = (
+            GroupMembership.objects.filter(group=group).aggregate(
+                total=Sum("lessons_completed")
+            )["total"]
+            or 0
+        )
     elif goal.goal_type == "member_active":
         week_ago = timezone.now() - timedelta(days=7)
         from .models import GroupActivity
 
         goal.current_value = (
-            GroupActivity.objects.filter(
-                group=group, created_at__gte=week_ago
-            )
+            GroupActivity.objects.filter(group=group, created_at__gte=week_ago)
             .values("user")
             .distinct()
             .count()
@@ -211,10 +200,7 @@ def _update_goal_progress(group, goal):
             or 0
         )
 
-    if (
-        goal.current_value >= goal.target_value
-        and not goal.is_completed
-    ):
+    if goal.current_value >= goal.target_value and not goal.is_completed:
         goal.is_completed = True
         goal.save()
     else:
@@ -224,6 +210,7 @@ def _update_goal_progress(group, goal):
 # ---------------------------------------------------------------------------
 #  Group Leaderboard
 # ---------------------------------------------------------------------------
+
 
 def get_group_leaderboard(group, period="all_time") -> list[dict[str, Any]]:
     """Return the group leaderboard for the specified period."""
@@ -249,13 +236,15 @@ def get_group_leaderboard(group, period="all_time") -> list[dict[str, Any]]:
         leaderboard = []
         for m in members:
             xp = xp_by_user.get(m.user_id, 0)
-            leaderboard.append({
-                "user_id": m.user_id,
-                "username": m.user.username,
-                "nickname": m.nickname or m.user.username,
-                "xp": xp,
-                "role": m.role,
-            })
+            leaderboard.append(
+                {
+                    "user_id": m.user_id,
+                    "username": m.user.username,
+                    "nickname": m.nickname or m.user.username,
+                    "xp": xp,
+                    "role": m.role,
+                }
+            )
         leaderboard.sort(key=lambda x: x["xp"], reverse=True)
 
     elif period == "monthly":
@@ -274,13 +263,15 @@ def get_group_leaderboard(group, period="all_time") -> list[dict[str, Any]]:
         leaderboard = []
         for m in members:
             xp = xp_by_user.get(m.user_id, 0)
-            leaderboard.append({
-                "user_id": m.user_id,
-                "username": m.user.username,
-                "nickname": m.nickname or m.user.username,
-                "xp": xp,
-                "role": m.role,
-            })
+            leaderboard.append(
+                {
+                    "user_id": m.user_id,
+                    "username": m.user.username,
+                    "nickname": m.nickname or m.user.username,
+                    "xp": xp,
+                    "role": m.role,
+                }
+            )
         leaderboard.sort(key=lambda x: x["xp"], reverse=True)
 
     else:  # all_time
@@ -305,6 +296,7 @@ def get_group_leaderboard(group, period="all_time") -> list[dict[str, Any]]:
 # ---------------------------------------------------------------------------
 #  Invite System
 # ---------------------------------------------------------------------------
+
 
 def create_invite(group, invited_by, invited_user=None, email="") -> dict:
     """Create an invite token for a study group."""
@@ -350,9 +342,7 @@ def accept_invite(token: str, user) -> dict:
     if group.is_full:
         return {"error": "This group is full."}
 
-    if GroupMembership.objects.filter(
-        group=group, user=user
-    ).exists():
+    if GroupMembership.objects.filter(group=group, user=user).exists():
         return {"error": "You are already a member."}
 
     with transaction.atomic():
@@ -387,6 +377,7 @@ def accept_invite(token: str, user) -> dict:
 #  Group Discovery
 # ---------------------------------------------------------------------------
 
+
 def discover_groups(user, category=None, search=None) -> list[dict]:
     """Find public groups for the user to join."""
     from .models import StudyGroup
@@ -402,10 +393,7 @@ def discover_groups(user, category=None, search=None) -> list[dict]:
         qs = qs.filter(category=category)
 
     if search:
-        qs = qs.filter(
-            Q(name__icontains=search)
-            | Q(description__icontains=search)
-        )
+        qs = qs.filter(Q(name__icontains=search) | Q(description__icontains=search))
 
     return [
         {
@@ -428,6 +416,7 @@ def discover_groups(user, category=None, search=None) -> list[dict]:
 #  Global Group Stats
 # ---------------------------------------------------------------------------
 
+
 def get_platform_group_stats() -> dict[str, Any]:
     """Aggregate statistics across all study groups."""
     from .models import StudyGroup
@@ -435,12 +424,8 @@ def get_platform_group_stats() -> dict[str, Any]:
     groups = StudyGroup.objects.filter(is_archived=False)
     return {
         "total_groups": groups.count(),
-        "total_members": (
-            groups.aggregate(total=Sum("member_count"))["total"] or 0
-        ),
-        "total_xp": (
-            groups.aggregate(total=Sum("total_xp"))["total"] or 0
-        ),
+        "total_members": (groups.aggregate(total=Sum("member_count"))["total"] or 0),
+        "total_xp": (groups.aggregate(total=Sum("total_xp"))["total"] or 0),
         "public_groups": groups.filter(visibility="public").count(),
         "private_groups": groups.filter(visibility="private").count(),
         "invite_only": groups.filter(visibility="invite_only").count(),

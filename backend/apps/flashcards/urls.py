@@ -17,10 +17,10 @@ from .views import (
     PublicDeckListView,
     ReviewHistoryView,
     ReviewLogSerializer,
-    SubmitReviewView,
     StudySessionCreateView,
     StudySessionEndView,
     StudyStatsView,
+    SubmitReviewView,
     UserReviewLogsView,
 )
 

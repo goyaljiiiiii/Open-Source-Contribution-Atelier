@@ -71,9 +71,7 @@ class LearningSessionModelTest(TestCase):
         self.user = User.objects.create_user(
             username="testuser", password="testpass123"
         )
-        self.tag = SkillTag.objects.create(
-            name="Python", slug="python"
-        )
+        self.tag = SkillTag.objects.create(name="Python", slug="python")
 
     def test_create_session(self):
         session = LearningSession.objects.create(
@@ -114,9 +112,7 @@ class UserSkillProfileModelTest(TestCase):
         self.user = User.objects.create_user(
             username="testuser", password="testpass123"
         )
-        self.tag = SkillTag.objects.create(
-            name="Django", slug="django"
-        )
+        self.tag = SkillTag.objects.create(name="Django", slug="django")
 
     def test_create_profile(self):
         profile = UserSkillProfile.objects.create(
@@ -232,9 +228,7 @@ class DailyLearningMetricModelTest(TestCase):
 
     def test_unique_constraint(self):
         today = timezone.now().date()
-        DailyLearningMetric.objects.create(
-            user=self.user, date=today, total_minutes=30
-        )
+        DailyLearningMetric.objects.create(user=self.user, date=today, total_minutes=30)
         with self.assertRaises(Exception):
             DailyLearningMetric.objects.create(
                 user=self.user, date=today, total_minutes=60
@@ -339,9 +333,7 @@ class ComputeSkillLevelTest(TestCase):
         self.user = User.objects.create_user(
             username="testuser", password="testpass123"
         )
-        self.tag = SkillTag.objects.create(
-            name="React", slug="react"
-        )
+        self.tag = SkillTag.objects.create(name="React", slug="react")
 
     def test_no_sessions_returns_zero(self):
         result = compute_skill_level(self.user, self.tag)
@@ -457,9 +449,7 @@ class ComputeDailyMetricsTest(TestCase):
 
     def test_updates_existing_metric(self):
         today = timezone.now().date()
-        DailyLearningMetric.objects.create(
-            user=self.user, date=today, total_minutes=10
-        )
+        DailyLearningMetric.objects.create(user=self.user, date=today, total_minutes=10)
 
         now = timezone.now()
         LearningSession.objects.create(
@@ -471,9 +461,7 @@ class ComputeDailyMetricsTest(TestCase):
         )
 
         metric = compute_daily_metrics(self.user, today)
-        self.assertEqual(
-            DailyLearningMetric.objects.filter(user=self.user).count(), 1
-        )
+        self.assertEqual(DailyLearningMetric.objects.filter(user=self.user).count(), 1)
 
 
 class GenerateInsightsTest(TestCase):
@@ -498,9 +486,7 @@ class GenerateInsightsTest(TestCase):
             longest_streak=15,
         )
         insights = generate_insights(self.user)
-        streak_insights = [
-            i for i in insights if i["insight_type"] == "streak"
-        ]
+        streak_insights = [i for i in insights if i["insight_type"] == "streak"]
         self.assertTrue(len(streak_insights) > 0)
         self.assertIn("10-day", streak_insights[0]["title"])
 
@@ -508,18 +494,12 @@ class GenerateInsightsTest(TestCase):
         """Generating insights twice should not create duplicates."""
         from apps.progress.models import StreakProfile
 
-        StreakProfile.objects.create(
-            user=self.user, current_streak=7, longest_streak=7
-        )
+        StreakProfile.objects.create(user=self.user, current_streak=7, longest_streak=7)
         generate_insights(self.user)
-        count_after_first = LearningInsight.objects.filter(
-            user=self.user
-        ).count()
+        count_after_first = LearningInsight.objects.filter(user=self.user).count()
 
         generate_insights(self.user)
-        count_after_second = LearningInsight.objects.filter(
-            user=self.user
-        ).count()
+        count_after_second = LearningInsight.objects.filter(user=self.user).count()
 
         self.assertEqual(count_after_first, count_after_second)
 
@@ -693,9 +673,7 @@ class GetCurrentStreakTest(TestCase):
 
     def test_single_day(self):
         today = timezone.now().date()
-        DailyLearningMetric.objects.create(
-            user=self.user, date=today, total_minutes=30
-        )
+        DailyLearningMetric.objects.create(user=self.user, date=today, total_minutes=30)
         streak = get_current_streak(self.user)
         self.assertEqual(streak, 1)
 
@@ -712,9 +690,7 @@ class GetCurrentStreakTest(TestCase):
 
     def test_broken_streak(self):
         today = timezone.now().date()
-        DailyLearningMetric.objects.create(
-            user=self.user, date=today, total_minutes=30
-        )
+        DailyLearningMetric.objects.create(user=self.user, date=today, total_minutes=30)
         DailyLearningMetric.objects.create(
             user=self.user,
             date=today - timedelta(days=2),

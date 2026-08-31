@@ -91,7 +91,9 @@ class StreakEngine:
         return current_date.weekday() in (5, 6)
 
     @staticmethod
-    def get_multiplier_for_streak(streak_days: int, current_date: Optional[Union[date, datetime]] = None) -> float:
+    def get_multiplier_for_streak(
+        streak_days: int, current_date: Optional[Union[date, datetime]] = None
+    ) -> float:
         """
         Return the XP multiplier for a given streak length, applying 1.5x weekend multiplier
         if current_date falls on Saturday/Sunday.
@@ -144,7 +146,9 @@ class StreakEngine:
         return profile
 
     @classmethod
-    def get_multiplier_for_user(cls, user: User, current_date: Optional[Union[date, datetime]] = None) -> float:
+    def get_multiplier_for_user(
+        cls, user: User, current_date: Optional[Union[date, datetime]] = None
+    ) -> float:
         """Return the current effective streak multiplier for a user including weekend bonus."""
         try:
             profile = StreakProfile.objects.get(user=user)
@@ -237,7 +241,11 @@ class StreakEngine:
         progress_pct = cls.compute_milestone_progress(profile.current_streak)
 
         is_weekend = cls.is_weekend_event()
-        effective_mult = round(profile.current_multiplier * 1.5, 2) if is_weekend else profile.current_multiplier
+        effective_mult = (
+            round(profile.current_multiplier * 1.5, 2)
+            if is_weekend
+            else profile.current_multiplier
+        )
 
         return {
             "current_streak": profile.current_streak,
@@ -269,7 +277,11 @@ class StreakEngine:
     def _build_result(profile: StreakProfile, multiplier_unlocked: bool) -> dict:
         next_ms = StreakEngine.get_next_milestone(profile.current_streak)
         is_weekend = StreakEngine.is_weekend_event()
-        effective_mult = round(profile.current_multiplier * 1.5, 2) if is_weekend else profile.current_multiplier
+        effective_mult = (
+            round(profile.current_multiplier * 1.5, 2)
+            if is_weekend
+            else profile.current_multiplier
+        )
 
         return {
             "current_streak": profile.current_streak,

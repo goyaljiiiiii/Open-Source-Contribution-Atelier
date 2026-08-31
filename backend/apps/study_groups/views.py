@@ -17,8 +17,8 @@ from .models import (
     GroupChallengeParticipant,
     GroupGoal,
     GroupInvite,
-    GroupMessage,
     GroupMembership,
+    GroupMessage,
     GroupResource,
     StudyGroup,
 )
@@ -48,7 +48,6 @@ from .services import (
     get_platform_group_stats,
     record_group_activity,
 )
-
 
 # ---------------------------------------------------------------------------
 #  Group CRUD
@@ -147,18 +146,14 @@ class JoinGroupView(views.APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if GroupMembership.objects.filter(
-            group=group, user=request.user
-        ).exists():
+        if GroupMembership.objects.filter(group=group, user=request.user).exists():
             return Response(
                 {"error": "Already a member."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         with transaction.atomic():
-            membership = GroupMembership.objects.create(
-                user=request.user, group=group
-            )
+            membership = GroupMembership.objects.create(user=request.user, group=group)
             StudyGroup.objects.filter(id=group.id).update(
                 member_count=F("member_count") + 1
             )
@@ -321,9 +316,7 @@ class GroupInviteCreateView(views.APIView):
 
             User = get_user_model()
             try:
-                invited_user = User.objects.get(
-                    id=serializer.validated_data["user_id"]
-                )
+                invited_user = User.objects.get(id=serializer.validated_data["user_id"])
             except User.DoesNotExist:
                 return Response(
                     {"error": "User not found."},
@@ -355,9 +348,7 @@ class AcceptInviteView(views.APIView):
         )
 
         if "error" in result:
-            return Response(
-                result, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(result)
 
@@ -439,10 +430,14 @@ class ChallengeLeaderboardView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, group_id, challenge_id):
-        participants = GroupChallengeParticipant.objects.filter(
-            challenge_id=challenge_id,
-            challenge__group_id=group_id,
-        ).select_related("user").order_by("-current_value")
+        participants = (
+            GroupChallengeParticipant.objects.filter(
+                challenge_id=challenge_id,
+                challenge__group_id=group_id,
+            )
+            .select_related("user")
+            .order_by("-current_value")
+        )
 
         return Response(
             GroupChallengeParticipantSerializer(participants, many=True).data

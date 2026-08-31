@@ -24,10 +24,10 @@ logger = logging.getLogger(__name__)
 import traceback
 from typing import Any, Dict, List
 
+from apps.sandbox.services.sandbox_executor import SandboxExecutor
+
 from .plugins import LessonPlugin, registry
 
-
-from apps.sandbox.services.sandbox_executor import SandboxExecutor
 
 def _run_in_sandbox(
     test_code: str, implementation_code: str, function_name: str

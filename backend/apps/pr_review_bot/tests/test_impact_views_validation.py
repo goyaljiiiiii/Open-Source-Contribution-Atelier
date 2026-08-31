@@ -1,6 +1,6 @@
 import pytest
-from rest_framework.test import APIClient
 from rest_framework import status
+from rest_framework.test import APIClient
 
 
 @pytest.mark.django_db
@@ -17,9 +17,7 @@ class TestPRImpactAnalysisValidation:
         assert "pr_number" in res.data.get("error", "").lower()
 
     def test_non_integer_pr_number_returns_400(self):
-        res = self.client.post(
-            self.url, {"pr_number": "invalid_string"}, format="json"
-        )
+        res = self.client.post(self.url, {"pr_number": "invalid_string"}, format="json")
         assert res.status_code == status.HTTP_400_BAD_REQUEST
         assert "integer" in res.data.get("error", "").lower()
 
@@ -28,9 +26,7 @@ class TestPRImpactAnalysisValidation:
         assert res.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_float_pr_number_string_returns_400(self):
-        res = self.client.post(
-            self.url, {"pr_number": "12.5"}, format="json"
-        )
+        res = self.client.post(self.url, {"pr_number": "12.5"}, format="json")
         assert res.status_code == status.HTTP_400_BAD_REQUEST
         assert "integer" in res.data.get("error", "").lower()
 
@@ -42,4 +38,7 @@ class TestPRImpactAnalysisValidation:
             format="json",
         )
         # Should not be a 400 validation error for pr_number
-        assert res.status_code != status.HTTP_400_BAD_REQUEST or "pr_number" not in res.data.get("error", "")
+        assert (
+            res.status_code != status.HTTP_400_BAD_REQUEST
+            or "pr_number" not in res.data.get("error", "")
+        )

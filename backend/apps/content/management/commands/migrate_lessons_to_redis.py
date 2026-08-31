@@ -37,4 +37,6 @@ class Command(BaseCommand):
                 )
                 errors += 1
 
-        self.stdout.write(self.style.SUCCESS(f"Done. {migrated} cached, {errors} errors."))
+        self.stdout.write(
+            self.style.SUCCESS(f"Done. {migrated} cached, {errors} errors.")
+        )

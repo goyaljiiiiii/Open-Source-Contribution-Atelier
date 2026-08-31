@@ -44,7 +44,9 @@ class TestChallengeOfTheDayTimezone:
             assert response.data["bonus_points"] == 20
 
     def test_complete_cotd_uses_user_local_date(self):
-        user = User.objects.create_user(username="tokyo_cotd_completer", password="password")
+        user = User.objects.create_user(
+            username="tokyo_cotd_completer", password="password"
+        )
         profile, _ = UserProfile.objects.get_or_create(user=user)
         profile.timezone = "Asia/Tokyo"
         profile.save()
@@ -62,4 +64,6 @@ class TestChallengeOfTheDayTimezone:
             response = client.post("/api/challenges/today/complete/")
             assert response.status_code == 201
             assert response.data["bonus_earned"] == 50
-            assert ChallengeCompletion.objects.filter(user=user, challenge=c_aug_5).exists()
+            assert ChallengeCompletion.objects.filter(
+                user=user, challenge=c_aug_5
+            ).exists()

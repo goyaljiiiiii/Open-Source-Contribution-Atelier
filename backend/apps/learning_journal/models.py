@@ -121,12 +121,17 @@ class JournalEntry(models.Model):
 
     def save(self, *args, **kwargs):
         # Auto-compute word count
-        text = " ".join(filter(None, [
-            self.what_i_learned,
-            self.challenges_faced,
-            self.key_takeaways,
-            self.tomorrow_goals,
-        ]))
+        text = " ".join(
+            filter(
+                None,
+                [
+                    self.what_i_learned,
+                    self.challenges_faced,
+                    self.key_takeaways,
+                    self.tomorrow_goals,
+                ],
+            )
+        )
         self.word_count = len(text.split()) if text else 0
         super().save(*args, **kwargs)
 
@@ -188,10 +193,7 @@ class JournalReaction(models.Model):
         unique_together = ("entry", "user", "reaction_type")
 
     def __str__(self):
-        return (
-            f"{self.user.username} {self.reaction_type} on "
-            f"entry {self.entry_id}"
-        )
+        return f"{self.user.username} {self.reaction_type} on " f"entry {self.entry_id}"
 
 
 class ReflectionPrompt(models.Model):
@@ -287,6 +289,7 @@ class UserReflectionStreak(models.Model):
             all_tags.extend(t or [])
         if all_tags:
             from collections import Counter
+
             self.favorite_tag = Counter(all_tags).most_common(1)[0][0]
 
         self.save()
@@ -355,8 +358,7 @@ class JournalTemplate(models.Model):
     sections = models.JSONField(
         default=list,
         help_text=(
-            'List of section titles, '
-            'e.g. ["What I learned", "Challenges", "Goals"].'
+            "List of section titles, " 'e.g. ["What I learned", "Challenges", "Goals"].'
         ),
     )
     default_tags = models.JSONField(default=list, blank=True)

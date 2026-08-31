@@ -1,12 +1,11 @@
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 from apps.accounts.views import GitHubOAuthCallbackView
-
-from django.core.cache import cache
 
 User = get_user_model()
 
@@ -14,14 +13,13 @@ User = get_user_model()
 class OAuthStateValidationTests(TestCase):
     def setUp(self):
         cache.clear()
+
     @override_settings(
         GITHUB_CLIENT_ID="client-id",
         GITHUB_CLIENT_SECRET="client-secret",
     )
     def test_missing_state_is_rejected_with_400(self):
-        response = APIClient().get(
-            "/api/auth/github/callback/?code=authorization-code"
-        )
+        response = APIClient().get("/api/auth/github/callback/?code=authorization-code")
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["detail"], "Missing state parameter.")

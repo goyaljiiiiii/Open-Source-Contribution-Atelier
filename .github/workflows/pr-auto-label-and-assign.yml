@@ -1,0 +1,105 @@
+name: PR Auto-Labeler & Auto-Assigner
+
+on:
+  pull_request_target:
+    types: [opened, edited, synchronize]
+
+permissions:
+  pull-requests: write
+  issues: read
+  contents: read
+
+jobs:
+  label-and-assign:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Auto Label PR by Modified Files
+        uses: actions/labeler@v5
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          sync-labels: false
+        continue-on-error: true
+
+      - name: Auto Label from Linked Issues & Assign PR
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const body = pr.body || '';
+
+            // 1. Collect Assignees (PR author + linked issue assignees)
+            const assignees = new Set();
+            if (pr.user && pr.user.login && pr.user.type !== 'Bot' && !pr.user.login.endsWith('[bot]')) {
+              assignees.add(pr.user.login);
+            }
+
+            // 2. Extract Linked Issue Numbers (e.g. Fixes #123, Closes #123, Resolves #123, or #123)
+            const issueMatches = new Set();
+            const keywordRegex = /(?:fixes|closes|resolves)\s*#(\d+)/gi;
+            let match;
+            while ((match = keywordRegex.exec(body)) !== null) {
+              issueMatches.add(parseInt(match[1], 10));
+            }
+            if (issueMatches.size === 0) {
+              const genericRegex = /#(\d+)/g;
+              while ((match = genericRegex.exec(body)) !== null) {
+                issueMatches.add(parseInt(match[1], 10));
+              }
+            }
+
+            const labelsToAdd = new Set();
+
+            for (const issueNum of issueMatches) {
+              try {
+                const issueRes = await github.rest.issues.get({
+                  owner,
+                  repo,
+                  issue_number: issueNum
+                });
+                const issue = issueRes.data;
+
+                // Inherit labels from linked issue
+                if (issue.labels && issue.labels.length > 0) {
+                  for (const l of issue.labels) {
+                    const lName = typeof l === 'string' ? l : l.name;
+                    if (lName) labelsToAdd.add(lName);
+                  }
+                }
+
+                // Add assignees from linked issue
+                if (issue.assignees && issue.assignees.length > 0) {
+                  for (const a of issue.assignees) {
+                    if (a.login && a.type !== 'Bot') assignees.add(a.login);
+                  }
+                }
+              } catch (e) {
+                console.warn(`Could not fetch linked issue #${issueNum}:`, e.message);
+              }
+            }
+
+            // Apply Labels to PR
+            if (labelsToAdd.size > 0) {
+              const labelList = Array.from(labelsToAdd);
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number: pr.number,
+                labels: labelList
+              });
+              console.log(`Added inherited issue labels to PR #${pr.number}: ${labelList.join(', ')}`);
+            }
+
+            // Apply Assignees to PR
+            if (assignees.size > 0) {
+              const assigneeList = Array.from(assignees);
+              await github.rest.issues.addAssignees({
+                owner,
+                repo,
+                issue_number: pr.number,
+                assignees: assigneeList
+              });
+              console.log(`Assigned users to PR #${pr.number}: ${assigneeList.join(', ')}`);
+            }

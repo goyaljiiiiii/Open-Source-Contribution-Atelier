@@ -14,9 +14,15 @@ User = get_user_model()
 
 @pytest.fixture
 def test_users(db):
-    user1 = User.objects.create_user(username="alice", email="alice@example.com", password="password123")
-    user2 = User.objects.create_user(username="bob", email="bob@example.com", password="password123")
-    user3 = User.objects.create_user(username="charlie", email="charlie@example.com", password="password123")
+    user1 = User.objects.create_user(
+        username="alice", email="alice@example.com", password="password123"
+    )
+    user2 = User.objects.create_user(
+        username="bob", email="bob@example.com", password="password123"
+    )
+    user3 = User.objects.create_user(
+        username="charlie", email="charlie@example.com", password="password123"
+    )
     return [user1, user2, user3]
 
 
@@ -44,8 +50,12 @@ class TestMonthlyLeaderboardArchive:
         alice, bob, charlie = test_users
 
         # Create lifetime XP events for users
-        XPEvent.objects.create(user=alice, source_type="lesson", base_points=500, xp_delta=500)
-        XPEvent.objects.create(user=bob, source_type="lesson", base_points=300, xp_delta=300)
+        XPEvent.objects.create(
+            user=alice, source_type="lesson", base_points=500, xp_delta=500
+        )
+        XPEvent.objects.create(
+            user=bob, source_type="lesson", base_points=300, xp_delta=300
+        )
 
         target_date = datetime(2026, 8, 31)
 
@@ -60,8 +70,13 @@ class TestMonthlyLeaderboardArchive:
             user_scores if key == monthly_key else []
         )
 
-        with patch("apps.progress.services.leaderboard_service.get_redis_client", return_value=mock_redis):
-            result = LeaderboardService.archive_and_reset_monthly_leaderboard(target_date=target_date)
+        with patch(
+            "apps.progress.services.leaderboard_service.get_redis_client",
+            return_value=mock_redis,
+        ):
+            result = LeaderboardService.archive_and_reset_monthly_leaderboard(
+                target_date=target_date
+            )
 
         assert result["period"] == "2026_08"
         assert result["archived_count"] == 3
@@ -75,7 +90,9 @@ class TestMonthlyLeaderboardArchive:
         assert bob_archive.rank == 2
         assert bob_archive.monthly_xp == 300
 
-        charlie_archive = LeaderboardArchive.objects.get(user=charlie, year=2026, month=8)
+        charlie_archive = LeaderboardArchive.objects.get(
+            user=charlie, year=2026, month=8
+        )
         assert charlie_archive.rank == 3
         assert charlie_archive.monthly_xp == 100
 

@@ -25,15 +25,17 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.permissions import IsMentor
-
+from apps.core.utils import parse_iso_datetime
 from apps.accounts.models import UserProfile
 from apps.content.models import Lesson
 from apps.content.serializers import LessonSerializer
+from apps.core.permissions import IsMentor
 from apps.core.throttling import SlidingWindowAnonThrottle, SlidingWindowScopedThrottle
 from apps.deduplication.idempotency import idempotent
 from apps.progress.constants import XP_PER_LEVEL
 from apps.progress.models import XPEvent
 from apps.progress.services.xp_service import XPService
+
 from .models import UserNote  # ✅ ADD: UserNote model
 from .models import (
     Badge,
@@ -80,6 +82,10 @@ class ExportNotesView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     format_kwarg = None
 
+    def perform_content_negotiation(self, request, force=False):
+        renderers = self.get_renderers()
+        return (renderers[0], renderers[0].media_type)
+
     def get(self, request):
         user = request.user
         format_type = request.query_params.get("format", "md").lower()
@@ -108,22 +114,22 @@ class ExportNotesView(APIView):
         start_date = None
         end_date = None
         if start_param:
-            try:
-                start_date = datetime.strptime(start_param, "%Y-%m-%d").date()
-            except ValueError:
+            parsed_start = parse_iso_datetime(start_param)
+            if parsed_start is None:
                 return Response(
                     {"error": "Invalid start_date format. Use YYYY-MM-DD."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+            start_date = parsed_start.date()
 
         if end_param:
-            try:
-                end_date = datetime.strptime(end_param, "%Y-%m-%d").date()
-            except ValueError:
+            parsed_end = parse_iso_datetime(end_param)
+            if parsed_end is None:
                 return Response(
                     {"error": "Invalid end_date format. Use YYYY-MM-DD."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+            end_date = parsed_end.date()
 
         if start_date and end_date:
             if start_date > end_date:
@@ -563,9 +569,11 @@ class CommunityFeedView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        org_id = UserProfile.objects.filter(user=request.user).values_list(
-            "organization_id", flat=True
-        ).first()
+        org_id = (
+            UserProfile.objects.filter(user=request.user)
+            .values_list("organization_id", flat=True)
+            .first()
+        )
 
         if org_id:
             user_ids = UserProfile.objects.filter(
@@ -1748,18 +1756,18 @@ class HeatmapView(APIView):
         end_param = request.query_params.get("end_date")
 
         if start_param:
-            try:
-                start_date = datetime.datetime.strptime(start_param, "%Y-%m-%d").date()
-            except ValueError:
-                start_date = today - datetime.timedelta(days=365)
+            parsed_start = parse_iso_datetime(start_param)
+            start_date = (
+                parsed_start.date()
+                if parsed_start is not None
+                else today - datetime.timedelta(days=365)
+            )
         else:
             start_date = today - datetime.timedelta(days=365)
 
         if end_param:
-            try:
-                end_date = datetime.datetime.strptime(end_param, "%Y-%m-%d").date()
-            except ValueError:
-                end_date = today
+            parsed_end = parse_iso_datetime(end_param)
+            end_date = parsed_end.date() if parsed_end is not None else today
         else:
             end_date = today
 
@@ -1855,7 +1863,9 @@ class StreakStatusView(APIView):
             "current_streak": data["current_streak"],
             "highest_streak": data["longest_streak"],
             "multiplier": data["current_multiplier"],
-            "effective_multiplier": data.get("effective_multiplier", data["current_multiplier"]),
+            "effective_multiplier": data.get(
+                "effective_multiplier", data["current_multiplier"]
+            ),
             "is_weekend_event": data.get("is_weekend_event", False),
             "next_milestone": (
                 data["next_milestone"]["days"] if data["next_milestone"] else None
@@ -1930,24 +1940,24 @@ class HeatmapCSVExportView(APIView):
             today = datetime.date.today()
 
         if start_param:
-            try:
-                start_date = datetime.datetime.strptime(start_param, "%Y-%m-%d").date()
-            except ValueError:
+            parsed_start = parse_iso_datetime(start_param)
+            if parsed_start is None:
                 return Response(
                     {"error": "Invalid start_date format. Use YYYY-MM-DD."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+            start_date = parsed_start.date()
         else:
             start_date = today - datetime.timedelta(days=365)
 
         if end_param:
-            try:
-                end_date = datetime.datetime.strptime(end_param, "%Y-%m-%d").date()
-            except ValueError:
+            parsed_end = parse_iso_datetime(end_param)
+            if parsed_end is None:
                 return Response(
                     {"error": "Invalid end_date format. Use YYYY-MM-DD."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+            end_date = parsed_end.date()
         else:
             end_date = today
 

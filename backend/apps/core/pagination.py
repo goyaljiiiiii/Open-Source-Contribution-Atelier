@@ -139,7 +139,11 @@ class SecureCursorPagination(pagination.BasePagination):
             return None
 
         # Format payload as timestamp|id safely checking created_at
-        ts = item.created_at.timestamp() if hasattr(item, "created_at") and item.created_at else 0.0
+        ts = (
+            item.created_at.timestamp()
+            if hasattr(item, "created_at") and item.created_at
+            else 0.0
+        )
         payload = f"{ts}|{item.id}"
 
         b64_payload = (

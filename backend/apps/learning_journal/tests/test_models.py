@@ -30,9 +30,7 @@ class JournalEntryModelTest(TestCase):
     """Tests for JournalEntry model."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="testuser", password="pass123"
-        )
+        self.user = User.objects.create_user(username="testuser", password="pass123")
 
     def test_create_entry(self):
         entry = JournalEntry.objects.create(
@@ -65,9 +63,7 @@ class JournalEntryModelTest(TestCase):
 
     def test_unique_date(self):
         today = timezone.now().date()
-        JournalEntry.objects.create(
-            user=self.user, date=today, what_i_learned="First"
-        )
+        JournalEntry.objects.create(user=self.user, date=today, what_i_learned="First")
         with self.assertRaises(Exception):
             JournalEntry.objects.create(
                 user=self.user, date=today, what_i_learned="Second"
@@ -97,9 +93,7 @@ class JournalCommentModelTest(TestCase):
     """Tests for JournalComment model."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="user1", password="p"
-        )
+        self.user = User.objects.create_user(username="user1", password="p")
         self.entry = JournalEntry.objects.create(
             user=self.user,
             date=timezone.now().date(),
@@ -115,9 +109,7 @@ class JournalCommentModelTest(TestCase):
         self.assertFalse(c.is_mentor_note)
 
     def test_mentor_note(self):
-        mentor = User.objects.create_user(
-            username="mentor", password="p"
-        )
+        mentor = User.objects.create_user(username="mentor", password="p")
         c = JournalComment.objects.create(
             entry=self.entry,
             user=mentor,
@@ -131,9 +123,7 @@ class JournalReactionModelTest(TestCase):
     """Tests for JournalReaction model."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="user1", password="p"
-        )
+        self.user = User.objects.create_user(username="user1", password="p")
         self.entry = JournalEntry.objects.create(
             user=self.user,
             date=timezone.now().date(),
@@ -174,9 +164,7 @@ class JournalTemplateModelTest(TestCase):
     """Tests for JournalTemplate model."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="user1", password="p"
-        )
+        self.user = User.objects.create_user(username="user1", password="p")
 
     def test_create_template(self):
         t = JournalTemplate.objects.create(
@@ -187,9 +175,7 @@ class JournalTemplateModelTest(TestCase):
         self.assertFalse(t.is_public)
 
     def test_str(self):
-        t = JournalTemplate.objects.create(
-            name="My Template", created_by=self.user
-        )
+        t = JournalTemplate.objects.create(name="My Template", created_by=self.user)
         self.assertEqual(str(t), "My Template")
 
 
@@ -197,9 +183,7 @@ class WeeklyReflectionModelTest(TestCase):
     """Tests for WeeklyReflection model."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="user1", password="p"
-        )
+        self.user = User.objects.create_user(username="user1", password="p")
 
     def test_create(self):
         today = timezone.now().date()
@@ -218,9 +202,7 @@ class UserReflectionStreakModelTest(TestCase):
     """Tests for UserReflectionStreak model."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="user1", password="p"
-        )
+        self.user = User.objects.create_user(username="user1", password="p")
 
     def test_create_streak(self):
         s = UserReflectionStreak.objects.create(user=self.user)
@@ -237,9 +219,7 @@ class ComputeJournalStreakTest(TestCase):
     """Tests for compute_journal_streak service."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="user1", password="p"
-        )
+        self.user = User.objects.create_user(username="user1", password="p")
 
     def test_no_entries(self):
         result = compute_journal_streak(self.user)
@@ -247,9 +227,7 @@ class ComputeJournalStreakTest(TestCase):
 
     def test_single_day(self):
         today = timezone.now().date()
-        JournalEntry.objects.create(
-            user=self.user, date=today, what_i_learned="X"
-        )
+        JournalEntry.objects.create(user=self.user, date=today, what_i_learned="X")
         result = compute_journal_streak(self.user)
         self.assertEqual(result["current_streak"], 1)
 
@@ -266,9 +244,7 @@ class ComputeJournalStreakTest(TestCase):
 
     def test_broken_streak(self):
         today = timezone.now().date()
-        JournalEntry.objects.create(
-            user=self.user, date=today, what_i_learned="Today"
-        )
+        JournalEntry.objects.create(user=self.user, date=today, what_i_learned="Today")
         JournalEntry.objects.create(
             user=self.user,
             date=today - timedelta(days=2),
@@ -282,9 +258,7 @@ class GenerateWeeklySummaryTest(TestCase):
     """Tests for generate_weekly_summary service."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="user1", password="p"
-        )
+        self.user = User.objects.create_user(username="user1", password="p")
 
     def test_empty_week(self):
         today = timezone.now().date()
@@ -315,9 +289,7 @@ class GetJournalStatsTest(TestCase):
     """Tests for get_journal_stats service."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="user1", password="p"
-        )
+        self.user = User.objects.create_user(username="user1", password="p")
 
     def test_empty_stats(self):
         stats = get_journal_stats(self.user)
@@ -344,12 +316,8 @@ class GetSocialFeedTest(TestCase):
     """Tests for get_social_feed service."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="user1", password="p"
-        )
-        self.other = User.objects.create_user(
-            username="other", password="p"
-        )
+        self.user = User.objects.create_user(username="user1", password="p")
+        self.other = User.objects.create_user(username="other", password="p")
 
     def test_empty_feed(self):
         feed = get_social_feed(self.user)
@@ -390,9 +358,7 @@ class GetReflectionPromptTest(TestCase):
     """Tests for get_reflection_prompt service."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="user1", password="p"
-        )
+        self.user = User.objects.create_user(username="user1", password="p")
 
     def test_default_prompt(self):
         result = get_reflection_prompt(self.user)
@@ -400,8 +366,6 @@ class GetReflectionPromptTest(TestCase):
         self.assertIn("type", result)
 
     def test_with_prompts(self):
-        ReflectionPrompt.objects.create(
-            text="Custom prompt?", prompt_type="daily"
-        )
+        ReflectionPrompt.objects.create(text="Custom prompt?", prompt_type="daily")
         result = get_reflection_prompt(self.user)
         self.assertEqual(result["text"], "Custom prompt?")

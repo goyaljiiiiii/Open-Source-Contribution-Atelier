@@ -15,7 +15,8 @@ from .models import (
 
 class MentorProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(
-        source="user.username", read_only=True,
+        source="user.username",
+        read_only=True,
     )
     acceptance_rate = serializers.FloatField(read_only=True)
     is_full = serializers.BooleanField(read_only=True)
@@ -59,10 +60,12 @@ class MentorProfileSerializer(serializers.ModelSerializer):
 
 class MentorshipRequestSerializer(serializers.ModelSerializer):
     mentee_username = serializers.CharField(
-        source="mentee.username", read_only=True,
+        source="mentee.username",
+        read_only=True,
     )
     mentor_username = serializers.CharField(
-        source="mentor.username", read_only=True,
+        source="mentor.username",
+        read_only=True,
     )
 
     class Meta:
@@ -90,15 +93,18 @@ class MentorshipRequestSerializer(serializers.ModelSerializer):
             "response_message",
             "created_at",
             "responded_at",
+            "expires_at",
         ]
 
 
 class MentorshipMatchSerializer(serializers.ModelSerializer):
     mentor_username = serializers.CharField(
-        source="mentor.username", read_only=True,
+        source="mentor.username",
+        read_only=True,
     )
     mentee_username = serializers.CharField(
-        source="mentee.username", read_only=True,
+        source="mentee.username",
+        read_only=True,
     )
     goal_count = serializers.SerializerMethodField()
 
@@ -130,10 +136,12 @@ class MentorshipMatchSerializer(serializers.ModelSerializer):
 
 class MentorshipSessionSerializer(serializers.ModelSerializer):
     mentor_username = serializers.CharField(
-        source="mentor.username", read_only=True,
+        source="mentor.username",
+        read_only=True,
     )
     mentee_username = serializers.CharField(
-        source="mentee.username", read_only=True,
+        source="mentee.username",
+        read_only=True,
     )
 
     class Meta:
@@ -166,6 +174,7 @@ class MentorshipSessionSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             "id",
+            "mentor",
             "xp_awarded_mentor",
             "xp_awarded_mentee",
             "started_at",
@@ -176,22 +185,34 @@ class MentorshipSessionSerializer(serializers.ModelSerializer):
 
 class SessionCompleteSerializer(serializers.Serializer):
     mentor_rating = serializers.IntegerField(
-        min_value=1, max_value=5, required=False, allow_null=True,
+        min_value=1,
+        max_value=5,
+        required=False,
+        allow_null=True,
     )
     mentee_rating = serializers.IntegerField(
-        min_value=1, max_value=5, required=False, allow_null=True,
+        min_value=1,
+        max_value=5,
+        required=False,
+        allow_null=True,
     )
     mentor_feedback = serializers.CharField(
-        required=False, allow_blank=True,
+        required=False,
+        allow_blank=True,
     )
     mentee_feedback = serializers.CharField(
-        required=False, allow_blank=True,
+        required=False,
+        allow_blank=True,
     )
     topics_covered = serializers.ListField(
-        child=serializers.CharField(), required=False, default=list,
+        child=serializers.CharField(),
+        required=False,
+        default=list,
     )
     action_items = serializers.ListField(
-        child=serializers.CharField(), required=False, default=list,
+        child=serializers.CharField(),
+        required=False,
+        default=list,
     )
 
 
@@ -213,10 +234,12 @@ class MentorshipGoalSerializer(serializers.ModelSerializer):
 
 class MentorshipFeedbackSerializer(serializers.ModelSerializer):
     from_username = serializers.CharField(
-        source="from_user.username", read_only=True,
+        source="from_user.username",
+        read_only=True,
     )
     to_username = serializers.CharField(
-        source="to_user.username", read_only=True,
+        source="to_user.username",
+        read_only=True,
     )
 
     class Meta:
@@ -235,12 +258,19 @@ class MentorshipFeedbackSerializer(serializers.ModelSerializer):
             "is_anonymous",
             "created_at",
         ]
-        read_only_fields = ["id", "from_user", "created_at"]
+        read_only_fields = [
+            "id",
+            "from_user",
+            "to_user",
+            "feedback_type",
+            "created_at",
+        ]
 
 
 class MentorshipMilestoneSerializer(serializers.ModelSerializer):
     username = serializers.CharField(
-        source="user.username", read_only=True,
+        source="user.username",
+        read_only=True,
     )
 
     class Meta:

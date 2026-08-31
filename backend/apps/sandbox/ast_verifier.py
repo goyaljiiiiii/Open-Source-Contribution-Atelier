@@ -75,7 +75,9 @@ def parse_git_command(command_str: str) -> GitASTNode:
                 flag_name = token
                 flags.append(flag_name)
                 # If next token exists and is not a flag, treat as flag value (e.g., -m "msg" or -b "branch")
-                if idx + 1 < len(arg_tokens) and not arg_tokens[idx + 1].startswith("-"):
+                if idx + 1 < len(arg_tokens) and not arg_tokens[idx + 1].startswith(
+                    "-"
+                ):
                     flag_values[flag_name] = arg_tokens[idx + 1]
                     idx += 1
                 else:
@@ -180,7 +182,9 @@ class ASTVerifier:
 
         config = allowlist_config or cls.load_allowlist(lesson_slug)
         allowed_cmds = config.get("allowed_commands", {})
-        global_denied_flags = set(config.get("denied_flags", ["--force", "-f", "--hard"]))
+        global_denied_flags = set(
+            config.get("denied_flags", ["--force", "-f", "--hard"])
+        )
 
         # 1. Check for denied flags (global)
         for flag in ast.flags:
@@ -253,7 +257,11 @@ class ASTVerifier:
                 )
         elif isinstance(cmd_spec.get("args"), int):
             expected = cmd_spec["args"]
-            num_args = len(ast.args) + (len([v for v in ast.flag_values.values() if v is not None]) if ast.flags and not ast.args else 0)
+            num_args = len(ast.args) + (
+                len([v for v in ast.flag_values.values() if v is not None])
+                if ast.flags and not ast.args
+                else 0
+            )
             if num_args != expected:
                 return ValidationResult(
                     is_valid=False,

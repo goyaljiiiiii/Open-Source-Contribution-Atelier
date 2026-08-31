@@ -1,9 +1,14 @@
+from django.core.cache import cache
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 
 class Issue_routingAPITests(APITestCase):
+    def setUp(self):
+        super().setUp()
+        cache.clear()
+
     def test_expertisedomain_list_unauthorized(self):
         url = reverse("expertise-domain-list")
         response = self.client.get(url)

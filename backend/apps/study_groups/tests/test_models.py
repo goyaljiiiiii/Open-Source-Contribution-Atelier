@@ -14,8 +14,8 @@ from apps.study_groups.models import (
     GroupChallengeParticipant,
     GroupGoal,
     GroupInvite,
-    GroupMessage,
     GroupMembership,
+    GroupMessage,
     GroupResource,
     StudyGroup,
 )
@@ -25,9 +25,7 @@ class StudyGroupModelTest(TestCase):
     """Tests for StudyGroup model."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="owner", password="pass123"
-        )
+        self.user = User.objects.create_user(username="owner", password="pass123")
 
     def test_create_group(self):
         group = StudyGroup.objects.create(
@@ -70,36 +68,22 @@ class StudyGroupModelTest(TestCase):
         self.assertFalse(group.is_full)
 
     def test_is_member(self):
-        group = StudyGroup.objects.create(
-            name="G", slug="g", owner=self.user
-        )
-        GroupMembership.objects.create(
-            user=self.user, group=group, role="owner"
-        )
+        group = StudyGroup.objects.create(name="G", slug="g", owner=self.user)
+        GroupMembership.objects.create(user=self.user, group=group, role="owner")
         self.assertTrue(group.is_member(self.user))
 
     def test_not_member(self):
-        user2 = User.objects.create_user(
-            username="other", password="pass123"
-        )
-        group = StudyGroup.objects.create(
-            name="G", slug="g", owner=self.user
-        )
+        user2 = User.objects.create_user(username="other", password="pass123")
+        group = StudyGroup.objects.create(name="G", slug="g", owner=self.user)
         self.assertFalse(group.is_member(user2))
 
     def test_get_member_role(self):
-        group = StudyGroup.objects.create(
-            name="G", slug="g", owner=self.user
-        )
-        GroupMembership.objects.create(
-            user=self.user, group=group, role="owner"
-        )
+        group = StudyGroup.objects.create(name="G", slug="g", owner=self.user)
+        GroupMembership.objects.create(user=self.user, group=group, role="owner")
         self.assertEqual(group.get_member_role(self.user), "owner")
 
     def test_get_member_role_none(self):
-        group = StudyGroup.objects.create(
-            name="G", slug="g", owner=self.user
-        )
+        group = StudyGroup.objects.create(name="G", slug="g", owner=self.user)
         self.assertIsNone(group.get_member_role(self.user))
 
 
@@ -107,9 +91,7 @@ class GroupMembershipModelTest(TestCase):
     """Tests for GroupMembership model."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="testuser", password="pass123"
-        )
+        self.user = User.objects.create_user(username="testuser", password="pass123")
         self.group = StudyGroup.objects.create(
             name="Test", slug="test", owner=self.user
         )
@@ -122,9 +104,7 @@ class GroupMembershipModelTest(TestCase):
         self.assertEqual(m.status, "active")
 
     def test_str(self):
-        m = GroupMembership.objects.create(
-            user=self.user, group=self.group
-        )
+        m = GroupMembership.objects.create(user=self.user, group=self.group)
         self.assertIn("testuser", str(m))
         self.assertIn("Test", str(m))
 
@@ -151,12 +131,8 @@ class GroupInviteModelTest(TestCase):
     """Tests for GroupInvite model."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="inviter", password="pass123"
-        )
-        self.group = StudyGroup.objects.create(
-            name="G", slug="g", owner=self.user
-        )
+        self.user = User.objects.create_user(username="inviter", password="pass123")
+        self.group = StudyGroup.objects.create(name="G", slug="g", owner=self.user)
 
     def test_create_invite(self):
         invite = GroupInvite.objects.create(
@@ -201,12 +177,8 @@ class GroupResourceModelTest(TestCase):
     """Tests for GroupResource model."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="user1", password="pass123"
-        )
-        self.group = StudyGroup.objects.create(
-            name="G", slug="g", owner=self.user
-        )
+        self.user = User.objects.create_user(username="user1", password="pass123")
+        self.group = StudyGroup.objects.create(name="G", slug="g", owner=self.user)
 
     def test_create_resource(self):
         r = GroupResource.objects.create(
@@ -233,12 +205,8 @@ class GroupActivityModelTest(TestCase):
     """Tests for GroupActivity model."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="user1", password="pass123"
-        )
-        self.group = StudyGroup.objects.create(
-            name="G", slug="g", owner=self.user
-        )
+        self.user = User.objects.create_user(username="user1", password="pass123")
+        self.group = StudyGroup.objects.create(name="G", slug="g", owner=self.user)
 
     def test_create_activity(self):
         a = GroupActivity.objects.create(
@@ -265,12 +233,8 @@ class GroupChallengeModelTest(TestCase):
     """Tests for GroupChallenge model."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="user1", password="pass123"
-        )
-        self.group = StudyGroup.objects.create(
-            name="G", slug="g", owner=self.user
-        )
+        self.user = User.objects.create_user(username="user1", password="pass123")
+        self.group = StudyGroup.objects.create(name="G", slug="g", owner=self.user)
 
     def test_create_challenge(self):
         c = GroupChallenge.objects.create(
@@ -313,12 +277,8 @@ class GroupChallengeParticipantTest(TestCase):
     """Tests for GroupChallengeParticipant model."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="user1", password="pass123"
-        )
-        self.group = StudyGroup.objects.create(
-            name="G", slug="g", owner=self.user
-        )
+        self.user = User.objects.create_user(username="user1", password="pass123")
+        self.group = StudyGroup.objects.create(name="G", slug="g", owner=self.user)
         self.challenge = GroupChallenge.objects.create(
             group=self.group,
             created_by=self.user,
@@ -350,12 +310,8 @@ class GroupGoalModelTest(TestCase):
     """Tests for GroupGoal model."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="user1", password="pass123"
-        )
-        self.group = StudyGroup.objects.create(
-            name="G", slug="g", owner=self.user
-        )
+        self.user = User.objects.create_user(username="user1", password="pass123")
+        self.group = StudyGroup.objects.create(name="G", slug="g", owner=self.user)
 
     def test_create_goal(self):
         g = GroupGoal.objects.create(
@@ -382,12 +338,8 @@ class GroupMessageModelTest(TestCase):
     """Tests for GroupMessage model."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="user1", password="pass123"
-        )
-        self.group = StudyGroup.objects.create(
-            name="G", slug="g", owner=self.user
-        )
+        self.user = User.objects.create_user(username="user1", password="pass123")
+        self.group = StudyGroup.objects.create(name="G", slug="g", owner=self.user)
 
     def test_create_message(self):
         m = GroupMessage.objects.create(

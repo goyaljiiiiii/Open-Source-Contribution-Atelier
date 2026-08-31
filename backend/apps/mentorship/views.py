@@ -20,6 +20,7 @@ from .models import (
 )
 from .serializers import (
     FindMentorsSerializer,
+    MenteeAnalyticsSerializer,
     MentorAnalyticsSerializer,
     MentorProfileSerializer,
     MentorshipFeedbackSerializer,
@@ -28,7 +29,6 @@ from .serializers import (
     MentorshipMilestoneSerializer,
     MentorshipRequestSerializer,
     MentorshipSessionSerializer,
-    MenteeAnalyticsSerializer,
     ProgramStatsSerializer,
     SessionCompleteSerializer,
 )
@@ -42,7 +42,6 @@ from .services import (
     get_session_recommendations,
     respond_to_request,
 )
-
 
 # ---------------------------------------------------------------------------
 #  Mentor Profiles
@@ -110,23 +109,25 @@ class FindMentorsView(views.APIView):
             limit=serializer.validated_data.get("limit", 10),
         )
 
-        return Response({
-            "mentors": [
-                {
-                    "user_id": r["user"].id,
-                    "username": r["user"].username,
-                    "score": r["score"],
-                    "expertise": r["expertise"],
-                    "rating": r["rating"],
-                    "sessions": r["sessions"],
-                    "capacity": r["capacity"],
-                    "is_full": r["is_full"],
-                    "bio": r["mentor_profile"].bio,
-                }
-                for r in results
-            ],
-            "count": len(results),
-        })
+        return Response(
+            {
+                "mentors": [
+                    {
+                        "user_id": r["user"].id,
+                        "username": r["user"].username,
+                        "score": r["score"],
+                        "expertise": r["expertise"],
+                        "rating": r["rating"],
+                        "sessions": r["sessions"],
+                        "capacity": r["capacity"],
+                        "is_full": r["is_full"],
+                        "bio": r["mentor_profile"].bio,
+                    }
+                    for r in results
+                ],
+                "count": len(results),
+            }
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -192,9 +193,7 @@ class RespondToRequestView(views.APIView):
         )
 
         if "error" in result:
-            return Response(
-                result, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
         return Response(result)
 
 
@@ -240,8 +239,8 @@ class MatchRecommendationsView(views.APIView):
 
         try:
             match = MentorshipMatch.objects.get(
-                id=match_id,
                 Q(mentor=request.user) | Q(mentee=request.user),
+                id=match_id,
             )
         except MentorshipMatch.DoesNotExist:
             return Response(
@@ -330,9 +329,7 @@ class SessionCompleteView(views.APIView):
         )
 
         if "error" in result:
-            return Response(
-                result, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
         return Response(result)
 
 
@@ -431,6 +428,7 @@ class ProgramStatsView(views.APIView):
 
 # Fix the Q import issue in MentorshipMatchListView
 from django.db.models import Q
+
 MentorshipMatchListView.get_queryset = lambda self: (
     MentorshipMatch.objects.filter(
         Q(mentor=self.request.user) | Q(mentee=self.request.user),

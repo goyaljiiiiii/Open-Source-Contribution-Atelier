@@ -25,7 +25,7 @@ class MentorProfile(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="mentor_profile",
+        related_name="mentorship_mentor_profile",
     )
     bio = models.TextField(
         blank=True,
@@ -107,9 +107,7 @@ class MentorProfile(models.Model):
 
     @property
     def acceptance_rate(self):
-        total = MentorshipRequest.objects.filter(
-            mentor=self.user
-        ).count()
+        total = MentorshipRequest.objects.filter(mentor=self.user).count()
         if total == 0:
             return 0.0
         accepted = MentorshipRequest.objects.filter(
@@ -130,18 +128,18 @@ class MentorProfile(models.Model):
             rating_count=Count("mentor_rating"),
         )
         self.total_sessions_mentored = agg["count"] or 0
-        self.total_hours_mentored = round(
-            (agg["total_minutes"] or 0) / 60, 1
-        )
+        self.total_hours_mentored = round((agg["total_minutes"] or 0) / 60, 1)
         self.average_rating = round(agg["avg_rating"] or 0, 1)
         self.rating_count = agg["rating_count"] or 0
-        self.save(update_fields=[
-            "total_sessions_mentored",
-            "total_hours_mentored",
-            "average_rating",
-            "rating_count",
-            "updated_at",
-        ])
+        self.save(
+            update_fields=[
+                "total_sessions_mentored",
+                "total_hours_mentored",
+                "average_rating",
+                "rating_count",
+                "updated_at",
+            ]
+        )
 
 
 class MentorshipRequest(models.Model):
@@ -412,9 +410,13 @@ class MentorshipSession(models.Model):
                 1,
                 int((self.ended_at - self.started_at).total_seconds() / 60),
             )
-        self.save(update_fields=[
-            "status", "ended_at", "duration_minutes",
-        ])
+        self.save(
+            update_fields=[
+                "status",
+                "ended_at",
+                "duration_minutes",
+            ]
+        )
 
         # Update match stats
         match = self.match
@@ -423,7 +425,9 @@ class MentorshipSession(models.Model):
         match.save(update_fields=["total_sessions", "total_hours"])
 
         # Update mentor profile
-        match.mentor.mentor_profile.recalculate_stats()
+        profile = getattr(match.mentor, "mentorship_mentor_profile", None) or getattr(match.mentor, "mentor_profile", None)
+        if profile and hasattr(profile, "recalculate_stats"):
+            profile.recalculate_stats()
 
 
 class MentorshipGoal(models.Model):
@@ -542,7 +546,4 @@ class MentorshipMilestone(models.Model):
         ordering = ["-achieved_at"]
 
     def __str__(self):
-        return (
-            f"{self.user.username}: {self.title} "
-            f"(+{self.xp_awarded} XP)"
-        )
+        return f"{self.user.username}: {self.title} " f"(+{self.xp_awarded} XP)"

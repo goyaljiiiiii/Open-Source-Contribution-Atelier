@@ -28,9 +28,13 @@ class EncryptionTests(TestCase):
         from django.db import connection
 
         with connection.cursor() as cursor:
-            cursor.execute("SELECT token FROM accounts_gitcredential WHERE id=%s", [cred1.id])
+            cursor.execute(
+                "SELECT token FROM accounts_gitcredential WHERE id=%s", [cred1.id]
+            )
             cred1_raw = cursor.fetchone()[0]
-            cursor.execute("SELECT token FROM accounts_gitcredential WHERE id=%s", [cred2.id])
+            cursor.execute(
+                "SELECT token FROM accounts_gitcredential WHERE id=%s", [cred2.id]
+            )
             cred2_raw = cursor.fetchone()[0]
 
         self.assertNotEqual(cred1_raw, cred2_raw)
@@ -58,7 +62,9 @@ class EncryptionTests(TestCase):
         from django.db import connection
 
         with connection.cursor() as cursor:
-            cursor.execute("SELECT password FROM accounts_gitcredential WHERE id=%s", [cred.id])
+            cursor.execute(
+                "SELECT password FROM accounts_gitcredential WHERE id=%s", [cred.id]
+            )
             old_raw = cursor.fetchone()[0]
 
         # Run the rotation command
@@ -68,7 +74,9 @@ class EncryptionTests(TestCase):
         self.assertEqual(cred.password, plaintext)
 
         with connection.cursor() as cursor:
-            cursor.execute("SELECT password FROM accounts_gitcredential WHERE id=%s", [cred.id])
+            cursor.execute(
+                "SELECT password FROM accounts_gitcredential WHERE id=%s", [cred.id]
+            )
             new_raw = cursor.fetchone()[0]
 
         # The ciphertext should have changed after rotation

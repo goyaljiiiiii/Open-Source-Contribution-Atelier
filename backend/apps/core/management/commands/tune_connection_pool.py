@@ -45,7 +45,9 @@ class Command(BaseCommand):
             return
 
         # Check time span of available metrics
-        span = recent_15m[-1].get("timestamp", now) - recent_15m[0].get("timestamp", now)
+        span = recent_15m[-1].get("timestamp", now) - recent_15m[0].get(
+            "timestamp", now
+        )
 
         # Filter last 5 minutes (300 seconds) for evaluation
         cutoff_5m = now - 300

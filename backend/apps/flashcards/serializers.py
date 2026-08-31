@@ -2,6 +2,7 @@
 DRF serializers for the Flashcards & Spaced Repetition app.
 """
 
+from django.utils import timezone
 from rest_framework import serializers
 
 from .models import (
@@ -89,6 +90,7 @@ class FlashcardSerializer(serializers.ModelSerializer):
 
 class FlashcardCreateBulkSerializer(serializers.Serializer):
     """Bulk-create flashcards in a deck."""
+
     cards = serializers.ListField(
         child=serializers.DictField(),
         min_length=1,
@@ -156,7 +158,8 @@ class ReviewSubmitSerializer(serializers.Serializer):
     card_id = serializers.IntegerField()
     quality = serializers.IntegerField(min_value=0, max_value=4)
     response_time_ms = serializers.IntegerField(
-        default=0, min_value=0,
+        default=0,
+        min_value=0,
     )
 
 

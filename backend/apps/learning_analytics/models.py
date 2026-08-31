@@ -175,10 +175,7 @@ class UserSkillProfile(models.Model):
         ]
 
     def __str__(self):
-        return (
-            f"{self.user.username} — {self.skill_tag.slug} "
-            f"Lv.{self.level}"
-        )
+        return f"{self.user.username} — {self.skill_tag.slug} " f"Lv.{self.level}"
 
 
 class LearningInsight(models.Model):

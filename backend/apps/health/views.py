@@ -3,23 +3,27 @@ Health check aggregator endpoint with async verification.
 """
 
 import asyncio
+import json
 import logging
 import time
-from typing import Dict, Any, Optional
-from django.db import connection
+from typing import Any, Dict, Optional
+
+import redis
+from django.conf import settings
 from django.core.cache import cache
+from django.db import connection
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from django.conf import settings
-import redis
-import json
 
 logger = logging.getLogger(__name__)
 
 
 def _check_db_pool() -> dict[str, Any]:
-    from apps.core.middleware.db_pool_monitor import fetch_postgres_pool_stats, get_conn_max_age
+    from apps.core.middleware.db_pool_monitor import (
+        fetch_postgres_pool_stats,
+        get_conn_max_age,
+    )
 
     max_connections = getattr(settings, "DB_MAX_CONNECTIONS", 97)
     active, idle, total, waiting = fetch_postgres_pool_stats()
@@ -178,8 +182,8 @@ class HealthChecker:
             "details": {},
         }
         try:
-            from channels.layers import get_channel_layer
             from asgiref.sync import async_to_sync
+            from channels.layers import get_channel_layer
 
             start = time.time()
             channel_layer = get_channel_layer()
@@ -292,7 +296,9 @@ def health_view(request):
 
     status_code = 200 if result["status"] == "healthy" else 503
 
-    response_body = result if _has_internal_access(request) else _minimal_response(result)
+    response_body = (
+        result if _has_internal_access(request) else _minimal_response(result)
+    )
     return JsonResponse(response_body, status=status_code)
 
 

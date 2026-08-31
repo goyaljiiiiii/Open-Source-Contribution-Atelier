@@ -7,19 +7,55 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('webhooks', '0004_remove_secret_plain'),
+        ("webhooks", "0004_remove_secret_plain"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='WebhookDeliveryLog',
+            name="WebhookDeliveryLog",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('status_code', models.IntegerField(blank=True, help_text='HTTP status code returned, if any.', null=True)),
-                ('response_body', models.TextField(blank=True, help_text='Response body or error details.')),
-                ('key_id', models.CharField(blank=True, help_text='The key ID used to verify (or attempted) the delivery signature.', max_length=64, null=True)),
-                ('attempted_at', models.DateTimeField(auto_now_add=True)),
-                ('delivery', models.ForeignKey(help_text='The delivery this attempt is associated with.', on_delete=django.db.models.deletion.CASCADE, related_name='logs', to='webhooks.webhookdelivery')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "status_code",
+                    models.IntegerField(
+                        blank=True,
+                        help_text="HTTP status code returned, if any.",
+                        null=True,
+                    ),
+                ),
+                (
+                    "response_body",
+                    models.TextField(
+                        blank=True, help_text="Response body or error details."
+                    ),
+                ),
+                (
+                    "key_id",
+                    models.CharField(
+                        blank=True,
+                        help_text="The key ID used to verify (or attempted) the delivery signature.",
+                        max_length=64,
+                        null=True,
+                    ),
+                ),
+                ("attempted_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "delivery",
+                    models.ForeignKey(
+                        help_text="The delivery this attempt is associated with.",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="logs",
+                        to="webhooks.webhookdelivery",
+                    ),
+                ),
             ],
         ),
     ]

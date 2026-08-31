@@ -1,6 +1,5 @@
 import csv
 from datetime import timedelta
-import csv
 
 from django.contrib.auth import get_user_model
 from django.db.models import Q
@@ -11,10 +10,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.dashboard.models import PullRequest
+
 from .serializers import ProductivitySerializer
 from .services import ProductivityService
 
 User = get_user_model()
+
+
 class ProductivityDashboardView(APIView):
     permission_classes = [IsAdminUser]
 

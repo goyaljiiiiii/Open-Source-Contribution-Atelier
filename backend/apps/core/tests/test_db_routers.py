@@ -6,7 +6,6 @@ from django.db import connections
 
 from config.db_router import PrimaryReplicaRouter
 
-
 VIEW_REPRESENTATIVE_MODELS = {
     "LeaderboardView": "dashboard.Issue",
     "ContributorDashboardView": "dashboard.PullRequest",
@@ -22,7 +21,9 @@ class TestAnalyticsReadReplicaRouter:
         with patch("sys.argv", ["manage.py", "runserver"]):
             return PrimaryReplicaRouter()
 
-    @pytest.mark.parametrize("view_name,model_label", VIEW_REPRESENTATIVE_MODELS.items())
+    @pytest.mark.parametrize(
+        "view_name,model_label", VIEW_REPRESENTATIVE_MODELS.items()
+    )
     def test_each_analytics_view_routes_to_read_replica(
         self, router, view_name, model_label
     ):

@@ -166,7 +166,9 @@ class CacheManager:
                 f"Created cache dependency: {source} -> {target} ({cache_key})"
             )
 
-    def invalidate_dependencies(self, target: models.Model, visited: Optional[set] = None):
+    def invalidate_dependencies(
+        self, target: models.Model, visited: Optional[set] = None
+    ):
         """
         Invalidate all cache keys that depend on a target object.
 
@@ -202,7 +204,9 @@ class CacheManager:
         # Also invalidate parent dependencies (cascade)
         self.invalidate_dependencies_cascade(target, visited=visited)
 
-    def invalidate_dependencies_cascade(self, target: models.Model, visited: Optional[set] = None):
+    def invalidate_dependencies_cascade(
+        self, target: models.Model, visited: Optional[set] = None
+    ):
         """
         Cascade invalidation to related objects.
 
