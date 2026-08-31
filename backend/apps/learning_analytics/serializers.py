@@ -400,6 +400,9 @@ class PathCompletionEstimateSerializer(serializers.Serializer):
     estimated_date = serializers.CharField(allow_null=True)
 
 
+LearningPathCompletionEstimateSerializer = PathCompletionEstimateSerializer
+
+
 class UserPathProgressSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserPathProgress
