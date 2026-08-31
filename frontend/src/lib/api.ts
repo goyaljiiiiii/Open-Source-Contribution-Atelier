@@ -447,6 +447,104 @@ export async function fetchApi(endpoint: string, options: RequestOptions = {}) {
   throw lastError;
 }
 
+export async function fetchStreamApi(
+  endpoint: string,
+  options: RequestOptions & {
+    onChunk: (text: string) => void;
+  },
+): Promise<void> {
+  const { onChunk, requireAuth = true, headers: customHeaders, ...config } = options;
+  const headers = new Headers(customHeaders);
+  const requestId = safeGenerateUUID();
+  headers.set("X-Request-ID", requestId);
+  const traceHeaders = getTraceHeaders();
+  if (traceHeaders.traceparent) {
+    headers.set("traceparent", traceHeaders.traceparent);
+  }
+  if (traceHeaders.tracestate) {
+    headers.set("tracestate", traceHeaders.tracestate);
+  }
+  if (!(config.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
+  if (requireAuth) {
+    const token = getAccessToken();
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+  }
+
+  const response = await fetch(`${API_BASE}${endpoint}`, {
+    ...config,
+    method: (options.method || "POST").toUpperCase(),
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    throw createApiError({
+      status: response.status,
+      endpoint,
+      requestId,
+      body: errorBody,
+      retryable: false,
+      authExpired: response.status === 401 && requireAuth,
+    });
+  }
+
+  if (!response.body) {
+    return;
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let buffer = "";
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split("\n\n");
+      buffer = parts.pop() || "";
+
+      for (const part of parts) {
+        const trimmed = part.trim();
+        if (!trimmed || !trimmed.startsWith("data:")) continue;
+
+        const dataStr = trimmed.slice(5).trim();
+        if (dataStr === "[DONE]") break;
+
+        try {
+          const parsed = JSON.parse(dataStr);
+          if (parsed.text !== undefined) {
+            onChunk(parsed.text);
+          } else if (parsed.content !== undefined) {
+            onChunk(parsed.content);
+          }
+        } catch {
+          onChunk(dataStr);
+        }
+      }
+    }
+
+    if (buffer.trim().startsWith("data:")) {
+      const dataStr = buffer.trim().slice(5).trim();
+      if (dataStr !== "[DONE]") {
+        try {
+          const parsed = JSON.parse(dataStr);
+          onChunk(parsed.text ?? parsed.content ?? dataStr);
+        } catch {
+          onChunk(dataStr);
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
 export interface CodeSnapshot {
   id: number;
   user: number;
