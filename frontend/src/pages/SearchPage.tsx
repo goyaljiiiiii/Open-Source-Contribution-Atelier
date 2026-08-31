@@ -12,8 +12,16 @@ import { useSearchWithCategories } from "../hooks/useSearchWithCategories";
 
 export const SearchPage: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const { results, isLoading, error, isDegraded, categories, search, retry } =
-    useSearchWithCategories();
+  const {
+    results,
+    isLoading,
+    error,
+    isDegraded,
+    categories,
+    searchDurationMs,
+    search,
+    retry,
+  } = useSearchWithCategories();
   const hasInitializedRef = useRef(false);
 
   // Initial search from URL params
@@ -33,7 +41,14 @@ export const SearchPage: React.FC = () => {
       <div className="search-page-header">
         <h1>🔍 Search</h1>
         <p className="search-subtitle">Find lessons, modules, and resources</p>
+        {!isLoading && searchDurationMs !== null && (
+          <p className="search-duration-info">
+            Found {results.length} result{results.length === 1 ? "" : "s"} in{" "}
+            {searchDurationMs}ms
+          </p>
+        )}
       </div>
+
 
       <div className="search-page-content">
         <SearchWithFilters

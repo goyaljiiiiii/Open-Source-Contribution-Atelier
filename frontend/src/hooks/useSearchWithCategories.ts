@@ -23,6 +23,7 @@ interface UseSearchWithCategoriesResult {
   error: string | null;
   isDegraded: boolean;
   categories: string[];
+  searchDurationMs: number | null;
   search: (query: string, category: string | null) => Promise<void>;
   retry: () => void;
   clearSearch: () => void;
@@ -50,6 +51,9 @@ export function useSearchWithCategories(): UseSearchWithCategoriesResult {
   const [error, setError] = useState<string | null>(null);
   const [isDegraded, setIsDegraded] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
+  const [searchDurationMs, setSearchDurationMs] = useState<number | null>(
+    null,
+  );
 
   // Keeps the arguments of the last search so `retry()` can replay it,
   // and lets an in-flight request be cancelled if a newer one starts.
@@ -85,6 +89,7 @@ export function useSearchWithCategories(): UseSearchWithCategoriesResult {
 
     setIsLoading(true);
     setError(null);
+    const startTime = performance.now();
 
     try {
       const params: Record<string, string> = {};
@@ -95,6 +100,13 @@ export function useSearchWithCategories(): UseSearchWithCategoriesResult {
         params,
         signal: controller.signal,
       });
+
+      const fetchDelta = Math.max(1, Math.round(performance.now() - startTime));
+      const backendDuration = response.data?.meta?.duration_ms;
+      const durationMs =
+        typeof backendDuration === "number" ? backendDuration : fetchDelta;
+
+      setSearchDurationMs(durationMs);
 
       const rawResults = response.data.results || response.data.lessons || [];
       setResults(rawResults);
@@ -133,6 +145,7 @@ export function useSearchWithCategories(): UseSearchWithCategoriesResult {
 
       setResults([]);
       setIsDegraded(false);
+      setSearchDurationMs(null);
     } finally {
       if (abortControllerRef.current === controller) {
         setIsLoading(false);
@@ -150,6 +163,7 @@ export function useSearchWithCategories(): UseSearchWithCategoriesResult {
     setResults([]);
     setError(null);
     setIsDegraded(false);
+    setSearchDurationMs(null);
   }, []);
 
   return {
@@ -158,6 +172,7 @@ export function useSearchWithCategories(): UseSearchWithCategoriesResult {
     error,
     isDegraded,
     categories,
+    searchDurationMs,
     search,
     retry,
     clearSearch,
@@ -165,3 +180,4 @@ export function useSearchWithCategories(): UseSearchWithCategoriesResult {
 }
 
 export default useSearchWithCategories;
+
