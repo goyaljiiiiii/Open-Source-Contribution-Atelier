@@ -666,15 +666,26 @@ export function Navigation() {
               <div className="flex items-center space-x-1.5 sm:space-x-2">
                 <Link
                   to="/profile"
-                  className="font-bold text-xs sm:text-sm text-text bg-white px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg border-2 border-black dark:bg-[#151411] dark:text-[#f0ebe2] dark:border-[#2e2924] flex items-center gap-1.5 shadow-card-sm hover:bg-surface-low transition-colors dark:hover:bg-[#1f1c18]"
+                  className="font-bold text-xs sm:text-sm text-text bg-white px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg border-2 border-black dark:bg-[#151411] dark:text-[#f0ebe2] dark:border-[#2e2924] inline-flex items-center gap-1.5 shadow-card-sm hover:bg-surface-low transition-colors dark:hover:bg-[#1f1c18]"
                   title="Profile Settings"
                 >
-                  👤{" "}
-                  <span className="hidden sm:inline-block max-w-[80px] truncate">
+                  <span className="inline-flex items-center text-sm leading-none">👤</span>
+                  <span className="hidden sm:inline-block max-w-[80px] truncate leading-none">
                     {user.username}
                   </span>
+                  {(user as { badge_count?: number }).badge_count !== undefined &&
+                    ((user as { badge_count?: number }).badge_count ?? 0) > 0 && (
+                      <span
+                        data-testid="navbar-user-badge-count"
+                        className="inline-flex items-center justify-center font-black text-[10px] leading-none px-1.5 py-0.5 rounded-full bg-accent text-black border border-black dark:border-white/20 self-center"
+                      >
+                        {((user as { badge_count?: number }).badge_count ?? 0) > 99
+                          ? "99+"
+                          : (user as { badge_count?: number }).badge_count}
+                      </span>
+                    )}
                   {user.is_staff && (
-                    <span className="font-black text-[9px] bg-[#ff665c] text-white px-1.5 py-0.5 rounded border border-black dark:border-none">
+                    <span className="inline-flex items-center justify-center font-black text-[9px] leading-none bg-[#ff665c] text-white px-1.5 py-0.5 rounded border border-black dark:border-none self-center">
                       ADMIN
                     </span>
                   )}
