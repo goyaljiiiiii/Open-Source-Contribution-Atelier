@@ -3,12 +3,12 @@ import json
 
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
-from django.utils.dateparse import parse_datetime
 from rest_framework import generics, permissions
 from rest_framework.pagination import PageNumberPagination
 
 from apps.audit.models import AuditEvent
 from apps.audit.serializers import AuditEventSerializer
+from apps.core.utils import parse_iso_datetime
 
 
 class AuditPagination(PageNumberPagination):
@@ -123,13 +123,13 @@ class AuditEventListView(generics.ListAPIView):
 
         start_date = self.request.query_params.get("start_date")
         if start_date:
-            dt = parse_datetime(start_date)
+            dt = parse_iso_datetime(start_date)
             if dt:
                 queryset = queryset.filter(created_at__gte=dt)
 
         end_date = self.request.query_params.get("end_date")
         if end_date:
-            dt = parse_datetime(end_date)
+            dt = parse_iso_datetime(end_date)
             if dt:
                 queryset = queryset.filter(created_at__lte=dt)
 
