@@ -68,6 +68,15 @@ class ModerationAuditEventSerializer(serializers.ModelSerializer):
     moderator_username = serializers.CharField(
         source="moderator.username", read_only=True
     )
+    moderator_id = serializers.IntegerField(
+        source="moderator.id", read_only=True
+    )
+    target_username = serializers.CharField(
+        source="target_user.username", read_only=True
+    )
+    target_user_id = serializers.IntegerField(
+        source="target_user.id", read_only=True
+    )
     content_report_id = serializers.IntegerField(
         source="content_report.id", read_only=True
     )
@@ -82,7 +91,11 @@ class ModerationAuditEventSerializer(serializers.ModelSerializer):
             "action_taken",
             "reason",
             "created_at",
+            "moderator_id",
             "moderator_username",
+            "target_user_id",
+            "target_username",
             "content_report_id",
         ]
         read_only_fields = fields
+
