@@ -1,4 +1,4 @@
-import React from "react";
+import React, { lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { AppLayout } from "../components/layout/AppLayout";
@@ -9,76 +9,10 @@ import { TerminalReplay } from "../components/ui/TerminalReplay";
 import { useAuth } from "../features/auth/AuthContext";
 import { RouteSuspenseWrapper } from "../components/ui/SkeletonRegistry";
 
-import {
-  FullStackDocsPage,
-  ChallengePage,
-  A11yLinterSandbox,
-  ChatPage,
-  CommunityPage,
-  DashboardPage,
-  GitHubAuthCallbackPage,
+const FullStackDocsPage = lazy(
+  () => import("../pages/docs/FullStackDocsPage"),
+);
 
-  LoginPage,
-  SignupPage,
-  LessonPage,
-  LessonCollaboratePage,
-  NotFoundPage,
-  ServerErrorPage,
-  ModerationDashboard,
-  BackupDashboardPage,
-  AuditLogViewerPage,
-  CeleryDashboardPage,
-  ApiPerformanceDashboardPage,
-  VulnerabilityDashboard,
-  SecurityDashboardPage,
-  SandboxPage,
-  ContributorSandboxPage,
-  GitSubmoduleSimulatorPage,
-  GitStashManagerPage,
-  GitRebaseVisualizerPage,
-  MonorepoVisualizerPage,
-  DockerfileLinterPage,
-  GitBisectGamePage,
-  CollabSessionPage,
-  CollabNotesPage,
-  PrDiffSummarizerPage,
-  ProfileSettingsPage,
-  NotificationPreferencesPage,
-  DigestPage,
-  PricingPage,
-  BillingPage,
-  InvoiceHistoryPage,
-  WebhookSettingsPage,
-  UserProfilePage,
-  LeaderboardPage,
-  ShopPage,
-  VerifyCertificatePage,
-  PeerReviewPage,
-  PathwayPage,
-  SkillTreePage,
-  LearningPathPage,
-  BountiesPage,
-  GoodFirstIssueFinderPage,
-  MaintainerReplyToneCoachPage,
-  MergeConflictScenarioBuilderPage,
-  PerformanceDashboardPage,
-  ContentStudioPage,
-  QuizBuilderPage,
-  ModuleTreePage,
-  AnalyticsDashboardPage,
-  TemplateMarketplacePage,
-  PortfolioPage,
-  ApiDocsPage,
-  EnvConfigGeneratorPage,
-  WebSocketSimulatorPage,
-  OAuthClientsPage,
-  UsageAnalyticsPage,
-  ConnectedAppsPage,
-  GitBranchSimulatorPage,
-} from "./routeComponents";
-
-<<<<<<< HEAD
-=======
 const ChallengePage = lazy(() =>
   import("../pages/ChallengePage").then((module) => ({
     default: module.ChallengePage,
@@ -772,31 +706,37 @@ export function AppRouter() {
         />
 
         <Route
-<<<<<<< HEAD
           path="/sandbox/json"
           element={
             <ProtectedRoute>
               <JsonTreeViewerPage />
-=======
-<<<<<<< HEAD
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/sandbox/regex"
           element={
             <ProtectedRoute>
               <RegexPlaygroundPage />
-=======
-<<<<<<< HEAD
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/sandbox/branches"
           element={
             <ProtectedRoute>
               <GitBranchSimulatorPage />
-=======
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/sandbox/color-palette"
           element={
             <ProtectedRoute>
               <ColorPaletteGeneratorPage />
->>>>>>> origin/main
->>>>>>> origin/main
->>>>>>> origin/main
             </ProtectedRoute>
           }
         />
