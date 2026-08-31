@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Layers,
@@ -20,6 +20,8 @@ import {
   Check,
   X,
   Play,
+  Keyboard,
+  HelpCircle,
 } from "lucide-react";
 
 export interface CodeHunk {
@@ -210,6 +212,7 @@ export function GitStashManager() {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [showDirtyWarning, setShowDirtyWarning] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false);
 
   const showNotification = (msg: string) => {
     setToastMsg(msg);
@@ -332,6 +335,58 @@ export function GitStashManager() {
     showNotification("🧹 Cleared all entries from stash stack.");
   };
 
+  // Keyboard shortcut listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      if (e.altKey && (e.key === "s" || e.key === "S")) {
+        e.preventDefault();
+        handleStashAll();
+      } else if (e.altKey && (e.key === "p" || e.key === "P")) {
+        e.preventDefault();
+        if (stashStack.length > 0) {
+          handlePopStash(stashStack[0].id);
+        } else {
+          showNotification("⚠️ No stashes in stack to pop!");
+        }
+      } else if (e.altKey && (e.key === "d" || e.key === "D")) {
+        e.preventDefault();
+        if (stashStack.length > 0) {
+          handleDropStash(stashStack[0].id);
+        } else {
+          showNotification("⚠️ No stashes in stack to drop!");
+        }
+      } else if (e.key === "?" || (e.shiftKey && e.key === "/")) {
+        e.preventDefault();
+        setShowShortcutsModal((prev) => !prev);
+      } else if (e.key === "Escape") {
+        if (showShortcutsModal) {
+          setShowShortcutsModal(false);
+        }
+        if (showDirtyWarning) {
+          setShowDirtyWarning(false);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    workingHunks,
+    stashStack,
+    customStashMsg,
+    showShortcutsModal,
+    showDirtyWarning,
+  ]);
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Toast Notification */}
@@ -369,17 +424,31 @@ export function GitStashManager() {
           </p>
         </div>
 
-        {/* Quick Stats Pill */}
-        <div className="flex items-center gap-3 bg-white dark:bg-[#1f1c18] border-2 border-black dark:border-[#2e2924] p-3 rounded-xl shadow-card-sm self-start md:self-auto">
-          <div className="bg-primary p-2.5 rounded-lg border border-black text-black font-black">
-            <Layers className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-xs font-black uppercase text-muted tracking-wider">
-              Stash Stack
+        {/* Quick Controls & Stats Pill */}
+        <div className="flex items-center gap-3 self-start md:self-auto">
+          <button
+            onClick={() => setShowShortcutsModal(true)}
+            className="bg-white dark:bg-[#1f1c18] hover:bg-black/5 dark:hover:bg-white/5 border-2 border-black dark:border-[#2e2924] p-3 rounded-xl shadow-card-sm text-text dark:text-[#f0ebe2] font-black text-xs flex items-center gap-2 transition-all"
+            title="Keyboard Shortcuts Cheat Sheet (?)"
+          >
+            <Keyboard className="w-5 h-5 text-accent" />
+            <span className="hidden sm:inline">Shortcuts</span>
+            <kbd className="bg-black/10 dark:bg-white/10 px-1.5 py-0.5 rounded text-[10px] font-mono border border-black/20 dark:border-white/20">
+              ?
+            </kbd>
+          </button>
+
+          <div className="flex items-center gap-3 bg-white dark:bg-[#1f1c18] border-2 border-black dark:border-[#2e2924] p-3 rounded-xl shadow-card-sm">
+            <div className="bg-primary p-2.5 rounded-lg border border-black text-black font-black">
+              <Layers className="w-6 h-6" />
             </div>
-            <div className="text-xl font-black text-text dark:text-[#f0ebe2]">
-              {stashStack.length} items
+            <div>
+              <div className="text-xs font-black uppercase text-muted tracking-wider">
+                Stash Stack
+              </div>
+              <div className="text-xl font-black text-text dark:text-[#f0ebe2]">
+                {stashStack.length} items
+              </div>
             </div>
           </div>
         </div>
@@ -442,8 +511,12 @@ export function GitStashManager() {
                 onClick={handleStashAll}
                 disabled={workingHunks.length === 0}
                 className="bg-primary hover:bg-primary/90 text-black font-black text-xs px-4 py-2 rounded-xl border-2 border-black shadow-card-sm disabled:opacity-50 transition-all flex items-center gap-1.5"
+                title="Stash all changes (Alt+S)"
               >
                 <Archive className="w-4 h-4" /> Stash All
+                <kbd className="hidden sm:inline-block ml-1 text-[10px] font-mono bg-black/20 text-black px-1.5 py-0.5 rounded border border-black/30">
+                  Alt+S
+                </kbd>
               </button>
             </div>
 
@@ -547,8 +620,9 @@ export function GitStashManager() {
                   panel.
                 </div>
               ) : (
-                stashStack.map((entry) => {
+                stashStack.map((entry, index) => {
                   const isSelected = selectedStash?.id === entry.id;
+                  const isTopEntry = index === 0;
                   return (
                     <div
                       key={entry.id}
@@ -586,9 +660,14 @@ export function GitStashManager() {
                             handlePopStash(entry.id);
                           }}
                           className="bg-emerald-500 text-black border border-black hover:bg-emerald-400 text-[11px] font-black px-2 py-1 rounded transition-all flex items-center gap-1"
-                          title="Pop stash (apply & remove)"
+                          title={`Pop stash (apply & remove)${isTopEntry ? " [Alt+P]" : ""}`}
                         >
                           <ArrowDownCircle className="w-3 h-3" /> Pop
+                          {isTopEntry && (
+                            <kbd className="hidden xl:inline-block ml-0.5 text-[9px] font-mono bg-black/20 text-black px-1 py-0.2 rounded">
+                              Alt+P
+                            </kbd>
+                          )}
                         </button>
                         <button
                           onClick={(e) => {
@@ -605,10 +684,15 @@ export function GitStashManager() {
                             e.stopPropagation();
                             handleDropStash(entry.id);
                           }}
-                          className="bg-rose-500 text-white border border-black hover:bg-rose-600 p-1 rounded transition-all"
-                          title="Drop stash"
+                          className="bg-rose-500 text-white border border-black hover:bg-rose-600 px-2 py-1 rounded transition-all flex items-center gap-1 text-[11px] font-black"
+                          title={`Drop stash${isTopEntry ? " [Alt+D]" : ""}`}
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="w-3 h-3" /> Drop
+                          {isTopEntry && (
+                            <kbd className="hidden xl:inline-block ml-0.5 text-[9px] font-mono bg-black/30 text-white px-1 py-0.2 rounded">
+                              Alt+D
+                            </kbd>
+                          )}
                         </button>
                       </div>
                     </div>
@@ -688,6 +772,103 @@ export function GitStashManager() {
         </div>
       </div>
 
+      {/* Keyboard Shortcuts Helper Modal */}
+      <AnimatePresence>
+        {showShortcutsModal && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowShortcutsModal(false)}
+          >
+            <div
+              className="bg-white dark:bg-[#1f1c18] border-4 border-black dark:border-[#2e2924] rounded-3xl shadow-card p-6 max-w-lg w-full space-y-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between pb-3 border-b-4 border-black dark:border-[#2e2924]">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-accent/20 rounded-xl text-accent border-2 border-black dark:border-[#2e2924]">
+                    <Keyboard className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-text dark:text-[#f0ebe2]">
+                      Keyboard Shortcuts
+                    </h3>
+                    <p className="text-xs font-bold text-muted">
+                      Git Stash Manager Cheat Sheet
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowShortcutsModal(false)}
+                  className="p-1.5 hover:bg-black/10 dark:hover:bg-white/10 rounded-xl transition-colors"
+                  aria-label="Close shortcuts modal"
+                >
+                  <X className="w-5 h-5 text-text dark:text-[#f0ebe2]" />
+                </button>
+              </div>
+
+              <div className="space-y-3 font-mono text-xs">
+                <div className="flex items-center justify-between p-3 rounded-xl border-2 border-black/10 dark:border-[#2e2924] bg-surface-low dark:bg-[#12110e]">
+                  <span className="font-bold text-text dark:text-[#f0ebe2]">
+                    Stash All Changes
+                  </span>
+                  <kbd className="px-2.5 py-1 bg-black text-white dark:bg-white dark:text-black rounded-lg font-black text-xs border border-black shadow-card-sm">
+                    Alt + S
+                  </kbd>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-xl border-2 border-black/10 dark:border-[#2e2924] bg-surface-low dark:bg-[#12110e]">
+                  <span className="font-bold text-text dark:text-[#f0ebe2]">
+                    Pop Top Stash Entry (`stash@{0}`)
+                  </span>
+                  <kbd className="px-2.5 py-1 bg-black text-white dark:bg-white dark:text-black rounded-lg font-black text-xs border border-black shadow-card-sm">
+                    Alt + P
+                  </kbd>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-xl border-2 border-black/10 dark:border-[#2e2924] bg-surface-low dark:bg-[#12110e]">
+                  <span className="font-bold text-text dark:text-[#f0ebe2]">
+                    Drop Top Stash Entry (`stash@{0}`)
+                  </span>
+                  <kbd className="px-2.5 py-1 bg-black text-white dark:bg-white dark:text-black rounded-lg font-black text-xs border border-black shadow-card-sm">
+                    Alt + D
+                  </kbd>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-xl border-2 border-black/10 dark:border-[#2e2924] bg-surface-low dark:bg-[#12110e]">
+                  <span className="font-bold text-text dark:text-[#f0ebe2]">
+                    Toggle Shortcuts Modal
+                  </span>
+                  <kbd className="px-2.5 py-1 bg-black text-white dark:bg-white dark:text-black rounded-lg font-black text-xs border border-black shadow-card-sm">
+                    ?
+                  </kbd>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-xl border-2 border-black/10 dark:border-[#2e2924] bg-surface-low dark:bg-[#12110e]">
+                  <span className="font-bold text-text dark:text-[#f0ebe2]">
+                    Close Modals
+                  </span>
+                  <kbd className="px-2.5 py-1 bg-black text-white dark:bg-white dark:text-black rounded-lg font-black text-xs border border-black shadow-card-sm">
+                    Esc
+                  </kbd>
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  onClick={() => setShowShortcutsModal(false)}
+                  className="px-5 py-2 bg-primary text-black font-black text-xs rounded-xl border-2 border-black shadow-card-sm hover:bg-primary/90 transition-all"
+                >
+                  Got it!
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Dirty Tree Warning Modal */}
       <AnimatePresence>
         {showDirtyWarning && (
@@ -735,3 +916,4 @@ export function GitStashManager() {
 }
 
 export default GitStashManager;
+
