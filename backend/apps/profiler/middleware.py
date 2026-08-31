@@ -21,6 +21,25 @@ class SlowEndpointProfiler(MiddlewareMixin):
     Middleware to profile slow endpoints and record performance metrics.
     """
 
+    STATIC_EXTENSIONS = (
+        ".css",
+        ".js",
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".gif",
+        ".svg",
+        ".ico",
+        ".woff",
+        ".woff2",
+        ".ttf",
+        ".eot",
+        ".mp4",
+        ".webm",
+        ".webp",
+        ".map",
+    )
+
     def __init__(self, get_response):
         super().__init__(get_response)
         self.slow_threshold = getattr(
@@ -30,10 +49,40 @@ class SlowEndpointProfiler(MiddlewareMixin):
             settings, "SLOW_QUERY_THRESHOLD", 0.1
         )  # seconds
         self.enabled = getattr(settings, "ENABLE_PROFILER", True)
+        self.exclude_paths = tuple(
+            getattr(
+                settings,
+                "PROFILER_EXCLUDE_PATHS",
+                [
+                    getattr(settings, "STATIC_URL", "/static/"),
+                    getattr(settings, "MEDIA_URL", "/media/"),
+                    "/favicon.ico",
+                    "/robots.txt",
+                ],
+            )
+        )
+
+    def is_static_or_media_path(self, path: str) -> bool:
+        """
+        Determine if request path belongs to static/media assets or exempt routes.
+        """
+        if not path:
+            return False
+
+        lower_path = path.lower().split("?")[0]
+
+        for prefix in self.exclude_paths:
+            if prefix and lower_path.startswith(prefix.lower()):
+                return True
+
+        if lower_path.endswith(self.STATIC_EXTENSIONS):
+            return True
+
+        return False
 
     def process_request(self, request):
         """Start profiling for the request."""
-        if not self.enabled:
+        if not self.enabled or self.is_static_or_media_path(request.path):
             return None
 
         # Store request info
@@ -51,7 +100,11 @@ class SlowEndpointProfiler(MiddlewareMixin):
 
     def process_view(self, request, view_func, view_args, view_kwargs):
         """Track view execution time."""
-        if not self.enabled:
+        if (
+            not self.enabled
+            or self.is_static_or_media_path(request.path)
+            or not hasattr(request, "_profile_data")
+        ):
             return None
 
         request._profile_data["view_name"] = (
@@ -62,7 +115,11 @@ class SlowEndpointProfiler(MiddlewareMixin):
 
     def process_response(self, request, response):
         """Record and log profile data."""
-        if not self.enabled:
+        if (
+            not self.enabled
+            or self.is_static_or_media_path(request.path)
+            or not hasattr(request, "_profile_data")
+        ):
             return response
 
         start_time = request._profile_data.get("start_time", time.time())
