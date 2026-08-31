@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, ArrowRight } from "lucide-react";
+import { BookOpen, ArrowRight, Clock } from "lucide-react";
+import { calculateReadingTime, formatReadingTime } from "../lib/readingTime";
 
 export interface IncompleteLesson {
   id?: number;
@@ -9,6 +10,8 @@ export interface IncompleteLesson {
   summary?: string;
   progress_percentage: number;
   score?: number;
+  estimated_minutes?: number;
+  word_count?: number;
   updated_at?: string;
 }
 
@@ -103,10 +106,19 @@ export function ContinueLearning({
                 </span>
               </div>
               {item.summary && (
-                <p className="mb-4 line-clamp-2 text-xs text-slate-400">
+                <p className="mb-2 line-clamp-2 text-xs text-slate-400">
                   {item.summary}
                 </p>
               )}
+              <div className="mb-3 flex items-center gap-1 text-[11px] font-medium text-slate-400">
+                <Clock className="h-3 w-3 text-indigo-400" />
+                <span>
+                  {formatReadingTime(
+                    item.estimated_minutes ??
+                      calculateReadingTime(item.word_count || item.summary || 300),
+                  )}
+                </span>
+              </div>
             </div>
 
             <div>
