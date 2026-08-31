@@ -12,6 +12,8 @@ Welcome to the official **ECSoC 2026** Contributor Leaderboard for **Open-Source
 
 | 1 | @sanjana2505006 | 🥇 Gold Contributor ⚡ | 8 | 200 | 2026-08-31 |
 
+| 1 | @Aditya8369 | 💎 Diamond Contributor ⚡ | 100 | 2500 | 2026-08-31 |
+
 ---
 
 ## 🎖️ Contributor Tiers & Badging System
