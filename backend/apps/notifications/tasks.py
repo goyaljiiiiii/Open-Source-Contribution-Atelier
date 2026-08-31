@@ -452,3 +452,39 @@ def dispatch_notification(
                     delivery.refresh_from_db()
 
     return deliveries
+
+
+from .webhooks import dispatch_outgoing_webhook
+
+
+@shared_task(
+    bind=True,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_kwargs={"max_retries": 5},
+    rate_limit="100/m",
+)
+def deliver_webhook_event(self, url: str, payload: dict, secret: str):
+    """
+    Celery background worker process that handles outbound event notifications.
+    Dynamically increments state counters across automatic retry execution windows.
+    """
+    # Extract structural retry counter context (Defaults to 0 on initial task run)
+    current_retry_count = self.request.retries
+    attempt_number = current_retry_count + 1
+
+    logger.info(
+        f"[WEBHOOK INITIATED] Target URL: {url} | Attempt Sequence: {attempt_number}"
+    )
+
+    try:
+        dispatch_outgoing_webhook(
+            url=url, payload=payload, secret=secret, attempt_number=attempt_number
+        )
+    except Exception as exc:
+        logger.warning(
+            f"[RETRY CALLBACK ENGAGED] Webhook attempt {attempt_number} failed. Re-queueing task."
+        )
+        # Re-raise error to propagate structural Celery autoretry handlers cleanly
+        raise exc
+
