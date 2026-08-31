@@ -8,9 +8,12 @@ from .models import (
     DailyLearningMetric,
     LearningGoal,
     LearningInsight,
+    LearningPath,
+    LearningPathStep,
     LearningSession,
     SessionSkillTag,
     SkillTag,
+    UserPathProgress,
     UserSkillProfile,
 )
 
@@ -265,3 +268,146 @@ class InsightBulkReadSerializer(serializers.Serializer):
         child=serializers.IntegerField(),
         min_length=1,
     )
+
+
+# ---------------------------------------------------------------------------
+#  Learning Path Serializers
+# ---------------------------------------------------------------------------
+
+
+class LearningPathStepSerializer(serializers.ModelSerializer):
+    skill_tag = SkillTagSerializer(read_only=True)
+    status_display = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LearningPathStep
+        fields = [
+            "id",
+            "step_number",
+            "step_type",
+            "status",
+            "status_display",
+            "title",
+            "description",
+            "activity_type",
+            "activity_id",
+            "skill_tag",
+            "estimated_minutes",
+            "xp_reward",
+            "is_milestone",
+            "reasoning",
+            "metadata",
+            "started_at",
+            "completed_at",
+        ]
+
+    def get_status_display(self, obj):
+        return obj.get_status_display()
+
+
+class LearningPathSerializer(serializers.ModelSerializer):
+    steps = LearningPathStepSerializer(many=True, read_only=True)
+    progress_pct = serializers.IntegerField(read_only=True)
+    is_fully_completed = serializers.BooleanField(read_only=True)
+    target_skills = SkillTagSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = LearningPath
+        fields = [
+            "id",
+            "title",
+            "description",
+            "difficulty",
+            "status",
+            "target_skills",
+            "estimated_minutes",
+            "total_steps",
+            "completed_steps",
+            "progress_pct",
+            "is_fully_completed",
+            "xp_reward",
+            "priority_score",
+            "generated_at",
+            "updated_at",
+            "completed_at",
+            "metadata",
+            "steps",
+        ]
+        read_only_fields = [
+            "id",
+            "total_steps",
+            "completed_steps",
+            "xp_reward",
+            "generated_at",
+            "updated_at",
+            "completed_at",
+        ]
+
+
+class LearningPathListSerializer(serializers.ModelSerializer):
+    """Lightweight list serializer (no steps embedded)."""
+    progress_pct = serializers.IntegerField(read_only=True)
+    next_step = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LearningPath
+        fields = [
+            "id",
+            "title",
+            "description",
+            "difficulty",
+            "status",
+            "estimated_minutes",
+            "total_steps",
+            "completed_steps",
+            "progress_pct",
+            "priority_score",
+            "xp_reward",
+            "generated_at",
+        ]
+
+    def get_next_step(self, obj):
+        ns = (
+            obj.steps.filter(status="not_started")
+            .order_by("step_number")
+            .first()
+        )
+        if ns is None:
+            return None
+        return {
+            "id": ns.id,
+            "title": ns.title,
+            "step_type": ns.step_type,
+            "estimated_minutes": ns.estimated_minutes,
+        }
+
+
+class PathGenerateSerializer(serializers.Serializer):
+    """Validates the path generation request body."""
+    force = serializers.BooleanField(default=False)
+
+
+class StepCompleteSerializer(serializers.Serializer):
+    """Validates the step-completion request body."""
+    step_id = serializers.IntegerField()
+
+
+class PathCompletionEstimateSerializer(serializers.Serializer):
+    active_path_count = serializers.IntegerField()
+    total_remaining_steps = serializers.IntegerField()
+    daily_step_velocity = serializers.FloatField()
+    estimated_completion_days = serializers.IntegerField()
+    estimated_date = serializers.CharField(allow_null=True)
+
+
+class UserPathProgressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserPathProgress
+        fields = [
+            "id",
+            "date",
+            "active_path_count",
+            "steps_completed_today",
+            "xp_earned_today",
+            "total_path_minutes_today",
+        ]

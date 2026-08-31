@@ -31,6 +31,46 @@ from django.utils import timezone
 User = get_user_model()
 
 
+def _award_step_xp(step):
+    """Award XP to the user when a learning path step is completed."""
+    from .models import DailyLearningMetric
+
+    if step.xp_reward <= 0:
+        return
+
+    user = step.path.user
+    today = timezone.now().date()
+    start_dt = timezone.make_aware(
+        timezone.datetime.combine(today, timezone.datetime.min.time())
+    )
+    end_dt = start_dt + timedelta(days=1)
+
+    session = LearningSession(
+        user=user,
+        activity_type=step.activity_type or "lesson",
+        activity_id=step.activity_id,
+        started_at=start_dt,
+        ended_at=end_dt,
+        duration_seconds=step.estimated_minutes * 60,
+        xp_earned=step.xp_reward,
+        completed=True,
+        metadata={
+            "source": "learning_path",
+            "path_id": step.path.id,
+            "step_id": step.id,
+        },
+    )
+    session.save()
+
+    # Attach skill tag if present
+    if step.skill_tag:
+        session.skill_tags.create(
+            skill_tag=step.skill_tag, confidence=1.0,
+        )
+
+    compute_daily_metrics(user, today)
+
+
 # ---------------------------------------------------------------------------
 #  Constants
 # ---------------------------------------------------------------------------

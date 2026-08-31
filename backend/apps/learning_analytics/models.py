@@ -357,3 +357,275 @@ class LearningGoal(models.Model):
             and not self.is_completed
             and timezone.now().date() > self.deadline
         )
+
+
+class LearningPath(models.Model):
+    """A personalised, adaptive learning path generated for a user.
+
+    Contains ordered steps (lessons / exercises) tailored to the user's
+    skill gaps, velocity, and goals.  The engine regenerates or updates
+    paths as the user progresses.
+    """
+
+    class Difficulty(models.TextChoices):
+        BEGINNER = "beginner", "Beginner"
+        INTERMEDIATE = "intermediate", "Intermediate"
+        ADVANCED = "advanced", "Advanced"
+        MIXED = "mixed", "Mixed"
+
+    class PathStatus(models.TextChoices):
+        ACTIVE = "active", "Active"
+        COMPLETED = "completed", "Completed"
+        ARCHIVED = "archived", "Archived"
+        PAUSED = "paused", "Paused"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="learning_paths",
+    )
+    title = models.CharField(max_length=255)
+    description = models.TextField(
+        blank=True,
+        help_text="Why this path was generated and what it covers.",
+    )
+    difficulty = models.CharField(
+        max_length=15,
+        choices=Difficulty.choices,
+        default=Difficulty.MIXED,
+    )
+    status = models.CharField(
+        max_length=12,
+        choices=PathStatus.choices,
+        default=PathStatus.ACTIVE,
+        db_index=True,
+    )
+    target_skills = models.ManyToManyField(
+        SkillTag,
+        blank=True,
+        related_name="targeted_learning_paths",
+        help_text="Primary skills this path aims to develop.",
+    )
+    estimated_minutes = models.PositiveIntegerField(
+        default=0,
+        help_text="Estimated total duration in minutes.",
+    )
+    total_steps = models.PositiveIntegerField(default=0)
+    completed_steps = models.PositiveIntegerField(default=0)
+    xp_reward = models.IntegerField(
+        default=0,
+        help_text="Total XP earned from this path so far.",
+    )
+    priority_score = models.FloatField(
+        default=0.0,
+        help_text="Engine-generated priority (0-100). Higher = more relevant.",
+    )
+    generated_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Extra data: reason, strategy, engine version.",
+    )
+
+    class Meta:
+        ordering = ["-priority_score", "-generated_at"]
+        indexes = [
+            models.Index(
+                fields=["user", "status"],
+                name="idx_lp_user_status",
+            ),
+            models.Index(
+                fields=["user", "-priority_score"],
+                name="idx_lp_user_priority",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.title} [{self.status}] (score={self.priority_score})"
+
+    @property
+    def progress_pct(self):
+        if self.total_steps == 0:
+            return 0
+        return min(100, int(self.completed_steps / self.total_steps * 100))
+
+    @property
+    def is_fully_completed(self):
+        return self.total_steps > 0 and self.completed_steps >= self.total_steps
+
+    def advance_step(self):
+        """Increment completed steps and refresh the progress."""
+        self.completed_steps = min(
+            self.completed_steps + 1, self.total_steps,
+        )
+        if self.is_fully_completed:
+            self.status = self.PathStatus.COMPLETED
+            self.completed_at = timezone.now()
+        self.save(
+            update_fields=[
+                "completed_steps",
+                "status",
+                "completed_at",
+                "updated_at",
+            ]
+        )
+
+
+class LearningPathStep(models.Model):
+    """A single step (lesson / exercise / quiz) within a learning path."""
+
+    class StepType(models.TextChoices):
+        LESSON = "lesson", "Lesson"
+        EXERCISE = "exercise", "Exercise"
+        QUIZ = "quiz", "Quiz"
+        CHALLENGE = "challenge", "Challenge"
+        REVIEW = "review", "Review"
+        MILESTONE = "milestone", "Milestone"
+
+    class StepStatus(models.TextChoices):
+        NOT_STARTED = "not_started", "Not Started"
+        IN_PROGRESS = "in_progress", "In Progress"
+        COMPLETED = "completed", "Completed"
+        SKIPPED = "skipped", "Skipped"
+
+    path = models.ForeignKey(
+        LearningPath,
+        on_delete=models.CASCADE,
+        related_name="steps",
+    )
+    skill_tag = models.ForeignKey(
+        SkillTag,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="learning_path_steps",
+    )
+    step_number = models.PositiveIntegerField(
+        help_text="1-based position in the path.",
+    )
+    step_type = models.CharField(
+        max_length=15,
+        choices=StepType.choices,
+        default=StepType.LESSON,
+    )
+    status = models.CharField(
+        max_length=15,
+        choices=StepStatus.choices,
+        default=StepStatus.NOT_STARTED,
+    )
+    title = models.CharField(max_length=255)
+    description = models.TextField(
+        blank=True,
+        help_text="Why this step is recommended at this point.",
+    )
+    activity_type = models.CharField(
+        max_length=20,
+        choices=LearningSession.ActivityType.choices,
+        null=True,
+        blank=True,
+        help_text="Maps to the session activity type for tracking.",
+    )
+    activity_id = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="FK id of the related content object.",
+    )
+    estimated_minutes = models.PositiveIntegerField(
+        default=15,
+        help_text="Estimated time for this step.",
+    )
+    xp_reward = models.IntegerField(
+        default=10,
+        help_text="XP awarded on step completion.",
+    )
+    is_milestone = models.BooleanField(
+        default=False)
+    reasoning = models.TextField(
+        blank=True,
+        help_text="Why the engine chose this step.",
+    )
+    metadata = models.JSONField(default=dict, blank=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["path", "step_number"]
+        unique_together = ("path", "step_number")
+        indexes = [
+            models.Index(
+                fields=["path", "step_number"],
+                name="idx_lps_path_step",
+            ),
+            models.Index(
+                fields=["path", "status"],
+                name="idx_lps_path_status",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"Step {self.step_number}: {self.title} "
+            f"[{self.status}]"
+        )
+
+    def mark_started(self):
+        self.status = self.StepStatus.IN_PROGRESS
+        self.started_at = timezone.now()
+        self.save(update_fields=["status", "started_at", "updated_at"])
+
+    def mark_completed(self):
+        self.status = self.StepStatus.COMPLETED
+        self.completed_at = timezone.now()
+        self.save(update_fields=["status", "completed_at", "updated_at"])
+        # Advance the parent path
+        self.path.advance_step()
+        # Award XP to the user
+        from .services import _award_step_xp
+        _award_step_xp(self)
+
+    def mark_skipped(self):
+        self.status = self.StepStatus.SKIPPED
+        self.save(update_fields=["status", "updated_at"])
+
+    def save(self, *args, **kwargs):
+        if self.is_milestone is None:
+            self.is_milestone = False
+        super().save(*args, **kwargs)
+
+
+class UserPathProgress(models.Model):
+    """Daily snapshot of a user's progress across all active learning paths.
+
+    Used by the engine to measure velocity and predict completion.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="path_progress_snapshots",
+    )
+    date = models.DateField(db_index=True)
+    active_path_count = models.PositiveIntegerField(default=0)
+    steps_completed_today = models.PositiveIntegerField(default=0)
+    xp_earned_today = models.IntegerField(default=0)
+    total_path_minutes_today = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "date")
+        ordering = ["-date"]
+        indexes = [
+            models.Index(
+                fields=["user", "-date"],
+                name="idx_upp_user_date",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.user.username} — {self.date} "
+            f"({self.steps_completed_today} steps, "
+            f"{self.xp_earned_today}xp)"
+        )

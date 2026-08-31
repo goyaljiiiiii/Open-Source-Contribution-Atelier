@@ -4,6 +4,8 @@ DRF views for the Learning Analytics & Insights app.
 
 from __future__ import annotations
 
+from datetime import timedelta
+
 from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
@@ -15,8 +17,11 @@ from .models import (
     DailyLearningMetric,
     LearningGoal,
     LearningInsight,
+    LearningPath,
+    LearningPathStep,
     LearningSession,
     SkillTag,
+    UserPathProgress,
     UserSkillProfile,
 )
 from .serializers import (
@@ -27,10 +32,16 @@ from .serializers import (
     LearningGoalCreateSerializer,
     LearningGoalSerializer,
     LearningInsightSerializer,
+    LearningPathCompletionEstimateSerializer,
+    LearningPathListSerializer,
+    LearningPathSerializer,
     LearningSessionCreateSerializer,
     LearningSessionSerializer,
     MonthlyRecapSerializer,
+    PathGenerateSerializer,
     SkillTagSerializer,
+    StepCompleteSerializer,
+    UserPathProgressSerializer,
     UserSkillProfileSerializer,
     VelocitySerializer,
     WeeklySummarySerializer,
@@ -336,6 +347,209 @@ class MonthlyRecapView(views.APIView):
     def get(self, request):
         data = generate_monthly_recap(request.user)
         serializer = MonthlyRecapSerializer(data)
+        return Response(serializer.data)
+
+
+# ---------------------------------------------------------------------------
+#  Personalised Learning Paths
+# ---------------------------------------------------------------------------
+
+
+class LearningPathListView(generics.ListAPIView):
+    """List the user's learning paths (lightweight, no steps)."""
+
+    serializer_class = LearningPathListSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        status_filter = self.request.query_params.get("status")
+        qs = LearningPath.objects.filter(
+            user=self.request.user,
+        ).select_related().order_by("-priority_score")
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        return qs
+
+
+class LearningPathDetailView(generics.RetrieveAPIView):
+    """Full detail of a single learning path including all steps."""
+
+    serializer_class = LearningPathSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return LearningPath.objects.filter(
+            user=self.request.user,
+        ).prefetch_related("steps", "target_skills")
+
+
+class LearningPathGenerateView(views.APIView):
+    """Generate or regenerate personalised learning paths."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        from .learning_path_engine import generate_learning_paths
+
+        serializer = PathGenerateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        force = serializer.validated_data.get("force", False)
+
+        results = generate_learning_paths(request.user, force=force)
+        return Response(
+            {
+                "generated": len(results),
+                "paths": results,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class LearningPathStepCompleteView(views.APIView):
+    """Mark a learning path step as completed."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = StepCompleteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        step_id = serializer.validated_data["step_id"]
+
+        try:
+            step = LearningPathStep.objects.select_related(
+                "path"
+            ).get(
+                id=step_id,
+                path__user=request.user,
+            )
+        except LearningPathStep.DoesNotExist:
+            return Response(
+                {"error": "Step not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if step.status == LearningPathStep.StepStatus.COMPLETED:
+            return Response(
+                {"error": "Step already completed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        with transaction.atomic():
+            step.mark_completed()
+
+        return Response(
+            {
+                "step_id": step.id,
+                "status": step.status,
+                "xp_earned": step.xp_reward,
+                "path_progress_pct": step.path.progress_pct,
+                "path_completed": step.path.is_fully_completed,
+            }
+        )
+
+
+class LearningPathStepStartView(views.APIView):
+    """Mark a learning path step as in-progress."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = StepCompleteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        step_id = serializer.validated_data["step_id"]
+
+        try:
+            step = LearningPathStep.objects.select_related(
+                "path"
+            ).get(
+                id=step_id,
+                path__user=request.user,
+            )
+        except LearningPathStep.DoesNotExist:
+            return Response(
+                {"error": "Step not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        step.mark_started()
+        return Response({"step_id": step.id, "status": step.status})
+
+
+class LearningPathStepSkipView(views.APIView):
+    """Skip a learning path step."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = StepCompleteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        step_id = serializer.validated_data["step_id"]
+
+        try:
+            step = LearningPathStep.objects.select_related(
+                "path"
+            ).get(
+                id=step_id,
+                path__user=request.user,
+            )
+        except LearningPathStep.DoesNotExist:
+            return Response(
+                {"error": "Step not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        step.mark_skipped()
+        return Response({"step_id": step.id, "status": step.status})
+
+
+class LearningPathDeleteView(views.APIView):
+    """Archive / delete a learning path."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, path_id):
+        try:
+            path = LearningPath.objects.get(
+                id=path_id, user=request.user,
+            )
+        except LearningPath.DoesNotExist:
+            return Response(
+                {"error": "Path not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        path.status = LearningPath.PathStatus.ARCHIVED
+        path.save(update_fields=["status", "updated_at"])
+        return Response({"archived": True})
+
+
+class PathCompletionEstimateView(views.APIView):
+    """Estimate when the user will finish all active paths."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from .learning_path_engine import compute_path_completion_estimate
+
+        estimate = compute_path_completion_estimate(request.user)
+        serializer = PathCompletionEstimateSerializer(estimate)
+        return Response(serializer.data)
+
+
+class LearningPathProgressView(views.APIView):
+    """Return recent progress snapshots for the user."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        days = int(request.query_params.get("days", 7))
+        days = max(1, min(30, days))
+        start = timezone.now().date() - timedelta(days=days)
+        snapshots = UserPathProgress.objects.filter(
+            user=request.user,
+            date__gte=start,
+        ).order_by("-date")
+        serializer = UserPathProgressSerializer(snapshots, many=True)
         return Response(serializer.data)
 
 
