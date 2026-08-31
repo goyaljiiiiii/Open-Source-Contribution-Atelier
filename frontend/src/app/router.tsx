@@ -388,6 +388,13 @@ const ConnectedAppsPage = lazy(() =>
     default: module.ConnectedApps,
   })),
 );
+
+const ColorPaletteGeneratorPage = lazy(() =>
+  import("../pages/ColorPaletteGeneratorPage").then((module) => ({
+    default: module.ColorPaletteGeneratorPage,
+  })),
+);
+
 function RouteLoadingFallback() {
   return (
     <div
@@ -689,6 +696,15 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <GitSubmoduleSimulatorPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/sandbox/color-palette"
+          element={
+            <ProtectedRoute>
+              <ColorPaletteGeneratorPage />
             </ProtectedRoute>
           }
         />
