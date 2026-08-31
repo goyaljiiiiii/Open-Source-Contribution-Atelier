@@ -38,16 +38,27 @@ export const CategoryFilterPills: React.FC<CategoryFilterPillsProps> = ({
   className = "",
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(
-    externalSelectedCategory || searchParams.get("category") || null,
-  );
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(() => {
+    return (
+      externalSelectedCategory ||
+      searchParams.get("category") ||
+      sessionStorage.getItem("search_category_filter_pill") ||
+      null
+    );
+  });
 
-  // Update URL when category changes
+  // Update URL and storage when category changes
   useEffect(() => {
     if (selectedCategory) {
       searchParams.set("category", selectedCategory);
+      try {
+        sessionStorage.setItem("search_category_filter_pill", selectedCategory);
+      } catch {}
     } else {
       searchParams.delete("category");
+      try {
+        sessionStorage.removeItem("search_category_filter_pill");
+      } catch {}
     }
     setSearchParams(searchParams, { replace: true });
   }, [selectedCategory, searchParams, setSearchParams]);

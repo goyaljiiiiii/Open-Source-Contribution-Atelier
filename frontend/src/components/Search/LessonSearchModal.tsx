@@ -20,18 +20,47 @@ interface LessonSearchModalProps {
   onClose: () => void;
 }
 
+const FILTER_CHIPS = ["All", "Git", "GitHub", "Workflows", "Security", "DevOps", "Documentation"];
+const STORAGE_KEY = "lesson_search_modal_active_filter";
+
 export function LessonSearchModal({ isOpen, onClose }: LessonSearchModalProps) {
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [activeFilter, setActiveFilter] = useState<string>(() => {
+    try {
+      return sessionStorage.getItem(STORAGE_KEY) || "All";
+    } catch {
+      return "All";
+    }
+  });
+
   const { search, loading } = useLessonSearch();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
+  const handleFilterSelect = (chip: string) => {
+    setActiveFilter(chip);
+    setSelectedIndex(0);
+    try {
+      sessionStorage.setItem(STORAGE_KEY, chip);
+    } catch {}
+  };
+
   const results = useMemo(() => {
-    return search(query);
-  }, [query, search]);
+    const rawResults = search(query);
+    if (!activeFilter || activeFilter === "All") {
+      return rawResults;
+    }
+    const filterLower = activeFilter.toLowerCase();
+    return rawResults.filter(
+      (r) =>
+        r.moduleTitle?.toLowerCase().includes(filterLower) ||
+        r.title?.toLowerCase().includes(filterLower) ||
+        r.tags?.some((t) => t.toLowerCase().includes(filterLower)),
+    );
+  }, [query, search, activeFilter]);
 
   useEffect(() => {
     if (isOpen) {
@@ -176,6 +205,34 @@ export function LessonSearchModal({ isOpen, onClose }: LessonSearchModalProps) {
           <span className="hidden sm:inline-block font-mono text-[10px] font-bold bg-slate-100 dark:bg-[#1f1c18] border border-black/20 dark:border-[#2e2924] text-slate-600 dark:text-slate-300 px-2 py-1 rounded-md">
             ESC
           </span>
+        </div>
+
+        {/* Filter Chips Bar */}
+        <div
+          role="group"
+          aria-label="Filter lessons by category"
+          className="flex items-center gap-1.5 px-4 py-2 bg-slate-50 dark:bg-[#151411] border-b-2 border-black/10 dark:border-[#2e2924] overflow-x-auto custom-scrollbar"
+        >
+          {FILTER_CHIPS.map((chip) => {
+            const isActive = activeFilter === chip;
+            return (
+              <button
+                key={chip}
+                type="button"
+                role="button"
+                aria-pressed={isActive}
+                data-testid={`search-filter-chip-${chip.toLowerCase()}`}
+                onClick={() => handleFilterSelect(chip)}
+                className={`px-2.5 py-1 text-xs font-bold rounded-lg border transition-all whitespace-nowrap ${
+                  isActive
+                    ? "bg-indigo-600 text-white border-indigo-700 dark:bg-indigo-500 shadow-sm"
+                    : "bg-white dark:bg-[#1f1c18] text-slate-600 dark:text-[#c4bbae] border-slate-200 dark:border-[#2e2924] hover:bg-slate-100 dark:hover:bg-[#2e2924]"
+                }`}
+              >
+                {chip === "All" ? "⚡ All" : `#${chip}`}
+              </button>
+            );
+          })}
         </div>
 
         {/* Search Results Area */}
