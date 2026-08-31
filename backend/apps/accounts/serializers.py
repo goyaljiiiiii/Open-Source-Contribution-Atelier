@@ -639,44 +639,14 @@ class UserListSerializer(serializers.ModelSerializer):
             return obj.global_rank
         if "bulk_global_ranks" in self.context:
             return self.context["bulk_global_ranks"].get(obj.id, 1)
-        from django.db.models import Sum
+        from apps.progress.services.ranking_service import RankingService
 
-        from apps.progress.models import XPEvent
-
-        user_xp = (
-            XPEvent.objects.filter(user=obj).aggregate(total=Sum("xp_delta"))["total"]
-            or 0
-        )
-        higher_count = (
-            XPEvent.objects.values("user")
-            .annotate(total=Sum("xp_delta"))
-            .filter(total__gt=user_xp)
-            .count()
-        )
-        return higher_count + 1
+        return RankingService.get_global_rank(obj)
 
     def get_percentile_standing(self, obj):
-        from django.db.models import Sum
+        from apps.progress.services.ranking_service import RankingService
 
-        from apps.progress.models import XPEvent
-
-        total_users = User.objects.count()
-        if total_users <= 1:
-            return 1
-
-        user_xp = (
-            XPEvent.objects.filter(user=obj).aggregate(total=Sum("xp_delta"))["total"]
-            or 0
-        )
-        higher_count = (
-            XPEvent.objects.values("user")
-            .annotate(total=Sum("xp_delta"))
-            .filter(total__gt=user_xp)
-            .count()
-        )
-        rank = higher_count + 1
-        percentile = max(1, int(round((rank / total_users) * 100)))
-        return percentile
+        return RankingService.get_percentile_standing(obj)
 
     def get_active_track_status(self, obj):
         if "bulk_track_statuses" in self.context:
