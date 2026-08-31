@@ -416,4 +416,3 @@ def tune_connection_pool_task():
         call_command("tune_connection_pool")
     except Exception as e:
         logger.error(f"Error executing tune_connection_pool task: {e}")
-

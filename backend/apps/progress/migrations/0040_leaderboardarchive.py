@@ -6,7 +6,10 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("progress", "0039_remove_lessonprogress_progress_lessonprogress_attempt_count_gte_0_and_more"),
+        (
+            "progress",
+            "0039_remove_lessonprogress_progress_lessonprogress_attempt_count_gte_0_and_more",
+        ),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

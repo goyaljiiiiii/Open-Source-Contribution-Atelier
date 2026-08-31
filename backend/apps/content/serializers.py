@@ -2,10 +2,10 @@ from rest_framework import serializers
 
 from .models import (
     Exercise,
+    LearningPath,
     Lesson,
     LessonDraft,
     LessonFeedback,
-    LearningPath,
     ModuleDraft,
     Organization,
     QuizDraft,

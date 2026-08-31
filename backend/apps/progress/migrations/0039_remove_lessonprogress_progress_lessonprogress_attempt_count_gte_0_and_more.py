@@ -6,8 +6,10 @@ class SafeRemoveConstraint(migrations.RemoveConstraint):
         model = from_state.apps.get_model(app_label, self.model_name)
         table_name = model._meta.db_table
         with schema_editor.connection.cursor() as cursor:
-            existing_constraints = schema_editor.connection.introspection.get_constraints(
-                cursor, table_name
+            existing_constraints = (
+                schema_editor.connection.introspection.get_constraints(
+                    cursor, table_name
+                )
             )
         if self.name not in existing_constraints:
             return

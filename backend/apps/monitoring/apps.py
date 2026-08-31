@@ -11,4 +11,3 @@ class MonitoringConfig(AppConfig):
             import apps.monitoring.celery_monitor  # noqa: F401
         except ImportError:
             pass
-

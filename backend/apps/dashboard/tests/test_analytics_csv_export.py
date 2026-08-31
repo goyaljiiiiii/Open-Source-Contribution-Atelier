@@ -47,7 +47,9 @@ class TestAnalyticsCSVExport(APITestCase):
 
     def test_dataset_filtering_registrations_only(self):
         self.client.force_authenticate(user=self.admin)
-        response = self.client.get(self.export_url, {"dataset": "registrations", "days": "7"})
+        response = self.client.get(
+            self.export_url, {"dataset": "registrations", "days": "7"}
+        )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         content = self._get_streaming_content(response)

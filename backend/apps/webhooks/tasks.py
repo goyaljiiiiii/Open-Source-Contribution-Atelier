@@ -110,7 +110,11 @@ def deliver_webhook(delivery_id, attempt=1):
 
     active_key_id = None
     signing_keys = getattr(settings, "WEBHOOK_SIGNING_KEYS", None)
-    if signing_keys and isinstance(signing_keys, (list, tuple)) and len(signing_keys) > 0:
+    if (
+        signing_keys
+        and isinstance(signing_keys, (list, tuple))
+        and len(signing_keys) > 0
+    ):
         active_key_id = signing_keys[0][0]
 
     try:

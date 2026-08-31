@@ -23,7 +23,12 @@ class WeeklyDigestService:
         the slug/path (handling spaces, hashes, parens, and unicode).
         """
         # Escape brackets in the link text to prevent breaking Markdown link syntax
-        safe_title = (title or "Lesson").replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
+        safe_title = (
+            (title or "Lesson")
+            .replace("\\", "\\\\")
+            .replace("[", "\\[")
+            .replace("]", "\\]")
+        )
         # Percent-encode URL path components while preserving valid path separators
         safe_slug = urllib.parse.quote(str(slug or "").strip(), safe="/-")
         # Ensure parentheses in URL are encoded so they don't terminate [text](url)
@@ -58,10 +63,12 @@ class WeeklyDigestService:
         ]
 
         if context.get("streak_at_risk"):
-            lines.extend([
-                "⚠️ **Streak at Risk!** Complete an activity today to keep your streak alive.",
-                "",
-            ])
+            lines.extend(
+                [
+                    "⚠️ **Streak at Risk!** Complete an activity today to keep your streak alive.",
+                    "",
+                ]
+            )
 
         recs = context.get("recommendation_details", [])
         if recs:
@@ -94,10 +101,12 @@ class WeeklyDigestService:
                 lines.append(f"- 🏅 {b}")
             lines.append("")
 
-        lines.extend([
-            "---",
-            f"[View Full Dashboard]({base_url.rstrip('/')}/dashboard)",
-        ])
+        lines.extend(
+            [
+                "---",
+                f"[View Full Dashboard]({base_url.rstrip('/')}/dashboard)",
+            ]
+        )
 
         return "\n".join(lines)
 
@@ -189,11 +198,15 @@ class WeeklyDigestService:
         from apps.content.models import LearningPath
 
         paths_data = []
-        for path in LearningPath.objects.filter(is_published=True).prefetch_related("lessons"):
+        for path in LearningPath.objects.filter(is_published=True).prefetch_related(
+            "lessons"
+        ):
             path_lessons = list(path.lessons.all())
             path_total = len(path_lessons)
             if path_total > 0:
-                path_completed = sum(1 for l in path_lessons if l.id in completed_lesson_ids)
+                path_completed = sum(
+                    1 for l in path_lessons if l.id in completed_lesson_ids
+                )
                 path_pct = round((path_completed / path_total) * 100, 1)
                 paths_data.append(
                     {
@@ -220,7 +233,9 @@ class WeeklyDigestService:
                 "title": lesson.title,
                 "summary": lesson.summary,
                 "slug": lesson.slug,
-                "markdown_link": cls.format_markdown_lesson_link(lesson.title, lesson.slug),
+                "markdown_link": cls.format_markdown_lesson_link(
+                    lesson.title, lesson.slug
+                ),
                 "url": f"https://atelier.dev/lessons/{urllib.parse.quote(str(lesson.slug), safe='/-')}",
             }
             for lesson in recommended_lessons
@@ -233,7 +248,9 @@ class WeeklyDigestService:
             {
                 "title": lesson.title,
                 "slug": lesson.slug,
-                "markdown_link": cls.format_markdown_lesson_link(lesson.title, lesson.slug),
+                "markdown_link": cls.format_markdown_lesson_link(
+                    lesson.title, lesson.slug
+                ),
                 "url": f"https://atelier.dev/lessons/{urllib.parse.quote(str(lesson.slug), safe='/-')}",
             }
             for lesson in new_lessons
@@ -267,4 +284,3 @@ class WeeklyDigestService:
 
         context_dict["markdown_summary"] = cls.generate_markdown_summary(context_dict)
         return context_dict
-

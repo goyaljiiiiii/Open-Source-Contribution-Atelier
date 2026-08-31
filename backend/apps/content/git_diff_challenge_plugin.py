@@ -85,7 +85,9 @@ def _apply_hunks(before_lines: List[str], hunks: List[Dict[str, Any]]) -> List[s
         target_start = hunk["old_start"] - 1  # convert to 0-indexed
 
         if target_start < cursor:
-            raise DiffApplyError(f"hunk starting at line {hunk['old_start']} overlaps a previous hunk")
+            raise DiffApplyError(
+                f"hunk starting at line {hunk['old_start']} overlaps a previous hunk"
+            )
 
         # Copy through unchanged lines before this hunk starts
         result.extend(before_lines[cursor:target_start])

@@ -37,6 +37,9 @@ class IssueReport(models.Model):
         related_name="issue_reports",
     )
     image = models.ImageField(upload_to="issue_reports/", null=True, blank=True)
+    is_verified = models.BooleanField(
+        default=False, help_text="Designates whether this report is a verified issue."
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -178,4 +178,3 @@ def generate_dependency_graph() -> Dict[str, Any]:
     """Helper function to generate dependency graph."""
     generator = DependencyGraphGenerator()
     return generator.build_graph()
-

@@ -31,9 +31,13 @@ urlpatterns = [
         name="notification-preferences",
     ),
     path("channels/", ChannelPreferencesView.as_view(), name="notification-channels"),
-    path("admin/metrics/", AdminMetricsView.as_view(), name="notification-admin-metrics"),
+    path(
+        "admin/metrics/", AdminMetricsView.as_view(), name="notification-admin-metrics"
+    ),
     path("track/open/<int:delivery_id>/", TrackOpenView.as_view(), name="track-open"),
-    path("track/click/<int:delivery_id>/", TrackClickView.as_view(), name="track-click"),
+    path(
+        "track/click/<int:delivery_id>/", TrackClickView.as_view(), name="track-click"
+    ),
     path("push/subscribe/", SubscribePushView.as_view(), name="push-subscribe"),
     path("push/unsubscribe/", UnsubscribePushView.as_view(), name="push-unsubscribe"),
 ]

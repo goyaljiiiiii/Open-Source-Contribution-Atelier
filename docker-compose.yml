@@ -110,6 +110,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      target: runner
+
     ports:
       - "5173:80"
     environment:

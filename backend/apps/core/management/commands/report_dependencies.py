@@ -95,13 +95,15 @@ class Command(BaseCommand):
             version = dep.get("version", "")
             latest = self._get_latest_version(name)
             license_name = license_map.get(name.lower(), "Unknown")
-            rows.append({
-                "name": name,
-                "version": version,
-                "license": license_name,
-                "latest_version": latest,
-                "ecosystem": "pip",
-            })
+            rows.append(
+                {
+                    "name": name,
+                    "version": version,
+                    "license": license_name,
+                    "latest_version": latest,
+                    "ecosystem": "pip",
+                }
+            )
 
         if output_format == "json":
             output = json.dumps(rows, indent=2)

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { CodeDiffViewer } from "../components/ui/CodeDiffViewer";
 import { Check, X, MessageSquare, Trophy } from "lucide-react";
 import toast from "react-hot-toast";
+import { FOCUS_RING } from "../lib/a11yFocus";
 
 const LEVELS = [
   {
@@ -110,8 +111,9 @@ export function PRReviewGamePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <button
+              type="button"
               onClick={() => handleAction("approve")}
-              className="flex flex-col items-center gap-2 p-4 bg-green-100 hover:bg-green-200 border-2 border-black rounded-xl shadow-card hover:-translate-y-1 transition-all"
+              className={`flex flex-col items-center gap-2 p-4 bg-green-100 hover:bg-green-200 border-2 border-black rounded-xl shadow-card hover:-translate-y-1 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${FOCUS_RING}`}
             >
               <Check className="text-green-700" size={32} />
               <span className="font-black text-green-900">Approve</span>
@@ -121,8 +123,9 @@ export function PRReviewGamePage() {
             </button>
 
             <button
+              type="button"
               onClick={() => handleAction("comment")}
-              className="flex flex-col items-center gap-2 p-4 bg-blue-100 hover:bg-blue-200 border-2 border-black rounded-xl shadow-card hover:-translate-y-1 transition-all"
+              className={`flex flex-col items-center gap-2 p-4 bg-blue-100 hover:bg-blue-200 border-2 border-black rounded-xl shadow-card hover:-translate-y-1 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${FOCUS_RING}`}
             >
               <MessageSquare className="text-blue-700" size={32} />
               <span className="font-black text-blue-900">Comment</span>
@@ -132,8 +135,9 @@ export function PRReviewGamePage() {
             </button>
 
             <button
+              type="button"
               onClick={() => handleAction("request_changes")}
-              className="flex flex-col items-center gap-2 p-4 bg-red-100 hover:bg-red-200 border-2 border-black rounded-xl shadow-card hover:-translate-y-1 transition-all"
+              className={`flex flex-col items-center gap-2 p-4 bg-red-100 hover:bg-red-200 border-2 border-black rounded-xl shadow-card hover:-translate-y-1 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${FOCUS_RING}`}
             >
               <X className="text-red-700" size={32} />
               <span className="font-black text-red-900">Request Changes</span>
@@ -155,8 +159,9 @@ export function PRReviewGamePage() {
             {LEVELS.length * 100}
           </p>
           <button
+            type="button"
             onClick={resetGame}
-            className="mt-6 px-8 py-3 bg-primary text-black font-black text-lg border-4 border-black rounded-xl hover:-translate-y-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
+            className={`mt-6 px-8 py-3 bg-primary text-black font-black text-lg border-4 border-black rounded-xl hover:-translate-y-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${FOCUS_RING}`}
           >
             Play Again
           </button>

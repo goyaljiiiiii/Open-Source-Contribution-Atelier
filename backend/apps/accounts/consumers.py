@@ -83,6 +83,7 @@ class JWTTokenRotationConsumer(AsyncJsonWebsocketConsumer):
     @property
     def _settings(self):
         from django.conf import settings
+
         return settings
 
     async def _listen_for_token_events(self):
@@ -103,7 +104,10 @@ class JWTTokenRotationConsumer(AsyncJsonWebsocketConsumer):
                     await self._close_for_token_change()
                     return
 
-                if event_type == "token_refreshed" and str(event.get("jti")) != self.current_jti:
+                if (
+                    event_type == "token_refreshed"
+                    and str(event.get("jti")) != self.current_jti
+                ):
                     await self._close_for_token_change()
                     return
         except asyncio.CancelledError:

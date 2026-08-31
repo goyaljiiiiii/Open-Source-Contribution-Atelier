@@ -1,0 +1,69 @@
+name: 48-Hour Stale Issue Reminder & Auto-Unassigner
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs daily at midnight UTC
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  check-stale-assigned-issues:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Process Stale Issue Assignments
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const now = new Date();
+
+            // Fetch open issues with assignees
+            const response = await github.rest.issues.listForRepo({
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100
+            });
+
+            const issues = response.data.filter(i => !i.pull_request && i.assignees && i.assignees.length > 0);
+
+            for (const issue of issues) {
+              const assignees = issue.assignees.map(a => a.login);
+              const updatedAt = new Date(issue.updated_at);
+              const hoursSinceUpdate = (now - updatedAt) / (1000 * 60 * 60);
+
+              // 1. Unassign if inactive for > 72 hours
+              if (hoursSinceUpdate >= 72) {
+                for (const user of assignees) {
+                  await github.rest.issues.removeAssignees({
+                    owner,
+                    repo,
+                    issue_number: issue.number,
+                    assignees: [user]
+                  });
+                  await github.rest.issues.createComment({
+                    owner,
+                    repo,
+                    issue_number: issue.number,
+                    body: `🛠️ @${user} has been automatically **unassigned** from Issue #${issue.number} due to 72 hours of inactivity.\n\nThis issue is now open for other contributors to claim! Use \`/claim ecsoc26\` to claim it.`
+                  });
+                  console.log(`Unassigned ${user} from issue #${issue.number}`);
+                }
+              }
+              // 2. Post reminder if inactive for > 48 hours
+              else if (hoursSinceUpdate >= 48) {
+                const mentions = assignees.map(u => `@${u}`).join(', ');
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: issue.number,
+                  body: `⏰ Friendly reminder ${mentions}! You have been assigned to this issue for over **48 hours**.\n\nPlease submit a Pull Request or post an update within 24 hours to retain your assignment!`
+                });
+                console.log(`Sent 48h reminder to ${mentions} on issue #${issue.number}`);
+              }
+            }

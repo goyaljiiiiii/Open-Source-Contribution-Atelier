@@ -13,12 +13,11 @@ requirement as UnitTestChallengePlugin #30 and BigOComplexityChallengePlugin
 #32) — not a second independent exec() path.
 """
 
+import json
 from typing import Any, Dict, List, Optional, Tuple
 
 from .plugins import LessonPlugin, registry
-
 from .unit_test_challenge_plugin import _run_in_sandbox
-import json
 
 
 def _run_bst_operation_in_sandbox(
@@ -54,11 +53,11 @@ for op in _ops:
     res["tree_snapshot"] = _serialize_tree(root)
     results.append(res)
 """
-    
+
     # Combine code. We use _run_in_sandbox as the current available execution path
     # while PythonSandboxPlugin is primarily frontend-oriented in this architecture.
     full_code = f"{implementation_code}\n_ops = {json.dumps(operations)}\n{harness}"
-    
+
     # We need to extract 'results' from the sandbox
     safe_globals = {
         "__builtins__": {
@@ -68,7 +67,7 @@ for op in _ops:
             "print": print,
         }
     }
-    
+
     try:
         # Reusing the logic from _run_in_sandbox but capturing the 'results' variable
         exec(full_code, safe_globals)
@@ -76,8 +75,6 @@ for op in _ops:
     except Exception as e:
         # If the user code crashes, we return empty results which leads to 0.0 score
         return []
-
-
 
 
 def _check_bst_invariant(
@@ -106,11 +103,15 @@ def _check_bst_invariant(
     if upper_bound is not None and value >= upper_bound:
         return False, f"value {value} violates BST invariant (must be < {upper_bound})"
 
-    left_valid, left_error = _check_bst_invariant(tree_snapshot.get("left"), lower_bound, value)
+    left_valid, left_error = _check_bst_invariant(
+        tree_snapshot.get("left"), lower_bound, value
+    )
     if not left_valid:
         return False, left_error
 
-    right_valid, right_error = _check_bst_invariant(tree_snapshot.get("right"), value, upper_bound)
+    right_valid, right_error = _check_bst_invariant(
+        tree_snapshot.get("right"), value, upper_bound
+    )
     if not right_valid:
         return False, right_error
 
@@ -158,7 +159,10 @@ class BinarySearchTreeChallengePlugin(LessonPlugin):
 
     @classmethod
     def validate_submission(cls, data: Dict[str, Any]) -> bool:
-        if not isinstance(data.get("implementation_code"), str) or not data["implementation_code"].strip():
+        if (
+            not isinstance(data.get("implementation_code"), str)
+            or not data["implementation_code"].strip()
+        ):
             return False
 
         operations = data.get("operations")
@@ -166,7 +170,11 @@ class BinarySearchTreeChallengePlugin(LessonPlugin):
             return False
 
         for op in operations:
-            if not isinstance(op, dict) or op.get("operation") not in ("insert", "search", "delete"):
+            if not isinstance(op, dict) or op.get("operation") not in (
+                "insert",
+                "search",
+                "delete",
+            ):
                 return False
             if not isinstance(op.get("value"), int):
                 return False
@@ -179,7 +187,9 @@ class BinarySearchTreeChallengePlugin(LessonPlugin):
             return 0.0
 
         try:
-            results = _run_bst_operation_in_sandbox(data["implementation_code"], data["operations"])
+            results = _run_bst_operation_in_sandbox(
+                data["implementation_code"], data["operations"]
+            )
         except NotImplementedError:
             raise
         except Exception:

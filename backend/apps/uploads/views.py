@@ -1,5 +1,7 @@
 import os
 import shutil
+import unicodedata
+import uuid
 from pathlib import Path
 
 from django.conf import settings
@@ -16,8 +18,6 @@ from .validators import (
     validate_file,
     validate_filename_extensions,
 )
-import unicodedata
-import uuid
 
 
 def sanitize_filename_ascii(filename: str) -> str:
@@ -42,9 +42,13 @@ class StartUploadView(views.APIView):
         upload_type = request.data.get("upload_type", UploadSession.UploadType.PROJECT)
 
         if not filename or total_size is None or total_chunks is None:
-            return Response({"error": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST
+            )
         if upload_type not in UploadSession.UploadType.values:
-            return Response({"error": "Invalid upload type"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Invalid upload type"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         try:
             validate_filename_extensions(filename)
@@ -54,7 +58,11 @@ class StartUploadView(views.APIView):
                 raise ValueError
             validate_declared_size(total_size, upload_type)
         except (TypeError, ValueError, ValidationError) as exc:
-            message = exc.messages[0] if isinstance(exc, ValidationError) else "Invalid upload metadata"
+            message = (
+                exc.messages[0]
+                if isinstance(exc, ValidationError)
+                else "Invalid upload metadata"
+            )
             return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
 
         session = UploadSession.objects.create(
@@ -66,7 +74,11 @@ class StartUploadView(views.APIView):
         )
         session.get_temp_dir()
         return Response(
-            {"session_id": session.session_id, "upload_id": session.session_id, "status": session.status},
+            {
+                "session_id": session.session_id,
+                "upload_id": session.session_id,
+                "status": session.status,
+            },
             status=status.HTTP_201_CREATED,
         )
 
@@ -76,9 +88,13 @@ class UploadChunkView(views.APIView):
 
     def post(self, request, session_id):
         try:
-            session = UploadSession.objects.get(session_id=session_id, user=request.user)
+            session = UploadSession.objects.get(
+                session_id=session_id, user=request.user
+            )
         except UploadSession.DoesNotExist:
-            return Response({"error": "Session not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Session not found"}, status=status.HTTP_404_NOT_FOUND
+            )
 
         try:
             chunk_index = int(request.data.get("chunk_index", -1))
@@ -87,15 +103,29 @@ class UploadChunkView(views.APIView):
         file_chunk = request.FILES.get("chunk")
 
         if chunk_index < 0 or chunk_index >= session.total_chunks or not file_chunk:
-            return Response({"error": "Invalid or missing chunk data"}, status=status.HTTP_400_BAD_REQUEST)
-        if session.status not in {UploadSession.Status.PENDING, UploadSession.Status.UPLOADING}:
-            return Response({"error": "Upload no longer accepts chunks"}, status=status.HTTP_409_CONFLICT)
+            return Response(
+                {"error": "Invalid or missing chunk data"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if session.status not in {
+            UploadSession.Status.PENDING,
+            UploadSession.Status.UPLOADING,
+        }:
+            return Response(
+                {"error": "Upload no longer accepts chunks"},
+                status=status.HTTP_409_CONFLICT,
+            )
         if chunk_index in session.uploaded_chunks:
-            return Response({"message": "Chunk already uploaded"}, status=status.HTTP_200_OK)
+            return Response(
+                {"message": "Chunk already uploaded"}, status=status.HTTP_200_OK
+            )
 
         MAX_CHUNK_SIZE = 10 * 1024 * 1024
         if file_chunk.size > MAX_CHUNK_SIZE:
-            return Response({"error": "Chunk size exceeds maximum allowed limit of 10MB"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Chunk size exceeds maximum allowed limit of 10MB"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         temp_dir = session.get_temp_dir()
         chunk_path = os.path.join(temp_dir, f"{chunk_index}.part")
@@ -112,7 +142,9 @@ class UploadChunkView(views.APIView):
         if current_total > max_allowed:
             os.remove(chunk_path)
             return Response(
-                {"error": f"Total uploaded size exceeds allowed limit of {max_allowed // (1024 * 1024)}MB for {session.upload_type}"},
+                {
+                    "error": f"Total uploaded size exceeds allowed limit of {max_allowed // (1024 * 1024)}MB for {session.upload_type}"
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -120,7 +152,9 @@ class UploadChunkView(views.APIView):
         session.status = UploadSession.Status.UPLOADING
         session.save(update_fields=["uploaded_chunks", "status", "updated_at"])
 
-        return Response({"message": "Chunk uploaded successfully"}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": "Chunk uploaded successfully"}, status=status.HTTP_200_OK
+        )
 
 
 class CompleteUploadView(views.APIView):
@@ -128,9 +162,13 @@ class CompleteUploadView(views.APIView):
 
     def post(self, request, session_id):
         try:
-            session = UploadSession.objects.get(session_id=session_id, user=request.user)
+            session = UploadSession.objects.get(
+                session_id=session_id, user=request.user
+            )
         except UploadSession.DoesNotExist:
-            return Response({"error": "Session not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Session not found"}, status=status.HTTP_404_NOT_FOUND
+            )
 
         # The JSON field is only bookkeeping and is vulnerable to lost updates
         # when chunks arrive concurrently. The files on disk are the authoritative
@@ -164,7 +202,9 @@ class CompleteUploadView(views.APIView):
             session.save(update_fields=["uploaded_chunks", "status", "updated_at"])
 
         quarantine_root = Path(
-            getattr(settings, "UPLOAD_QUARANTINE_ROOT", settings.BASE_DIR / "quarantine")
+            getattr(
+                settings, "UPLOAD_QUARANTINE_ROOT", settings.BASE_DIR / "quarantine"
+            )
         )
         quarantine_root.mkdir(parents=True, exist_ok=True)
         quarantine_path = quarantine_root / f"{session.session_id}_{session.filename}"
@@ -198,9 +238,13 @@ class CompleteUploadView(views.APIView):
         except (ValidationError, FileNotFoundError) as exc:
             quarantine_path.unlink(missing_ok=True)
             session.status = UploadSession.Status.REJECTED
-            session.scan_message = exc.messages[0] if isinstance(exc, ValidationError) else str(exc)
+            session.scan_message = (
+                exc.messages[0] if isinstance(exc, ValidationError) else str(exc)
+            )
             session.save(update_fields=["status", "scan_message", "updated_at"])
-            return Response({"error": session.scan_message}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": session.scan_message}, status=status.HTTP_400_BAD_REQUEST
+            )
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
 
@@ -227,9 +271,13 @@ class UploadStatusView(views.APIView):
 
     def get(self, request, session_id):
         try:
-            session = UploadSession.objects.get(session_id=session_id, user=request.user)
+            session = UploadSession.objects.get(
+                session_id=session_id, user=request.user
+            )
         except UploadSession.DoesNotExist:
-            return Response({"error": "Session not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Session not found"}, status=status.HTTP_404_NOT_FOUND
+            )
 
         payload = {
             "session_id": session.session_id,
@@ -250,20 +298,28 @@ class DirectUploadView(views.APIView):
     def post(self, request):
         uploaded_file = request.FILES.get("file") or request.FILES.get("image")
         if not uploaded_file:
-            return Response({"error": "No file uploaded"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "No file uploaded"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         upload_type = request.data.get("upload_type", UploadSession.UploadType.PROJECT)
         if upload_type not in UploadSession.UploadType.values:
-            return Response({"error": "Invalid upload type"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Invalid upload type"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         try:
             validate_declared_size(uploaded_file.size, upload_type)
         except ValidationError as exc:
-            return Response({"error": exc.messages[0]}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": exc.messages[0]}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         valid_name = sanitize_filename_ascii(uploaded_file.name)
         quarantine_root = Path(
-            getattr(settings, "UPLOAD_QUARANTINE_ROOT", settings.BASE_DIR / "quarantine")
+            getattr(
+                settings, "UPLOAD_QUARANTINE_ROOT", settings.BASE_DIR / "quarantine"
+            )
         )
         quarantine_root.mkdir(parents=True, exist_ok=True)
         quarantine_path = quarantine_root / f"{uuid.uuid4()}_{valid_name}"
@@ -273,7 +329,9 @@ class DirectUploadView(views.APIView):
                 dest.write(chunk)
 
         try:
-            detected_type, mime_type = validate_file(quarantine_path, valid_name, upload_type)
+            detected_type, mime_type = validate_file(
+                quarantine_path, valid_name, upload_type
+            )
             if detected_type == "svg":
                 sanitize_svg_file(quarantine_path)
         except (ValidationError, FileNotFoundError) as exc:

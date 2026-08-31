@@ -61,6 +61,10 @@ if (typeof window !== "undefined" && "serviceWorker" in navigator) {
           "[ServiceWorker] Registered with scope:",
           registration.scope,
         );
+        if (registration.waiting) {
+          registration.waiting.postMessage({ type: "SKIP_WAITING" });
+        }
+        registration.update();
       })
       .catch((error) => {
         console.error("[ServiceWorker] Registration failed:", error);
@@ -74,8 +78,9 @@ syncOfflineQueue();
 // Keep HF Spaces container warm (production only)
 initKeepAlive();
 
-ReactDOM.hydrateRoot(
-  document.getElementById("root")!,
+const container = document.getElementById("root")!;
+
+ReactDOM.createRoot(container).render(
   <React.StrictMode>
     <Provider store={store}>
       <I18nextProvider i18n={i18n}>

@@ -38,7 +38,11 @@ class TestFeedPostSearch:
     def test_list_all_feed_posts(self):
         response = self.client.get("/api/feed/posts/")
         assert response.status_code == 200
-        results = response.data.get("results", response.data) if isinstance(response.data, dict) else response.data
+        results = (
+            response.data.get("results", response.data)
+            if isinstance(response.data, dict)
+            else response.data
+        )
         assert len(results) == 3
 
     def test_filter_by_post_type(self):
@@ -54,7 +58,9 @@ class TestFeedPostSearch:
         assert response.data["results"][0]["id"] == self.post1.id
 
     def test_search_and_filter_combined(self):
-        response = self.client.get("/api/feed/posts/search/?q=portfolio&post_type=share")
+        response = self.client.get(
+            "/api/feed/posts/search/?q=portfolio&post_type=share"
+        )
         assert response.status_code == 200
         assert response.data["count"] == 1
         assert response.data["results"][0]["id"] == self.post3.id

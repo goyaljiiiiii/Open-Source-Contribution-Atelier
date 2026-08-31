@@ -288,4 +288,3 @@ class LeaderboardService:
             month_key,
         )
         return {"period": month_key, "archived_count": archived_count}
-

@@ -1,5 +1,5 @@
 import time
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
 
 class CollabRoomManager:
@@ -12,7 +12,9 @@ class CollabRoomManager:
         # { room_id: { "content": str, "peers": { user_id: { username, color, cursor } }, "last_saved": float } }
         self._rooms: Dict[str, Dict[str, Any]] = {}
 
-    def get_or_create_room(self, room_id: str, default_title: str = "Collaborative Note") -> Dict[str, Any]:
+    def get_or_create_room(
+        self, room_id: str, default_title: str = "Collaborative Note"
+    ) -> Dict[str, Any]:
         if room_id not in self._rooms:
             self._rooms[room_id] = {
                 "room_id": room_id,
@@ -29,7 +31,14 @@ class CollabRoomManager:
         room["content"] = content
         room["last_saved"] = time.time()
 
-    def update_peer(self, room_id: str, user_id: str, username: str, color: str, cursor: Dict[str, Any] = None) -> None:
+    def update_peer(
+        self,
+        room_id: str,
+        user_id: str,
+        username: str,
+        color: str,
+        cursor: Dict[str, Any] = None,
+    ) -> None:
         room = self.get_or_create_room(room_id)
         room["peers"][user_id] = {
             "user_id": user_id,

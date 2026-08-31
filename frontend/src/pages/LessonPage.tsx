@@ -648,6 +648,48 @@ export function LessonPage() {
     };
   }, [markdownContent]);
 
+  // 3b. Prefetch next lesson content when user scrolls past 80%
+  useEffect(() => {
+    const element = mainContentRef.current;
+    if (!element || !lesson || lessonsList.length === 0) return;
+
+    let prefetched = false;
+
+    const handleScroll = () => {
+      if (prefetched) return;
+
+      const totalHeight = element.scrollHeight - element.clientHeight;
+      if (totalHeight <= 0) return;
+
+      const scrollPercent = (element.scrollTop / totalHeight) * 100;
+
+      if (scrollPercent >= 80) {
+        prefetched = true;
+        const currentIdx = lessonsList.findIndex((l) => l.slug === lesson.slug);
+        const next = lessonsList[currentIdx + 1];
+        if (next?.filePath) {
+          const cachePath = `/content/${next.filePath}`;
+          caches.open("content-runtime-cache").then((cache) => {
+            cache.match(cachePath).then((cached) => {
+              if (!cached) {
+                fetch(cachePath)
+                  .then((res) => {
+                    if (res.ok) cache.put(cachePath, res);
+                  })
+                  .catch(() => {});
+              }
+            });
+          }).catch(() => {});
+        }
+      }
+    };
+
+    element.addEventListener("scroll", handleScroll);
+    return () => {
+      element.removeEventListener("scroll", handleScroll);
+    };
+  }, [lesson?.slug, lessonsList, markdownContent]);
+
   // 4. Keyboard Shortcuts for Lesson Navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

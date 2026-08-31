@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Heart,
   Share2,
@@ -12,7 +12,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { getReelActionLabel, getReelDescription } from "../../lib/accessibility";
 
 interface Comment {
   username: string;
@@ -194,7 +193,6 @@ export function TrendingReels() {
   );
   const [heartPops, setHeartPops] = useState<HeartPop[]>([]);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const liveRegionRef = useRef<HTMLDivElement | null>(null);
 
   const activeReel = REELS_DATA[activeIdx];
   const activeLikes = likesState[activeReel.id] || {
@@ -219,80 +217,10 @@ export function TrendingReels() {
     return () => clearInterval(interval);
   }, [isPlaying, showComments, activeIdx]);
 
-  // Reset progress on active reel change and announce to screen readers
+  // Reset progress on active reel change
   useEffect(() => {
     setProgress(0);
-    announce(
-      `Now showing reel ${activeIdx + 1} of ${REELS_DATA.length}: ${activeReel.title}`,
-    );
-  }, [activeIdx, activeReel.title, announce]);
-
-  // Keyboard navigation for the reel player
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    function handleKeyDown(event: KeyboardEvent) {
-      // Only handle when focus is within the reel player area
-      if (!container.contains(document.activeElement)) return;
-
-      switch (event.key) {
-        case "ArrowRight":
-        case "ArrowDown":
-          event.preventDefault();
-          handleNext();
-          break;
-        case "ArrowLeft":
-        case "ArrowUp":
-          event.preventDefault();
-          handlePrev();
-          break;
-        case " ":
-          event.preventDefault();
-          handleTogglePlay();
-          break;
-        case "l":
-        case "L":
-          if (!event.ctrlKey && !event.metaKey) {
-            handleLike(event as any);
-            announce(activeLikes.liked ? "Unliked" : "Liked");
-          }
-          break;
-        case "c":
-        case "C":
-          if (!event.ctrlKey && !event.metaKey) {
-            setShowComments(true);
-          }
-          break;
-        case "s":
-        case "S":
-          if (!event.ctrlKey && !event.metaKey) {
-            handleShare();
-          }
-          break;
-        case "Escape":
-          if (showComments) {
-            setShowComments(false);
-          }
-          break;
-      }
-    }
-
-    container.addEventListener("keydown", handleKeyDown);
-    return () => container.removeEventListener("keydown", handleKeyDown);
-  }, [activeIdx, showComments, activeLikes.liked, announce]);
-
-  // Screen reader announcement helper
-  const announce = useCallback((message: string) => {
-    if (liveRegionRef.current) {
-      liveRegionRef.current.textContent = "";
-      requestAnimationFrame(() => {
-        if (liveRegionRef.current) {
-          liveRegionRef.current.textContent = message;
-        }
-      });
-    }
-  }, []);
+  }, [activeIdx]);
 
   const handleNext = () => {
     setActiveIdx((current) => (current + 1) % REELS_DATA.length);
@@ -524,16 +452,16 @@ export function TrendingReels() {
                 Resolution Actions:
               </div>
               <div className="flex gap-2">
-                <span aria-hidden="true" tabIndex={-1} className="flex-1 py-1.5 px-2 bg-red-900/30 border border-red-600 text-red-200 rounded text-[10px] font-bold select-none">
+                <button className="flex-1 py-1.5 px-2 bg-red-900/30 hover:bg-red-900/50 border border-red-600 text-red-200 rounded text-[10px] transition-colors font-bold">
                   Accept Head
-                </span>
-                <span aria-hidden="true" tabIndex={-1} className="flex-1 py-1.5 px-2 bg-blue-900/30 border border-blue-600 text-blue-200 rounded text-[10px] font-bold select-none">
+                </button>
+                <button className="flex-1 py-1.5 px-2 bg-blue-900/30 hover:bg-blue-900/50 border border-blue-600 text-blue-200 rounded text-[10px] transition-colors font-bold">
                   Accept Master
-                </span>
+                </button>
               </div>
-              <span aria-hidden="true" tabIndex={-1} className="w-full py-2 bg-green-600 border-2 border-black text-black font-black uppercase text-[10px] rounded-lg shadow-[2px_2px_0_#000] flex items-center justify-center gap-1.5 select-none">
+              <button className="w-full py-2 bg-green-600 hover:bg-green-700 border-2 border-black text-black font-black uppercase text-[10px] rounded-lg shadow-[2px_2px_0_#000] hover:translate-y-[-1px] active:translate-y-0 active:shadow-none transition-all flex items-center justify-center gap-1.5">
                 <Sparkles size={12} /> Accept Both Changes
-              </span>
+              </button>
             </div>
           </div>
         );
@@ -602,15 +530,7 @@ export function TrendingReels() {
   };
 
   return (
-    <section className="w-full bg-[#EBEBEB] dark:bg-[#0E0E12] border-t-4 border-b-4 border-black py-16 px-6 font-sans relative overflow-hidden select-none" aria-labelledby="trending-reels-heading">
-      {/* Screen reader live region for dynamic announcements */}
-      <div
-        ref={liveRegionRef}
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-        className="sr-only"
-      />
+    <section className="w-full bg-[#EBEBEB] dark:bg-[#0E0E12] border-t-4 border-b-4 border-black py-16 px-6 font-sans relative overflow-hidden select-none">
       {/* Background Decorative Grid */}
       <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none"></div>
 
@@ -623,7 +543,7 @@ export function TrendingReels() {
             </span>
           </div>
 
-          <h2 id="trending-reels-heading" className="text-3xl sm:text-4xl lg:text-5xl font-black text-black dark:text-white uppercase leading-none tracking-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-black dark:text-white uppercase leading-none tracking-tight">
             Trending Git Reels
           </h2>
 
@@ -639,7 +559,7 @@ export function TrendingReels() {
               className="p-3 bg-white dark:bg-[#1E1E24] border-4 border-black text-black dark:text-white rounded-xl shadow-card-sm hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
               aria-label="Previous Reel"
             >
-              <ChevronLeft size={24} aria-hidden="true" />
+              <ChevronLeft size={24} />
             </button>
 
             <button
@@ -648,11 +568,11 @@ export function TrendingReels() {
             >
               {isPlaying ? (
                 <>
-                  <Pause size={18} aria-hidden="true" /> Pause Autoplay
+                  <Pause size={18} /> Pause Autoplay
                 </>
               ) : (
                 <>
-                  <Play size={18} aria-hidden="true" /> Play Autoplay
+                  <Play size={18} /> Play Autoplay
                 </>
               )}
             </button>
@@ -662,7 +582,7 @@ export function TrendingReels() {
               className="p-3 bg-white dark:bg-[#1E1E24] border-4 border-black text-black dark:text-white rounded-xl shadow-card-sm hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
               aria-label="Next Reel"
             >
-              <ChevronRight size={24} aria-hidden="true" />
+              <ChevronRight size={24} />
             </button>
           </div>
         </div>
@@ -671,9 +591,6 @@ export function TrendingReels() {
         <div
           className="w-full max-w-[340px] aspect-[9/16] relative mx-auto"
           ref={containerRef}
-          role="region"
-          aria-label="Trending reel player. Use arrow keys to navigate, space to pause, L to like, C for comments, S to share."
-          tabIndex={0}
         >
           {/* External Phone Shell Frame */}
           <div className="absolute inset-0 rounded-[3rem] border-8 border-black bg-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col justify-between relative select-none">
@@ -706,8 +623,6 @@ export function TrendingReels() {
                   {/* Follow Button */}
                   <button
                     onClick={handleToggleFollow}
-                    aria-label={isFollowing[activeReel.id] ? `Unfollow @${activeReel.creator.username}` : `Follow @${activeReel.creator.username}`}
-                    aria-pressed={isFollowing[activeReel.id]}
                     className={`ml-auto px-2 py-1 text-[9px] font-black border border-white rounded-lg flex items-center gap-1 transition-all ${
                       isFollowing[activeReel.id]
                         ? "bg-white text-black"
@@ -787,8 +702,6 @@ export function TrendingReels() {
             <div className="flex flex-col items-center">
               <button
                 onClick={handleLike}
-                aria-label={activeLikes.liked ? "Unlike this reel" : "Like this reel"}
-                aria-pressed={activeLikes.liked}
                 className={`p-3 rounded-full border-2 border-black shadow-[2px_2px_0_#000] transition-all hover:translate-y-[-1px] active:translate-y-0 active:shadow-none flex items-center justify-center relative cursor-pointer ${
                   activeLikes.liked
                     ? "bg-[#FF6B6B] text-white"
@@ -798,7 +711,6 @@ export function TrendingReels() {
                 <Heart
                   size={20}
                   fill={activeLikes.liked ? "currentColor" : "none"}
-                  aria-hidden="true"
                 />
               </button>
               <span className="text-[10px] font-black text-black dark:text-white mt-1">
@@ -810,10 +722,9 @@ export function TrendingReels() {
             <div className="flex flex-col items-center">
               <button
                 onClick={() => setShowComments(true)}
-                aria-label="View comments"
                 className="p-3 rounded-full border-2 border-black bg-white dark:bg-[#1E1E24] text-black dark:text-white shadow-[2px_2px_0_#000] hover:translate-y-[-1px] active:translate-y-0 active:shadow-none flex items-center justify-center cursor-pointer"
               >
-                <MessageSquare size={20} aria-hidden="true" />
+                <MessageSquare size={20} />
               </button>
               <span className="text-[10px] font-black text-black dark:text-white mt-1">
                 {activeReel.commentsCount}
@@ -823,10 +734,9 @@ export function TrendingReels() {
             {/* Share Button */}
             <button
               onClick={handleShare}
-              aria-label="Share reel"
               className="p-3 rounded-full border-2 border-black bg-white dark:bg-[#1E1E24] text-black dark:text-white shadow-[2px_2px_0_#000] hover:translate-y-[-1px] active:translate-y-0 active:shadow-none flex items-center justify-center cursor-pointer"
             >
-              <Share2 size={20} aria-hidden="true" />
+              <Share2 size={20} />
             </button>
           </div>
         </div>
@@ -835,9 +745,9 @@ export function TrendingReels() {
       {/* COMMENTS SIDE DRAWER DIALOG MOCKUP */}
       {showComments && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white dark:bg-[#1C1C24] border-4 border-black rounded-2xl p-6 shadow-[8px_8px_0_#000] relative">              <button
+          <div className="w-full max-w-md bg-white dark:bg-[#1C1C24] border-4 border-black rounded-2xl p-6 shadow-[8px_8px_0_#000] relative">
+            <button
               onClick={() => setShowComments(false)}
-              aria-label="Close comments"
               className="absolute top-4 right-4 text-xs font-black border-2 border-black px-2.5 py-1 hover:bg-slate-50 dark:text-white dark:border-white/20 dark:hover:bg-white/10 rounded-lg cursor-pointer"
             >
               Close
@@ -848,12 +758,13 @@ export function TrendingReels() {
             </h3>
 
             {/* Comments List */}
-            <div className="max-h-[300px] overflow-y-auto space-y-4 mb-4 pr-1 text-slate-800 dark:text-slate-100" role="list" aria-label="Comments">
-              {(comments[activeReel.id] || []).map((c, i) => (                <div key={i}
-                  role="listitem"
+            <div className="max-h-[300px] overflow-y-auto space-y-4 mb-4 pr-1 text-slate-800 dark:text-slate-100">
+              {(comments[activeReel.id] || []).map((c, i) => (
+                <div
+                  key={i}
                   className="flex gap-3 items-start text-xs border-b border-slate-100 dark:border-slate-800 pb-3"
                 >
-                  <div className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm" aria-hidden="true">
+                  <div className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm">
                     {c.avatar}
                   </div>
                   <div className="flex-1">
@@ -882,7 +793,6 @@ export function TrendingReels() {
               />
               <button
                 type="submit"
-                aria-label="Post comment"
                 className="px-4 py-2 bg-[#FF6B6B] text-white border-2 border-black rounded-xl text-xs font-black uppercase shadow-card-sm hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none cursor-pointer"
               >
                 Post

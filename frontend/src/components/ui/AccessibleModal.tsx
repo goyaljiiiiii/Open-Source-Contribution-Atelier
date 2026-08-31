@@ -30,8 +30,8 @@ export const AccessibleModal: React.FC<AccessibleModalProps> = ({
   titleId,
   descriptionId,
   children,
-  className = "bg-white p-6 border-4 border-black max-w-lg w-full rounded-2xl shadow-[6px_6px_0px_0px_#000000] relative",
-  backdropClassName = "fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4",
+  className = "bg-white dark:bg-slate-900 p-6 border border-slate-700 dark:border-slate-800 max-w-lg w-full rounded-2xl shadow-2xl relative",
+  backdropClassName = "fixed inset-0 z-50 flex items-center justify-center bg-black/75 dark:bg-black/80 backdrop-blur-sm p-4",
   closeOnOverlayClick = true,
   closeOnEscape = true,
 }) => {

@@ -20,7 +20,22 @@ class IssueReportViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
     def perform_create(self, serializer):
-        serializer.save()
+        instance = serializer.save()
+        self._check_and_award_bug_hunter_badge(instance)
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        self._check_and_award_bug_hunter_badge(instance)
+
+    def _check_and_award_bug_hunter_badge(self, instance):
+        if instance.user and instance.is_verified:
+            verified_count = IssueReport.objects.filter(
+                user=instance.user, is_verified=True
+            ).count()
+            if verified_count >= 3:
+                from apps.gamification.services import award_badge_service
+
+                award_badge_service(instance.user, badge_name="Bug Hunter")
 
 
 from django.db import transaction

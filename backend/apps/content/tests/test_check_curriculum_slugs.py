@@ -50,14 +50,16 @@ class CheckCurriculumSlugsTests(TestCase):
         with TemporaryDirectory() as tmpdir:
             curriculum_file = Path(tmpdir) / "curriculum.json"
             curriculum_file.write_text(
-                json.dumps({
-                    "modules": [
-                        {
-                            "id": "m1",
-                            "lessons": [{"slug": "curriculum-lesson-1"}],
-                        }
-                    ]
-                }),
+                json.dumps(
+                    {
+                        "modules": [
+                            {
+                                "id": "m1",
+                                "lessons": [{"slug": "curriculum-lesson-1"}],
+                            }
+                        ]
+                    }
+                ),
                 encoding="utf-8",
             )
 
@@ -78,11 +80,9 @@ class CheckCurriculumSlugsTests(TestCase):
         with TemporaryDirectory() as tmpdir:
             curriculum_file = Path(tmpdir) / "curriculum.json"
             curriculum_file.write_text(
-                json.dumps({
-                    "modules": [
-                        {"id": "m1", "lessons": [{"slug": "missing-slug"}]}
-                    ]
-                }),
+                json.dumps(
+                    {"modules": [{"id": "m1", "lessons": [{"slug": "missing-slug"}]}]}
+                ),
                 encoding="utf-8",
             )
 

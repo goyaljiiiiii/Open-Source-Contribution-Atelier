@@ -16,7 +16,9 @@ def parse_version_from_accept_header(accept_header: str) -> Optional[str]:
         return None
 
     # Match version=<val> in Accept header parameters
-    match = re.search(r";\s*version=['\"]?v?(\d+(?:\.\d+)?)['\"]?", accept_header, re.IGNORECASE)
+    match = re.search(
+        r";\s*version=['\"]?v?(\d+(?:\.\d+)?)['\"]?", accept_header, re.IGNORECASE
+    )
     if match:
         return match.group(1)
     return None
@@ -50,9 +52,7 @@ class AcceptHeaderOrURLVersioning(versioning.BaseVersioning):
     def determine_version(
         self, request: HttpRequest, *args, **kwargs
     ) -> Tuple[Optional[str], Optional[versioning.BaseVersioning]]:
-        allowed_versions: List[str] = getattr(
-            settings, "ALLOWED_API_VERSIONS", ["1.0"]
-        )
+        allowed_versions: List[str] = getattr(settings, "ALLOWED_API_VERSIONS", ["1.0"])
         default_version: str = getattr(settings, "DEFAULT_API_VERSION", "1.0")
 
         # 1. Check Accept Header (e.g., Accept: application/json; version=1.0)
@@ -91,14 +91,22 @@ class VersionedAPIRouter:
         self.default_version = default_version
         self.registry: List[Dict] = []
 
-    def register(self, prefix: str, include_target, name: Optional[str] = None, kwargs: Optional[Dict] = None):
+    def register(
+        self,
+        prefix: str,
+        include_target,
+        name: Optional[str] = None,
+        kwargs: Optional[Dict] = None,
+    ):
         """Register an endpoint prefix and target include/view."""
-        self.registry.append({
-            "prefix": prefix,
-            "include_target": include_target,
-            "name": name,
-            "kwargs": kwargs or {},
-        })
+        self.registry.append(
+            {
+                "prefix": prefix,
+                "include_target": include_target,
+                "name": name,
+                "kwargs": kwargs or {},
+            }
+        )
 
     def get_v1_patterns(self):
         """Returns URL patterns for version 1.0."""

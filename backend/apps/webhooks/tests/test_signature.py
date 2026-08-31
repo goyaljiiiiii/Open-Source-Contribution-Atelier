@@ -67,7 +67,9 @@ def test_tampered_payload_signature(client):
     Test that sending a tampered payload with the original payload's signature returns 403 Forbidden.
     """
     url = reverse("github-webhook")
-    tampered_payload = json.dumps({"action": "opened", "issue": {"id": 101, "title": "Hacked Title"}}).encode("utf-8")
+    tampered_payload = json.dumps(
+        {"action": "opened", "issue": {"id": 101, "title": "Hacked Title"}}
+    ).encode("utf-8")
     response = client.post(
         url,
         data=tampered_payload,

@@ -83,4 +83,3 @@ def test_exceeding_upload_type_size_limit_is_rejected(tmp_path):
     path.write_bytes(content)
     with pytest.raises(ValidationError, match="exceeds the 5MB limit"):
         validate_file(path, "large.png", "avatar")
-

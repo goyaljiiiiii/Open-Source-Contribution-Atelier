@@ -31,7 +31,9 @@ def test_notification_prefs_get_creates_defaults(auth_client):
 
     response = client.get("/api/notifications/prefs/")
     assert response.status_code == 200
-    assert response.data == {"email": True, "in_app": True, "websocket": True}
+    assert response.data["email"] is True
+    assert response.data["in_app"] is True
+    assert response.data["websocket"] is True
     assert NotificationPreference.objects.filter(user=user).count() == 1
 
 

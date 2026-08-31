@@ -28,13 +28,17 @@ class MermaidExporter:
             original_id = str(node["id"])
             mermaid_id = self._sanitize_node_id(original_id)
             node_ids[original_id] = mermaid_id
-            label = str(node["label"]).replace('"', '\"')
+            label = str(node["label"]).replace('"', '"')
             lines.append(f'    {mermaid_id}["{label}"]')
 
         # Add edges using the same sanitized IDs as their nodes.
         for edge in graph_data["edges"]:
-            source = node_ids.get(str(edge["source"]), self._sanitize_node_id(edge["source"]))
-            target = node_ids.get(str(edge["target"]), self._sanitize_node_id(edge["target"]))
+            source = node_ids.get(
+                str(edge["source"]), self._sanitize_node_id(edge["source"])
+            )
+            target = node_ids.get(
+                str(edge["target"]), self._sanitize_node_id(edge["target"])
+            )
             lines.append(f"    {source} --> {target}")
 
         return "\n".join(lines)

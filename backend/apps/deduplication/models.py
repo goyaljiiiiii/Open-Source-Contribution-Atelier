@@ -48,4 +48,6 @@ class IdempotencyRecord(models.Model):
         return hashlib.sha256(body).hexdigest()
 
     def __str__(self):
-        return f"IdempotencyRecord(key={self.idempotency_key}, endpoint={self.endpoint})"
+        return (
+            f"IdempotencyRecord(key={self.idempotency_key}, endpoint={self.endpoint})"
+        )

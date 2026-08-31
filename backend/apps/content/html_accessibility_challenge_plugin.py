@@ -26,7 +26,9 @@ class _AccessibilityAuditParser(HTMLParser):
         self._label_for_ids: set = set()
         self._input_ids_needing_label: List[Tuple[str, int]] = []
         self._last_heading_level = 0
-        self._tag_stack: List[Tuple[str, int, bool]] = []  # (tag, line, has_text_content)
+        self._tag_stack: List[Tuple[str, int, bool]] = (
+            []
+        )  # (tag, line, has_text_content)
         self._interactive_text_buffer: Dict[int, str] = {}
 
     def handle_starttag(self, tag: str, attrs: List[Tuple[str, Optional[str]]]):
@@ -36,7 +38,9 @@ class _AccessibilityAuditParser(HTMLParser):
         if tag == "img":
             alt = attrs_dict.get("alt")
             if alt is None or alt.strip() == "":
-                self.errors.append(f"line {line}: <img> missing non-empty 'alt' attribute")
+                self.errors.append(
+                    f"line {line}: <img> missing non-empty 'alt' attribute"
+                )
 
         if tag == "label":
             for_id = attrs_dict.get("for")
@@ -127,7 +131,9 @@ class HTMLAccessibilityChallengePlugin(LessonPlugin):
     # Approximate check count for scoring — actual violations found is
     # what matters; this is a soft denominator representing "how many
     # independent rule categories were checked" for percentage scoring.
-    _RULE_CATEGORIES = 4  # img alt, label association, heading hierarchy, interactive text
+    _RULE_CATEGORIES = (
+        4  # img alt, label association, heading hierarchy, interactive text
+    )
 
     @classmethod
     def validate_submission(cls, data: Dict[str, Any]) -> bool:
@@ -153,7 +159,9 @@ class HTMLAccessibilityChallengePlugin(LessonPlugin):
         # rather than a hard binary pass/fail — a document with 1 missing
         # alt attribute among otherwise-correct markup is closer to
         # passing than one with a dozen violations.
-        penalty_per_error = 100.0 / (cls._RULE_CATEGORIES * 3)  # allow up to 3 violations per category before hitting 0
+        penalty_per_error = 100.0 / (
+            cls._RULE_CATEGORIES * 3
+        )  # allow up to 3 violations per category before hitting 0
         score = max(0.0, 100.0 - (len(errors) * penalty_per_error))
         return round(score, 2)
 

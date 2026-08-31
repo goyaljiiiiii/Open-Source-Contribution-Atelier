@@ -1,7 +1,9 @@
 from pathlib import Path
+
 from apps.pr_review_bot.services.diff_parser import GitDiffParser, parse_git_diff
 
 FIXTURE = Path(__file__).parent / "fixtures" / "rename_and_mode.diff"
+
 
 def test_parse_multi_file_rename_and_mode_change():
     files = parse_git_diff(FIXTURE.read_text())
@@ -15,15 +17,20 @@ def test_parse_multi_file_rename_and_mode_change():
     assert renamed.new_mode == "100755"
     assert renamed.mode_changed is True
 
+
 def test_comment_uses_post_rename_path_and_new_line_position():
-    anchor = GitDiffParser().map_comment(FIXTURE.read_text(), "backend/new_service.py", 12)
+    anchor = GitDiffParser().map_comment(
+        FIXTURE.read_text(), "backend/new_service.py", 12
+    )
     assert anchor == {"path": "backend/new_service.py", "line": 12, "position": 3}
+
 
 def test_old_rename_path_is_not_used_for_review_comments():
     parser = GitDiffParser()
     diff = FIXTURE.read_text()
     assert parser.file_for_comment(diff, "backend/new_service.py") is not None
     assert parser.file_for_comment(diff, "backend/old_service.py") is None
+
 
 def test_non_renamed_file_still_maps_lines():
     anchor = GitDiffParser().map_comment(FIXTURE.read_text(), "backend/untouched.py", 2)

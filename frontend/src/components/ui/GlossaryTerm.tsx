@@ -5,12 +5,42 @@ export type GlossaryTermProps = {
   entry: GlossaryEntry;
   children: React.ReactNode;
   onOpen: (entry: GlossaryEntry) => void;
+  query?: string;
 };
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function highlightQuery(text: string, query?: string): React.ReactNode {
+  const cleanQuery = query?.trim();
+  if (!cleanQuery) return text;
+  const regex = new RegExp(`(${escapeRegExp(cleanQuery)})`, "ig");
+  const parts = text.split(regex);
+  if (parts.length === 1) return text;
+  return parts.map((part, idx) =>
+    part.toLowerCase() === cleanQuery.toLowerCase() ? (
+      <mark
+        key={`q-${idx}`}
+        className="rounded-sm bg-yellow-300 px-0.5 text-black dark:bg-yellow-400"
+      >
+        {part}
+      </mark>
+    ) : (
+      <React.Fragment key={`t-${idx}`}>{part}</React.Fragment>
+    ),
+  );
+}
 
 /**
  * Clickable / keyboard-activatable glossary term in lesson prose.
  */
-export function GlossaryTerm({ entry, children, onOpen }: GlossaryTermProps) {
+export function GlossaryTerm({
+  entry,
+  children,
+  onOpen,
+  query,
+}: GlossaryTermProps) {
   const descId = useId();
 
   return (
@@ -28,7 +58,7 @@ export function GlossaryTerm({ entry, children, onOpen }: GlossaryTermProps) {
         aria-describedby={descId}
         title={entry.short}
       >
-        {children}
+        {typeof children === "string" ? highlightQuery(children, query) : children}
       </button>
       <span id={descId} className="sr-only">
         Glossary: {entry.short}

@@ -6,21 +6,20 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('audit', '0001_initial'),
+        ("audit", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='RBAC',
-            fields=[
-            ],
+            name="RBAC",
+            fields=[],
             options={
-                'verbose_name': 'RBAC Audit Event',
-                'verbose_name_plural': 'RBAC Audit Events',
-                'proxy': True,
-                'indexes': [],
-                'constraints': [],
+                "verbose_name": "RBAC Audit Event",
+                "verbose_name_plural": "RBAC Audit Events",
+                "proxy": True,
+                "indexes": [],
+                "constraints": [],
             },
-            bases=('audit.auditevent',),
+            bases=("audit.auditevent",),
         ),
     ]

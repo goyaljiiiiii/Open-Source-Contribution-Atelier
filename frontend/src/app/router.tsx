@@ -1,4 +1,4 @@
-import React, { lazy } from "react";
+import React from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { AppLayout } from "../components/layout/AppLayout";
@@ -9,18 +9,76 @@ import { TerminalReplay } from "../components/ui/TerminalReplay";
 import { useAuth } from "../features/auth/AuthContext";
 import { RouteSuspenseWrapper } from "../components/ui/SkeletonRegistry";
 
-/*
- * Route components are loaded only when their route is visited.
- * Most pages in this project use named exports, so their imports
- * are mapped to the default export shape required by React.lazy().
- */
+import {
+  FullStackDocsPage,
+  ChallengePage,
+  A11yLinterSandbox,
+  ChatPage,
+  CommunityPage,
+  DashboardPage,
+  GitHubAuthCallbackPage,
 
-const FullStackDocsPage = lazy(() =>
-  import("../pages/docs/FullStackDocsPage").then((module) => ({
-    default: module.FullStackDocsPage,
-  })),
-);
+  LoginPage,
+  SignupPage,
+  LessonPage,
+  LessonCollaboratePage,
+  NotFoundPage,
+  ServerErrorPage,
+  ModerationDashboard,
+  BackupDashboardPage,
+  AuditLogViewerPage,
+  CeleryDashboardPage,
+  ApiPerformanceDashboardPage,
+  VulnerabilityDashboard,
+  SecurityDashboardPage,
+  SandboxPage,
+  ContributorSandboxPage,
+  GitSubmoduleSimulatorPage,
+  GitStashManagerPage,
+  GitRebaseVisualizerPage,
+  MonorepoVisualizerPage,
+  DockerfileLinterPage,
+  GitBisectGamePage,
+  CollabSessionPage,
+  CollabNotesPage,
+  PrDiffSummarizerPage,
+  ProfileSettingsPage,
+  NotificationPreferencesPage,
+  DigestPage,
+  PricingPage,
+  BillingPage,
+  InvoiceHistoryPage,
+  WebhookSettingsPage,
+  UserProfilePage,
+  LeaderboardPage,
+  ShopPage,
+  VerifyCertificatePage,
+  PeerReviewPage,
+  PathwayPage,
+  SkillTreePage,
+  LearningPathPage,
+  BountiesPage,
+  GoodFirstIssueFinderPage,
+  MaintainerReplyToneCoachPage,
+  MergeConflictScenarioBuilderPage,
+  PerformanceDashboardPage,
+  ContentStudioPage,
+  QuizBuilderPage,
+  ModuleTreePage,
+  AnalyticsDashboardPage,
+  TemplateMarketplacePage,
+  PortfolioPage,
+  ApiDocsPage,
+  EnvConfigGeneratorPage,
+  WebSocketSimulatorPage,
+  OAuthClientsPage,
+  UsageAnalyticsPage,
+  ConnectedAppsPage,
+  GitBranchSimulatorPage,
+} from "./routeComponents";
 
+<<<<<<< HEAD
+=======
 const ChallengePage = lazy(() =>
   import("../pages/ChallengePage").then((module) => ({
     default: module.ChallengePage,
@@ -383,6 +441,7 @@ const UsageAnalyticsPage = lazy(
   () => import("../pages/admin/UsageAnalyticsPage"),
 );
 
+
 const ConnectedAppsPage = lazy(() =>
   import("../pages/settings/ConnectedApps").then((module) => ({
     default: module.ConnectedApps,
@@ -392,6 +451,18 @@ const ConnectedAppsPage = lazy(() =>
 const JsonTreeViewerPage = lazy(() =>
   import("../pages/JsonTreeViewerPage").then((module) => ({
     default: module.JsonTreeViewerPage,
+  })),
+);
+
+const RegexPlaygroundPage = lazy(() =>
+  import("../pages/RegexPlaygroundPage").then((module) => ({
+    default: module.RegexPlaygroundPage,
+  })),
+);
+
+const ColorPaletteGeneratorPage = lazy(() =>
+  import("../pages/ColorPaletteGeneratorPage").then((module) => ({
+    default: module.ColorPaletteGeneratorPage,
   })),
 );
 
@@ -452,7 +523,7 @@ export function AppRouter() {
           path="/"
           element={
             <PublicOnlyRoute>
-              <LandingPage />
+              <LoginPage />
             </PublicOnlyRoute>
           }
         />
@@ -701,10 +772,31 @@ export function AppRouter() {
         />
 
         <Route
+<<<<<<< HEAD
           path="/sandbox/json"
           element={
             <ProtectedRoute>
               <JsonTreeViewerPage />
+=======
+<<<<<<< HEAD
+          path="/sandbox/regex"
+          element={
+            <ProtectedRoute>
+              <RegexPlaygroundPage />
+=======
+<<<<<<< HEAD
+          path="/sandbox/branches"
+          element={
+            <ProtectedRoute>
+              <GitBranchSimulatorPage />
+=======
+          path="/sandbox/color-palette"
+          element={
+            <ProtectedRoute>
+              <ColorPaletteGeneratorPage />
+>>>>>>> origin/main
+>>>>>>> origin/main
+>>>>>>> origin/main
             </ProtectedRoute>
           }
         />
@@ -992,14 +1084,6 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <ContentStudioPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/leaderboard"
-          element={
-            <ProtectedRoute>
-              <LeaderboardPage />
             </ProtectedRoute>
           }
         />

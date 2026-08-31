@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import ast
 import re
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from typing import Any, Dict, List, Optional
 
 
@@ -91,7 +91,11 @@ def analyze_python_complexity(path: str, content: str) -> List[ComplexityFinding
                         asymptotic_hint=hint,
                         message=(
                             f"Function '{node.name}' cyclomatic complexity {cc}"
-                            + (f", nested loops suggest {hint}" if hint and hint != "O(n)" else "")
+                            + (
+                                f", nested loops suggest {hint}"
+                                if hint and hint != "O(n)"
+                                else ""
+                            )
                         ),
                     )
                 )

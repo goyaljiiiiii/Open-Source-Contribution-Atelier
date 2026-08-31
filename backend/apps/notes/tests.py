@@ -37,7 +37,11 @@ class NoteAPITestCase(TestCase):
         # Retrieve notes
         response = self.client.get("/api/notes/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        results = response.data.get("results") if isinstance(response.data, dict) else response.data
+        results = (
+            response.data.get("results")
+            if isinstance(response.data, dict)
+            else response.data
+        )
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["title"], "My Secret")
 
@@ -51,7 +55,11 @@ class NoteAPITestCase(TestCase):
 
         self.client.force_authenticate(user=self.user1)
         response = self.client.get("/api/notes/")
-        results = response.data.get("results") if isinstance(response.data, dict) else response.data
+        results = (
+            response.data.get("results")
+            if isinstance(response.data, dict)
+            else response.data
+        )
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["title"], "User 1 Note")
 
