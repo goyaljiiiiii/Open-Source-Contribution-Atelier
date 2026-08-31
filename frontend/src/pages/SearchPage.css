@@ -28,7 +28,16 @@
   font-size: 16px;
 }
 
+.search-duration-info {
+  color: #4ade80;
+  font-size: 13px;
+  font-family: monospace;
+  margin-top: 6px;
+  font-weight: 600;
+}
+
 .search-page-content {
   max-width: 800px;
   margin: 0 auto;
 }
+
