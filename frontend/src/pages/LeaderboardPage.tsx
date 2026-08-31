@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { CARD_FOCUS_RING } from "../lib/a11yFocus";
 import { StreakFlame } from "../components/dashboard/StreakFlame";
+import LeaderboardSkeleton from "../components/ui/skeletons/LeaderboardSkeleton";
 import "../components/dashboard/streakFlame.css";
 
 export interface ContributorRankData {
@@ -464,16 +465,7 @@ export function LeaderboardPage() {
                 </tr>
               </thead>
               {showInitialLoader ? (
-                <tbody>
-                  <tr>
-                    <td colSpan={7} className="py-12 text-center">
-                      <LoaderCircle className="w-8 h-8 mx-auto animate-spin text-amber-500" />
-                      <p className="mt-3 text-sm font-black text-gray-500 dark:text-[#c4bbae]">
-                        Loading live leaderboard...
-                      </p>
-                    </td>
-                  </tr>
-                </tbody>
+                <LeaderboardSkeleton />
               ) : isError && rawRows.length === 0 ? (
                 <tbody>
                   <tr>
