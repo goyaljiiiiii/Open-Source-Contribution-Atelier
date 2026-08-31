@@ -18,7 +18,9 @@ class NotificationPrefsView(APIView):
     def get(self, request):
         prefs, _ = NotificationPreference.objects.get_or_create(user=request.user)
         user_profile = getattr(request.user, "user_profile", None)
-        receive_weekly_digest = user_profile.receive_weekly_digest if user_profile else True
+        receive_weekly_digest = (
+            user_profile.receive_weekly_digest if user_profile else True
+        )
         return Response(
             {
                 "email": prefs.email_enabled,
@@ -56,7 +58,9 @@ class NotificationPrefsView(APIView):
             profile.save(update_fields=["receive_weekly_digest"])
 
         user_profile = getattr(request.user, "user_profile", None)
-        receive_weekly_digest = user_profile.receive_weekly_digest if user_profile else True
+        receive_weekly_digest = (
+            user_profile.receive_weekly_digest if user_profile else True
+        )
 
         return Response(
             {
@@ -67,6 +71,8 @@ class NotificationPrefsView(APIView):
                 "weekly_digest": receive_weekly_digest,
             }
         )
+
+    patch = put
 
 
 class NotificationListView(generics.ListAPIView):
@@ -171,9 +177,7 @@ class DigestAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         return (
-            Notification.objects.filter(
-                recipient=self.request.user, is_read=False
-            )
+            Notification.objects.filter(recipient=self.request.user, is_read=False)
             .select_related("sender")
             .order_by("-created_at", "-id")
         )
@@ -185,7 +189,7 @@ class DigestAPIView(generics.ListAPIView):
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             response = self.get_paginated_response(serializer.data)
-            response.data["unread_count"] = self.page.paginator.count
+            response.data["unread_count"] = response.data.get("count", len(page))
             return response
 
         unread_count = queryset.count()
@@ -217,7 +221,9 @@ class TrackOpenView(APIView):
 
     def get(self, request, delivery_id):
         from django.http import HttpResponse
+
         from .models import NotificationDelivery
+
         try:
             delivery = NotificationDelivery.objects.get(pk=delivery_id)
             delivery.status = "opened"
@@ -238,7 +244,9 @@ class TrackClickView(APIView):
 
     def get(self, request, delivery_id):
         from django.shortcuts import redirect
+
         from .models import NotificationDelivery
+
         target = request.query_params.get("target", "/")
         try:
             delivery = NotificationDelivery.objects.get(pk=delivery_id)
@@ -255,7 +263,14 @@ class ChannelPreferencesView(APIView):
     def get(self, request):
         return Response(
             {
-                "available_channels": ["in_app", "email", "push", "sms", "webhook", "slack"],
+                "available_channels": [
+                    "in_app",
+                    "email",
+                    "push",
+                    "sms",
+                    "webhook",
+                    "slack",
+                ],
                 "channel_preferences": {
                     "badge": {
                         "in_app": True,
@@ -287,6 +302,7 @@ class AdminMetricsView(APIView):
 
     def get(self, request):
         from .models import NotificationDelivery
+
         total = NotificationDelivery.objects.count()
         return Response(
             {

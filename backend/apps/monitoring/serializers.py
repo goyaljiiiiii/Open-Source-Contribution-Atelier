@@ -31,4 +31,3 @@ class TaskRunSerializer(serializers.ModelSerializer):
             "args_summary",
             "retry_count",
         ]
-

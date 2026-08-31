@@ -202,9 +202,9 @@ class NotificationConsumer(AsyncWebsocketConsumer):
     async def mark_notification_read(self, notif_id):
         from .models import Notification
 
-        await Notification.objects.filter(id=notif_id, recipient=self.scope["user"]).aupdate(
-            is_read=True
-        )
+        await Notification.objects.filter(
+            id=notif_id, recipient=self.scope["user"]
+        ).aupdate(is_read=True)
 
 
 class LeaderboardConsumer(AsyncWebsocketConsumer):

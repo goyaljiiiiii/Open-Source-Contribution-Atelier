@@ -8,7 +8,10 @@ class AiTutorRateThrottle(UserRateThrottle):
 
     def get_rate(self):
         from django.conf import settings
-        rates = getattr(settings, "REST_FRAMEWORK", {}).get("DEFAULT_THROTTLE_RATES", {})
+
+        rates = getattr(settings, "REST_FRAMEWORK", {}).get(
+            "DEFAULT_THROTTLE_RATES", {}
+        )
         return rates.get(self.scope)
 
     def allow_request(self, request, view):

@@ -117,10 +117,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.close(code=4002)
             return
 
-
         user_id = getattr(user, "pk", getattr(user, "id", None))
-
-
 
         if room_id.startswith("dm_"):
             parts = room_id.split("_")
@@ -130,11 +127,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
                     if user_id not in [u1, u2]:
 
-                     if self.user.id not in [u1, u2]:
+                        if self.user.id not in [u1, u2]:
 
-                        logger.warning("WS Chat rejected: unauthorized DM access")
-                        await self.close(code=4003)
-                        return
+                            logger.warning("WS Chat rejected: unauthorized DM access")
+                            await self.close(code=4003)
+                            return
                 except ValueError:
                     await self.close(code=4002)
                     return
@@ -192,25 +189,26 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 self.group_name,
                 {
                     "type": "presence_joined",
-
                     "username": getattr(self.user, "username", ""),
                     "user_id": user_id,
-
                     "username": self.user.username,
                     "user_id": self.user.id,
-
                 },
             )
 
     async def get_last_50_messages(self):
-        qs = Message.objects.select_related("user").filter(room_id=self.room_id).order_by("-created_at")[:50]
+        qs = (
+            Message.objects.select_related("user")
+            .filter(room_id=self.room_id)
+            .order_by("-created_at")[:50]
+        )
         messages = [m async for m in qs]
         return [
             {
-                "id": m.id, # type: ignore
+                "id": m.id,  # type: ignore
                 "parent_id": m.parent,
                 "username": m.user.username,
-                "user_id": m.user.id, # type: ignore
+                "user_id": m.user.id,  # type: ignore
                 "content": m.content,
                 "created_at": m.created_at.isoformat(),
             }
@@ -477,6 +475,4 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     "user_id": event["user_id"],
                 }
             )
-
         )
-

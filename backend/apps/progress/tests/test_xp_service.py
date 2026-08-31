@@ -87,7 +87,9 @@ class TestXPServiceMultiTierClaim(TestCase):
         with patch.object(
             XPEvent.objects, "create", side_effect=DatabaseError("simulated DB failure")
         ):
-            with self.assertLogs("apps.progress.services.xp_service", level="ERROR") as cm:
+            with self.assertLogs(
+                "apps.progress.services.xp_service", level="ERROR"
+            ) as cm:
                 with self.assertRaises(ValidationError):
                     XPService.claim_multi_tier_rewards(self.user, tiers)
 

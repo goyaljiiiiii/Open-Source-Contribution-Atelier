@@ -24,7 +24,9 @@ def _redis_url() -> str:
     return getattr(settings, "REDIS_URL", "") or "redis://127.0.0.1:6379/0"
 
 
-def publish_token_event(user_id: int | str, event_type: str, jti: str | None = None) -> None:
+def publish_token_event(
+    user_id: int | str, event_type: str, jti: str | None = None
+) -> None:
     """Publish a token lifecycle event; Redis outages never break authentication."""
     payload: dict[str, Any] = {"type": event_type}
     if jti:

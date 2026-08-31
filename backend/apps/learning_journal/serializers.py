@@ -15,7 +15,8 @@ from .models import (
 
 class JournalEntrySerializer(serializers.ModelSerializer):
     username = serializers.CharField(
-        source="user.username", read_only=True,
+        source="user.username",
+        read_only=True,
     )
     reactions_count = serializers.SerializerMethodField()
     comments_count = serializers.SerializerMethodField()
@@ -65,7 +66,8 @@ class JournalEntrySerializer(serializers.ModelSerializer):
 
 class JournalCommentSerializer(serializers.ModelSerializer):
     username = serializers.CharField(
-        source="user.username", read_only=True,
+        source="user.username",
+        read_only=True,
     )
 
     class Meta:
@@ -79,12 +81,13 @@ class JournalCommentSerializer(serializers.ModelSerializer):
             "is_mentor_note",
             "created_at",
         ]
-        read_only_fields = ["id", "user", "created_at"]
+        read_only_fields = ["id", "user", "entry", "created_at"]
 
 
 class JournalReactionSerializer(serializers.ModelSerializer):
     username = serializers.CharField(
-        source="user.username", read_only=True,
+        source="user.username",
+        read_only=True,
     )
 
     class Meta:
@@ -104,7 +107,10 @@ class ReflectionPromptSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReflectionPrompt
         fields = [
-            "id", "text", "prompt_type", "category",
+            "id",
+            "text",
+            "prompt_type",
+            "category",
             "times_used",
         ]
 
@@ -149,7 +155,8 @@ class WeeklyReflectionSerializer(serializers.ModelSerializer):
 
 class JournalTemplateSerializer(serializers.ModelSerializer):
     created_by_username = serializers.CharField(
-        source="created_by.username", read_only=True,
+        source="created_by.username",
+        read_only=True,
     )
 
     class Meta:
@@ -167,7 +174,10 @@ class JournalTemplateSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = [
-            "id", "clone_count", "created_at",
+            "id",
+            "created_by",
+            "clone_count",
+            "created_at",
         ]
 
 

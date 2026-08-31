@@ -33,9 +33,7 @@ class BaseLearningAnalyticsTest(TestCase):
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
 
-        self.tag = SkillTag.objects.create(
-            name="JavaScript", slug="javascript"
-        )
+        self.tag = SkillTag.objects.create(name="JavaScript", slug="javascript")
 
 
 class LearningSessionListCreateViewTest(BaseLearningAnalyticsTest):
@@ -82,9 +80,7 @@ class LearningSessionListCreateViewTest(BaseLearningAnalyticsTest):
         url = reverse("learning_analytics:session-list")
         data = {"activity_type": "invalid_type"}
         response = self.client.post(url, data, format="json")
-        self.assertEqual(
-            response.status_code, status.HTTP_400_BAD_REQUEST
-        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class LearningSessionDetailViewTest(BaseLearningAnalyticsTest):
@@ -96,9 +92,7 @@ class LearningSessionDetailViewTest(BaseLearningAnalyticsTest):
             activity_type="exercise",
             duration_seconds=60,
         )
-        url = reverse(
-            "learning_analytics:session-detail", args=[session.id]
-        )
+        url = reverse("learning_analytics:session-detail", args=[session.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -107,29 +101,19 @@ class LearningSessionDetailViewTest(BaseLearningAnalyticsTest):
             user=self.other_user,
             activity_type="lesson",
         )
-        url = reverse(
-            "learning_analytics:session-detail", args=[session.id]
-        )
+        url = reverse("learning_analytics:session-detail", args=[session.id])
         response = self.client.get(url)
-        self.assertEqual(
-            response.status_code, status.HTTP_404_NOT_FOUND
-        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_delete_session(self):
         session = LearningSession.objects.create(
             user=self.user,
             activity_type="lesson",
         )
-        url = reverse(
-            "learning_analytics:session-detail", args=[session.id]
-        )
+        url = reverse("learning_analytics:session-detail", args=[session.id])
         response = self.client.delete(url)
-        self.assertEqual(
-            response.status_code, status.HTTP_204_NO_CONTENT
-        )
-        self.assertFalse(
-            LearningSession.objects.filter(id=session.id).exists()
-        )
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(LearningSession.objects.filter(id=session.id).exists())
 
 
 class SkillTagListViewTest(BaseLearningAnalyticsTest):
@@ -206,9 +190,7 @@ class SkillLevelRefreshViewTest(BaseLearningAnalyticsTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["refreshed"], 1)
         self.assertTrue(
-            UserSkillProfile.objects.filter(
-                user=self.user, skill_tag=self.tag
-            ).exists()
+            UserSkillProfile.objects.filter(user=self.user, skill_tag=self.tag).exists()
         )
 
 
@@ -255,21 +237,15 @@ class InsightDismissViewTest(BaseLearningAnalyticsTest):
             body="Something",
         )
         url = reverse("learning_analytics:insight-dismiss")
-        response = self.client.post(
-            url, {"insight_id": insight.id}, format="json"
-        )
+        response = self.client.post(url, {"insight_id": insight.id}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         insight.refresh_from_db()
         self.assertTrue(insight.is_dismissed)
 
     def test_dismiss_nonexistent(self):
         url = reverse("learning_analytics:insight-dismiss")
-        response = self.client.post(
-            url, {"insight_id": 9999}, format="json"
-        )
-        self.assertEqual(
-            response.status_code, status.HTTP_404_NOT_FOUND
-        )
+        response = self.client.post(url, {"insight_id": 9999}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
 class InsightBulkReadViewTest(BaseLearningAnalyticsTest):
@@ -323,9 +299,7 @@ class AnalyticsDashboardViewTest(BaseLearningAnalyticsTest):
         self.client.force_authenticate(user=None)
         url = reverse("learning_analytics:analytics-dashboard")
         response = self.client.get(url)
-        self.assertEqual(
-            response.status_code, status.HTTP_401_UNAUTHORIZED
-        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
 class DailyMetricsListViewTest(BaseLearningAnalyticsTest):
@@ -419,9 +393,7 @@ class LearningGoalListCreateViewTest(BaseLearningAnalyticsTest):
             "target_value": 50,
         }
         response = self.client.post(url, data, format="json")
-        self.assertEqual(
-            response.status_code, status.HTTP_400_BAD_REQUEST
-        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_skill_level_goal_with_slug(self):
         url = reverse("learning_analytics:goal-list")
@@ -460,50 +432,32 @@ class LearningGoalDetailViewTest(BaseLearningAnalyticsTest):
         )
 
     def test_retrieve_goal(self):
-        url = reverse(
-            "learning_analytics:goal-detail", args=[self.goal.id]
-        )
+        url = reverse("learning_analytics:goal-detail", args=[self.goal.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["title"], "My Goal")
 
     def test_update_goal(self):
-        url = reverse(
-            "learning_analytics:goal-detail", args=[self.goal.id]
-        )
-        response = self.client.patch(
-            url, {"current_value": 50}, format="json"
-        )
+        url = reverse("learning_analytics:goal-detail", args=[self.goal.id])
+        response = self.client.patch(url, {"current_value": 50}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["current_value"], 50)
 
     def test_complete_goal(self):
-        url = reverse(
-            "learning_analytics:goal-detail", args=[self.goal.id]
-        )
-        response = self.client.patch(
-            url, {"action": "complete"}, format="json"
-        )
+        url = reverse("learning_analytics:goal-detail", args=[self.goal.id])
+        response = self.client.patch(url, {"action": "complete"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data["is_completed"])
 
     def test_archive_goal(self):
-        url = reverse(
-            "learning_analytics:goal-detail", args=[self.goal.id]
-        )
-        response = self.client.patch(
-            url, {"action": "archive"}, format="json"
-        )
+        url = reverse("learning_analytics:goal-detail", args=[self.goal.id])
+        response = self.client.patch(url, {"action": "archive"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_delete_goal(self):
-        url = reverse(
-            "learning_analytics:goal-detail", args=[self.goal.id]
-        )
+        url = reverse("learning_analytics:goal-detail", args=[self.goal.id])
         response = self.client.delete(url)
-        self.assertEqual(
-            response.status_code, status.HTTP_204_NO_CONTENT
-        )
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
 
 class GoalPredictionViewTest(BaseLearningAnalyticsTest):
@@ -517,21 +471,15 @@ class GoalPredictionViewTest(BaseLearningAnalyticsTest):
             target_value=1000,
             current_value=200,
         )
-        url = reverse(
-            "learning_analytics:goal-prediction", args=[goal.id]
-        )
+        url = reverse("learning_analytics:goal-prediction", args=[goal.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("confidence", response.data)
 
     def test_prediction_nonexistent(self):
-        url = reverse(
-            "learning_analytics:goal-prediction", args=[9999]
-        )
+        url = reverse("learning_analytics:goal-prediction", args=[9999])
         response = self.client.get(url)
-        self.assertEqual(
-            response.status_code, status.HTTP_404_NOT_FOUND
-        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_prediction_completed_goal(self):
         goal = LearningGoal.objects.create(
@@ -541,9 +489,7 @@ class GoalPredictionViewTest(BaseLearningAnalyticsTest):
             target_value=100,
             is_completed=True,
         )
-        url = reverse(
-            "learning_analytics:goal-prediction", args=[goal.id]
-        )
+        url = reverse("learning_analytics:goal-prediction", args=[goal.id])
         response = self.client.get(url)
         self.assertEqual(response.data["confidence"], "completed")
 

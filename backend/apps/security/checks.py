@@ -1,4 +1,5 @@
 import urllib.parse
+
 from django.conf import settings
 from django.core.checks import Error, Tags, Warning, register
 

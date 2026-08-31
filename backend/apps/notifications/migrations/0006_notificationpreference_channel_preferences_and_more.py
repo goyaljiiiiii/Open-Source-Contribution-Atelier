@@ -70,7 +70,7 @@ class Migration(migrations.Migration):
                         max_length=50,
                     ),
                 ),
-            ]
+            ],
         ),
         migrations.CreateModel(
             name="NotificationDeadLetter",

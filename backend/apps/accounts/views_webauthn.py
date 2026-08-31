@@ -106,7 +106,9 @@ class PasskeyRegisterFinishView(APIView):
         state = request.session.get("webauthn_registration_state")
         if not state:
             return Response(
-                {"detail": "Registration session not found. Please restart registration."},
+                {
+                    "detail": "Registration session not found. Please restart registration."
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

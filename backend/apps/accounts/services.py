@@ -2,8 +2,8 @@
 Services for user accounts, authentication tokens, and password reset flows.
 """
 
-from datetime import timedelta
 import logging
+from datetime import timedelta
 from typing import Optional, Tuple
 
 from django.conf import settings

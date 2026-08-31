@@ -6,10 +6,11 @@ import logging
 import time
 import uuid
 from contextlib import contextmanager
-from typing import Optional, Any, Callable
 from functools import wraps
-from django.core.cache import cache
+from typing import Any, Callable, Optional
+
 from django.conf import settings
+from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 

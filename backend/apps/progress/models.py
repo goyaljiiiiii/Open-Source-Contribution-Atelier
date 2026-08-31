@@ -793,5 +793,3 @@ class LeaderboardArchive(models.Model):
 
     def __str__(self):
         return f"LeaderboardArchive(user={self.user.username}, period={self.month_key}, rank={self.rank}, xp={self.monthly_xp})"
-
-

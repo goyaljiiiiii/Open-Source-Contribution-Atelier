@@ -34,11 +34,11 @@ _MAX_EF = 3.0
 # Interval multipliers by quality rating (0-4)
 # After first 2 successful reviews, interval = prev_interval * EF multiplier
 _RATING_INTERVAL_MULTIPLIERS = {
-    0: 0.0,    # Again → lapse
-    1: 1.0,    # Hard → same interval
-    2: 1.0,    # Good → multiply by EF
-    3: 1.3,    # Easy → multiply by EF * 1.3
-    4: 1.5,    # Perfect → multiply by EF * 1.5
+    0: 0.0,  # Again → lapse
+    1: 1.0,  # Hard → same interval
+    2: 1.0,  # Good → multiply by EF
+    3: 1.3,  # Easy → multiply by EF * 1.3
+    4: 1.5,  # Perfect → multiply by EF * 1.5
 }
 
 # New-card learning steps (in minutes) before graduation
@@ -47,11 +47,11 @@ _GRADUATION_INTERVAL_DAYS = 1
 
 # XP per review quality
 _XP_RATINGS = {
-    0: 0,     # Again
-    1: 2,     # Hard
-    2: 5,     # Good
-    3: 8,     # Easy
-    4: 12,    # Perfect
+    0: 0,  # Again
+    1: 2,  # Hard
+    2: 5,  # Good
+    3: 8,  # Easy
+    4: 12,  # Perfect
 }
 
 # Streak bonus: every N consecutive good+ reviews adds bonus XP
@@ -62,6 +62,7 @@ _STREAK_BONUS_XP = 10
 # ---------------------------------------------------------------------------
 #  Core SM-2 Engine
 # ---------------------------------------------------------------------------
+
 
 def compute_next_review(
     easiness_factor: float,
@@ -81,10 +82,7 @@ def compute_next_review(
         (new_ef, new_interval, new_repetition)
     """
     # 1. Update easiness factor
-    new_ef = easiness_factor + (
-        0.1
-        - (5 - quality) * (0.08 + (5 - quality) * 0.02)
-    )
+    new_ef = easiness_factor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
     new_ef = max(_MIN_EF, min(_MAX_EF, new_ef))
 
     # 2. Handle lapse (quality < 2)
@@ -108,6 +106,7 @@ def compute_next_review(
 #  Review Processing
 # ---------------------------------------------------------------------------
 
+
 def process_review(
     user,
     flashcard_id: int,
@@ -124,9 +123,8 @@ def process_review(
         raise ValueError(f"Quality must be 0-4, got {quality}")
 
     with transaction.atomic():
-        schedule = (
-            ReviewSchedule.objects.select_for_update()
-            .get(user=user, flashcard_id=flashcard_id)
+        schedule = ReviewSchedule.objects.select_for_update().get(
+            user=user, flashcard_id=flashcard_id
         )
 
         # Snapshot before
@@ -203,6 +201,7 @@ def process_review(
 # ---------------------------------------------------------------------------
 #  Due Card Queries
 # ---------------------------------------------------------------------------
+
 
 def get_due_cards(user, deck_id=None, limit=20) -> list[dict[str, Any]]:
     """Get flashcards due for review, ordered by priority.
@@ -289,6 +288,7 @@ def _schedule_to_dict(schedule) -> dict[str, Any]:
 #  Deck Cloning
 # ---------------------------------------------------------------------------
 
+
 def clone_deck(source_deck, target_user) -> "Deck":
     """Clone a public deck for the target user.
 
@@ -339,9 +339,7 @@ def clone_deck(source_deck, target_user) -> "Deck":
     )
 
     # Increment clone count on source
-    Deck.objects.filter(id=source_deck.id).update(
-        clone_count=F("clone_count") + 1
-    )
+    Deck.objects.filter(id=source_deck.id).update(clone_count=F("clone_count") + 1)
 
     return new_deck
 
@@ -349,6 +347,7 @@ def clone_deck(source_deck, target_user) -> "Deck":
 # ---------------------------------------------------------------------------
 #  Statistics & Analytics
 # ---------------------------------------------------------------------------
+
 
 def get_deck_stats(user, deck_id) -> dict[str, Any]:
     """Compute statistics for a user's deck."""
@@ -378,15 +377,17 @@ def get_deck_stats(user, deck_id) -> dict[str, Any]:
         label = s.maturity_label
         maturity_counts[label] = maturity_counts.get(label, 0) + 1
 
-    due_count = schedules.filter(
-        next_review__lte=timezone.now()
-    ).count()
+    due_count = schedules.filter(next_review__lte=timezone.now()).count()
 
     agg = schedules.aggregate(
         avg_ef=Avg("easiness_factor"),
-        avg_acc=Avg("accuracy_pct"),
+        total_correct=Sum("correct_reviews"),
         total_reviews=Sum("total_reviews"),
     )
+
+    tot_rev = agg["total_reviews"] or 0
+    tot_corr = agg["total_correct"] or 0
+    avg_accuracy = round((tot_corr / tot_rev * 100), 1) if tot_rev > 0 else 0.0
 
     return {
         "total_cards": total,
@@ -396,8 +397,8 @@ def get_deck_stats(user, deck_id) -> dict[str, Any]:
         "mature": maturity_counts.get("mature", 0),
         "due_now": due_count,
         "avg_easiness": round(agg["avg_ef"] or 0, 2),
-        "avg_accuracy": round(agg["avg_acc"] or 0, 1),
-        "total_reviews": agg["total_reviews"] or 0,
+        "avg_accuracy": avg_accuracy,
+        "total_reviews": tot_rev,
     }
 
 
@@ -432,9 +433,7 @@ def get_user_study_stats(user) -> dict[str, Any]:
         "due_now": due_count,
         "today_reviews": today_reviews,
         "total_sessions": session_agg["total_sessions"] or 0,
-        "total_cards_reviewed": (
-            session_agg["total_cards_reviewed"] or 0
-        ),
+        "total_cards_reviewed": (session_agg["total_cards_reviewed"] or 0),
         "total_xp": session_agg["total_xp"] or 0,
     }
 
@@ -442,6 +441,7 @@ def get_user_study_stats(user) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 #  Session XP Calculation
 # ---------------------------------------------------------------------------
+
 
 def calculate_session_xp(
     correct_count: int,
@@ -471,6 +471,7 @@ def calculate_session_xp(
 #  Deck Creation Helpers
 # ---------------------------------------------------------------------------
 
+
 def create_deck_from_lesson(user, lesson) -> "Deck":
     """Create a flashcard deck from a Lesson's learning objectives."""
     from .models import Deck, Flashcard, ReviewSchedule
@@ -480,7 +481,7 @@ def create_deck_from_lesson(user, lesson) -> "Deck":
         title=f"Flashcards: {lesson.title}",
         description=f"Auto-generated from lesson: {lesson.title}",
         deck_type="lesson",
-        source_lesson=lesson,
+        source_lesson=lesson if hasattr(lesson, "_meta") else None,
     )
 
     # Generate cards from learning objectives

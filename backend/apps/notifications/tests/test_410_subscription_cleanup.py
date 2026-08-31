@@ -1,4 +1,3 @@
-
 """Regression coverage for automatic pruning of stale Web Push subscriptions.
 
 Issue #2899:
@@ -583,9 +582,7 @@ def test_404_and_410_are_both_terminal(vapid_settings):
 @pytest.mark.django_db
 def test_terminal_cleanup_scales_across_many_subscriptions(vapid_settings):
     user = make_user()
-    subscriptions = [
-        make_subscription(user, f"bulk-{index}") for index in range(20)
-    ]
+    subscriptions = [make_subscription(user, f"bulk-{index}") for index in range(20)]
 
     with patch(
         "apps.notifications.tasks.webpush",
@@ -888,11 +885,18 @@ def test_410_cleanup_does_not_call_delete_for_success(vapid_settings):
     user = make_user()
     subscription = make_subscription(user)
 
-    with patch("apps.notifications.tasks.webpush", return_value=None):
-        with patch.object(subscription, "delete") as delete:
-            run_push(user.id)
-            delete.assert_not_called()
+    real_delete = PushSubscription.delete
+    deleted = []
 
+    def mock_delete(self, *args, **kwargs):
+        deleted.append(self)
+        return real_delete(self, *args, **kwargs)
+
+    with patch("apps.notifications.tasks.webpush", return_value=None):
+        with patch.object(PushSubscription, "delete", side_effect=mock_delete, autospec=True):
+            run_push(user.id)
+
+    assert len(deleted) == 0
     assert_subscription_exists(subscription.id)
 
 
@@ -901,14 +905,21 @@ def test_410_cleanup_calls_delete_for_terminal_response(vapid_settings):
     user = make_user()
     subscription = make_subscription(user)
 
+    real_delete = PushSubscription.delete
+    deleted = []
+
+    def mock_delete(self, *args, **kwargs):
+        deleted.append(self)
+        return real_delete(self, *args, **kwargs)
+
     with patch(
         "apps.notifications.tasks.webpush",
         side_effect=web_push_exception(410),
     ):
-        with patch.object(subscription, "delete", wraps=subscription.delete) as delete:
+        with patch.object(PushSubscription, "delete", side_effect=mock_delete, autospec=True):
             run_push(user.id)
-            delete.assert_called_once_with()
 
+    assert len(deleted) == 1
     assert_subscription_removed(subscription.id)
 
 
@@ -971,10 +982,7 @@ def test_410_cleanup_handles_all_subscriptions_expiring_in_same_batch(
     vapid_settings,
 ):
     user = make_user()
-    ids = [
-        make_subscription(user, f"batch-{index}").id
-        for index in range(10)
-    ]
+    ids = [make_subscription(user, f"batch-{index}").id for index in range(10)]
 
     with patch(
         "apps.notifications.tasks.webpush",
@@ -982,9 +990,10 @@ def test_410_cleanup_handles_all_subscriptions_expiring_in_same_batch(
     ):
         run_push(user.id)
 
-    assert list(
-        PushSubscription.objects.filter(id__in=ids).values_list("id", flat=True)
-    ) == []
+    assert (
+        list(PushSubscription.objects.filter(id__in=ids).values_list("id", flat=True))
+        == []
+    )
 
 
 @pytest.mark.django_db
@@ -1111,9 +1120,7 @@ def test_410_cleanup_leaves_no_stale_queryset_records(vapid_settings):
     ):
         run_push(user.id)
 
-    stale_count = PushSubscription.objects.filter(
-        user_id=user.id
-    ).count()
+    stale_count = PushSubscription.objects.filter(user_id=user.id).count()
     assert stale_count == 0
 
 
@@ -1247,9 +1254,7 @@ def test_410_cleanup_does_not_delete_subscription_before_webpush_call(
     observed = []
 
     def side_effect(*args, **kwargs):
-        observed.append(
-            PushSubscription.objects.filter(pk=subscription.pk).exists()
-        )
+        observed.append(PushSubscription.objects.filter(pk=subscription.pk).exists())
         raise web_push_exception(410)
 
     with patch("apps.notifications.tasks.webpush", side_effect=side_effect):
@@ -1395,8 +1400,7 @@ def test_410_cleanup_with_multiple_users(vapid_settings):
     users = [make_user(f"multi-user-{i}") for i in range(4)]
     target_subscription = make_subscription(users[0], "target")
     untouched = [
-        make_subscription(users[index], f"untouched-{index}")
-        for index in range(1, 4)
+        make_subscription(users[index], f"untouched-{index}") for index in range(1, 4)
     ]
 
     with patch(
@@ -1515,10 +1519,13 @@ def test_410_cleanup_is_explicitly_asserted_against_status_code(
     with patch("apps.notifications.tasks.webpush", side_effect=error):
         run_push(user.id)
 
-    assert PushSubscription.objects.filter(
-        id=subscription.id,
-        user_id=user.id,
-    ).exists() is False
+    assert (
+        PushSubscription.objects.filter(
+            id=subscription.id,
+            user_id=user.id,
+        ).exists()
+        is False
+    )
 
 
 @pytest.mark.django_db
@@ -1565,10 +1572,7 @@ def test_410_cleanup_with_repeated_success_and_failure_pattern(
     vapid_settings,
 ):
     user = make_user()
-    subscriptions = [
-        make_subscription(user, str(index))
-        for index in range(6)
-    ]
+    subscriptions = [make_subscription(user, str(index)) for index in range(6)]
 
     def side_effect(*args, **kwargs):
         endpoint = kwargs["subscription_info"]["endpoint"]
@@ -1621,9 +1625,10 @@ def test_410_cleanup_does_not_require_push_subscription_refresh(
     ):
         run_push(user.id)
 
-    assert PushSubscription.objects.filter(
-        endpoint=subscription.endpoint
-    ).exists() is False
+    assert (
+        PushSubscription.objects.filter(endpoint=subscription.endpoint).exists()
+        is False
+    )
 
 
 @pytest.mark.django_db
@@ -1737,8 +1742,7 @@ def test_410_cleanup_with_many_other_users(vapid_settings):
     others = [make_user(f"other-many-users-{i}") for i in range(8)]
     target_subscription = make_subscription(target, "target")
     other_subscriptions = [
-        make_subscription(user, f"other-{index}")
-        for index, user in enumerate(others)
+        make_subscription(user, f"other-{index}") for index, user in enumerate(others)
     ]
 
     with patch(
@@ -1800,9 +1804,7 @@ def test_410_cleanup_does_not_delete_before_exception(vapid_settings):
     states = []
 
     def side_effect(*args, **kwargs):
-        states.append(
-            PushSubscription.objects.filter(pk=subscription.pk).exists()
-        )
+        states.append(PushSubscription.objects.filter(pk=subscription.pk).exists())
         raise web_push_exception(410)
 
     with patch("apps.notifications.tasks.webpush", side_effect=side_effect):
@@ -1835,10 +1837,7 @@ def test_410_cleanup_allows_new_endpoint_after_pruning(vapid_settings):
 @pytest.mark.django_db
 def test_410_cleanup_with_batch_of_expired_endpoints(vapid_settings):
     user = make_user()
-    expired = [
-        make_subscription(user, f"expired-{i}")
-        for i in range(15)
-    ]
+    expired = [make_subscription(user, f"expired-{i}") for i in range(15)]
 
     with patch(
         "apps.notifications.tasks.webpush",
@@ -1849,8 +1848,7 @@ def test_410_cleanup_with_batch_of_expired_endpoints(vapid_settings):
     remaining = PushSubscription.objects.filter(user=user).count()
     assert remaining == 0
     assert all(
-        not PushSubscription.objects.filter(pk=item.pk).exists()
-        for item in expired
+        not PushSubscription.objects.filter(pk=item.pk).exists() for item in expired
     )
 
 
@@ -1867,9 +1865,7 @@ def test_410_cleanup_keeps_database_transaction_result_consistent(
     ):
         run_push(user.id)
 
-    fresh = PushSubscription.objects.filter(
-        pk=subscription.pk
-    ).first()
+    fresh = PushSubscription.objects.filter(pk=subscription.pk).first()
     assert fresh is None
 
 
@@ -2171,12 +2167,9 @@ def test_410_cleanup_is_safe_for_large_subscription_set(vapid_settings):
 def test_410_cleanup_is_safe_for_multiple_large_user_sets(vapid_settings):
     target = make_user("large-target")
     others = [make_user(f"large-other-{i}") for i in range(5)]
-    target_subscriptions = [
-        make_subscription(target, f"target-{i}") for i in range(20)
-    ]
+    target_subscriptions = [make_subscription(target, f"target-{i}") for i in range(20)]
     other_subscriptions = [
-        make_subscription(user, f"other-{i}")
-        for i, user in enumerate(others)
+        make_subscription(user, f"other-{i}") for i, user in enumerate(others)
     ]
 
     with patch(
@@ -2475,9 +2468,7 @@ def test_410_cleanup_is_consistent_for_two_expired_subscriptions(
     ):
         run_push(user.id)
 
-    assert not PushSubscription.objects.filter(
-        pk__in=[first.pk, second.pk]
-    ).exists()
+    assert not PushSubscription.objects.filter(pk__in=[first.pk, second.pk]).exists()
 
 
 @pytest.mark.django_db
@@ -2813,10 +2804,7 @@ def test_410_cleanup_with_provider_error_and_multiple_subscriptions(
     vapid_settings,
 ):
     user = make_user()
-    subscriptions = [
-        make_subscription(user, f"multi-{i}")
-        for i in range(4)
-    ]
+    subscriptions = [make_subscription(user, f"multi-{i}") for i in range(4)]
 
     def side_effect(*args, **kwargs):
         endpoint = kwargs["subscription_info"]["endpoint"]
@@ -2884,10 +2872,13 @@ def test_410_cleanup_preserves_subscription_model_contract(vapid_settings):
     ):
         run_push(user.id)
 
-    assert PushSubscription.objects.filter(
-        user=user,
-        endpoint=subscription.endpoint,
-    ).count() == 0
+    assert (
+        PushSubscription.objects.filter(
+            user=user,
+            endpoint=subscription.endpoint,
+        ).count()
+        == 0
+    )
 
 
 @pytest.mark.django_db

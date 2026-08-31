@@ -7,6 +7,7 @@ from datetime import timedelta
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -32,9 +33,7 @@ class BaseFlashcardTest(TestCase):
         )
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
-        self.deck = Deck.objects.create(
-            user=self.user, title="My Deck"
-        )
+        self.deck = Deck.objects.create(user=self.user, title="My Deck")
 
 
 class DeckListCreateViewTest(BaseFlashcardTest):
@@ -70,9 +69,7 @@ class DeckDetailViewTest(BaseFlashcardTest):
 
     def test_update(self):
         url = reverse("flashcards:deck-detail", args=[self.deck.id])
-        response = self.client.patch(
-            url, {"title": "Updated"}, format="json"
-        )
+        response = self.client.patch(url, {"title": "Updated"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_delete(self):
@@ -81,9 +78,7 @@ class DeckDetailViewTest(BaseFlashcardTest):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_cannot_access_other_users_deck(self):
-        other_deck = Deck.objects.create(
-            user=self.other_user, title="Other"
-        )
+        other_deck = Deck.objects.create(user=self.other_user, title="Other")
         url = reverse("flashcards:deck-detail", args=[other_deck.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
@@ -93,9 +88,7 @@ class FlashcardListCreateViewTest(BaseFlashcardTest):
     """Tests for FlashcardListCreateView."""
 
     def test_list_cards(self):
-        Flashcard.objects.create(
-            deck=self.deck, front="Q1", back="A1"
-        )
+        Flashcard.objects.create(deck=self.deck, front="Q1", back="A1")
         url = reverse("flashcards:card-list", args=[self.deck.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -122,9 +115,7 @@ class FlashcardBulkCreateViewTest(BaseFlashcardTest):
     """Tests for FlashcardBulkCreateView."""
 
     def test_bulk_create(self):
-        url = reverse(
-            "flashcards:card-bulk-create", args=[self.deck.id]
-        )
+        url = reverse("flashcards:card-bulk-create", args=[self.deck.id])
         data = {
             "cards": [
                 {"front": "Q1", "back": "A1"},
@@ -139,9 +130,7 @@ class FlashcardBulkCreateViewTest(BaseFlashcardTest):
         self.assertEqual(self.deck.card_count, 3)
 
     def test_bulk_create_creates_schedules(self):
-        url = reverse(
-            "flashcards:card-bulk-create", args=[self.deck.id]
-        )
+        url = reverse("flashcards:card-bulk-create", args=[self.deck.id])
         data = {
             "cards": [
                 {"front": "Q1", "back": "A1"},
@@ -155,25 +144,15 @@ class FlashcardBulkCreateViewTest(BaseFlashcardTest):
         self.assertEqual(schedules.count(), 2)
 
     def test_bulk_create_empty_list(self):
-        url = reverse(
-            "flashcards:card-bulk-create", args=[self.deck.id]
-        )
-        response = self.client.post(
-            url, {"cards": []}, format="json"
-        )
-        self.assertEqual(
-            response.status_code, status.HTTP_400_BAD_REQUEST
-        )
+        url = reverse("flashcards:card-bulk-create", args=[self.deck.id])
+        response = self.client.post(url, {"cards": []}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_bulk_create_missing_front(self):
-        url = reverse(
-            "flashcards:card-bulk-create", args=[self.deck.id]
-        )
+        url = reverse("flashcards:card-bulk-create", args=[self.deck.id])
         data = {"cards": [{"back": "A1"}]}
         response = self.client.post(url, data, format="json")
-        self.assertEqual(
-            response.status_code, status.HTTP_400_BAD_REQUEST
-        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class FlashcardDetailViewTest(BaseFlashcardTest):
@@ -181,9 +160,7 @@ class FlashcardDetailViewTest(BaseFlashcardTest):
 
     def setUp(self):
         super().setUp()
-        self.card = Flashcard.objects.create(
-            deck=self.deck, front="Q", back="A"
-        )
+        self.card = Flashcard.objects.create(deck=self.deck, front="Q", back="A")
 
     def test_retrieve(self):
         url = reverse("flashcards:card-detail", args=[self.card.id])
@@ -192,9 +169,7 @@ class FlashcardDetailViewTest(BaseFlashcardTest):
 
     def test_update_front(self):
         url = reverse("flashcards:card-detail", args=[self.card.id])
-        response = self.client.patch(
-            url, {"front": "New Q"}, format="json"
-        )
+        response = self.client.patch(url, {"front": "New Q"}, format="json")
         self.assertEqual(response.data["front"], "New Q")
 
     def test_delete(self):
@@ -213,9 +188,7 @@ class DueCardsViewTest(BaseFlashcardTest):
         self.assertEqual(response.data["count"], 0)
 
     def test_with_due_cards(self):
-        card = Flashcard.objects.create(
-            deck=self.deck, front="Q", back="A"
-        )
+        card = Flashcard.objects.create(deck=self.deck, front="Q", back="A")
         ReviewSchedule.objects.create(
             user=self.user,
             flashcard=card,
@@ -226,25 +199,19 @@ class DueCardsViewTest(BaseFlashcardTest):
         self.assertEqual(response.data["count"], 1)
 
     def test_deck_filter(self):
-        card = Flashcard.objects.create(
-            deck=self.deck, front="Q", back="A"
-        )
+        card = Flashcard.objects.create(deck=self.deck, front="Q", back="A")
         ReviewSchedule.objects.create(
             user=self.user,
             flashcard=card,
             next_review=timezone.now(),
         )
         url = reverse("flashcards:due-cards")
-        response = self.client.get(
-            url, {"deck_id": self.deck.id}
-        )
+        response = self.client.get(url, {"deck_id": self.deck.id})
         self.assertEqual(response.data["count"], 1)
 
     def test_limit(self):
         for _ in range(5):
-            card = Flashcard.objects.create(
-                deck=self.deck, front="Q", back="A"
-            )
+            card = Flashcard.objects.create(deck=self.deck, front="Q", back="A")
             ReviewSchedule.objects.create(
                 user=self.user,
                 flashcard=card,
@@ -259,9 +226,7 @@ class NewCardsViewTest(BaseFlashcardTest):
     """Tests for NewCardsView."""
 
     def test_get_new_cards(self):
-        card = Flashcard.objects.create(
-            deck=self.deck, front="Q", back="A"
-        )
+        card = Flashcard.objects.create(deck=self.deck, front="Q", back="A")
         ReviewSchedule.objects.create(
             user=self.user,
             flashcard=card,
@@ -278,9 +243,7 @@ class SubmitReviewViewTest(BaseFlashcardTest):
 
     def setUp(self):
         super().setUp()
-        self.card = Flashcard.objects.create(
-            deck=self.deck, front="Q", back="A"
-        )
+        self.card = Flashcard.objects.create(deck=self.deck, front="Q", back="A")
         self.schedule = ReviewSchedule.objects.create(
             user=self.user,
             flashcard=self.card,
@@ -312,17 +275,13 @@ class SubmitReviewViewTest(BaseFlashcardTest):
         url = reverse("flashcards:submit-review")
         data = {"card_id": self.card.id, "quality": 5}
         response = self.client.post(url, data, format="json")
-        self.assertEqual(
-            response.status_code, status.HTTP_400_BAD_REQUEST
-        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_nonexistent_card(self):
         url = reverse("flashcards:submit-review")
         data = {"card_id": 9999, "quality": 2}
         response = self.client.post(url, data, format="json")
-        self.assertEqual(
-            response.status_code, status.HTTP_404_NOT_FOUND
-        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_with_response_time(self):
         url = reverse("flashcards:submit-review")
@@ -344,9 +303,7 @@ class ReviewHistoryViewTest(BaseFlashcardTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_with_history(self):
-        card = Flashcard.objects.create(
-            deck=self.deck, front="Q", back="A"
-        )
+        card = Flashcard.objects.create(deck=self.deck, front="Q", back="A")
         sched = ReviewSchedule.objects.create(
             user=self.user,
             flashcard=card,
@@ -391,9 +348,7 @@ class StudySessionCreateViewTest(BaseFlashcardTest):
         url = reverse("flashcards:session-create")
         data = {"deck_id": 9999}
         response = self.client.post(url, data, format="json")
-        self.assertEqual(
-            response.status_code, status.HTTP_404_NOT_FOUND
-        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
 class StudySessionEndViewTest(BaseFlashcardTest):
@@ -401,14 +356,10 @@ class StudySessionEndViewTest(BaseFlashcardTest):
 
     def setUp(self):
         super().setUp()
-        self.session = StudySession.objects.create(
-            user=self.user, session_type="due"
-        )
+        self.session = StudySession.objects.create(user=self.user, session_type="due")
 
     def test_end_session(self):
-        url = reverse(
-            "flashcards:session-end", args=[self.session.id]
-        )
+        url = reverse("flashcards:session-end", args=[self.session.id])
         data = {"cards_reviewed": 10, "cards_correct": 8}
         response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -417,59 +368,46 @@ class StudySessionEndViewTest(BaseFlashcardTest):
     def test_end_nonexistent(self):
         url = reverse("flashcards:session-end", args=[9999])
         response = self.client.post(url, {}, format="json")
-        self.assertEqual(
-            response.status_code, status.HTTP_404_NOT_FOUND
-        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_end_already_ended(self):
         self.session.end_session()
-        url = reverse(
-            "flashcards:session-end", args=[self.session.id]
-        )
+        url = reverse("flashcards:session-end", args=[self.session.id])
         response = self.client.post(url, {}, format="json")
-        self.assertEqual(
-            response.status_code, status.HTTP_404_NOT_FOUND
-        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
 class DeckStatsViewTest(BaseFlashcardTest):
     """Tests for DeckStatsView."""
 
     def test_empty_deck_stats(self):
-        url = reverse(
-            "flashcards:deck-stats", args=[self.deck.id]
-        )
+        url = reverse("flashcards:deck-stats", args=[self.deck.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["total_cards"], 0)
 
     def test_with_cards(self):
-        card = Flashcard.objects.create(
-            deck=self.deck, front="Q", back="A"
-        )
+        card = Flashcard.objects.create(deck=self.deck, front="Q", back="A")
         ReviewSchedule.objects.create(
             user=self.user,
             flashcard=card,
             next_review=timezone.now(),
         )
-        url = reverse(
-            "flashcards:deck-stats", args=[self.deck.id]
-        )
+        url = reverse("flashcards:deck-stats", args=[self.deck.id])
         response = self.client.get(url)
         self.assertEqual(response.data["total_cards"], 1)
 
     def test_nonexistent_deck(self):
         url = reverse("flashcards:deck-stats", args=[9999])
         response = self.client.get(url)
-        self.assertEqual(
-            response.status_code, status.HTTP_404_NOT_FOUND
-        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
 class StudyStatsViewTest(BaseFlashcardTest):
     """Tests for StudyStatsView."""
 
     def test_empty_stats(self):
+        self.deck.delete()
         url = reverse("flashcards:study-stats")
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -486,9 +424,7 @@ class DeckCloneViewTest(BaseFlashcardTest):
             title="Public Deck",
             is_public=True,
         )
-        Flashcard.objects.create(
-            deck=self.public_deck, front="Q", back="A"
-        )
+        Flashcard.objects.create(deck=self.public_deck, front="Q", back="A")
 
     def test_clone_deck(self):
         url = reverse("flashcards:deck-clone")
@@ -500,20 +436,14 @@ class DeckCloneViewTest(BaseFlashcardTest):
         url = reverse("flashcards:deck-clone")
         data = {"deck_id": 9999}
         response = self.client.post(url, data, format="json")
-        self.assertEqual(
-            response.status_code, status.HTTP_404_NOT_FOUND
-        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_clone_private_deck(self):
-        private = Deck.objects.create(
-            user=self.other_user, title="Private"
-        )
+        private = Deck.objects.create(user=self.other_user, title="Private")
         url = reverse("flashcards:deck-clone")
         data = {"deck_id": private.id}
         response = self.client.post(url, data, format="json")
-        self.assertEqual(
-            response.status_code, status.HTTP_404_NOT_FOUND
-        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_clone_already_cloned(self):
         url = reverse("flashcards:deck-clone")
@@ -527,9 +457,7 @@ class DeckCloneViewTest(BaseFlashcardTest):
             {"deck_id": self.public_deck.id},
             format="json",
         )
-        self.assertEqual(
-            response.status_code, status.HTTP_400_BAD_REQUEST
-        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class PublicDeckListViewTest(BaseFlashcardTest):
@@ -553,4 +481,9 @@ class PublicDeckListViewTest(BaseFlashcardTest):
         )
         url = reverse("flashcards:public-deck-list")
         response = self.client.get(url)
-        self.assertEqual(len(response.data["results"]), 0)
+        data = (
+            response.data["results"]
+            if isinstance(response.data, dict)
+            else response.data
+        )
+        self.assertEqual(len(data), 0)

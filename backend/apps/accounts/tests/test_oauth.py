@@ -1,11 +1,9 @@
 import time
 from unittest.mock import patch
 
+from django.core.cache import cache
 from django.test import Client, TestCase
 from django.urls import reverse
-
-
-from django.core.cache import cache
 
 
 class OAuthSecurityTests(TestCase):

@@ -26,11 +26,11 @@ from .serializers import (
     FlashcardCreateBulkSerializer,
     FlashcardSerializer,
     ReviewLogSerializer,
+    ReviewResponseSerializer,
     ReviewScheduleSerializer,
     ReviewSubmitSerializer,
     StudySessionSerializer,
     StudyStatsSerializer,
-    ReviewResponseSerializer,
 )
 from .services import (
     clone_deck,
@@ -41,7 +41,6 @@ from .services import (
     get_user_study_stats,
     process_review,
 )
-
 
 # ---------------------------------------------------------------------------
 #  Deck CRUD
@@ -55,9 +54,7 @@ class DeckListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Deck.objects.filter(user=self.request.user).order_by(
-            "-updated_at"
-        )
+        return Deck.objects.filter(user=self.request.user).order_by("-updated_at")
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -194,9 +191,9 @@ class FlashcardBulkCreateView(views.APIView):
         Flashcard.objects.bulk_create(cards)
 
         # Create review schedules for all new cards
-        created_cards = Flashcard.objects.filter(deck=deck).order_by(
-            "-id"
-        )[: len(cards_data)]
+        created_cards = Flashcard.objects.filter(deck=deck).order_by("-id")[
+            : len(cards_data)
+        ]
         for card in created_cards:
             schedules.append(
                 ReviewSchedule(
@@ -295,9 +292,7 @@ class SubmitReviewView(views.APIView):
                 user=request.user,
                 flashcard_id=serializer.validated_data["card_id"],
                 quality=serializer.validated_data["quality"],
-                response_time_ms=serializer.validated_data.get(
-                    "response_time_ms", 0
-                ),
+                response_time_ms=serializer.validated_data.get("response_time_ms", 0),
             )
         except ReviewSchedule.DoesNotExist:
             return Response(
@@ -449,4 +444,6 @@ class UserReviewLogsView(generics.ListAPIView):
     def get_queryset(self):
         return ReviewLog.objects.filter(
             user=self.request.user,
-        ).select_related("flashcard", "schedule")[:200]
+        ).select_related(
+            "flashcard", "schedule"
+        )[:200]

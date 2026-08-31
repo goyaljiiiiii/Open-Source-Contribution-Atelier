@@ -70,9 +70,7 @@ class FlashcardModelTest(TestCase):
         self.user = User.objects.create_user(
             username="testuser", password="testpass123"
         )
-        self.deck = Deck.objects.create(
-            user=self.user, title="Test Deck"
-        )
+        self.deck = Deck.objects.create(user=self.user, title="Test Deck")
 
     def test_create_card(self):
         card = Flashcard.objects.create(
@@ -86,9 +84,7 @@ class FlashcardModelTest(TestCase):
         self.assertFalse(card.is_suspended)
 
     def test_str(self):
-        card = Flashcard.objects.create(
-            deck=self.deck, front="Q", back="A", order=3
-        )
+        card = Flashcard.objects.create(deck=self.deck, front="Q", back="A", order=3)
         self.assertIn("Card #3", str(card))
         self.assertIn("Test Deck", str(card))
 
@@ -119,9 +115,7 @@ class ReviewScheduleModelTest(TestCase):
             username="testuser", password="testpass123"
         )
         self.deck = Deck.objects.create(user=self.user, title="Deck")
-        self.card = Flashcard.objects.create(
-            deck=self.deck, front="Q", back="A"
-        )
+        self.card = Flashcard.objects.create(deck=self.deck, front="Q", back="A")
 
     def test_create_schedule(self):
         sched = ReviewSchedule.objects.create(
@@ -233,9 +227,7 @@ class ReviewLogModelTest(TestCase):
             username="testuser", password="testpass123"
         )
         self.deck = Deck.objects.create(user=self.user, title="Deck")
-        self.card = Flashcard.objects.create(
-            deck=self.deck, front="Q", back="A"
-        )
+        self.card = Flashcard.objects.create(deck=self.deck, front="Q", back="A")
         self.schedule = ReviewSchedule.objects.create(
             user=self.user,
             flashcard=self.card,
@@ -320,12 +312,8 @@ class DeckShareModelTest(TestCase):
     """Tests for DeckShare model."""
 
     def setUp(self):
-        self.user1 = User.objects.create_user(
-            username="user1", password="pass123"
-        )
-        self.user2 = User.objects.create_user(
-            username="user2", password="pass123"
-        )
+        self.user1 = User.objects.create_user(username="user1", password="pass123")
+        self.user2 = User.objects.create_user(username="user2", password="pass123")
         self.deck = Deck.objects.create(
             user=self.user1,
             title="Public Deck",

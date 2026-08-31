@@ -34,6 +34,7 @@ class SignupSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ("id", "username", "email", "password")
+
     def validate_username(self, value):
         """Reject duplicate usernames using a case-insensitive comparison."""
         normalized = value.strip()
@@ -288,7 +289,9 @@ class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
             if user:
                 attrs = {**attrs, username_key: user.username}
 
-        remember_me = self.initial_data.get("remember", False) or attrs.get("remember", False)
+        remember_me = self.initial_data.get("remember", False) or attrs.get(
+            "remember", False
+        )
 
         result = super().validate(attrs)
 
@@ -393,6 +396,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
     token = serializers.UUIDField()
     new_password = serializers.CharField(write_only=True, min_length=8, max_length=128)
+
     def validate_new_password(self, value):
         return validate_strong_password(value)
 
@@ -424,6 +428,8 @@ class MagicLinkRequestSerializer(serializers.Serializer):
     """Accept an email address to trigger a magic link login email."""
 
     email = serializers.EmailField()
+
+
 def validate_strong_password(value):
     if len(value) > 128:
         raise serializers.ValidationError("Password cannot exceed 128 characters.")
@@ -620,8 +626,9 @@ class UserListSerializer(serializers.ModelSerializer):
             return obj.global_rank
         if "bulk_global_ranks" in self.context:
             return self.context["bulk_global_ranks"].get(obj.id, 1)
-        from apps.progress.models import XPEvent
         from django.db.models import Sum
+
+        from apps.progress.models import XPEvent
 
         user_xp = (
             XPEvent.objects.filter(user=obj).aggregate(total=Sum("xp_delta"))["total"]
@@ -636,8 +643,9 @@ class UserListSerializer(serializers.ModelSerializer):
         return higher_count + 1
 
     def get_percentile_standing(self, obj):
-        from apps.progress.models import XPEvent
         from django.db.models import Sum
+
+        from apps.progress.models import XPEvent
 
         total_users = User.objects.count()
         if total_users <= 1:
@@ -708,8 +716,6 @@ class UserListSerializer(serializers.ModelSerializer):
         return ""
 
 
-
-
 class TwoFactorVerifySerializer(serializers.Serializer):
     """Accept 6-digit TOTP verification code to confirm 2FA setup."""
 
@@ -720,7 +726,6 @@ class TwoFactorDisableSerializer(serializers.Serializer):
     """Accept user password to confirm disabling 2FA."""
 
     password = serializers.CharField(write_only=True)
-
 
 
 # ─────────────────────────────────────────────────────────────────────────────

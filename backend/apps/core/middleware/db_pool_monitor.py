@@ -64,16 +64,14 @@ def fetch_postgres_pool_stats() -> Tuple[int, int, int, int]:
 
     try:
         with connection.cursor() as cursor:
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT
                     COALESCE(COUNT(CASE WHEN state = 'active' THEN 1 END), 0) AS active,
                     COALESCE(COUNT(CASE WHEN state = 'idle' THEN 1 END), 0) AS idle,
                     COALESCE(COUNT(*), 0) AS total,
                     COALESCE(COUNT(CASE WHEN wait_event IS NOT NULL THEN 1 END), 0) AS waiting
                 FROM pg_stat_activity
-                """
-            )
+                """)
             row = cursor.fetchone()
             if row:
                 return (int(row[0]), int(row[1]), int(row[2]), int(row[3]))
@@ -136,7 +134,9 @@ class DatabasePoolMonitorMiddleware:
         start_time = time.perf_counter()
 
         # Gather pool stats at start
-        active_start, idle_start, total_start, waiting_start = fetch_postgres_pool_stats()
+        active_start, idle_start, total_start, waiting_start = (
+            fetch_postgres_pool_stats()
+        )
 
         response = self.get_response(request)
 

@@ -11,8 +11,8 @@ from graphene_django.views import GraphQLView
 
 from apps.billing.views import CheckoutSessionView
 from apps.billing.webhooks import stripe_webhook
-from apps.dashboard.views import LeaderboardView
 from apps.content.views_notes import LessonNoteAPIView
+from apps.dashboard.views import LeaderboardView
 
 from .health_view import health_view
 from .version_view import api_versions_view, version_view
@@ -44,8 +44,16 @@ api_v1_patterns = [
     path("oauth/", include("apps.oauth.urls")),
     # ── Core Apps ──────────────────────────────────────────────────────────────
     path("api/content/", include("apps.content.urls")),
-    path("api/lessons/<str:lesson_id>/notes", LessonNoteAPIView.as_view(), name="api-lesson-notes"),
-    path("api/lessons/<str:lesson_id>/notes/", LessonNoteAPIView.as_view(), name="api-lesson-notes-slash"),
+    path(
+        "api/lessons/<str:lesson_id>/notes",
+        LessonNoteAPIView.as_view(),
+        name="api-lesson-notes",
+    ),
+    path(
+        "api/lessons/<str:lesson_id>/notes/",
+        LessonNoteAPIView.as_view(),
+        name="api-lesson-notes-slash",
+    ),
     path("api/billing/", include("apps.billing.urls")),
     path("api/progress/", include("apps.progress.urls")),
     path("api/localization/", include("apps.localization.urls")),
@@ -77,9 +85,13 @@ api_v1_patterns = [
     path("api/accessibility/", include("apps.accessibility.urls")),
     # ── Issue Reporting ────────────────────────────────────────────────────────
     path("api/issues/", include("apps.issues.urls")),
-    # ── Project Health & Security ─────────────────────────────────────────────
     path("api/project-health/", include("apps.project_health.urls")),
     path("api/security/", include("apps.security.urls")),
+    path("api/flashcards/", include("apps.flashcards.urls", namespace="flashcards")),
+    path("api/learning-analytics/", include("apps.learning_analytics.urls", namespace="learning_analytics")),
+    path("api/learning-journal/", include("apps.learning_journal.urls", namespace="learning_journal")),
+    path("api/study-groups/", include("apps.study_groups.urls", namespace="study_groups")),
+    path("api/mentorship/", include("apps.mentorship.urls", namespace="mentorship")),
     # ── Plugins ────────────────────────────────────────────────────────────────
     path("api/plugins/", include("apps.plugins.urls")),
     # ── Scaffolded Apps ────────────────────────────────────────────────────────
@@ -100,6 +112,7 @@ api_v1_patterns = [
     path("api/ml-triage/", include("apps.ml_triage.urls")),
     # ── AI Tutor ────────────────────────────────────────────────────────────────
     path("api/ai/tutor/", include("apps.ai_tutor.urls")),
+    path("", include("apps.oauth.urls")),
     # ── Events & GraphQL ──────────────────────────────────────────────────────
     path("api/events/", include("apps.events.urls")),
     path("api/graphql/", include("apps.graphql_gateway.urls")),

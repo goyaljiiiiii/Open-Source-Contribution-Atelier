@@ -10,6 +10,9 @@ class ErrorGroup(models.Model):
     ]
 
     fingerprint = models.CharField(max_length=64, unique=True, db_index=True)
+    exception_class = models.CharField(
+        max_length=255, db_index=True, blank=True, default=""
+    )
     message = models.TextField()
     module = models.CharField(max_length=255, db_index=True)
     count = models.PositiveIntegerField(default=0)
@@ -26,6 +29,9 @@ class ErrorGroup(models.Model):
 class ErrorEvent(models.Model):
     group = models.ForeignKey(
         ErrorGroup, on_delete=models.CASCADE, related_name="events"
+    )
+    exception_class = models.CharField(
+        max_length=255, db_index=True, blank=True, default=""
     )
     raw_message = models.TextField()
     stacktrace = models.TextField(blank=True)

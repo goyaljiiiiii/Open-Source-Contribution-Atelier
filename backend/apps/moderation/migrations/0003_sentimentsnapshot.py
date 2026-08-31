@@ -6,20 +6,28 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('moderation', '0002_moderationauditevent'),
+        ("moderation", "0002_moderationauditevent"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='SentimentSnapshot',
+            name="SentimentSnapshot",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date', models.DateField(auto_now_add=True)),
-                ('positive_count', models.IntegerField(default=0)),
-                ('negative_count', models.IntegerField(default=0)),
-                ('neutral_count', models.IntegerField(default=0)),
-                ('avg_toxicity', models.FloatField(default=0)),
-                ('total_comments', models.IntegerField(default=0)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("date", models.DateField(auto_now_add=True)),
+                ("positive_count", models.IntegerField(default=0)),
+                ("negative_count", models.IntegerField(default=0)),
+                ("neutral_count", models.IntegerField(default=0)),
+                ("avg_toxicity", models.FloatField(default=0)),
+                ("total_comments", models.IntegerField(default=0)),
             ],
         ),
     ]

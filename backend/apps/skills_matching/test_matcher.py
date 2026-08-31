@@ -78,9 +78,7 @@ class SkillMatcherRegressionTests(SimpleTestCase):
 
         self.assertAlmostEqual(score, expected_score)
 
-    @patch(
-        "apps.skills_matching.services.matcher.Recommendation.objects.create"
-    )
+    @patch("apps.skills_matching.services.matcher.Recommendation.objects.create")
     @patch("apps.skills_matching.services.matcher.Issue.objects.filter")
     def test_recommendations_are_sorted_by_combined_score(
         self, mock_issue_filter, mock_create
@@ -130,9 +128,7 @@ class SkillMatcherRegressionTests(SimpleTestCase):
         )
         contributor.save.assert_called_once_with()
 
-    @patch(
-        "apps.skills_matching.services.matcher.Recommendation.objects.create"
-    )
+    @patch("apps.skills_matching.services.matcher.Recommendation.objects.create")
     @patch("apps.skills_matching.services.matcher.Issue.objects.filter")
     def test_match_score_is_not_used_to_bypass_friendliness_weight(
         self, mock_issue_filter, mock_create

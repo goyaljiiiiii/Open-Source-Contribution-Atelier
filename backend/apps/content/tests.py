@@ -890,6 +890,7 @@ def test_search_special_characters_no_crash():
 
 def test_bulk_import_csv_special_characters():
     from io import BytesIO
+
     from apps.content.models import Lesson
 
     client = APIClient()
@@ -897,7 +898,7 @@ def test_bulk_import_csv_special_characters():
     csv_content = (
         "title,summary,content,difficulty,category,estimated_minutes\n"
         "Introduction to Git,Basic git commands,Git is a VCS,beginner,git,10\n"
-        "Lessons in Español: Introducción,\"Lección con caracteres especiales: é, ñ, ü, ¡Hola!\",Contenido en español,intermediate,git,15\n"
+        'Lessons in Español: Introducción,"Lección con caracteres especiales: é, ñ, ü, ¡Hola!",Contenido en español,intermediate,git,15\n'
         "Advanced C# & React+,Deep dive into \"C#\" and 'React+',Advanced guide,advanced,react,20\n"
         ",Missing title row,Content without title,beginner,general,5\n"
     )

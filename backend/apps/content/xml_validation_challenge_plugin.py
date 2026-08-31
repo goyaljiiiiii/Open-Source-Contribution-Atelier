@@ -22,7 +22,9 @@ from .plugins import LessonPlugin, registry
 # Primary DoS mitigation: reject oversized input before it's ever handed
 # to the XML parser. Entity-expansion damage is fundamentally bounded by
 # how much raw input text is available to expand from.
-_MAX_INPUT_SIZE_BYTES = 100_000  # 100KB — generous for a lesson exercise, far below anything concerning
+_MAX_INPUT_SIZE_BYTES = (
+    100_000  # 100KB — generous for a lesson exercise, far below anything concerning
+)
 
 
 class XMLParseSizeError(Exception):
@@ -97,7 +99,9 @@ def _validate_element(
             )
 
         for i, child in enumerate(matching_children):
-            errors.extend(_validate_element(child, child_schema, f"{path}/{child_tag}[{i}]"))
+            errors.extend(
+                _validate_element(child, child_schema, f"{path}/{child_tag}[{i}]")
+            )
 
     return errors
 
@@ -163,14 +167,18 @@ class XMLValidationChallengePlugin(LessonPlugin):
 
         # Partial credit: root tag matched (structurally recognizable as
         # an attempt at the right document) but has other violations.
-        root_tag_ok = data["schema"].get("tag") is None or root.tag == data["schema"]["tag"]
+        root_tag_ok = (
+            data["schema"].get("tag") is None or root.tag == data["schema"]["tag"]
+        )
         return 30.0 if root_tag_ok else 0.0
 
     @classmethod
     def get_validation_errors(cls, data: Dict[str, Any]) -> List[str]:
         """Non-interface helper: human-readable validation errors for learner feedback."""
         if not cls.validate_submission(data):
-            return ["Submission is not valid XML, exceeds the size limit, or is missing a schema."]
+            return [
+                "Submission is not valid XML, exceeds the size limit, or is missing a schema."
+            ]
         try:
             root = _safe_parse_xml(data["submitted_xml"])
         except (XMLParseSizeError, ET.ParseError) as e:

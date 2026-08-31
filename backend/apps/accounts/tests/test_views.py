@@ -40,11 +40,14 @@ class TestPasswordMaxLengthValidation:
             )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "password" in response.data or "password" in response.data.get("errors", {})
+        assert "password" in response.data or "password" in response.data.get(
+            "errors", {}
+        )
         hash_spy.assert_not_called()
 
     def test_login_rejects_oversized_password_with_400(self, api_client, existing_user):
         from django.core.cache import cache
+
         cache.clear()
         with patch(
             "django.contrib.auth.base_user.AbstractBaseUser.check_password"
@@ -59,6 +62,7 @@ class TestPasswordMaxLengthValidation:
 
     def test_login_accepts_password_within_limit(self, api_client, existing_user):
         from django.core.cache import cache
+
         cache.clear()
         response = api_client.post(
             reverse("login"),

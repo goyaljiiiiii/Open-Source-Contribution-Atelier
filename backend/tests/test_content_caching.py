@@ -87,10 +87,16 @@ def test_module_and_lesson_signal_cache_invalidation():
 
     # Verify signal handlers are connected to Lesson, Module, ModuleDraft, Exercise for post_save and post_delete
     for model in [Lesson, Module, ModuleDraft, Exercise]:
-        receivers_save = [r[1]() for r in post_save.receivers if r[1]() == invalidate_lesson_cache]
-        receivers_delete = [r[1]() for r in post_delete.receivers if r[1]() == invalidate_lesson_cache]
+        receivers_save = [
+            r[1]() for r in post_save.receivers if r[1]() == invalidate_lesson_cache
+        ]
+        receivers_delete = [
+            r[1]() for r in post_delete.receivers if r[1]() == invalidate_lesson_cache
+        ]
         assert len(receivers_save) > 0, f"post_save signal not connected for {model}"
-        assert len(receivers_delete) > 0, f"post_delete signal not connected for {model}"
+        assert (
+            len(receivers_delete) > 0
+        ), f"post_delete signal not connected for {model}"
 
 
 from unittest.mock import MagicMock, patch
@@ -106,4 +112,3 @@ def test_purge_redis_cache_patterns_delete_pattern():
     assert mock_delete_pattern.call_count == 2
     mock_delete_pattern.assert_any_call("pathway_ordering_*")
     mock_delete_pattern.assert_any_call("module_list_*")
-

@@ -74,7 +74,10 @@ def test_list_is_paginated_and_sender_is_selected(user_a, db):
     assert response.data["count"] == 25
     assert len(response.data["results"]) == 20
     assert response.data["next"] is not None
-    assert all(item["sender_username"] == "notification_sender" for item in response.data["results"])
+    assert all(
+        item["sender_username"] == "notification_sender"
+        for item in response.data["results"]
+    )
 
 
 def test_digest_is_paginated_and_includes_unread_count(user_a, db):

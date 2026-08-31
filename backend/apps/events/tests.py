@@ -64,7 +64,11 @@ class EventListViewAuthorizationTests(APITestCase):
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        results = response.data.get("results") if isinstance(response.data, dict) else response.data
+        results = (
+            response.data.get("results")
+            if isinstance(response.data, dict)
+            else response.data
+        )
         returned_ids = {item["id"] for item in results}
 
         self.assertIn(str(self.event_by_a.id), returned_ids)
@@ -82,7 +86,11 @@ class EventListViewAuthorizationTests(APITestCase):
         response = self.client.get(self.list_url, {"user_id": self.user_b.id})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        results = response.data.get("results") if isinstance(response.data, dict) else response.data
+        results = (
+            response.data.get("results")
+            if isinstance(response.data, dict)
+            else response.data
+        )
         returned_ids = {item["id"] for item in results}
         self.assertNotIn(str(self.event_by_b.id), returned_ids)
 
@@ -108,7 +116,11 @@ class EventListViewAuthorizationTests(APITestCase):
     def test_staff_without_org_does_not_see_others_events(self):
         self.client.force_authenticate(user=self.staff)
         response = self.client.get(self.list_url)
-        results = response.data.get("results") if isinstance(response.data, dict) else response.data
+        results = (
+            response.data.get("results")
+            if isinstance(response.data, dict)
+            else response.data
+        )
         returned_ids = {item["id"] for item in results}
         # Staff status alone (no shared org) grants no extra visibility
         self.assertNotIn(str(self.event_by_a.id), returned_ids)

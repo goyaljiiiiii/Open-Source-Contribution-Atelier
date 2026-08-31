@@ -98,16 +98,12 @@ class StudyGroup(models.Model):
         return self.member_count >= self.max_members
 
     def is_member(self, user) -> bool:
-        return GroupMembership.objects.filter(
-            group=self, user=user
-        ).exists()
+        return GroupMembership.objects.filter(group=self, user=user).exists()
 
     def get_member_role(self, user):
         """Return the user's role in this group, or None."""
         try:
-            return GroupMembership.objects.get(
-                group=self, user=user
-            ).role
+            return GroupMembership.objects.get(group=self, user=user).role
         except GroupMembership.DoesNotExist:
             return None
 

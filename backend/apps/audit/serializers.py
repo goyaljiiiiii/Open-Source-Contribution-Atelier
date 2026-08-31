@@ -30,8 +30,12 @@ class AuditEventSerializer(serializers.ModelSerializer):
     def get_summary(self, obj: AuditEvent) -> str:
         if obj.extra and isinstance(obj.extra, dict) and "summary" in obj.extra:
             return str(obj.extra["summary"])
-        
-        resource = obj.resource_type.split(".")[-1].capitalize() if obj.resource_type else "Resource"
+
+        resource = (
+            obj.resource_type.split(".")[-1].capitalize()
+            if obj.resource_type
+            else "Resource"
+        )
         if obj.action == AuditEvent.ACTION_CREATED:
             return f"Created {resource} #{obj.resource_id}"
         elif obj.action == AuditEvent.ACTION_DELETED:

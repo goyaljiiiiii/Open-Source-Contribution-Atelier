@@ -22,13 +22,17 @@ class SandboxVerifier:
         return {
             "is_valid": val_result.is_valid,
             "reason": val_result.reason,
-            "ast": {
-                "subcommand": val_result.ast_node.subcommand if val_result.ast_node else None,
-                "args": val_result.ast_node.args if val_result.ast_node else [],
-                "flags": val_result.ast_node.flags if val_result.ast_node else [],
-            }
-            if val_result.ast_node
-            else None,
+            "ast": (
+                {
+                    "subcommand": (
+                        val_result.ast_node.subcommand if val_result.ast_node else None
+                    ),
+                    "args": val_result.ast_node.args if val_result.ast_node else [],
+                    "flags": val_result.ast_node.flags if val_result.ast_node else [],
+                }
+                if val_result.ast_node
+                else None
+            ),
         }
 
     @classmethod

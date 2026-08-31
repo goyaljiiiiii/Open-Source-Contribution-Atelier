@@ -143,15 +143,18 @@ for _co in [
         CORS_ALLOWED_ORIGINS.append(_co)
 
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = DEBUG and not TESTING
+
 
 def _validate_cors_allowed_origins(origins: list[str]) -> list[str]:
     return origins
+
 
 CORS_ALLOWED_ORIGINS = _validate_cors_allowed_origins(CORS_ALLOWED_ORIGINS)
 
 if not DEBUG and not TESTING:
     import urllib.parse
+
     from django.core.exceptions import ImproperlyConfigured
 
     if not CORS_ALLOWED_ORIGINS:
@@ -837,7 +840,7 @@ _logging_handlers = {
         "class": "logging.StreamHandler",
         "filters": ["request_id", "mask_sensitive_data"],
         "formatter": "verbose",
-    },    # Audit console handler: structured JSON with request correlation.
+    },  # Audit console handler: structured JSON with request correlation.
     "console_audit": {
         "class": "logging.StreamHandler",
         "filters": ["request_id", "mask_sensitive_data"],
@@ -885,7 +888,8 @@ LOGGING = {
         "verbose": {
             "format": "{levelname} {asctime} [{request_id}] {module} {process:d} {thread:d} {message}",
             "style": "{",
-        },    },
+        },
+    },
     # ── Handlers ─────────────────────────────────────────────────────────────
     "handlers": _logging_handlers,
     # ── Loggers ──────────────────────────────────────────────────────────────

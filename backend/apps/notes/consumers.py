@@ -1,13 +1,21 @@
 import json
 import logging
+
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
+
 from .services.collaboration import collab_manager
 
 logger = logging.getLogger(__name__)
 
 USER_COLORS = [
-    "#4ECDC4", "#45B7D1", "#FF6B6B", "#A78BFA",
-    "#F59E0B", "#10B981", "#EC4899", "#3B82F6"
+    "#4ECDC4",
+    "#45B7D1",
+    "#FF6B6B",
+    "#A78BFA",
+    "#F59E0B",
+    "#10B981",
+    "#EC4899",
+    "#3B82F6",
 ]
 
 
@@ -23,8 +31,16 @@ class CollabNotesConsumer(AsyncJsonWebsocketConsumer):
 
         # Assign user identifier & avatar color
         user = self.scope.get("user")
-        self.user_id = str(user.id) if user and user.is_authenticated else f"anon_{self.channel_name[-6:]}"
-        self.username = user.username if user and user.is_authenticated else f"Contributor_{self.channel_name[-4:]}"
+        self.user_id = (
+            str(user.id)
+            if user and user.is_authenticated
+            else f"anon_{self.channel_name[-6:]}"
+        )
+        self.username = (
+            user.username
+            if user and user.is_authenticated
+            else f"Contributor_{self.channel_name[-4:]}"
+        )
         color_idx = hash(self.user_id) % len(USER_COLORS)
         self.user_color = USER_COLORS[color_idx]
 
@@ -37,21 +53,23 @@ class CollabNotesConsumer(AsyncJsonWebsocketConsumer):
             room_id=self.room_id,
             user_id=self.user_id,
             username=self.username,
-            color=self.user_color
+            color=self.user_color,
         )
 
         room_data = collab_manager.get_or_create_room(self.room_id)
 
         # Send initial room snapshot to newly connected client
-        await self.send_json({
-            "type": "init_state",
-            "room_id": self.room_id,
-            "content": room_data["content"],
-            "user_id": self.user_id,
-            "username": self.username,
-            "user_color": self.user_color,
-            "peers": collab_manager.get_room_peers(self.room_id)
-        })
+        await self.send_json(
+            {
+                "type": "init_state",
+                "room_id": self.room_id,
+                "content": room_data["content"],
+                "user_id": self.user_id,
+                "username": self.username,
+                "user_color": self.user_color,
+                "peers": collab_manager.get_room_peers(self.room_id),
+            }
+        )
 
         # Broadcast user join event to room
         await self.channel_layer.group_send(
@@ -62,8 +80,8 @@ class CollabNotesConsumer(AsyncJsonWebsocketConsumer):
                 "user_id": self.user_id,
                 "username": self.username,
                 "user_color": self.user_color,
-                "peers": collab_manager.get_room_peers(self.room_id)
-            }
+                "peers": collab_manager.get_room_peers(self.room_id),
+            },
         )
 
     async def disconnect(self, close_code):
@@ -81,8 +99,8 @@ class CollabNotesConsumer(AsyncJsonWebsocketConsumer):
                 "event": "leave",
                 "user_id": self.user_id,
                 "username": self.username,
-                "peers": collab_manager.get_room_peers(self.room_id)
-            }
+                "peers": collab_manager.get_room_peers(self.room_id),
+            },
         )
 
     async def receive_json(self, content):
@@ -99,7 +117,7 @@ class CollabNotesConsumer(AsyncJsonWebsocketConsumer):
                     "type": "content_broadcast",
                     "sender_id": self.user_id,
                     "content": new_content,
-                }
+                },
             )
 
         elif action == "cursor_move":
@@ -109,7 +127,7 @@ class CollabNotesConsumer(AsyncJsonWebsocketConsumer):
                 user_id=self.user_id,
                 username=self.username,
                 color=self.user_color,
-                cursor=cursor_pos
+                cursor=cursor_pos,
             )
 
             # Broadcast cursor movement
@@ -121,32 +139,35 @@ class CollabNotesConsumer(AsyncJsonWebsocketConsumer):
                     "username": self.username,
                     "color": self.user_color,
                     "cursor": cursor_pos,
-                }
+                },
             )
 
     async def content_broadcast(self, event):
         # Do not echo back to sender
         if event["sender_id"] != self.user_id:
-            await self.send_json({
-                "type": "content_update",
-                "content": event["content"]
-            })
+            await self.send_json(
+                {"type": "content_update", "content": event["content"]}
+            )
 
     async def cursor_broadcast(self, event):
         if event["sender_id"] != self.user_id:
-            await self.send_json({
-                "type": "cursor_update",
-                "sender_id": event["sender_id"],
-                "username": event["username"],
-                "color": event["color"],
-                "cursor": event["cursor"]
-            })
+            await self.send_json(
+                {
+                    "type": "cursor_update",
+                    "sender_id": event["sender_id"],
+                    "username": event["username"],
+                    "color": event["color"],
+                    "cursor": event["cursor"],
+                }
+            )
 
     async def peer_event(self, event):
-        await self.send_json({
-            "type": "peer_update",
-            "event": event["event"],
-            "user_id": event["user_id"],
-            "username": event.get("username", ""),
-            "peers": event["peers"]
-        })
+        await self.send_json(
+            {
+                "type": "peer_update",
+                "event": event["event"],
+                "user_id": event["user_id"],
+                "username": event.get("username", ""),
+                "peers": event["peers"],
+            }
+        )

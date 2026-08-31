@@ -46,8 +46,10 @@ class UserWeeklyBurnoutTrendsView(generics.GenericAPIView):
 
     def get(self, request):
         from datetime import timedelta
+
         from django.contrib.auth import get_user_model
         from django.utils import timezone
+
         from .models import BurnoutActivityDay, BurnoutSignal
 
         User = get_user_model()

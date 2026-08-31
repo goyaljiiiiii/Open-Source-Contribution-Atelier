@@ -87,7 +87,6 @@ class TestStreakRecovery:
         plan = StreakRecoveryService.get_or_create_recovery_plan(user)
         assert plan is not None
 
-        
         # 1. Incorrect quiz attempt should NOT count
         QuizAttempt.objects.create(
             user=user,
@@ -118,7 +117,7 @@ class TestStreakRecovery:
         # Sync progress
         plan = StreakRecoveryService.sync_and_update_progress(plan)
         plan.refresh_from_db()
-        
+
         assert plan.quiz_progress == 1
         assert plan.code_progress == 1
         assert plan.is_completed is False  # reading still not completed

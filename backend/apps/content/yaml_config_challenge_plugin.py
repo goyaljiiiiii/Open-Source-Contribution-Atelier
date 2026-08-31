@@ -30,7 +30,9 @@ _TYPE_MAP = {
 }
 
 
-def _validate_against_schema(value: Any, schema: Dict[str, Any], path: str = "$") -> List[str]:
+def _validate_against_schema(
+    value: Any, schema: Dict[str, Any], path: str = "$"
+) -> List[str]:
     """
     Recursively validate value against schema. Same lightweight subset
     approach as JSONValidationChallengePlugin (#27): type, required,
@@ -50,7 +52,9 @@ def _validate_against_schema(value: Any, schema: Dict[str, Any], path: str = "$"
         elif expected_type == "integer" and isinstance(value, bool):
             errors.append(f"{path}: expected integer, got boolean")
         elif not isinstance(value, py_type):
-            errors.append(f"{path}: expected {expected_type}, got {type(value).__name__}")
+            errors.append(
+                f"{path}: expected {expected_type}, got {type(value).__name__}"
+            )
             return errors
 
     if "enum" in schema and value not in schema["enum"]:
@@ -64,9 +68,13 @@ def _validate_against_schema(value: Any, schema: Dict[str, Any], path: str = "$"
 
     if isinstance(value, str):
         if "minLength" in schema and len(value) < schema["minLength"]:
-            errors.append(f"{path}: length {len(value)} is below minLength {schema['minLength']}")
+            errors.append(
+                f"{path}: length {len(value)} is below minLength {schema['minLength']}"
+            )
         if "maxLength" in schema and len(value) > schema["maxLength"]:
-            errors.append(f"{path}: length {len(value)} is above maxLength {schema['maxLength']}")
+            errors.append(
+                f"{path}: length {len(value)} is above maxLength {schema['maxLength']}"
+            )
 
     if isinstance(value, dict) and "properties" in schema:
         properties = schema["properties"]
@@ -78,7 +86,11 @@ def _validate_against_schema(value: Any, schema: Dict[str, Any], path: str = "$"
 
         for key, sub_value in value.items():
             if key in properties:
-                errors.extend(_validate_against_schema(sub_value, properties[key], f"{path}.{key}"))
+                errors.extend(
+                    _validate_against_schema(
+                        sub_value, properties[key], f"{path}.{key}"
+                    )
+                )
             elif schema.get("additionalProperties") is False:
                 errors.append(f"{path}: unexpected additional property '{key}'")
 
@@ -158,7 +170,9 @@ class YAMLConfigChallengePlugin(LessonPlugin):
 
         required = schema.get("required", []) if isinstance(parsed, dict) else []
         if required:
-            present = sum(1 for key in required if isinstance(parsed, dict) and key in parsed)
+            present = sum(
+                1 for key in required if isinstance(parsed, dict) and key in parsed
+            )
             structural_score = (present / len(required)) * 60.0
         else:
             structural_score = 0.0

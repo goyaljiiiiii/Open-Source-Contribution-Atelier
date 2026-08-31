@@ -1,7 +1,9 @@
-import pytest
 from unittest.mock import MagicMock, patch
-from django.test import RequestFactory
+
+import pytest
 from django.http import HttpResponse
+from django.test import RequestFactory
+
 from apps.core.middleware.otel import OpenTelemetryMiddleware
 
 

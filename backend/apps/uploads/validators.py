@@ -88,6 +88,7 @@ DANGEROUS_URL_RE = re.compile(r"^\s*(?:javascript|data\s*:\s*text/html)", re.I)
 
 _SCAN_CHUNK_SIZE = 65536  # 64KB chunks, bounded memory regardless of file size
 
+
 def max_size_for(upload_type: str) -> int:
     limits = getattr(
         settings,
@@ -150,7 +151,7 @@ def _contains_dangerous_marker(stream: BinaryIO) -> bool:
                 return True
             # Keep a small tail so a marker split across the chunk
             # boundary is still caught on the next iteration.
-            tail = window[-(max_marker_len - 1):] if max_marker_len > 1 else b""
+            tail = window[-(max_marker_len - 1) :] if max_marker_len > 1 else b""
         return False
     finally:
         stream.seek(position)

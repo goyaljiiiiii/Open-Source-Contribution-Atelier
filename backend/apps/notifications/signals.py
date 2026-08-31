@@ -27,7 +27,6 @@ def _push_notification(notification: Notification):
 
     from apps.core.channel_safety import safe_group_send_sync
 
-
     data = NotificationSerializer(notification).data
     group_name = f"notifications_{notification.recipient_id}"  # type: ignore
     pushed = safe_group_send_sync(

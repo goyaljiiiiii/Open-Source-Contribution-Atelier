@@ -87,8 +87,9 @@ class TestStreakTimezoneEvaluation:
         # timezone.localdate() would incorrectly record Aug 4.
         now = datetime(2026, 8, 4, 10, 0, 0, tzinfo=timezone.utc)
 
-        with django_timezone.override("UTC"), patch(
-            "apps.progress.streak_engine.timezone.now", return_value=now
+        with (
+            django_timezone.override("UTC"),
+            patch("apps.progress.streak_engine.timezone.now", return_value=now),
         ):
             update_user_streak(user)
 

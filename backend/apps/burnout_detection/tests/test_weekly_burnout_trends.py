@@ -1,4 +1,5 @@
 from datetime import timedelta
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -121,7 +122,9 @@ class TestUserWeeklyBurnoutTrendsAPI:
         factory = APIRequestFactory()
         view = UserWeeklyBurnoutTrendsView.as_view()
 
-        request = factory.get(f"/api/burnout-detection/user-trends/?user_id={normal_user.id}")
+        request = factory.get(
+            f"/api/burnout-detection/user-trends/?user_id={normal_user.id}"
+        )
         force_authenticate(request, user=staff_user)
         response = view(request)
 

@@ -27,7 +27,9 @@ class StepGradingResult:
     summary: str = ""
 
 
-def _evaluate_equivalence(expected_cmd_str: str, executed_cmd_str: str) -> Tuple[float, Optional[str]]:
+def _evaluate_equivalence(
+    expected_cmd_str: str, executed_cmd_str: str
+) -> Tuple[float, Optional[str]]:
     """
     Evaluates if executed_cmd_str is functionally equivalent to expected_cmd_str.
     Returns tuple of (score_multiplier, custom_hint_override).
@@ -54,7 +56,10 @@ def _evaluate_equivalence(expected_cmd_str: str, executed_cmd_str: str) -> Tuple
     if exp_sub in ["checkout", "switch"] and exc_sub in ["checkout", "switch"]:
         if not "-b" in exp_ast.flags and not "-b" in exc_ast.flags:
             if exp_ast.args == exc_ast.args:
-                return (1.0, f"Used 'git {exc_sub}' which is equivalent to 'git {exp_sub}'.")
+                return (
+                    1.0,
+                    f"Used 'git {exc_sub}' which is equivalent to 'git {exp_sub}'.",
+                )
 
     # Equivalent: merge vs rebase
     if exp_sub == "rebase" and exc_sub == "merge":
@@ -97,7 +102,9 @@ def grade_session(
     # Pre-validate all executed commands with AST verifier for forbidden commands
     verified_events = []
     for cmd in executed_commands:
-        val = ASTVerifier.verify_command(cmd, allowlist_config=allowlist_config, lesson_slug=lesson_slug)
+        val = ASTVerifier.verify_command(
+            cmd, allowlist_config=allowlist_config, lesson_slug=lesson_slug
+        )
         verified_events.append((cmd, val))
 
     step_grades: List[StepGrade] = []
@@ -142,7 +149,8 @@ def grade_session(
                         executed_command=exec_cmd,
                         score=step_score,
                         status="passed",
-                        hint=hint_override or f"Step {step_num}: Passed successfully with '{exec_cmd}'.",
+                        hint=hint_override
+                        or f"Step {step_num}: Passed successfully with '{exec_cmd}'.",
                     )
                 )
                 step_done = True
@@ -158,7 +166,8 @@ def grade_session(
                         executed_command=exec_cmd,
                         score=step_score,
                         status="partial",
-                        hint=hint_override or f"Step {step_num}: Partial credit ({int(step_score * 100)}%).",
+                        hint=hint_override
+                        or f"Step {step_num}: Partial credit ({int(step_score * 100)}%).",
                     )
                 )
                 step_done = True

@@ -25,7 +25,9 @@ def purge_redis_cache_patterns(patterns=("pathway_ordering_*", "module_list_*"))
                 cache.delete_pattern(pattern)
                 continue
             except Exception as exc:
-                logger.warning("cache.delete_pattern failed for pattern %s: %s", pattern, exc)
+                logger.warning(
+                    "cache.delete_pattern failed for pattern %s: %s", pattern, exc
+                )
 
         if hasattr(cache, "keys"):
             try:
@@ -34,9 +36,14 @@ def purge_redis_cache_patterns(patterns=("pathway_ordering_*", "module_list_*"))
                     cache.delete(key)
                 continue
             except Exception as exc:
-                logger.warning("cache.keys scan failed for pattern %s: %s", pattern, exc)
+                logger.warning(
+                    "cache.keys scan failed for pattern %s: %s", pattern, exc
+                )
 
-        if hasattr(cache, "client") and "redis" in getattr(cache, "__module__", "").lower():
+        if (
+            hasattr(cache, "client")
+            and "redis" in getattr(cache, "__module__", "").lower()
+        ):
             try:
                 client = cache.client.get_client()
                 if hasattr(client, "scan_iter"):
@@ -44,7 +51,9 @@ def purge_redis_cache_patterns(patterns=("pathway_ordering_*", "module_list_*"))
                     if keys:
                         client.delete(*keys)
             except Exception as exc:
-                logger.warning("Redis client scan_iter failed for pattern %s: %s", pattern, exc)
+                logger.warning(
+                    "Redis client scan_iter failed for pattern %s: %s", pattern, exc
+                )
 
 
 def clear_curriculum_caches():

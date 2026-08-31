@@ -40,7 +40,6 @@ from .services import (
     get_social_feed,
 )
 
-
 # ---------------------------------------------------------------------------
 #  Journal Entries CRUD
 # ---------------------------------------------------------------------------
@@ -91,13 +90,12 @@ class TodayEntryView(views.APIView):
     def get(self, request):
         today = timezone.now().date()
         entry = JournalEntry.objects.filter(
-            user=request.user, date=today,
+            user=request.user,
+            date=today,
         ).first()
 
         if entry:
-            return Response(
-                JournalEntrySerializer(entry).data
-            )
+            return Response(JournalEntrySerializer(entry).data)
 
         # Check for a prompt
         prompt = get_reflection_prompt(request.user)
@@ -113,7 +111,8 @@ class TodayEntryView(views.APIView):
     def post(self, request):
         today = timezone.now().date()
         existing = JournalEntry.objects.filter(
-            user=request.user, date=today,
+            user=request.user,
+            date=today,
         ).first()
 
         if existing:
@@ -158,7 +157,10 @@ class JournalCommentListCreateView(generics.ListCreateAPIView):
         ).select_related("user")
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        serializer.save(
+            user=self.request.user,
+            entry_id=self.kwargs["entry_id"],
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -270,9 +272,7 @@ class JournalSocialFeedView(views.APIView):
         limit = max(1, min(50, limit))
         entries = get_social_feed(request.user, limit=limit)
         return Response(
-            SocialFeedSerializer(
-                {"entries": entries, "count": len(entries)}
-            ).data
+            SocialFeedSerializer({"entries": entries, "count": len(entries)}).data
         )
 
 

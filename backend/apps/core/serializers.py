@@ -5,7 +5,7 @@ class StandardErrorSerializer(serializers.Serializer):
     """
     Standard error response serializer for common HTTP error codes.
     Used by drf-spectacular to document error responses in OpenAPI schema.
-    
+
     Example:
         {
             "error": true,
@@ -13,23 +13,19 @@ class StandardErrorSerializer(serializers.Serializer):
             "message": "You do not have permission to perform this action."
         }
     """
-    
-    error = serializers.BooleanField(
-        help_text="Indicates whether an error occurred"
-    )
+
+    error = serializers.BooleanField(help_text="Indicates whether an error occurred")
     code = serializers.CharField(
         help_text="Machine-readable error code (e.g., 'permission_denied', 'not_found')"
     )
-    message = serializers.CharField(
-        help_text="Human-readable error message"
-    )
+    message = serializers.CharField(help_text="Human-readable error message")
 
 
 class ValidationErrorSerializer(serializers.Serializer):
     """
     Validation error response serializer for 400 Bad Request responses.
     Extends StandardErrorSerializer with field-level errors.
-    
+
     Example:
         {
             "error": true,
@@ -40,27 +36,23 @@ class ValidationErrorSerializer(serializers.Serializer):
             }
         }
     """
-    
-    error = serializers.BooleanField(
-        help_text="Indicates whether an error occurred"
-    )
+
+    error = serializers.BooleanField(help_text="Indicates whether an error occurred")
     code = serializers.CharField(
         help_text="Always 'validation_error' for this response type"
     )
-    message = serializers.CharField(
-        help_text="Primary validation error message"
-    )
+    message = serializers.CharField(help_text="Primary validation error message")
     errors = serializers.DictField(
         child=serializers.ListField(child=serializers.CharField()),
         required=False,
-        help_text="Detailed field-level validation errors"
+        help_text="Detailed field-level validation errors",
     )
 
 
 class AuthenticationErrorSerializer(serializers.Serializer):
     """
     Authentication error response serializer for 401 Unauthorized responses.
-    
+
     Example:
         {
             "error": true,
@@ -68,10 +60,8 @@ class AuthenticationErrorSerializer(serializers.Serializer):
             "message": "Authentication credentials were not provided."
         }
     """
-    
-    error = serializers.BooleanField(
-        help_text="Indicates whether an error occurred"
-    )
+
+    error = serializers.BooleanField(help_text="Indicates whether an error occurred")
     code = serializers.CharField(
         help_text="Authentication error code (e.g., 'authentication_required', 'authentication_failed')"
     )
@@ -83,7 +73,7 @@ class AuthenticationErrorSerializer(serializers.Serializer):
 class RateLimitErrorSerializer(serializers.Serializer):
     """
     Rate limit error response serializer for 429 Too Many Requests responses.
-    
+
     Example:
         {
             "error": "rate_limited",
@@ -92,16 +82,14 @@ class RateLimitErrorSerializer(serializers.Serializer):
             "retry_after": 60
         }
     """
-    
+
     error = serializers.CharField(
         help_text="Always 'rate_limited' for this response type"
     )
     code = serializers.CharField(
         help_text="Always 'rate_limited' for this response type"
     )
-    message = serializers.CharField(
-        help_text="Human-readable rate limit error message"
-    )
+    message = serializers.CharField(help_text="Human-readable rate limit error message")
     retry_after = serializers.IntegerField(
         help_text="Number of seconds to wait before retrying the request"
     )

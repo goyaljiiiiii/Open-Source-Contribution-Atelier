@@ -1,6 +1,6 @@
 import math
 import random
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
 
 class FlakyTestPredictor:
@@ -25,7 +25,7 @@ class FlakyTestPredictor:
         added_lines: int,
         deleted_lines: int,
         affected_tests: List[str],
-        historical_test_logs: Dict[str, Any] = None
+        historical_test_logs: Dict[str, Any] = None,
     ) -> Dict[str, Any]:
         """
         Calculates a PR Risk Score (0.0 to 100.0%) and identifies potential flaky tests.
@@ -36,7 +36,7 @@ class FlakyTestPredictor:
                 "risk_level": "LOW",
                 "flaky_tests_detected": [],
                 "confidence": 1.0,
-                "breakdown": {}
+                "breakdown": {},
             }
 
         historical_test_logs = historical_test_logs or {}
@@ -58,25 +58,35 @@ class FlakyTestPredictor:
         for test in affected_tests:
             # Check historical failure rate or simulate based on test name heuristics
             failure_rate = historical_test_logs.get(test, {}).get("flaky_rate", 0.0)
-            if "integration" in test.lower() or "e2e" in test.lower() or "async" in test.lower():
+            if (
+                "integration" in test.lower()
+                or "e2e" in test.lower()
+                or "async" in test.lower()
+            ):
                 failure_rate = max(failure_rate, 0.45)
 
             if failure_rate > 0.20:
-                flaky_tests.append({
-                    "test_name": test,
-                    "flaky_probability": round(failure_rate * 100, 1),
-                    "reason": "High failure variance in recent CI runs" if failure_rate > 0.4 else "Async timing dependency"
-                })
+                flaky_tests.append(
+                    {
+                        "test_name": test,
+                        "flaky_probability": round(failure_rate * 100, 1),
+                        "reason": (
+                            "High failure variance in recent CI runs"
+                            if failure_rate > 0.4
+                            else "Async timing dependency"
+                        ),
+                    }
+                )
                 flakiness_sum += failure_rate
 
         flakiness_score = min((flakiness_sum / (len(affected_tests) or 1)) * 100, 100)
 
         # Weighted calculation
         raw_score = (
-            file_score * self.weights["changed_files_count"] +
-            churn_score * self.weights["additions_deletions_ratio"] +
-            test_impact_score * self.weights["dependency_depth"] +
-            flakiness_score * self.weights["historical_flakiness_score"]
+            file_score * self.weights["changed_files_count"]
+            + churn_score * self.weights["additions_deletions_ratio"]
+            + test_impact_score * self.weights["dependency_depth"]
+            + flakiness_score * self.weights["historical_flakiness_score"]
         )
 
         final_risk_score = round(min(max(raw_score, 5.0), 99.9), 1)
@@ -100,6 +110,6 @@ class FlakyTestPredictor:
                 "file_impact": round(file_score, 1),
                 "code_churn": round(churn_score, 1),
                 "test_impact": round(test_impact_score, 1),
-                "flakiness_impact": round(flakiness_score, 1)
-            }
+                "flakiness_impact": round(flakiness_score, 1),
+            },
         }

@@ -1,4 +1,5 @@
 import time
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
@@ -135,6 +136,7 @@ class TestEventBusTelemetryThrottling:
 class TestTelemetryEventIngestAPI:
     def test_api_ingests_and_throttles_duplicates(self, user):
         from rest_framework.test import APIRequestFactory, force_authenticate
+
         from apps.events.views import TelemetryEventIngestView
 
         factory = APIRequestFactory()
@@ -159,4 +161,3 @@ class TestTelemetryEventIngestAPI:
         resp2 = view(request2)
         assert resp2.status_code == 200
         assert resp2.data["status"] == "throttled"
-

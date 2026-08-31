@@ -1,5 +1,6 @@
 import csv
 import json
+
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
 from django.utils.dateparse import parse_datetime
@@ -28,7 +29,9 @@ class AuditEventListView(generics.ListAPIView):
     def get_queryset(self):
         if not AuditEvent.objects.exists():
             import uuid
+
             from django.utils import timezone
+
             user = self.request.user if self.request.user.is_authenticated else None
             now = timezone.now()
             sample_events = [
@@ -78,7 +81,9 @@ class AuditEventListView(generics.ListAPIView):
         queryset = AuditEvent.objects.select_related("actor").all()
 
         # Structured free-text search across multiple fields
-        search_query = self.request.query_params.get("search") or self.request.query_params.get("q")
+        search_query = self.request.query_params.get(
+            "search"
+        ) or self.request.query_params.get("q")
         if search_query:
             search_query = search_query.strip()
             queryset = queryset.filter(
@@ -98,7 +103,9 @@ class AuditEventListView(generics.ListAPIView):
                 queryset = queryset.filter(actor__username__icontains=actor)
 
         # Support both resource_type and model_type query params
-        resource_type = self.request.query_params.get("resource_type") or self.request.query_params.get("model_type")
+        resource_type = self.request.query_params.get(
+            "resource_type"
+        ) or self.request.query_params.get("model_type")
         if resource_type:
             queryset = queryset.filter(resource_type__icontains=resource_type.strip())
 
@@ -129,7 +136,11 @@ class AuditEventListView(generics.ListAPIView):
         return queryset
 
     def list(self, request, *args, **kwargs):
-        export_fmt = (request.query_params.get("export") or request.query_params.get("format") or "").lower()
+        export_fmt = (
+            request.query_params.get("export")
+            or request.query_params.get("format")
+            or ""
+        ).lower()
 
         if export_fmt in ["csv", "json"]:
             queryset = self.filter_queryset(self.get_queryset())
@@ -137,32 +148,38 @@ class AuditEventListView(generics.ListAPIView):
 
             if export_fmt == "csv":
                 response = HttpResponse(content_type="text/csv")
-                response["Content-Disposition"] = 'attachment; filename="audit_logs.csv"'
+                response["Content-Disposition"] = (
+                    'attachment; filename="audit_logs.csv"'
+                )
                 writer = csv.writer(response)
-                writer.writerow([
-                    "ID",
-                    "Timestamp",
-                    "Actor",
-                    "Action",
-                    "Model Type",
-                    "Resource ID",
-                    "Summary",
-                    "Correlation ID",
-                    "IP Address",
-                ])
+                writer.writerow(
+                    [
+                        "ID",
+                        "Timestamp",
+                        "Actor",
+                        "Action",
+                        "Model Type",
+                        "Resource ID",
+                        "Summary",
+                        "Correlation ID",
+                        "IP Address",
+                    ]
+                )
 
                 for item in serializer.data:
-                    writer.writerow([
-                        item.get("id"),
-                        item.get("created_at"),
-                        item.get("actor_username") or "System",
-                        item.get("action"),
-                        item.get("resource_type"),
-                        item.get("resource_id"),
-                        item.get("summary"),
-                        item.get("correlation_id"),
-                        item.get("ip_address"),
-                    ])
+                    writer.writerow(
+                        [
+                            item.get("id"),
+                            item.get("created_at"),
+                            item.get("actor_username") or "System",
+                            item.get("action"),
+                            item.get("resource_type"),
+                            item.get("resource_id"),
+                            item.get("summary"),
+                            item.get("correlation_id"),
+                            item.get("ip_address"),
+                        ]
+                    )
                 return response
 
             if export_fmt == "json":
@@ -170,7 +187,9 @@ class AuditEventListView(generics.ListAPIView):
                     json.dumps(serializer.data, indent=2),
                     content_type="application/json",
                 )
-                response["Content-Disposition"] = 'attachment; filename="audit_logs.json"'
+                response["Content-Disposition"] = (
+                    'attachment; filename="audit_logs.json"'
+                )
                 return response
 
         return super().list(request, *args, **kwargs)

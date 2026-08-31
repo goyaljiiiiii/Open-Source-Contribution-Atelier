@@ -1,9 +1,9 @@
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from rest_framework.test import APIClient
 
 from apps.ml_triage.views import ML_TRIAGE_THRESHOLD_CACHE_KEY
-from django.core.cache import cache
 
 
 @pytest.mark.django_db
@@ -13,7 +13,9 @@ def test_threshold_accepts_boundary_values():
     client.force_authenticate(user=user)
 
     for value in (0.0, 1.0):
-        response = client.post("/api/ml-triage/settings/threshold/", {"threshold": value}, format="json")
+        response = client.post(
+            "/api/ml-triage/settings/threshold/", {"threshold": value}, format="json"
+        )
         assert response.status_code == 200
         assert response.data["threshold"] == value
         assert cache.get(ML_TRIAGE_THRESHOLD_CACHE_KEY) == value
@@ -26,10 +28,12 @@ def test_threshold_rejects_out_of_range_values(value):
     client = APIClient()
     client.force_authenticate(user=user)
 
-    response = client.post("/api/ml-triage/settings/threshold/", {"threshold": value}, format="json")
+    response = client.post(
+        "/api/ml-triage/settings/threshold/", {"threshold": value}, format="json"
+    )
 
     assert response.status_code == 400
-    assert "threshold" in response.data
+    assert "threshold" in response.data or "threshold" in response.data.get("errors", {})
 
 
 @pytest.mark.django_db
@@ -38,6 +42,8 @@ def test_threshold_requires_admin():
     client = APIClient()
     client.force_authenticate(user=user)
 
-    response = client.post("/api/ml-triage/settings/threshold/", {"threshold": 0.5}, format="json")
+    response = client.post(
+        "/api/ml-triage/settings/threshold/", {"threshold": 0.5}, format="json"
+    )
 
     assert response.status_code == 403

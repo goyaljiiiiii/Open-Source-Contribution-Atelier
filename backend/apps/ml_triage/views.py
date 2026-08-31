@@ -96,41 +96,51 @@ class ModelViewSet(viewsets.ViewSet):
             total_samples=issues.count(),
         )
         model.save_model("1.0")
-        return Response({
-            "status": "success",
-            "metrics": metrics,
-            "training_id": training.id,
-            "total_samples": issues.count(),
-        })
+        return Response(
+            {
+                "status": "success",
+                "metrics": metrics,
+                "training_id": training.id,
+                "total_samples": issues.count(),
+            }
+        )
 
     @action(detail=False, methods=["post"])
     def predict(self, request):
         """Predict for a specific issue."""
         issue_id = request.data.get("issue_id")
         if not issue_id:
-            return Response({"error": "issue_id required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "issue_id required"}, status=status.HTTP_400_BAD_REQUEST
+            )
         try:
             issue = Issue.objects.get(id=issue_id)
         except Issue.DoesNotExist:
-            return Response({"error": "Issue not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Issue not found"}, status=status.HTTP_404_NOT_FOUND
+            )
         model = MLModel()
         model.load_model()
         if not model.is_trained:
-            return Response({"error": "Model not trained"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Model not trained"}, status=status.HTTP_400_BAD_REQUEST
+            )
         category, confidence = model.predict_category(issue)
         priority, priority_conf = model.predict_priority(issue)
         lifetime = model.predict_lifetime(issue)
         priority_score = model.calculate_priority_score(issue)
-        return Response({
-            "issue_id": issue.id,
-            "category": category,
-            "category_confidence": confidence,
-            "priority": priority,
-            "priority_confidence": priority_conf,
-            "lifetime_days": lifetime,
-            "priority_score": priority_score,
-            "hotness_score": issue.hotness_score,
-        })
+        return Response(
+            {
+                "issue_id": issue.id,
+                "category": category,
+                "category_confidence": confidence,
+                "priority": priority,
+                "priority_confidence": priority_conf,
+                "lifetime_days": lifetime,
+                "priority_score": priority_score,
+                "hotness_score": issue.hotness_score,
+            }
+        )
 
 
 @api_view(["POST"])

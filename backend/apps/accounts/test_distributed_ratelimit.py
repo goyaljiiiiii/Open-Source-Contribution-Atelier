@@ -52,6 +52,7 @@ def test_local_fallback_when_backend_local(settings):
     Verify fallback to local cache throttling when RATE_LIMIT_BACKEND = 'local'.
     """
     from django.core.cache import cache
+
     cache.clear()
     settings.RATE_LIMIT_BACKEND = "local"
     settings.REST_FRAMEWORK = {

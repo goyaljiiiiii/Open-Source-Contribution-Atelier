@@ -2,7 +2,10 @@ import logging
 
 from celery import shared_task
 
-from apps.core.middleware.db_pool_monitor import fetch_postgres_pool_stats, get_conn_max_age
+from apps.core.middleware.db_pool_monitor import (
+    fetch_postgres_pool_stats,
+    get_conn_max_age,
+)
 
 logger = logging.getLogger(__name__)
 

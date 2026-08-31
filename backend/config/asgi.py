@@ -19,10 +19,10 @@ django_asgi_app = get_asgi_application()
 
 from apps.accounts.routing import websocket_urlpatterns as accounts_ws  # noqa: E402
 from apps.chat.routing import websocket_urlpatterns as chat_ws  # noqa: E402
+from apps.content.routing import websocket_urlpatterns as content_ws  # noqa: E402
 from apps.dashboard.routing import websocket_urlpatterns as dashboard_ws  # noqa: E402
 from apps.feed.routing import websocket_urlpatterns as feed_ws  # noqa: E402
 from apps.monitoring.routing import websocket_urlpatterns as monitoring_ws  # noqa: E402
-from apps.content.routing import websocket_urlpatterns as content_ws  # noqa: E402
 from apps.notifications.middleware import JWTAuthMiddleware  # noqa: E402
 from apps.notifications.routing import (  # noqa: E402
     websocket_urlpatterns as notifications_ws,

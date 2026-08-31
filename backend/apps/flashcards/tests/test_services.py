@@ -117,9 +117,7 @@ class ProcessReviewTest(TestCase):
             username="testuser", password="testpass123"
         )
         self.deck = Deck.objects.create(user=self.user, title="Deck")
-        self.card = Flashcard.objects.create(
-            deck=self.deck, front="Q?", back="A!"
-        )
+        self.card = Flashcard.objects.create(deck=self.deck, front="Q?", back="A!")
         self.schedule = ReviewSchedule.objects.create(
             user=self.user,
             flashcard=self.card,
@@ -217,9 +215,7 @@ class GetDueCardsTest(TestCase):
         self.deck = Deck.objects.create(user=self.user, title="Deck")
 
     def _make_card(self, due=True, new=True):
-        card = Flashcard.objects.create(
-            deck=self.deck, front="Q", back="A"
-        )
+        card = Flashcard.objects.create(deck=self.deck, front="Q", back="A")
         sched = ReviewSchedule.objects.create(
             user=self.user,
             flashcard=card,
@@ -244,9 +240,7 @@ class GetDueCardsTest(TestCase):
         self.assertEqual(len(result), 3)
 
     def test_excludes_other_users(self):
-        card = Flashcard.objects.create(
-            deck=self.deck, front="Q", back="A"
-        )
+        card = Flashcard.objects.create(deck=self.deck, front="Q", back="A")
         ReviewSchedule.objects.create(
             user=self.other_user,
             flashcard=card,
@@ -278,9 +272,7 @@ class GetNewCardsTest(TestCase):
         self.deck = Deck.objects.create(user=self.user, title="Deck")
 
     def test_get_new_cards(self):
-        card = Flashcard.objects.create(
-            deck=self.deck, front="Q", back="A"
-        )
+        card = Flashcard.objects.create(deck=self.deck, front="Q", back="A")
         ReviewSchedule.objects.create(
             user=self.user,
             flashcard=card,
@@ -292,9 +284,7 @@ class GetNewCardsTest(TestCase):
         self.assertTrue(result[0]["is_new"])
 
     def test_excludes_reviewed(self):
-        card = Flashcard.objects.create(
-            deck=self.deck, front="Q", back="A"
-        )
+        card = Flashcard.objects.create(deck=self.deck, front="Q", back="A")
         ReviewSchedule.objects.create(
             user=self.user,
             flashcard=card,
@@ -309,12 +299,8 @@ class CloneDeckTest(TestCase):
     """Tests for clone_deck service."""
 
     def setUp(self):
-        self.owner = User.objects.create_user(
-            username="owner", password="pass123"
-        )
-        self.cloner = User.objects.create_user(
-            username="cloner", password="pass123"
-        )
+        self.owner = User.objects.create_user(username="owner", password="pass123")
+        self.cloner = User.objects.create_user(username="cloner", password="pass123")
         self.source_deck = Deck.objects.create(
             user=self.owner,
             title="Source Deck",
@@ -322,12 +308,8 @@ class CloneDeckTest(TestCase):
             color="#ff0000",
             icon_emoji="📗",
         )
-        Flashcard.objects.create(
-            deck=self.source_deck, front="Q1", back="A1"
-        )
-        Flashcard.objects.create(
-            deck=self.source_deck, front="Q2", back="A2"
-        )
+        Flashcard.objects.create(deck=self.source_deck, front="Q1", back="A1")
+        Flashcard.objects.create(deck=self.source_deck, front="Q2", back="A2")
 
     def test_clone_creates_new_deck(self):
         new_deck = clone_deck(self.source_deck, self.cloner)
@@ -380,13 +362,13 @@ class GetDeckStatsTest(TestCase):
 
     def test_with_cards(self):
         for i in range(3):
-            card = Flashcard.objects.create(
-                deck=self.deck, front=f"Q{i}", back=f"A{i}"
-            )
+            card = Flashcard.objects.create(deck=self.deck, front=f"Q{i}", back=f"A{i}")
             ReviewSchedule.objects.create(
                 user=self.user,
                 flashcard=card,
-                next_review=timezone.now() if i < 2 else timezone.now() + timedelta(days=7),
+                next_review=(
+                    timezone.now() if i < 2 else timezone.now() + timedelta(days=7)
+                ),
                 is_new=i == 0,
             )
         stats = get_deck_stats(self.user, self.deck.id)
@@ -410,9 +392,7 @@ class GetUserStudyStatsTest(TestCase):
 
     def test_with_data(self):
         deck = Deck.objects.create(user=self.user, title="Deck")
-        card = Flashcard.objects.create(
-            deck=deck, front="Q", back="A"
-        )
+        card = Flashcard.objects.create(deck=deck, front="Q", back="A")
         ReviewSchedule.objects.create(
             user=self.user,
             flashcard=card,

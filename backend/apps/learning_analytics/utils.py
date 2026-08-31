@@ -65,8 +65,7 @@ def compute_velocity(user, days: int = 7) -> dict[str, float]:
     total_minutes = sum(m.total_minutes for m in metrics)
     total_xp = sum(m.xp_earned for m in metrics)
     total_sessions = sum(
-        m.lessons_completed + m.exercises_completed + m.quizzes_taken
-        for m in metrics
+        m.lessons_completed + m.exercises_completed + m.quizzes_taken for m in metrics
     )
 
     return {
@@ -128,9 +127,7 @@ def predict_completion(user, goal) -> dict:
         }
 
     days_remaining = remaining / progress_per_day
-    estimated_date = timezone.now().date() + timedelta(
-        days=int(days_remaining)
-    )
+    estimated_date = timezone.now().date() + timedelta(days=int(days_remaining))
 
     # Confidence based on amount of data
     from .models import DailyLearningMetric
