@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.permissions import IsModeratorOrAdmin
+from apps.moderation.audit_utils import log_moderation_action
 from apps.moderation.models import ContentReport, ModerationAuditEvent
 from apps.moderation.serializers import (
     ContentReportSerializer,
@@ -46,6 +47,7 @@ class ContentReportActionView(APIView):
         serializer = ModerationActionSerializer(data=request.data)
 
         if serializer.is_valid():
+            old_status = report.status
             new_status = serializer.validated_data["status"]
             report.status = new_status
             report.moderator = request.user
@@ -61,6 +63,30 @@ class ContentReportActionView(APIView):
                 report.action_taken = ContentReport.ActionTaken.NONE
 
             report.save()
+
+            # Determine target user (author/owner of the reported content, or reporter fallback)
+            content_obj = report.content_object
+            target_user = None
+            if content_obj:
+                target_user = (
+                    getattr(content_obj, "user", None)
+                    or getattr(content_obj, "reviewer", None)
+                    or getattr(content_obj, "author", None)
+                )
+            if not target_user:
+                target_user = report.reporter
+
+            log_moderation_action(
+                content_report=report,
+                moderator=request.user,
+                target_user=target_user,
+                status_before=old_status,
+                status_after=new_status,
+                action_taken=report.action_taken,
+                reason=serializer.validated_data.get("reason", ""),
+            )
+
             return Response(ContentReportSerializer(report).data)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+

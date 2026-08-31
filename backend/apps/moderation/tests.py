@@ -200,3 +200,42 @@ class ModerationWorkflowTests(TestCase):
 
         self.review.refresh_from_db()
         self.assertTrue(self.review.is_hidden)
+
+    def test_audit_event_logs_target_user_and_moderator(self):
+        from apps.moderation.models import ModerationAuditEvent
+
+        report = ContentReport.objects.create(
+            reporter=self.user,
+            content_type=self.review_ct,
+            object_id=self.review.id,
+            category=ContentReport.Category.SPAM,
+        )
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.post(
+            f"/api/moderation/reports/{report.id}/action/",
+            {"status": "APPROVED", "reason": "Inappropriate content"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        audit_event = ModerationAuditEvent.objects.filter(content_report=report).first()
+        self.assertIsNotNone(audit_event)
+        self.assertEqual(audit_event.moderator, self.admin)
+        self.assertEqual(audit_event.target_user, self.user)
+
+    def test_log_moderation_action_requires_target_user(self):
+        from apps.moderation.audit_utils import log_moderation_action
+
+        report = ContentReport.objects.create(
+            reporter=self.user,
+            content_type=self.review_ct,
+            object_id=self.review.id,
+            category=ContentReport.Category.SPAM,
+        )
+        with self.assertRaises(ValueError):
+            log_moderation_action(
+                content_report=report,
+                moderator=self.admin,
+                target_user=None,
+                status_after="APPROVED",
+            )
+
