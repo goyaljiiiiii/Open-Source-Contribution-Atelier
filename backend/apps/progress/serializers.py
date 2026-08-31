@@ -11,7 +11,6 @@ from .models import (
 )
 
 
-
 class BadgeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Badge
@@ -210,16 +209,21 @@ class WeeklyGoalSerializer(serializers.ModelSerializer):
 
     def validate_target_lessons(self, value):
         if value < 1 or value > 100:
-            raise serializers.ValidationError("Target lessons must be between 1 and 100.")
+            raise serializers.ValidationError(
+                "Target lessons must be between 1 and 100."
+            )
         return value
 
     def validate_target_xp(self, value):
         if value < 10 or value > 50000:
-            raise serializers.ValidationError("Target XP must be between 10 and 50,000.")
+            raise serializers.ValidationError(
+                "Target XP must be between 10 and 50,000."
+            )
         return value
 
     def validate_target_minutes(self, value):
         if value < 10 or value > 10080:
-            raise serializers.ValidationError("Target minutes must be between 10 and 10,080.")
+            raise serializers.ValidationError(
+                "Target minutes must be between 10 and 10,080."
+            )
         return value
-

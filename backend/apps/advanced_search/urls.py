@@ -8,9 +8,15 @@ from .views import (
 )
 
 router = DefaultRouter()
-router.register(r"search-embedding", SearchEmbeddingViewSet, basename="search-embedding")
-router.register(r"user-search-profile", UserSearchProfileViewSet, basename="user-search-profile")
-router.register(r"search-analytics", SearchAnalyticsViewSet, basename="search-analytics")
+router.register(
+    r"search-embedding", SearchEmbeddingViewSet, basename="search-embedding"
+)
+router.register(
+    r"user-search-profile", UserSearchProfileViewSet, basename="user-search-profile"
+)
+router.register(
+    r"search-analytics", SearchAnalyticsViewSet, basename="search-analytics"
+)
 
 urlpatterns = [
     path("", include(router.urls)),

@@ -7,12 +7,13 @@ live in this dedicated module to avoid a package/module name conflict.
 
 from __future__ import annotations
 
+import datetime
+
 from django.conf import settings
 from django.utils import timezone
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-import datetime
 
 CERTIFICATE_MAX_AGE_DAYS = 365 * 5
 
@@ -40,16 +41,19 @@ class CertificateVerificationView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request, hash: str):
-        signed = SignedCertificate.objects.filter(
-            verification_hash=hash, is_active=True
-        ).select_related("user").first()
+        signed = (
+            SignedCertificate.objects.filter(verification_hash=hash, is_active=True)
+            .select_related("user")
+            .first()
+        )
 
         if signed:
             payload = dict(signed.payload or {})
-            public_pem = getattr(settings, "CERT_SIGNING_PUBLIC_KEY_PEM", "") or get_public_key_pem()
-            signature_valid = verify_signature(
-                payload, signed.signature, public_pem
+            public_pem = (
+                getattr(settings, "CERT_SIGNING_PUBLIC_KEY_PEM", "")
+                or get_public_key_pem()
             )
+            signature_valid = verify_signature(payload, signed.signature, public_pem)
 
             is_expired = False
             expires_at_str = payload.get("expires_at")
@@ -76,8 +80,7 @@ class CertificateVerificationView(APIView):
                         "course_name": signed.course_name,
                         "public_key_fingerprint": signed.public_key_fingerprint,
                         "created_at": signed.created_at.isoformat(),
-                        "user": signed.user.get_full_name()
-                        or signed.user.username,
+                        "user": signed.user.get_full_name() or signed.user.username,
                     },
                 },
                 status=status.HTTP_200_OK,

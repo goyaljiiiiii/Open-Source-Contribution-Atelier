@@ -54,7 +54,6 @@ ANALYTICS_READ_REPLICA_MODELS = {
 }
 
 
-
 def mark_user_dirty(user_id: int) -> None:
     """
     Mark a user as having just performed a write.

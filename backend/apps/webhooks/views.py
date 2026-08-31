@@ -204,6 +204,7 @@ class TestWebhookView(APIView):
     POST /api/webhooks/test/ or /api/webhooks/test
     Sends a test event to a given endpoint URL with HMAC-SHA256 signature without persisting a delivery.
     """
+
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):

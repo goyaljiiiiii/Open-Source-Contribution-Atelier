@@ -9,6 +9,7 @@ from .context_processors import feature_flags
 class FeatureFlagContextProcessorTests(TestCase):
     def setUp(self):
         from django.core.cache import cache
+
         cache.clear()
 
     def test_feature_flags_in_context_with_switches(self):

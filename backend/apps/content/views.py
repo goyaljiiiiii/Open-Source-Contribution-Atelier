@@ -16,13 +16,14 @@ from rest_framework import (
     views,
     viewsets,
 )
-from apps.core.pagination import SecureCursorPagination
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.challenges.models import Challenge
 from apps.challenges.serializers import ChallengeSerializer
+from apps.core.pagination import SecureCursorPagination
+from apps.core.permissions import IsLessonUnlocked
 from apps.progress.models import LessonProgress
 from apps.search.models import SearchDocument
 
@@ -35,7 +36,6 @@ from .models import (
     Organization,
     QuizDraft,
 )
-from apps.core.permissions import IsLessonUnlocked
 from .serializers import (
     LearningPathSerializer,
     LessonDraftSerializer,
@@ -50,13 +50,13 @@ from .serializers import (
 # --- Helper Functions ---
 def get_active_lessons():
     from apps.core.cache.stampede import stampede_protected_get_or_set
-    
+
     def generate():
-        return list(
-            Lesson.objects.prefetch_related("exercises", "prerequisites").all()
-        )
-        
-    return stampede_protected_get_or_set("curriculum:full", generate, timeout=60 * 60 * 24)
+        return list(Lesson.objects.prefetch_related("exercises", "prerequisites").all())
+
+    return stampede_protected_get_or_set(
+        "curriculum:full", generate, timeout=60 * 60 * 24
+    )
 
 
 # --- Existing Views ---
@@ -91,12 +91,15 @@ class LessonViewSet(viewsets.ModelViewSet):
     def bulk_import(self, request):
         import csv
         import io
+
         from django.utils.text import slugify
 
         file_obj = request.FILES.get("file")
         if not file_obj:
             return response.Response(
-                {"error": "No file uploaded. Please upload a CSV file under key 'file'."},
+                {
+                    "error": "No file uploaded. Please upload a CSV file under key 'file'."
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -106,7 +109,9 @@ class LessonViewSet(viewsets.ModelViewSet):
             decoded_file = raw_bytes.decode("utf-8-sig")
         except UnicodeDecodeError as exc:
             return response.Response(
-                {"error": f"Invalid file encoding. File must be UTF-8 encoded: {str(exc)}"},
+                {
+                    "error": f"Invalid file encoding. File must be UTF-8 encoded: {str(exc)}"
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -121,15 +126,23 @@ class LessonViewSet(viewsets.ModelViewSet):
         errors = []
         rows = list(csv_reader)
 
-        org = getattr(request.user, "organization", None) if request.user.is_authenticated else None
+        org = (
+            getattr(request.user, "organization", None)
+            if request.user.is_authenticated
+            else None
+        )
 
         for idx, row in enumerate(rows, start=2):  # Row 1 is header
             title = (row.get("title") or row.get("Title") or "").strip()
             summary = (row.get("summary") or row.get("Summary") or "").strip()
             content = (row.get("content") or row.get("Content") or "").strip()
-            difficulty = (row.get("difficulty") or row.get("Difficulty") or "beginner").strip()
+            difficulty = (
+                row.get("difficulty") or row.get("Difficulty") or "beginner"
+            ).strip()
             category = (row.get("category") or row.get("Category") or "general").strip()
-            estimated_minutes = row.get("estimated_minutes") or row.get("Estimated Minutes") or 15
+            estimated_minutes = (
+                row.get("estimated_minutes") or row.get("Estimated Minutes") or 15
+            )
 
             if not title:
                 errors.append({"row": idx, "error": "Missing required field: 'title'"})
@@ -142,7 +155,13 @@ class LessonViewSet(viewsets.ModelViewSet):
                 slug = slugify(title, allow_unicode=True)
 
             if not slug:
-                errors.append({"row": idx, "title": title, "error": "Could not generate valid slug from title"})
+                errors.append(
+                    {
+                        "row": idx,
+                        "title": title,
+                        "error": "Could not generate valid slug from title",
+                    }
+                )
                 continue
 
             try:
@@ -172,7 +191,9 @@ class LessonViewSet(viewsets.ModelViewSet):
             except Exception as e:
                 errors.append({"row": idx, "title": title, "error": str(e)})
 
-        status_code = status.HTTP_201_CREATED if imported_lessons else status.HTTP_400_BAD_REQUEST
+        status_code = (
+            status.HTTP_201_CREATED if imported_lessons else status.HTTP_400_BAD_REQUEST
+        )
         return response.Response(
             {
                 "message": f"{len(imported_lessons)} lessons imported",
@@ -191,7 +212,7 @@ class SearchView(views.APIView):
         query = request.GET.get("q", "").strip()
         if not query:
             return response.Response({"lessons": [], "challenges": []})
-        
+
         # Safe SearchQuery handling for special characters (% _ # + @ etc.)
         try:
             search_query = SearchQuery(query, search_type="websearch")
@@ -204,17 +225,25 @@ class SearchView(views.APIView):
         def get_fts_objects(model_class, content_type):
             from django.db import connection
 
-            org = getattr(request.user, "organization", None) if request.user.is_authenticated else None
+            org = (
+                getattr(request.user, "organization", None)
+                if request.user.is_authenticated
+                else None
+            )
             filter_kwargs = {"organization": org} if org else {}
 
             if connection.vendor != "postgresql":
                 return list(
                     model_class.objects.filter(
-                        Q(title__icontains=query) | Q(summary__icontains=query) if hasattr(model_class, "summary") else Q(title__icontains=query),
-                        **filter_kwargs
+                        (
+                            Q(title__icontains=query) | Q(summary__icontains=query)
+                            if hasattr(model_class, "summary")
+                            else Q(title__icontains=query)
+                        ),
+                        **filter_kwargs,
                     )[:50]
                 )
-            
+
             try:
                 docs = (
                     SearchDocument.objects.filter(
@@ -243,11 +272,15 @@ class SearchView(views.APIView):
                 if model_class == Lesson:
                     objects = objects.prefetch_related("exercises", "prerequisites")
                 return sorted(objects, key=lambda x: object_ids.index(x.id))
-            
+
             # Fallback to direct icontains search if FTS / Trigram produced no matches
             objects = model_class.objects.filter(
-                Q(title__icontains=query) | Q(summary__icontains=query) if hasattr(model_class, "summary") else Q(title__icontains=query),
-                **filter_kwargs
+                (
+                    Q(title__icontains=query) | Q(summary__icontains=query)
+                    if hasattr(model_class, "summary")
+                    else Q(title__icontains=query)
+                ),
+                **filter_kwargs,
             )[:50]
             if model_class == Lesson:
                 objects = objects.prefetch_related("exercises", "prerequisites")

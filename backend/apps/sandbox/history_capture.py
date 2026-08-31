@@ -25,7 +25,9 @@ PROMPT_PATTERN = re.compile(
 EXIT_CODE_PATTERN = re.compile(r"\[exit_code:?\s*(\d+)\]", re.IGNORECASE)
 
 
-def parse_terminal_session(log_content: Union[str, List[Dict[str, Any]]]) -> List[HistoryEvent]:
+def parse_terminal_session(
+    log_content: Union[str, List[Dict[str, Any]]],
+) -> List[HistoryEvent]:
     """
     Parses a raw terminal session log or typescript stream into a chronological list of HistoryEvent objects.
     Supports both JSON-structured command arrays and raw text shell outputs.

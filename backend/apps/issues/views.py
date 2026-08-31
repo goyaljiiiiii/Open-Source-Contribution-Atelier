@@ -38,7 +38,6 @@ class IssueReportViewSet(viewsets.ModelViewSet):
                 award_badge_service(instance.user, badge_name="Bug Hunter")
 
 
-
 from django.db import transaction
 from django_q.tasks import async_task
 from rest_framework import status

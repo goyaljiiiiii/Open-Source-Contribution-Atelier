@@ -6,7 +6,11 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 class CeleryMonitorConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         user = self.scope.get("user")
-        if not user or not user.is_authenticated or not (user.is_staff or user.is_superuser):
+        if (
+            not user
+            or not user.is_authenticated
+            or not (user.is_staff or user.is_superuser)
+        ):
             await self.close()
             return
 
@@ -19,4 +23,6 @@ class CeleryMonitorConsumer(AsyncWebsocketConsumer):
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
     async def task_update(self, event):
-        await self.send(text_data=json.dumps({"type": "task_update", "data": event["task_run"]}))
+        await self.send(
+            text_data=json.dumps({"type": "task_update", "data": event["task_run"]})
+        )

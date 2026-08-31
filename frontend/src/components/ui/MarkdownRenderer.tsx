@@ -15,6 +15,7 @@ interface MarkdownRendererProps {
   content: string;
   /** For testing purposes, allows overriding the glossary loading function. */
   loadGlossaryFn?: () => Promise<GlossaryEntry[]>;
+  glossarySearchQuery?: string;
 }
 
 // Helper to parse markdown table rows, parsing code spans first to treat pipes inside backticks as literal characters.
@@ -61,6 +62,7 @@ function splitTableRow(row: string): string[] {
 export function MarkdownRenderer({
   content,
   loadGlossaryFn = loadGlossary,
+  glossarySearchQuery,
 }: MarkdownRendererProps) {
   const sanitizedContent = DOMPurify.sanitize(content, {
     ALLOWED_TAGS: [
@@ -143,6 +145,7 @@ export function MarkdownRenderer({
           key={`${keyPrefix}-g-${i}-${seg.entry.id}`}
           entry={seg.entry}
           onOpen={setActiveTerm}
+          query={glossarySearchQuery}
         >
           {seg.value}
         </GlossaryTerm>

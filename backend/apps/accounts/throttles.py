@@ -210,9 +210,7 @@ class UserRateThrottle(BaseDistributedThrottle):
 
         self.rate = self.get_rate()
         if self.rate:
-            num_requests, duration = self.parse_rate(self.rate)
-            self.num_requests = num_requests
-            self.duration = duration
+            self.num_requests, self.duration = self.parse_rate(self.rate)
 
         return super().allow_request(request, view)
 

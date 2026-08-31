@@ -26,15 +26,16 @@ from rest_framework.views import APIView
 
 from apps.core.permissions import IsMentor
 from apps.core.utils import parse_iso_datetime
-
 from apps.accounts.models import UserProfile
 from apps.content.models import Lesson
 from apps.content.serializers import LessonSerializer
+from apps.core.permissions import IsMentor
 from apps.core.throttling import SlidingWindowAnonThrottle, SlidingWindowScopedThrottle
 from apps.deduplication.idempotency import idempotent
 from apps.progress.constants import XP_PER_LEVEL
 from apps.progress.models import XPEvent
 from apps.progress.services.xp_service import XPService
+
 from .models import UserNote  # ✅ ADD: UserNote model
 from .models import (
     Badge,
@@ -80,6 +81,10 @@ class ExportNotesView(APIView):
 
     permission_classes = [permissions.IsAuthenticated]
     format_kwarg = None
+
+    def perform_content_negotiation(self, request, force=False):
+        renderers = self.get_renderers()
+        return (renderers[0], renderers[0].media_type)
 
     def get(self, request):
         user = request.user
@@ -564,9 +569,11 @@ class CommunityFeedView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        org_id = UserProfile.objects.filter(user=request.user).values_list(
-            "organization_id", flat=True
-        ).first()
+        org_id = (
+            UserProfile.objects.filter(user=request.user)
+            .values_list("organization_id", flat=True)
+            .first()
+        )
 
         if org_id:
             user_ids = UserProfile.objects.filter(
@@ -1856,7 +1863,9 @@ class StreakStatusView(APIView):
             "current_streak": data["current_streak"],
             "highest_streak": data["longest_streak"],
             "multiplier": data["current_multiplier"],
-            "effective_multiplier": data.get("effective_multiplier", data["current_multiplier"]),
+            "effective_multiplier": data.get(
+                "effective_multiplier", data["current_multiplier"]
+            ),
             "is_weekend_event": data.get("is_weekend_event", False),
             "next_milestone": (
                 data["next_milestone"]["days"] if data["next_milestone"] else None

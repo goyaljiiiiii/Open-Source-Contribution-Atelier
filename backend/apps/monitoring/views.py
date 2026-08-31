@@ -124,4 +124,3 @@ class TaskRunViewSet(viewsets.ReadOnlyModelViewSet):
         if status_param and status_param.upper() != "ALL":
             qs = qs.filter(status=status_param.upper())
         return qs
-

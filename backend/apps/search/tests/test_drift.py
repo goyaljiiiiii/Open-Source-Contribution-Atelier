@@ -56,34 +56,36 @@ def test_django_check_bulk_create_bypass(capsys):
     # Since seed_lessons.py exists in the codebase and calls Lesson.objects.bulk_create,
     # the check should flag it.
     from django.core.management import call_command
+    from django.test import override_settings
 
-    # We call standard Django checks. The 'search' app is tested.
-    # It might log warnings or output to stderr/stdout depending on check results.
-    # We just ensure it doesn't crash.
     try:
-        call_command("check")
+        with override_settings(CORS_ALLOW_ALL_ORIGINS=False):
+            call_command("check")
     except Exception as exc:
         pytest.fail(f"manage.py check failed: {exc}")
 
 
 @pytest.mark.django_db
-def test_reconcile_search_index(mocker):
+@patch("apps.search.meili_client.get_meili_index")
+def test_reconcile_search_index(mock_get_meili_index):
     """
     Test that reconcile_search_index syncs the DB SearchDocument state with Meilisearch.
     """
+    from unittest.mock import MagicMock
+
     from django.contrib.contenttypes.models import ContentType
 
     from apps.search.models import SearchDocument
     from apps.search.tasks import reconcile_search_index
 
     # Mock meilisearch index
-    mock_index = mocker.MagicMock()
+    mock_index = MagicMock()
     # Let meili have one document '999' which is stale, and one '1' which is valid
     # But DB only has '1' and '2'. So '2' is missing in meili, '999' is stale.
-    mock_index.get_documents.return_value = mocker.MagicMock(
+    mock_index.get_documents.return_value = MagicMock(
         results=[{"id": "1"}, {"id": "999"}]
     )
-    mocker.patch("apps.search.tasks.get_meili_index", return_value=mock_index)
+    mock_get_meili_index.return_value = mock_index
 
     ct = ContentType.objects.get_for_model(Lesson)
     SearchDocument.objects.create(

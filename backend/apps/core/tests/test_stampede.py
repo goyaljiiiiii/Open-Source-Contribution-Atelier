@@ -55,35 +55,36 @@ class TestCacheStampede(TestCase):
     def test_probabilistic_xfetch(self):
         # Test that XFetch correctly probabilistically decides to recompute
         # when a cache item is nearing expiration (stale data).
-        
+
         call_count = 0
+
         def generate():
             nonlocal call_count
             call_count += 1
             return "fresh_data"
-            
+
         # First call populates cache
         res = stampede_protected_get_or_set("xfetch_key", generate, timeout=2)
         self.assertEqual(res, "fresh_data")
         self.assertEqual(call_count, 1)
-        
+
         # Immediate subsequent call should return cached data without recomputing
         res = stampede_protected_get_or_set("xfetch_key", generate, timeout=2)
         self.assertEqual(call_count, 1)
-        
+
         # Simulate time passing so the key logically expires but is still in physical cache
         # Let's mock time.time
         import unittest.mock as mock
-        
+
         # If we advance time beyond expiry, it should probabilistically recompute
         # Since p = beta * (now - expiry) / timeout, if now == expiry, p = 0
         # If now == expiry + timeout, p = 1
         start_t = time.time()
-        with mock.patch('time.time', side_effect=lambda: start_t + 3):
-            with mock.patch('random.random', return_value=0.1):
+        with mock.patch("time.time", side_effect=lambda: start_t + 3):
+            with mock.patch("random.random", return_value=0.1):
                 res = stampede_protected_get_or_set("xfetch_key", generate, timeout=2)
                 self.assertEqual(call_count, 2)
-                
-            with mock.patch('random.random', return_value=0.9):
+
+            with mock.patch("random.random", return_value=0.9):
                 res = stampede_protected_get_or_set("xfetch_key", generate, timeout=2)
                 self.assertEqual(call_count, 2)

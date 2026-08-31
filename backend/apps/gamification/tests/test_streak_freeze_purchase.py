@@ -1,3 +1,5 @@
+from datetime import date, timedelta
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
@@ -7,7 +9,6 @@ from rest_framework.test import APIClient
 from apps.gamification.models import Purchase, ShopItem
 from apps.progress.models import StreakProfile, XPEvent
 from apps.progress.streak_engine import StreakEngine
-from datetime import date, timedelta
 
 User = get_user_model()
 
@@ -15,7 +16,9 @@ User = get_user_model()
 @pytest.mark.django_db
 class TestStreakFreezeShieldShopIntegration:
     def setup_method(self):
-        self.user = User.objects.create_user(username="shield_buyer", password="password")
+        self.user = User.objects.create_user(
+            username="shield_buyer", password="password"
+        )
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
 
@@ -126,7 +129,9 @@ class TestStreakFreezeShieldShopIntegration:
         assert res["current_streak"] == 1  # Reset to 1
 
     def test_insufficient_xp_rejects_freeze_purchase(self):
-        broke_user = User.objects.create_user(username="broke_user", password="password")
+        broke_user = User.objects.create_user(
+            username="broke_user", password="password"
+        )
         client = APIClient()
         client.force_authenticate(user=broke_user)
 

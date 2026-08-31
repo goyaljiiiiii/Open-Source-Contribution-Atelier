@@ -42,8 +42,8 @@ class ChatRoomListViewTests(TestCase):
 
     def test_n_plus_one_query_optimization(self):
         """Verify fetching rooms for multiple DM channels executes a constant number of queries."""
-        from django.test.utils import CaptureQueriesContext
         from django.db import connection
+        from django.test.utils import CaptureQueriesContext
 
         users_5 = [
             User.objects.create_user(username=f"user_{i}", password="password")

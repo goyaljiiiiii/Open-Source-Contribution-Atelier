@@ -119,4 +119,3 @@ class CoreConfig(AppConfig):
             logger.warning("Caught exception: %s", e)
             # Table might not be migrated yet or django_q not installed
             pass
-

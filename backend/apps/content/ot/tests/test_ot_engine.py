@@ -1,4 +1,5 @@
-from hypothesis import assume, given, strategies as st
+from hypothesis import assume, given
+from hypothesis import strategies as st
 from hypothesis.stateful import RuleBasedStateMachine, invariant, rule
 
 from apps.content.ot.engine import apply, compose, transform

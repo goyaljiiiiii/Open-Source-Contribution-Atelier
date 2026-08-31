@@ -94,7 +94,11 @@ def _parse_traceparent(header: str | None) -> tuple[str, str, str]:
     if header:
         match = _TRACEPARENT_RE.match(header.strip())
         if match:
-            return match.group(1).lower(), match.group(2).lower(), match.group(3).lower()
+            return (
+                match.group(1).lower(),
+                match.group(2).lower(),
+                match.group(3).lower(),
+            )
 
     trace_id = uuid.uuid4().hex
     span_id = uuid.uuid4().hex[:16]

@@ -39,7 +39,9 @@ def get_celery_stats():
         # Reserved tasks
         reserved = inspect.reserved()
         if reserved:
-            stats_data["reserved_tasks"] = sum(len(tasks) for tasks in reserved.values())
+            stats_data["reserved_tasks"] = sum(
+                len(tasks) for tasks in reserved.values()
+            )
 
     except Exception as e:
         logger.warning(f"Failed to inspect Celery workers: {e}")
@@ -84,8 +86,16 @@ def broadcast_task_update(task_run):
                         "task_id": task_run.task_id,
                         "task_name": task_run.task_name,
                         "status": task_run.status,
-                        "started_at": task_run.started_at.isoformat() if task_run.started_at else None,
-                        "finished_at": task_run.finished_at.isoformat() if task_run.finished_at else None,
+                        "started_at": (
+                            task_run.started_at.isoformat()
+                            if task_run.started_at
+                            else None
+                        ),
+                        "finished_at": (
+                            task_run.finished_at.isoformat()
+                            if task_run.finished_at
+                            else None
+                        ),
                         "duration": task_run.duration,
                         "error_message": task_run.error_message,
                         "retry_count": task_run.retry_count,
@@ -101,7 +111,9 @@ def broadcast_task_update(task_run):
 def on_task_prerun(sender=None, task_id=None, task=None, args=None, kwargs=None, **kw):
     if not task_id:
         return
-    task_name = (sender.name if sender else None) or (task.name if task else "unknown_task")
+    task_name = (sender.name if sender else None) or (
+        task.name if task else "unknown_task"
+    )
     args_repr = str(args or kwargs or "")[:500]
 
     try:
@@ -126,10 +138,14 @@ def on_task_prerun(sender=None, task_id=None, task=None, args=None, kwargs=None,
 
 
 @task_postrun.connect
-def on_task_postrun(sender=None, task_id=None, task=None, retval=None, state=None, **kw):
+def on_task_postrun(
+    sender=None, task_id=None, task=None, retval=None, state=None, **kw
+):
     if not task_id:
         return
-    task_name = (sender.name if sender else None) or (task.name if task else "unknown_task")
+    task_name = (sender.name if sender else None) or (
+        task.name if task else "unknown_task"
+    )
     now = timezone.now()
 
     try:
@@ -187,7 +203,9 @@ def on_task_retry(sender=None, request=None, reason=None, **kw):
         task_run = TaskRun.objects.filter(task_id=task_id).first()
         if not task_run:
             task_name = sender.name if sender else "unknown_task"
-            task_run = TaskRun(task_id=task_id, task_name=task_name, started_at=timezone.now())
+            task_run = TaskRun(
+                task_id=task_id, task_name=task_name, started_at=timezone.now()
+            )
 
         task_run.status = "RETRY"
         task_run.retry_count += 1
@@ -222,20 +240,26 @@ def get_task_type_stats():
         successes = qs.filter(status="SUCCESS").count()
         failures = qs.filter(status="FAILURE").count()
 
-        avg_duration_res = qs.filter(duration__isnull=False).aggregate(models.Avg("duration"))
+        avg_duration_res = qs.filter(duration__isnull=False).aggregate(
+            models.Avg("duration")
+        )
         avg_duration = round(avg_duration_res["duration__avg"] or 0.0, 3)
 
-        last_failed = qs.filter(status="FAILURE").order_by("-finished_at", "-started_at").first()
+        last_failed = (
+            qs.filter(status="FAILURE").order_by("-finished_at", "-started_at").first()
+        )
         last_failure_reason = last_failed.error_message if last_failed else None
 
-        per_task_stats.append({
-            "task_name": name,
-            "total_runs": total_runs,
-            "successes": successes,
-            "failures": failures,
-            "avg_duration": avg_duration,
-            "last_failure_reason": last_failure_reason,
-        })
+        per_task_stats.append(
+            {
+                "task_name": name,
+                "total_runs": total_runs,
+                "successes": successes,
+                "failures": failures,
+                "avg_duration": avg_duration,
+                "last_failure_reason": last_failure_reason,
+            }
+        )
 
     # Sort per_task_stats by total runs descending
     per_task_stats.sort(key=lambda x: x["total_runs"], reverse=True)
@@ -257,12 +281,14 @@ def get_task_type_stats():
         succ = hour_qs.filter(status="SUCCESS").count()
         fail = hour_qs.filter(status="FAILURE").count()
 
-        sparkline_24h.append({
-            "hour": h_start.strftime("%H:00"),
-            "successes": succ,
-            "failures": fail,
-            "total": succ + fail,
-        })
+        sparkline_24h.append(
+            {
+                "hour": h_start.strftime("%H:00"),
+                "successes": succ,
+                "failures": fail,
+                "total": succ + fail,
+            }
+        )
 
     return {
         "per_task_stats": per_task_stats,

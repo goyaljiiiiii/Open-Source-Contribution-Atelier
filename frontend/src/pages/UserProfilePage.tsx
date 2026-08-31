@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { fetchApi, getMediaUrl } from "../lib/api";
+import { StreakFlameBadge } from "../components/ui/StreakFlameBadge";
 import {
   Github,
   Linkedin,
@@ -13,7 +14,6 @@ import {
   Check,
   Trophy,
   TrendingUp,
-  Sparkles,
 } from "lucide-react";
 
 interface UserProfileData {
@@ -45,6 +45,8 @@ interface UserProfileData {
   global_rank?: number;
   percentile_standing?: number;
   rank_tier?: string;
+  streak_days?: number;
+  longest_streak?: number;
 }
 
 export function UserProfilePage() {
@@ -286,6 +288,27 @@ export function UserProfilePage() {
               Statistics & Global Rank
             </h3>
             <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2 rounded-2xl border-2 border-black bg-gradient-to-r from-orange-50 to-amber-100 p-3.5 text-center dark:bg-[#241a10] dark:border-[#3a3a45]">
+                <div className="flex items-center justify-center gap-3">
+                  <StreakFlameBadge
+                    streakDays={profile.streak_days ?? 0}
+                    longestStreak={profile.longest_streak ?? 0}
+                    size={38}
+                  />
+                  <div className="text-left">
+                    <div className="font-black text-sm text-black dark:text-white">
+                      {profile.streak_days ?? 0} Day Streak
+                    </div>
+                    <div className="text-[11px] font-bold text-muted">
+                      Best: {profile.longest_streak ?? profile.streak_days ?? 0}{" "}
+                      days
+                    </div>
+                  </div>
+                </div>
+                <p className="text-[11px] font-bold text-muted mt-1">
+                  Keep contributing daily to unlock higher flame tiers
+                </p>
+              </div>
               <div className="rounded-2xl border-2 border-black bg-white p-4 text-center dark:bg-[#121218] dark:border-[#3a3a45]">
                 <BookOpen size={24} className="mx-auto mb-2 text-primary" />
                 <div className="text-2xl font-black text-black dark:text-white">
@@ -303,7 +326,18 @@ export function UserProfilePage() {
               <div className="col-span-2 rounded-2xl border-2 border-black bg-gradient-to-r from-amber-50 to-orange-50 p-3.5 text-center dark:bg-[#1d1b18] dark:border-[#3a3a45]">
                 <div className="flex items-center justify-center gap-2 text-amber-600 dark:text-amber-400 font-black text-sm">
                   <TrendingUp size={16} />
-                  <span>Global Standing: Top {profile.percentile_standing ?? (total_score >= 1000 ? 5 : total_score >= 500 ? 10 : total_score >= 100 ? 25 : 50)}%</span>
+                  <span>
+                    Global Standing: Top{" "}
+                    {profile.percentile_standing ??
+                      (total_score >= 1000
+                        ? 5
+                        : total_score >= 500
+                          ? 10
+                          : total_score >= 100
+                            ? 25
+                            : 50)}
+                    %
+                  </span>
                 </div>
                 <p className="text-[11px] font-bold text-muted mt-0.5">
                   Calculated against all active open source contributors

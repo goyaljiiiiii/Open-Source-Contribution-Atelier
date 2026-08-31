@@ -63,6 +63,7 @@ export function MaintainerReplyToneCoach({
 
   const analysis = useMemo(() => analyzeMaintainerReply(draft), [draft]);
   const suggestion = useMemo(() => suggestReplyRewrite(draft), [draft]);
+  const draftLength = draft.length;
   const showSuggestion =
     draft.trim().length > 0 &&
     (!analysis.ok || analysis.flags.some((f) => f.severity !== "info"));
@@ -147,6 +148,15 @@ export function MaintainerReplyToneCoach({
           placeholder='e.g. "any update???" or a real comment you almost posted…'
           className="w-full resize-y rounded-2xl border-4 border-black bg-surface-low p-4 text-sm font-bold leading-relaxed outline-none focus:ring-2 focus:ring-primary dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2]"
         />
+        <div className="mt-3 flex justify-end">
+          <div
+            className="rounded-full border-2 border-black bg-white px-3 py-1 text-[11px] font-black shadow-card-sm dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2]"
+            aria-live="polite"
+            aria-label={`Character count ${draftLength} characters`}
+          >
+            {draftLength} characters
+          </div>
+        </div>
 
         <ul className="mt-4 space-y-2" aria-live="polite">
           {analysis.flags.map((flag) => (

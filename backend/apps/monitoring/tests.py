@@ -33,14 +33,23 @@ class TestCeleryMonitoring:
         # 1. Test prerun signal
         task_id = "test-task-123"
         task_name = "apps.notifications.tasks.send_email"
-        on_task_prerun(sender=type("Task", (), {"name": task_name}), task_id=task_id, args=("arg1",), kwargs={"k": "v"})
+        on_task_prerun(
+            sender=type("Task", (), {"name": task_name}),
+            task_id=task_id,
+            args=("arg1",),
+            kwargs={"k": "v"},
+        )
 
         run = TaskRun.objects.get(task_id=task_id)
         assert run.task_name == task_name
         assert run.status == "STARTED"
 
         # 2. Test postrun signal
-        on_task_postrun(sender=type("Task", (), {"name": task_name}), task_id=task_id, state="SUCCESS")
+        on_task_postrun(
+            sender=type("Task", (), {"name": task_name}),
+            task_id=task_id,
+            state="SUCCESS",
+        )
         run.refresh_from_db()
         assert run.status == "SUCCESS"
         assert run.finished_at is not None
@@ -48,7 +57,9 @@ class TestCeleryMonitoring:
 
         # 3. Test failure signal
         fail_task_id = "test-fail-456"
-        on_task_prerun(sender=type("Task", (), {"name": task_name}), task_id=fail_task_id)
+        on_task_prerun(
+            sender=type("Task", (), {"name": task_name}), task_id=fail_task_id
+        )
         on_task_failure(
             sender=type("Task", (), {"name": task_name}),
             task_id=fail_task_id,
@@ -98,7 +109,10 @@ class TestCeleryMonitoring:
 
         # Unauthenticated request -> 401
         res = self.client.get(url)
-        assert res.status_code in [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN]
+        assert res.status_code in [
+            status.HTTP_401_UNAUTHORIZED,
+            status.HTTP_403_FORBIDDEN,
+        ]
 
         # Normal user -> 403
         self.client.force_authenticate(user=self.normal_user)

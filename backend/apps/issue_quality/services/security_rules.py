@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import ast
 import re
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from typing import Any, Dict, List, Literal, Optional
 
 Severity = Literal["Low", "Medium", "Critical"]
@@ -183,7 +183,9 @@ def _regex_findings(path: str, content: str) -> List[SecurityFinding]:
                     )
                 )
 
-        if SQL_EXECUTE.search(line) and ("+" in line or "${" in line or ".format(" in line):
+        if SQL_EXECUTE.search(line) and (
+            "+" in line or "${" in line or ".format(" in line
+        ):
             findings.append(
                 SecurityFinding(
                     rule="sql_injection",

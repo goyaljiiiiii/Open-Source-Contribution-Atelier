@@ -343,8 +343,8 @@ class TestWebhookDirectTestAndSignals:
 
     @patch("apps.webhooks.tasks.dispatch_event")
     def test_webhook_signal_handlers(self, mock_dispatch):
-        from apps.webhooks.signals import webhook_on_xp_milestone
         from apps.progress.models import XPEvent
+        from apps.webhooks.signals import webhook_on_xp_milestone
 
         xp_instance = MagicMock(spec=XPEvent)
         xp_instance.user_id = 1
@@ -357,4 +357,3 @@ class TestWebhookDirectTestAndSignals:
         webhook_on_xp_milestone(XPEvent, xp_instance, created=True)
         mock_dispatch.assert_called_once()
         assert mock_dispatch.call_args[0][0] == "xp.milestone"
-

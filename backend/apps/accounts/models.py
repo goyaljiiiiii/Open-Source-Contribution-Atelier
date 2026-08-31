@@ -446,4 +446,6 @@ class WebAuthnCredential(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"WebAuthnCredential(user={self.user.username}, nickname={self.nickname})"
+        return (
+            f"WebAuthnCredential(user={self.user.username}, nickname={self.nickname})"
+        )

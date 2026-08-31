@@ -117,9 +117,11 @@ class ChatRoomListView(APIView):
             .distinct()
         )
 
-        latest_content_subquery = Message.objects.filter(
-            room_id=OuterRef("room_id")
-        ).order_by("-created_at", "-id").values("content")[:1]
+        latest_content_subquery = (
+            Message.objects.filter(room_id=OuterRef("room_id"))
+            .order_by("-created_at", "-id")
+            .values("content")[:1]
+        )
 
         rooms = (
             Message.objects.filter(room_id__in=user_rooms)

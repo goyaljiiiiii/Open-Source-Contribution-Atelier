@@ -6,7 +6,6 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django_q.tasks import async_task
 
-
 from apps.progress.models import Badge, ExerciseAttempt, LessonProgress, UserBadge
 
 logger = logging.getLogger(__name__)
@@ -60,9 +59,7 @@ def send_weekly_progress_summary():
             async_task("apps.notifications.tasks.send_bulk_email", payload)
 
             # Record that we sent the digest so re-runs won't duplicate
-            WeeklyDigestLog.objects.get_or_create(
-                user=user, week_start=week_start
-            )
+            WeeklyDigestLog.objects.get_or_create(user=user, week_start=week_start)
 
 
 def _increment_badge_skip_metric(user_id=None, badge_id=None, reason=""):
@@ -318,7 +315,11 @@ def award_specific_badge(user_id, badge_id):
             "Skipping badge award: Recipient user id=%s not found (badge_id=%s)",
             user_id,
             badge_id,
-            extra={"user_id": user_id, "badge_id": badge_id, "reason": "user_not_found"},
+            extra={
+                "user_id": user_id,
+                "badge_id": badge_id,
+                "reason": "user_not_found",
+            },
         )
         _increment_badge_skip_metric(
             user_id=user_id, badge_id=badge_id, reason="user_not_found"
@@ -332,7 +333,11 @@ def award_specific_badge(user_id, badge_id):
             "Skipping badge award: Badge id=%s not found for recipient user_id=%s",
             badge_id,
             user_id,
-            extra={"user_id": user_id, "badge_id": badge_id, "reason": "badge_not_found"},
+            extra={
+                "user_id": user_id,
+                "badge_id": badge_id,
+                "reason": "badge_not_found",
+            },
         )
         _increment_badge_skip_metric(
             user_id=user_id, badge_id=badge_id, reason="badge_not_found"
@@ -398,7 +403,11 @@ def award_badge_to_users(user_ids, badge_id):
                 "Skipping badge award for recipient user_id=%s (badge_id=%s): User record missing",
                 uid,
                 badge_id,
-                extra={"user_id": uid, "badge_id": badge_id, "reason": "user_not_found"},
+                extra={
+                    "user_id": uid,
+                    "badge_id": badge_id,
+                    "reason": "user_not_found",
+                },
             )
             _increment_badge_skip_metric(
                 user_id=uid, badge_id=badge_id, reason="user_not_found"
@@ -418,5 +427,3 @@ def archive_monthly_leaderboard():
     from apps.progress.services.leaderboard_service import LeaderboardService
 
     return LeaderboardService.archive_and_reset_monthly_leaderboard()
-
-

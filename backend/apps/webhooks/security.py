@@ -48,7 +48,9 @@ def compute_signature(secret: str, payload: bytes) -> str:
 
 
 def verify_signature(
-    secret: Union[str, List[Union[str, Tuple[str, str]]], Tuple[Union[str, Tuple[str, str]], ...]],
+    secret: Union[
+        str, List[Union[str, Tuple[str, str]]], Tuple[Union[str, Tuple[str, str]], ...]
+    ],
     payload: bytes,
     signature: str,
 ) -> bool:
@@ -60,9 +62,23 @@ def verify_signature(
     if not signature:
         return False
 
-    clean_sig = signature.removeprefix("sha256=") if signature.startswith("sha256=") else signature
+    clean_sig = (
+        signature.removeprefix("sha256=")
+        if signature.startswith("sha256=")
+        else signature
+    )
 
-    secrets_list = [secret] if isinstance(secret, (str, tuple)) and not (isinstance(secret, tuple) and len(secret) == 2 and isinstance(secret[0], str) and isinstance(secret[1], str)) else list(secret) if isinstance(secret, (list, tuple)) else [secret]
+    secrets_list = (
+        [secret]
+        if isinstance(secret, (str, tuple))
+        and not (
+            isinstance(secret, tuple)
+            and len(secret) == 2
+            and isinstance(secret[0], str)
+            and isinstance(secret[1], str)
+        )
+        else list(secret) if isinstance(secret, (list, tuple)) else [secret]
+    )
 
     for item in secrets_list:
         sec = item[1] if isinstance(item, (tuple, list)) and len(item) == 2 else item

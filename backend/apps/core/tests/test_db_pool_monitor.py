@@ -1,5 +1,6 @@
 import time
 from concurrent.futures import ThreadPoolExecutor
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
@@ -74,12 +75,15 @@ def test_middleware_records_metrics_and_prom_gauges(api_client, normal_user):
     # Check Prometheus gauges if present
     if DB_POOL_ACTIVE is not None:
         from prometheus_client import REGISTRY
+
         active_val = REGISTRY.get_sample_value("db_pool_active")
         assert active_val is not None
 
 
 @pytest.mark.django_db
-def test_db_pool_status_view_permissions_and_response(api_client, admin_user, normal_user):
+def test_db_pool_status_view_permissions_and_response(
+    api_client, admin_user, normal_user
+):
     """Test GET /api/admin/db/pool endpoint response format and access control."""
     url = "/api/admin/db/pool"
 
@@ -268,4 +272,3 @@ def test_simulated_connection_pressure_20_concurrent_requests(admin_user):
     new_conn_max_age = get_conn_max_age()
     assert new_conn_max_age > 100
     assert new_conn_max_age == 110
-

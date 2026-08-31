@@ -17,7 +17,7 @@ class VCSAdapterFactory:
 
         Args:
             provider: The name of the VCS provider (e.g., 'github', 'gitlab').
-            token: Optional authentication token. If not provided, the adapter 
+            token: Optional authentication token. If not provided, the adapter
                    will attempt to load it from Django settings.
 
         Returns:

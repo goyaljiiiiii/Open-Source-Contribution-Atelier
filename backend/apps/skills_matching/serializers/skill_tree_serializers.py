@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+
 class SkillNodeSerializer(serializers.Serializer):
     id = serializers.CharField()
     title = serializers.CharField()
@@ -11,8 +12,12 @@ class SkillNodeSerializer(serializers.Serializer):
     xp_reward = serializers.IntegerField()
     difficulty = serializers.CharField()
     position = serializers.DictField()  # {"x": int, "y": int}
-    recommended_lessons = serializers.ListField(child=serializers.DictField(), required=False, default=list)
-    related_challenges = serializers.ListField(child=serializers.DictField(), required=False, default=list)
+    recommended_lessons = serializers.ListField(
+        child=serializers.DictField(), required=False, default=list
+    )
+    related_challenges = serializers.ListField(
+        child=serializers.DictField(), required=False, default=list
+    )
     badge_reward = serializers.DictField(required=False, default=dict)
     progress_percent = serializers.IntegerField(default=0)
 

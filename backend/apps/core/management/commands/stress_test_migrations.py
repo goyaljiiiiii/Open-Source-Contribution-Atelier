@@ -1,10 +1,11 @@
+import importlib
 import json
 import time
-import importlib
 from typing import Any, Dict, List, Optional
+
+from django.apps import apps
 from django.core.management.base import BaseCommand, CommandError
 from django.db import connection, transaction
-from django.apps import apps
 
 
 class Command(BaseCommand):
@@ -86,7 +87,9 @@ class Command(BaseCommand):
 
         # Simulate lock duration and row operations based on dataset size
         estimated_lock_ms = round(target_rows * 0.045, 2)
-        execution_duration_ms = round((time.time() - start_time) * 1000 + (target_rows / 1000) * 12, 2)
+        execution_duration_ms = round(
+            (time.time() - start_time) * 1000 + (target_rows / 1000) * 12, 2
+        )
 
         recommendations: List[str] = []
 
@@ -127,8 +130,12 @@ class Command(BaseCommand):
         )
         self.stdout.write(f"Target Dataset Rows : {report['simulated_dataset_rows']:,}")
         self.stdout.write(f"Execution Duration  : {report['execution_duration_ms']} ms")
-        self.stdout.write(f"Est. Table Lock     : {report['estimated_table_lock_ms']} ms")
-        self.stdout.write(f"Recommended Batch   : {report['batch_size_recommended']} rows")
+        self.stdout.write(
+            f"Est. Table Lock     : {report['estimated_table_lock_ms']} ms"
+        )
+        self.stdout.write(
+            f"Recommended Batch   : {report['batch_size_recommended']} rows"
+        )
         self.stdout.write(f"Dry Run Mode        : {report['dry_run']}")
 
         status_style = (

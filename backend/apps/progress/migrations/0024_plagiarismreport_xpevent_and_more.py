@@ -16,7 +16,8 @@ class SafeAlterUniqueTogether(migrations.AlterUniqueTogether):
                     cursor, table_name
                 )
             has_unique = any(
-                c_info.get("unique") and set(c_info.get("columns", [])) == {"user_id", "badge_id"}
+                c_info.get("unique")
+                and set(c_info.get("columns", [])) == {"user_id", "badge_id"}
                 for c_info in constraints.values()
             )
             if not has_unique:
@@ -32,8 +33,10 @@ class SafeAddConstraint(migrations.AddConstraint):
         model = from_state.apps.get_model(app_label, self.model_name)
         table_name = model._meta.db_table
         with schema_editor.connection.cursor() as cursor:
-            existing_constraints = schema_editor.connection.introspection.get_constraints(
-                cursor, table_name
+            existing_constraints = (
+                schema_editor.connection.introspection.get_constraints(
+                    cursor, table_name
+                )
             )
         if self.constraint.name in existing_constraints:
             return

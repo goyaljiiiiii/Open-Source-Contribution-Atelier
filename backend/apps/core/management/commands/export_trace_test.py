@@ -1,6 +1,7 @@
 import json
-from django.core.management.base import BaseCommand
+
 from django.conf import settings
+from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
@@ -24,6 +25,7 @@ class Command(BaseCommand):
 
         try:
             from opentelemetry import trace
+
             tracer = trace.get_tracer("management.export_trace_test")
 
             with tracer.start_as_current_span("export_trace_test_span") as span:
@@ -33,13 +35,17 @@ class Command(BaseCommand):
                 trace_id = format(ctx.trace_id, "032x") if ctx.is_valid else "invalid"
                 span_id = format(ctx.span_id, "016x") if ctx.is_valid else "invalid"
 
-                self.stdout.write(self.style.SUCCESS(
-                    f"Successfully created trace: trace_id={trace_id}, span_id={span_id}"
-                ))
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f"Successfully created trace: trace_id={trace_id}, span_id={span_id}"
+                    )
+                )
 
         except ImportError:
-            self.stdout.write(self.style.WARNING(
-                "OpenTelemetry package not installed. Skipping trace generation."
-            ))
+            self.stdout.write(
+                self.style.WARNING(
+                    "OpenTelemetry package not installed. Skipping trace generation."
+                )
+            )
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"Error generating trace: {e}"))

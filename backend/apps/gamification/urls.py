@@ -1,6 +1,10 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
+from .certificate_verification_view import (
+    AntiCheatCheckView,
+    CertificateVerificationView,
+)
 from .views import (
     BadgeViewSet,
     MyAchievementsView,
@@ -10,10 +14,6 @@ from .views import (
     PurchaseHistoryView,
     PurchaseItemView,
     ShopItemListView,
-)
-from .certificate_verification_view import (
-    AntiCheatCheckView,
-    CertificateVerificationView,
 )
 
 router = DefaultRouter()

@@ -29,7 +29,9 @@ def _check_no_latest_tag(lines: List[str]) -> List[str]:
         if match:
             image = match.group(1)
             if ":" not in image or image.endswith(":latest"):
-                errors.append(f"line {i + 1}: base image '{image}' is unpinned or uses ':latest' — pin to a specific version")
+                errors.append(
+                    f"line {i + 1}: base image '{image}' is unpinned or uses ':latest' — pin to a specific version"
+                )
     return errors
 
 
@@ -39,7 +41,9 @@ def _check_has_non_root_user(lines: List[str]) -> List[str]:
         match = _USER_PATTERN.match(line)
         if match and match.group(1).lower() not in ("root", "0"):
             return []
-    return ["no USER instruction found switching away from root — container will run as root by default"]
+    return [
+        "no USER instruction found switching away from root — container will run as root by default"
+    ]
 
 
 def _check_apt_cleanup(lines: List[str]) -> List[str]:
@@ -50,9 +54,13 @@ def _check_apt_cleanup(lines: List[str]) -> List[str]:
             has_update = bool(_APT_UPDATE_SAME_LINE_PATTERN.search(line))
             has_cleanup = bool(_APT_CLEANUP_PATTERN.search(line))
             if not has_update:
-                errors.append(f"line {i + 1}: 'apt-get install' without 'apt-get update' in the same RUN layer (stale/missing package index risk)")
+                errors.append(
+                    f"line {i + 1}: 'apt-get install' without 'apt-get update' in the same RUN layer (stale/missing package index risk)"
+                )
             if not has_cleanup:
-                errors.append(f"line {i + 1}: 'apt-get install' without cleaning up /var/lib/apt/lists afterward (bloats image layer)")
+                errors.append(
+                    f"line {i + 1}: 'apt-get install' without cleaning up /var/lib/apt/lists afterward (bloats image layer)"
+                )
     return errors
 
 
@@ -61,7 +69,9 @@ def _check_copy_context(lines: List[str]) -> List[str]:
     warnings = []
     for i, line in enumerate(lines):
         if _COPY_DOT_DOT_PATTERN.match(line):
-            warnings.append(f"line {i + 1}: 'COPY . .' copies the entire build context — consider a .dockerignore or more specific COPY paths")
+            warnings.append(
+                f"line {i + 1}: 'COPY . .' copies the entire build context — consider a .dockerignore or more specific COPY paths"
+            )
     return warnings
 
 
@@ -70,7 +80,9 @@ def _check_explicit_expose(lines: List[str]) -> List[str]:
     for line in lines:
         if _EXPOSE_PATTERN.match(line):
             return []
-    return ["no EXPOSE instruction found — container's listening port isn't documented in the Dockerfile"]
+    return [
+        "no EXPOSE instruction found — container's listening port isn't documented in the Dockerfile"
+    ]
 
 
 class DockerfileLintChallengePlugin(LessonPlugin):
@@ -130,7 +142,9 @@ class DockerfileLintChallengePlugin(LessonPlugin):
         for check_fn in cls._SOFT_CHECKS:
             if not check_fn(lines):
                 soft_passed += 1
-        soft_score = (soft_passed / len(cls._SOFT_CHECKS)) * 10.0 if cls._SOFT_CHECKS else 0.0
+        soft_score = (
+            (soft_passed / len(cls._SOFT_CHECKS)) * 10.0 if cls._SOFT_CHECKS else 0.0
+        )
 
         return round(hard_score + soft_score, 2)
 
@@ -138,7 +152,10 @@ class DockerfileLintChallengePlugin(LessonPlugin):
     def get_lint_warnings(cls, data: Dict[str, Any]) -> Tuple[List[str], List[str]]:
         """Non-interface helper: returns (hard_errors, soft_warnings) for learner feedback."""
         if not cls.validate_submission(data):
-            return (["Submission is not a valid Dockerfile (no FROM instruction found)."], [])
+            return (
+                ["Submission is not a valid Dockerfile (no FROM instruction found)."],
+                [],
+            )
 
         lines = data["submitted_dockerfile"].split("\n")
         hard_errors = []

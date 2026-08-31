@@ -80,9 +80,10 @@ class PermissionFilter(admin.SimpleListFilter):
 
     def lookups(self, request, model_admin):
         # We can extract recent permissions from events, but it's complex.
-        # Alternatively, we could just return a few common ones or let it be 
+        # Alternatively, we could just return a few common ones or let it be
         # used via URL. For simplicity, we fetch distinct slugs from DB.
         from apps.rbac.models import Permission
+
         perms = Permission.objects.values_list("slug", flat=True)[:50]
         return [(p, p) for p in perms]
 
@@ -96,7 +97,9 @@ class PermissionFilter(admin.SimpleListFilter):
                 app, code = val.split(".", 1)
             else:
                 app, code = "rbac", val
-            return queryset.filter(after__contains=[[app, code]]) | queryset.filter(before__contains=[[app, code]])
+            return queryset.filter(after__contains=[[app, code]]) | queryset.filter(
+                before__contains=[[app, code]]
+            )
         return queryset
 
 

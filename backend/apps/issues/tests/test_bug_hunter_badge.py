@@ -75,7 +75,9 @@ class TestBugHunterBadge:
                 is_verified=True,
             )
 
-        assert IssueReport.objects.filter(user=regular_user, is_verified=True).count() == 2
+        assert (
+            IssueReport.objects.filter(user=regular_user, is_verified=True).count() == 2
+        )
         assert not UserAchievement.objects.filter(
             user=regular_user, badge__name="Bug Hunter"
         ).exists()
@@ -94,15 +96,22 @@ class TestBugHunterBadge:
                 issue_type="Bug",
                 is_verified=True,
             )
-            if IssueReport.objects.filter(user=regular_user, is_verified=True).count() >= 3:
+            if (
+                IssueReport.objects.filter(user=regular_user, is_verified=True).count()
+                >= 3
+            ):
                 award_badge_service(regular_user, "Bug Hunter")
 
-        assert IssueReport.objects.filter(user=regular_user, is_verified=True).count() == 3
+        assert (
+            IssueReport.objects.filter(user=regular_user, is_verified=True).count() == 3
+        )
         assert UserAchievement.objects.filter(
             user=regular_user, badge__name="Bug Hunter"
         ).exists()
 
-    def test_unverified_issue_reports_do_not_award_badge(self, api_client, regular_user):
+    def test_unverified_issue_reports_do_not_award_badge(
+        self, api_client, regular_user
+    ):
         api_client.force_authenticate(user=regular_user)
 
         # File 5 unverified issue reports
@@ -118,7 +127,10 @@ class TestBugHunterBadge:
             )
             assert response.status_code == 201
 
-        assert IssueReport.objects.filter(user=regular_user, is_verified=False).count() == 5
+        assert (
+            IssueReport.objects.filter(user=regular_user, is_verified=False).count()
+            == 5
+        )
         assert not UserAchievement.objects.filter(
             user=regular_user, badge__name="Bug Hunter"
         ).exists()
@@ -145,7 +157,10 @@ class TestBugHunterBadge:
             report.is_verified = True
             report.save()
 
-            if IssueReport.objects.filter(user=regular_user, is_verified=True).count() >= 3:
+            if (
+                IssueReport.objects.filter(user=regular_user, is_verified=True).count()
+                >= 3
+            ):
                 award_badge_service(regular_user, "Bug Hunter")
 
             if i < 2:

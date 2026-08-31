@@ -1,5 +1,6 @@
 import pytest
 from django.apps import apps
+
 from apps.dependency_graph.apps import DependencyGraphConfig
 from apps.dependency_graph.exporters.mermaid import MermaidExporter
 from apps.dependency_graph.graph_generator import generate_dependency_graph

@@ -23,8 +23,10 @@ def slow_compute(sleep_time=0.5):
 
 def _crashing_worker():
     import django
+
     django.setup()
     from django.core.cache import cache
+
     cache.add("test_crash_key:lock", "1", timeout=2)
     hard_crashing_compute()
 

@@ -38,7 +38,7 @@ class GitLabAdapter(VCSAdapter):
 
         user_id = user_data.get("id")
         repos = self._get_user_repos(user_id) if user_id else []
-        
+
         # GitLab API doesn't easily expose language breakdown per repo without extra calls,
         # but for compatibility we will try to approximate or extract if available
         languages = self._extract_languages(repos)
@@ -67,9 +67,9 @@ class GitLabAdapter(VCSAdapter):
     def _get_user_data(self, username: str) -> dict | None:
         try:
             response = requests.get(
-                f"{self.GITLAB_API_URL}/users", 
+                f"{self.GITLAB_API_URL}/users",
                 headers=self.headers,
-                params={"username": username}
+                params={"username": username},
             )
             response.raise_for_status()
             data = response.json()
@@ -111,7 +111,15 @@ class GitLabAdapter(VCSAdapter):
             topics = repo.get("tag_list", []) or repo.get("topics", [])
             for t in topics:
                 t = t.lower()
-                if t in ["python", "javascript", "typescript", "java", "ruby", "go", "c++"]:
+                if t in [
+                    "python",
+                    "javascript",
+                    "typescript",
+                    "java",
+                    "ruby",
+                    "go",
+                    "c++",
+                ]:
                     languages[t] = languages.get(t, 0) + 1
         return languages
 

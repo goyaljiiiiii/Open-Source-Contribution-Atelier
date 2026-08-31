@@ -13,6 +13,7 @@ import {
   Share2,
   Library,
 } from "lucide-react";
+import DOMPurify from "dompurify";
 import { usePythonSandbox } from "../../hooks/usePythonSandbox";
 import { PythonExercise } from "../../lib/lessons";
 import { useAuth } from "../../features/auth/AuthContext";
@@ -314,7 +315,10 @@ export function CollabPythonSandbox({
           Console Output
         </div>
         {output ? (
-          <pre className="whitespace-pre-wrap">{output}</pre>
+          <pre
+            className="whitespace-pre-wrap"
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(output) }}
+          />
         ) : (
           <div className="text-gray-500 italic">No output...</div>
         )}
@@ -324,7 +328,10 @@ export function CollabPythonSandbox({
             <div className="flex items-center gap-2 text-red-400 font-bold mb-2">
               <XCircle className="w-4 h-4" /> Runtime Error
             </div>
-            <pre className="text-red-300 whitespace-pre-wrap">{error}</pre>
+            <pre
+              className="text-red-300 whitespace-pre-wrap"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(error) }}
+            />
             {exercise.hint && (
               <div className="mt-2 text-yellow-300 text-xs flex gap-2 p-2 bg-yellow-900/20 rounded">
                 <span className="font-bold">Hint:</span> {exercise.hint}

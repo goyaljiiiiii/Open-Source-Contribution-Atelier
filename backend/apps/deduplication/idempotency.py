@@ -20,7 +20,9 @@ IDEMPOTENCY_TTL_HOURS = 24
 def idempotent(view_func):
     @wraps(view_func)
     def wrapper(view_instance, request, *args, **kwargs):
-        idempotency_key = request.META.get(f"HTTP_{IDEMPOTENCY_HEADER.upper().replace('-', '_')}") or request.headers.get(IDEMPOTENCY_HEADER)
+        idempotency_key = request.META.get(
+            f"HTTP_{IDEMPOTENCY_HEADER.upper().replace('-', '_')}"
+        ) or request.headers.get(IDEMPOTENCY_HEADER)
 
         if not idempotency_key:
             return view_func(view_instance, request, *args, **kwargs)
@@ -63,7 +65,9 @@ def idempotent(view_func):
         if isinstance(response, Response):
             response_status = response.status_code
             try:
-                response_body = json.dumps(response.data) if response.data is not None else ""
+                response_body = (
+                    json.dumps(response.data) if response.data is not None else ""
+                )
             except (TypeError, ValueError):
                 response_body = str(response.data) if response.data is not None else ""
 
@@ -77,7 +81,8 @@ def idempotent(view_func):
                         request_method=method,
                         response_status=response_status,
                         response_body=response_body,
-                        expires_at=timezone.now() + timedelta(hours=IDEMPOTENCY_TTL_HOURS),
+                        expires_at=timezone.now()
+                        + timedelta(hours=IDEMPOTENCY_TTL_HOURS),
                     )
                 except Exception as e:
                     logger.warning(f"Failed to store idempotency record: {e}")

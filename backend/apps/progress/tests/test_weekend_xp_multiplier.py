@@ -1,9 +1,11 @@
-import pytest
 from datetime import date, datetime
+
+import pytest
 from django.contrib.auth import get_user_model
-from apps.progress.streak_engine import StreakEngine
-from apps.progress.models import StreakProfile
 from rest_framework.test import APIClient
+
+from apps.progress.models import StreakProfile
+from apps.progress.streak_engine import StreakEngine
 
 User = get_user_model()
 
@@ -11,7 +13,9 @@ User = get_user_model()
 @pytest.mark.django_db
 class TestWeekendXpBonusMultiplier:
     def setup_method(self):
-        self.user = User.objects.create_user(username="weekend_warrior", password="password")
+        self.user = User.objects.create_user(
+            username="weekend_warrior", password="password"
+        )
         self.profile = StreakEngine.get_or_create_profile(self.user)
 
     def test_is_weekend_event_detection(self):

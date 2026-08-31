@@ -24,7 +24,6 @@ class GamificationConfig(AppConfig):
         try:
             from django_q.models import Schedule
 
-
             Schedule.objects.get_or_create(
                 name="assign-daily-quests",
                 defaults={
@@ -60,7 +59,6 @@ class GamificationConfig(AppConfig):
                 "icon_url": None,
             },
         )
-
 
     @staticmethod
     def seed_default_quests():

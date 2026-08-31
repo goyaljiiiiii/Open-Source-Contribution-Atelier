@@ -3,7 +3,10 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from apps.cache.services.cache_manager import disable_cache_signals, enable_cache_signals
+from apps.cache.services.cache_manager import (
+    disable_cache_signals,
+    enable_cache_signals,
+)
 from apps.content.models import LessonDraft, ModuleDraft
 
 

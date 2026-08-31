@@ -116,7 +116,11 @@ def _js_tree_sitter_nodes(source: str) -> Optional[List[AstNodeSummary]]:
         def walk(node: tree_sitter.Node) -> None:
             ntype = node.type
             name = ""
-            if ntype in ("function_declaration", "method_definition", "class_declaration"):
+            if ntype in (
+                "function_declaration",
+                "method_definition",
+                "class_declaration",
+            ):
                 for child in node.children:
                     if child.type == "identifier":
                         name = source[child.start_byte : child.end_byte]
@@ -132,7 +136,9 @@ def _js_tree_sitter_nodes(source: str) -> Optional[List[AstNodeSummary]]:
                 lineno = node.start_point[0] + 1
                 nodes.append(
                     AstNodeSummary(
-                        type=ntype.replace("_declaration", "").replace("_statement", ""),
+                        type=ntype.replace("_declaration", "").replace(
+                            "_statement", ""
+                        ),
                         name=name or ntype,
                         lineno=lineno,
                     )

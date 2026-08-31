@@ -1,0 +1,36 @@
+name: PR Linked Issue Validator
+
+on:
+  pull_request:
+    types: [opened, edited]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  validate-linked-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for Linked Issue Keyword
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const body = pr.body || '';
+
+            // Check for fixes/closes/resolves #123 syntax
+            const hasLinkedIssue = /(fixes|closes|resolves)\s*#\d+/i.test(body) || /#\d+/.test(body);
+
+            if (!hasLinkedIssue) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: pr.number,
+                body: `⚠️ @${pr.user.login}, thank you for opening this Pull Request! Please link your assigned issue in the description using \`Fixes #<issue_number>\` (e.g. \`Fixes #2800\`) so the issue automatically closes when merged!`
+              });
+              console.log(`Prompted @${pr.user.login} to link issue on PR #${pr.number}`);
+            }

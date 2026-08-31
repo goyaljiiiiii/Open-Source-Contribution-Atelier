@@ -50,4 +50,3 @@ class TaskRun(models.Model):
 
     def __str__(self):
         return f"{self.task_name} [{self.task_id[:8]}] - {self.status}"
-

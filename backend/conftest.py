@@ -53,7 +53,6 @@ def _configure_media_root(settings, tmp_path):
     settings.MEDIA_ROOT = str(tmp_path)
 
 
-
 @pytest.fixture(autouse=True)
 def mock_django_q_async_task(monkeypatch):
     """
