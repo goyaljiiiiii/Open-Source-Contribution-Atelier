@@ -394,6 +394,12 @@ const RegexPlaygroundPage = lazy(() =>
   })),
 );
 
+const GitBranchSimulatorPage = lazy(() =>
+  import("../pages/GitBranchSimulatorPage").then((module) => ({
+    default: module.GitBranchSimulatorPage,
+  })),
+);
+
 const ColorPaletteGeneratorPage = lazy(() =>
   import("../pages/ColorPaletteGeneratorPage").then((module) => ({
     default: module.ColorPaletteGeneratorPage,
