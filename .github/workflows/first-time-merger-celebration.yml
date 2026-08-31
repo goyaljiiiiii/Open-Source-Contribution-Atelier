@@ -1,0 +1,55 @@
+name: First-Time Merger Celebration
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  celebrate-first-merge:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Merged PR Count & Celebrate
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const author = pr.user.login;
+
+            // Fetch merged PRs by author
+            const searchRes = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${owner}/${repo} is:pr is:merged author:${author}`
+            });
+
+            const mergedCount = searchRes.data.total_count;
+
+            if (mergedCount === 1) {
+              const celebrationComment = [
+                `## 🏆 Congratulations @${author}! 🎉`,
+                ``,
+                `Your very first Pull Request has been **successfully merged** into **${repo}**! 🚀`,
+                ``,
+                `Thank you for contributing to open source! Your contribution makes this project better for everyone.`,
+                ``,
+                `### 🌟 Keep Contributing:`,
+                `- Add your contributor badge to your GitHub profile \`README.md\`!`,
+                `- Check out more open issues labeled \`good first issue\` or \`ECSoC26\`!`,
+                ``,
+                `Happy coding! 💻✨`
+              ].join('\n');
+
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: pr.number,
+                body: celebrationComment
+              });
+              console.log(`Celebrated first-time merge for @${author} on PR #${pr.number}`);
+            }

@@ -1,5 +1,6 @@
 import pytest
 from rest_framework.test import APIClient
+
 from apps.progress.models import StreakProfile
 
 
@@ -26,6 +27,7 @@ def test_dashboard_personal_stats_uses_streak_profile(user):
     )
 
     from django.core.cache import cache
+
     cache.clear()
 
     client = APIClient()

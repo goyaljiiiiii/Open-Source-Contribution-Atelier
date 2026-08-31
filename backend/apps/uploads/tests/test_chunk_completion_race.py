@@ -36,11 +36,13 @@ class ChunkCompletionRaceTests(TestCase):
         (temp_dir / "1.part").write_bytes(b"bb")
         (temp_dir / "2.part").write_bytes(b"cc")
 
-        with patch("apps.uploads.views.validate_file", return_value=("text", "text/plain")), \
-             patch("apps.uploads.views.enqueue_upload_scan") as enqueue_scan:
-            response = self.client.post(
-                f"/api/uploads/complete/{session.session_id}/"
-            )
+        with (
+            patch(
+                "apps.uploads.views.validate_file", return_value=("text", "text/plain")
+            ),
+            patch("apps.uploads.views.enqueue_upload_scan") as enqueue_scan,
+        ):
+            response = self.client.post(f"/api/uploads/complete/{session.session_id}/")
 
         self.assertEqual(response.status_code, 202)
         session.refresh_from_db()
@@ -61,9 +63,7 @@ class ChunkCompletionRaceTests(TestCase):
         temp_dir = Path(session.get_temp_dir())
         (temp_dir / "0.part").write_bytes(b"aa")
 
-        response = self.client.post(
-            f"/api/uploads/complete/{session.session_id}/"
-        )
+        response = self.client.post(f"/api/uploads/complete/{session.session_id}/")
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["error"], "Missing chunks")

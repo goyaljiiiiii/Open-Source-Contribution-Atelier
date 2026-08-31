@@ -1,8 +1,9 @@
 import pytest
-from django.test import Client
+from django.test import Client, override_settings
 
 
 @pytest.mark.django_db
+@override_settings(ALLOWED_HOSTS=["localhost", "127.0.0.1", "testserver"])
 def test_host_header_validation_rejects_unallowed_hosts():
     """
     Ensures that Host header validation is active and rejects unknown hosts.

@@ -4,10 +4,10 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.permissions import HasPermission, HasRole
 from apps.organizations.models import Organization, OrganizationMembership
 
 from .models import AuditLog, Permission, Role, UserRole
-from apps.core.permissions import HasPermission, HasRole
 from .serializers import (
     AuditLogSerializer,
     PermissionSerializer,

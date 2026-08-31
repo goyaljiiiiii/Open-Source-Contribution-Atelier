@@ -25,3 +25,25 @@ class StreakService:
         streak.last_activity_date = today
         streak.save()
         return streak
+
+
+def award_badge_service(user, badge_name="Bug Hunter"):
+    """
+    Awards a gamification Badge to a user if not already earned.
+    Creates a UserAchievement record and returns (achievement, created).
+    """
+    from .models import Badge, UserAchievement
+
+    if isinstance(badge_name, Badge):
+        badge = badge_name
+    else:
+        badge, _ = Badge.objects.get_or_create(
+            name=badge_name,
+            defaults={"description": f"Awarded for obtaining {badge_name}."},
+        )
+
+    achievement, created = UserAchievement.objects.get_or_create(
+        user=user,
+        badge=badge,
+    )
+    return achievement, created

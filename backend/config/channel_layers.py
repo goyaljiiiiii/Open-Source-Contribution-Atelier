@@ -58,7 +58,6 @@ def is_redis_available(url: str, timeout: float = 0.5) -> bool:
     if not url or _truthy(os.getenv("FORCE_INMEMORY_CHANNEL_LAYER")):
         return False
 
-
     # Prefer a real Redis PING when the client library is installed.
     try:
         import redis

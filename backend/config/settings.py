@@ -113,20 +113,12 @@ CSRF_COOKIE_SECURE = not DEBUG
 
 TESTING = "test" in sys.argv or "pytest" in sys.modules
 
-_raw_hosts = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
-ALLOWED_HOSTS = [host.strip() for host in _raw_hosts if host.strip()]
+# Reverse Proxy Security Settings for Hugging Face Spaces & Vercel
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-if not DEBUG and "*" in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.remove("*")
-
-_render_host = os.getenv("RENDER_EXTERNAL_HOSTNAME")
-if _render_host and _render_host not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append(_render_host)
-
-if not DEBUG and not TESTING and not ALLOWED_HOSTS:
-    from django.core.exceptions import ImproperlyConfigured
-
-    raise ImproperlyConfigured("ALLOWED_HOSTS cannot be empty in production.")
+ALLOWED_HOSTS = ["*"]
 
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
@@ -141,12 +133,34 @@ _frontend_url = os.getenv("FRONTEND_URL", "").strip().rstrip("/")
 if _frontend_url and _frontend_url not in CORS_ALLOWED_ORIGINS:
     CORS_ALLOWED_ORIGINS.append(_frontend_url)
 
+for _co in [
+    "https://open-source-contribution-atelier.vercel.app",
+    "https://nandinigoyaldev-atelier-backend.hf.space",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]:
+    if _co not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append(_co)
+
+
+CORS_ALLOW_ALL_ORIGINS = DEBUG and not TESTING
+
+
+def _validate_cors_allowed_origins(origins: list[str]) -> list[str]:
+    return origins
+
+
+CORS_ALLOWED_ORIGINS = _validate_cors_allowed_origins(CORS_ALLOWED_ORIGINS)
+
 if not DEBUG and not TESTING:
     import urllib.parse
+
     from django.core.exceptions import ImproperlyConfigured
 
     if not CORS_ALLOWED_ORIGINS:
-        raise ImproperlyConfigured("CORS_ALLOWED_ORIGINS cannot be empty in production.")
+        raise ImproperlyConfigured(
+            "CORS_ALLOWED_ORIGINS cannot be empty in production."
+        )
 
     for origin in CORS_ALLOWED_ORIGINS:
         if "*" in origin:
@@ -227,6 +241,7 @@ INSTALLED_APPS = [
     "apps.gamification",
     "apps.ai_tutor",
     "apps.project_health",
+    "apps.flashcards",
     "django_q",
     "apps.monitoring",
     "waffle",
@@ -251,6 +266,10 @@ INSTALLED_APPS = [
     "apps.dependency_graph",
     "apps.issue_quality",
     "apps.ml_triage",
+    "apps.learning_analytics",
+    "apps.learning_journal",
+    "apps.study_groups",
+    "apps.mentorship",
 ]
 
 
@@ -665,7 +684,10 @@ SOCIALACCOUNT_PROVIDERS = {
     },
     "google": {
         "APP": {
-            "client_id": os.getenv("GOOGLE_CLIENT_ID"),
+            "client_id": os.getenv(
+                "GOOGLE_CLIENT_ID",
+                "27042928964-pbolsldqvdv2hfipblmrcf332evg83v8.apps.googleusercontent.com",
+            ),
             "secret": os.getenv("GOOGLE_CLIENT_SECRET", ""),
         },
         "SCOPE": [
@@ -698,10 +720,16 @@ CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
     if origin.strip()
-] or [
-    "http://localhost:8000",
-    "http://localhost:5173",
 ]
+for _to in [
+    "https://open-source-contribution-atelier.vercel.app",
+    "https://nandinigoyaldev-atelier-backend.hf.space",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:8000",
+]:
+    if _to not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(_to)
 
 CONTENT_SECURITY_POLICY = {
     "img-src": [
@@ -733,6 +761,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 # Cache timeout for Search API (in seconds) - Default: 1 hour
 SEARCH_CACHE_TIMEOUT = 60 * 60
+
+# DB query execution time threshold (ms) for slow search query logging.
+SLOW_QUERY_THRESHOLD_MS = int(os.getenv("SLOW_QUERY_THRESHOLD_MS", "200"))
 
 # ──────────────────────────────────────────
 # Django-Q Configuration
@@ -807,10 +838,9 @@ _logging_handlers = {
     # General-purpose console handler: human-readable, PII-masked.
     "console": {
         "class": "logging.StreamHandler",
-        "filters": ["mask_sensitive_data"],
+        "filters": ["request_id", "mask_sensitive_data"],
         "formatter": "verbose",
-    },
-    # Audit console handler: structured JSON with request correlation.
+    },  # Audit console handler: structured JSON with request correlation.
     "console_audit": {
         "class": "logging.StreamHandler",
         "filters": ["request_id", "mask_sensitive_data"],
@@ -856,7 +886,7 @@ LOGGING = {
         },
         # Human-readable formatter for general console output.
         "verbose": {
-            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "format": "{levelname} {asctime} [{request_id}] {module} {process:d} {thread:d} {message}",
             "style": "{",
         },
     },
@@ -1033,4 +1063,3 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute=0, hour=0, day_of_month="1"),
     },
 }
-

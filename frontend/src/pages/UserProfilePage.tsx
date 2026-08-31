@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { fetchApi, getMediaUrl } from "../lib/api";
+import { StreakFlameBadge } from "../components/ui/StreakFlameBadge";
 import {
   Github,
   Linkedin,
@@ -11,6 +12,8 @@ import {
   MapPin,
   Copy,
   Check,
+  Trophy,
+  TrendingUp,
 } from "lucide-react";
 
 interface UserProfileData {
@@ -39,6 +42,11 @@ interface UserProfileData {
   }>;
   total_score: number;
   completed_lessons: number;
+  global_rank?: number;
+  percentile_standing?: number;
+  rank_tier?: string;
+  streak_days?: number;
+  longest_streak?: number;
 }
 
 export function UserProfilePage() {
@@ -47,6 +55,16 @@ export function UserProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const getPercentileLabel = (standing?: number, score: number = 0) => {
+    if (standing !== undefined && standing !== null) {
+      return `Top ${standing}% Contributor`;
+    }
+    if (score >= 1000) return "Top 5% Contributor";
+    if (score >= 500) return "Top 10% Contributor";
+    if (score >= 100) return "Top 25% Contributor";
+    return "Top 50% Contributor";
+  };
 
   const handleCopyLink = () => {
     const profileLink = `${window.location.origin}/u/${username}`;
@@ -179,13 +197,22 @@ export function UserProfilePage() {
             <h2 className="text-3xl font-black text-center text-black dark:text-white mb-1">
               {user.username}
             </h2>
-            {user.is_staff && (
-              <div className="text-center mb-4">
+
+            {/* Global Rank Percentile Standing Badge */}
+            <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
+              <span
+                data-testid="rank-percentile-badge"
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r from-amber-400 to-orange-500 text-black border-2 border-black shadow-card-sm"
+              >
+                <Trophy size={14} className="stroke-[2.5]" />
+                {getPercentileLabel(profile.percentile_standing, total_score)}
+              </span>
+              {user.is_staff && (
                 <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-black bg-black text-white dark:bg-[#e2e8f0] dark:text-black">
                   STAFF
                 </span>
-              </div>
-            )}
+              )}
+            </div>
 
             <div className="space-y-3 mt-4 text-sm font-bold text-muted-foreground">
               <div className="flex items-center gap-2">
@@ -258,9 +285,30 @@ export function UserProfilePage() {
           {/* Quick Stats Widget */}
           <div className="rounded-3xl border-4 border-black bg-[#E8F0FE] p-6 shadow-card dark:bg-[#182235] dark:border-[#7790bf]">
             <h3 className="text-lg font-black uppercase text-black dark:text-white mb-4">
-              Statistics
+              Statistics & Global Rank
             </h3>
             <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2 rounded-2xl border-2 border-black bg-gradient-to-r from-orange-50 to-amber-100 p-3.5 text-center dark:bg-[#241a10] dark:border-[#3a3a45]">
+                <div className="flex items-center justify-center gap-3">
+                  <StreakFlameBadge
+                    streakDays={profile.streak_days ?? 0}
+                    longestStreak={profile.longest_streak ?? 0}
+                    size={38}
+                  />
+                  <div className="text-left">
+                    <div className="font-black text-sm text-black dark:text-white">
+                      {profile.streak_days ?? 0} Day Streak
+                    </div>
+                    <div className="text-[11px] font-bold text-muted">
+                      Best: {profile.longest_streak ?? profile.streak_days ?? 0}{" "}
+                      days
+                    </div>
+                  </div>
+                </div>
+                <p className="text-[11px] font-bold text-muted mt-1">
+                  Keep contributing daily to unlock higher flame tiers
+                </p>
+              </div>
               <div className="rounded-2xl border-2 border-black bg-white p-4 text-center dark:bg-[#121218] dark:border-[#3a3a45]">
                 <BookOpen size={24} className="mx-auto mb-2 text-primary" />
                 <div className="text-2xl font-black text-black dark:text-white">
@@ -274,6 +322,26 @@ export function UserProfilePage() {
                   {total_score}
                 </div>
                 <div className="text-xs font-bold text-muted">XP Points</div>
+              </div>
+              <div className="col-span-2 rounded-2xl border-2 border-black bg-gradient-to-r from-amber-50 to-orange-50 p-3.5 text-center dark:bg-[#1d1b18] dark:border-[#3a3a45]">
+                <div className="flex items-center justify-center gap-2 text-amber-600 dark:text-amber-400 font-black text-sm">
+                  <TrendingUp size={16} />
+                  <span>
+                    Global Standing: Top{" "}
+                    {profile.percentile_standing ??
+                      (total_score >= 1000
+                        ? 5
+                        : total_score >= 500
+                          ? 10
+                          : total_score >= 100
+                            ? 25
+                            : 50)}
+                    %
+                  </span>
+                </div>
+                <p className="text-[11px] font-bold text-muted mt-0.5">
+                  Calculated against all active open source contributors
+                </p>
               </div>
             </div>
           </div>

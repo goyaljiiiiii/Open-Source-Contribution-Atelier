@@ -2,11 +2,15 @@
 
 Welcome to the official **ECSoC 2026** Contributor Leaderboard for **Open-Source Contribution Atelier**! 🚀
 
-| 1 | @Jidnyasa-P | 💎 Diamond Contributor ⚡ | 30 | 750 | 2026-08-25 |
+| 1 | @Jidnyasa-P | 💎 Diamond Contributor ⚡ | 31 | 775 | 2026-08-27 |
 
 | 1 | @Pratyush-Panda-2006 | 💎 Diamond Contributor ⚡ | 59 | 1475 | 2026-08-23 |
 
 | 1 | @Babin123456 | 💎 Diamond Contributor ⚡ | 36 | 900 | 2026-08-23 |
+
+| 1 | @karan-chaos | 🥈 Silver Contributor ⚡ | 4 | 100 | 2026-08-31 |
+
+| 1 | @sanjana2505006 | 🥇 Gold Contributor ⚡ | 8 | 200 | 2026-08-31 |
 
 ---
 

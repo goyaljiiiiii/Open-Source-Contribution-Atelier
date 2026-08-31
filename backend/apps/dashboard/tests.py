@@ -85,16 +85,28 @@ class ContinueLearningTests(APITestCase):
         from apps.progress.models import LessonProgress
 
         self.lesson1 = Lesson.objects.create(
-            title="Lesson 1", slug="lesson-1", summary="Summary 1", difficulty="beginner"
+            title="Lesson 1",
+            slug="lesson-1",
+            summary="Summary 1",
+            difficulty="beginner",
         )
         self.lesson2 = Lesson.objects.create(
-            title="Lesson 2", slug="lesson-2", summary="Summary 2", difficulty="beginner"
+            title="Lesson 2",
+            slug="lesson-2",
+            summary="Summary 2",
+            difficulty="beginner",
         )
         self.lesson3 = Lesson.objects.create(
-            title="Lesson 3", slug="lesson-3", summary="Summary 3", difficulty="intermediate"
+            title="Lesson 3",
+            slug="lesson-3",
+            summary="Summary 3",
+            difficulty="intermediate",
         )
         self.lesson4 = Lesson.objects.create(
-            title="Lesson 4", slug="lesson-4", summary="Summary 4", difficulty="advanced"
+            title="Lesson 4",
+            slug="lesson-4",
+            summary="Summary 4",
+            difficulty="advanced",
         )
 
         # Create progress items
@@ -132,4 +144,3 @@ class ContinueLearningTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["continue_learning"], [])
-

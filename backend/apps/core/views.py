@@ -17,7 +17,6 @@ from apps.core.middleware.db_pool_monitor import (
 from apps.core.models import PerformanceSample
 
 
-
 class PerformanceDashboardView(APIView):
     permission_classes = [IsAdminUser]
 
@@ -77,7 +76,7 @@ class I18nDetectView(APIView):
         langs = [lang.split(";")[0].strip() for lang in accept_lang.split(",") if lang]
         locale = "en"
         supported = ["en", "fr", "es", "hi", "pt-BR", "zh-CN", "ar", "de", "ja"]
-        
+
         for lang in langs:
             if lang in supported:
                 locale = lang
@@ -86,18 +85,15 @@ class I18nDetectView(APIView):
             if prefix in supported:
                 locale = prefix
                 break
-        
+
         fallback_chain = [locale]
         if locale != "en":
             prefix = locale.split("-")[0]
             if prefix != locale and prefix not in fallback_chain:
                 fallback_chain.append(prefix)
             fallback_chain.append("en")
-            
-        return Response({
-            "locale": locale,
-            "fallback_chain": fallback_chain
-        })
+
+        return Response({"locale": locale, "fallback_chain": fallback_chain})
 
 
 class DbPoolStatusView(APIView):
@@ -166,4 +162,3 @@ class DbPoolStatusView(APIView):
                 "current_conn_max_age": current_age,
             }
         )
-

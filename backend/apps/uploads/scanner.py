@@ -2,13 +2,20 @@
 
 from __future__ import annotations
 
+import shutil
+import subprocess
+import uuid
 from dataclasses import dataclass
+from pathlib import Path
 
-import pyclamd
 from django.conf import settings
 
 
 class ScannerUnavailable(RuntimeError):
+    pass
+
+
+class ScanTimeout(RuntimeError):
     pass
 
 
@@ -18,29 +25,61 @@ class ScanResult:
     signature: str = ""
 
 
-def get_clamav_client():
-    socket_path = getattr(settings, "CLAMAV_SOCKET", "")
-    host = getattr(settings, "CLAMAV_HOST", "127.0.0.1")
-    port = int(getattr(settings, "CLAMAV_PORT", 3310))
+def _tmp_upload_path(filename: str) -> Path:
+    tmp_dir = Path(settings.MEDIA_ROOT) / "tmp_uploads"
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    safe_name = Path(filename).name
+    return tmp_dir / f"{uuid.uuid4().hex}_{safe_name}"
 
-    client = (
-        pyclamd.ClamdUnixSocket(socket_path)
-        if socket_path
-        else pyclamd.ClamdNetworkSocket(host, port)
-    )
+
+def _safe_unlink(path: Path) -> None:
     try:
-        client.ping()
-    except Exception as exc:
-        raise ScannerUnavailable("ClamAV is unavailable.") from exc
-    return client
+        path.unlink(missing_ok=True)
+    except OSError:
+        pass
+
+
+def _parse_scan_signature(stdout: str) -> str:
+    for line in stdout.splitlines():
+        if " FOUND" in line:
+            _, _, rest = line.partition(": ")
+            signature, _, _ = rest.partition(" FOUND")
+            return signature.strip()
+    return ""
 
 
 def scan_file(file_path: str) -> ScanResult:
-    client = get_clamav_client()
-    result = client.scan_file(file_path)
-    if not result:
-        return ScanResult(infected=False)
+    """Scan an upload via a ClamAV subprocess and purge its temporary copy."""
 
-    _, details = next(iter(result.items()))
-    status, signature = details
-    return ScanResult(infected=status == "FOUND", signature=signature or "")
+    source = Path(file_path)
+    temp_path = _tmp_upload_path(source.name)
+    timeout = int(getattr(settings, "UPLOAD_SCAN_TIMEOUT", 15))
+    command = tuple(getattr(settings, "CLAMAV_SCAN_COMMAND", ("clamscan", "--no-summary")))
+
+    try:
+        shutil.copy2(source, temp_path)
+        try:
+            completed = subprocess.run(
+                [*command, str(temp_path)],
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                check=False,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise ScanTimeout("Upload scan subprocess timed out.") from exc
+        except FileNotFoundError as exc:
+            raise ScannerUnavailable("ClamAV scanner binary is unavailable.") from exc
+
+        if completed.returncode == 0:
+            return ScanResult(infected=False)
+        if completed.returncode == 1:
+            return ScanResult(
+                infected=True,
+                signature=_parse_scan_signature(completed.stdout),
+            )
+        raise ScannerUnavailable(
+            completed.stderr.strip() or "ClamAV scan failed unexpectedly."
+        )
+    finally:
+        _safe_unlink(temp_path)

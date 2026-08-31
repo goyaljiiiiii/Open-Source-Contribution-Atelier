@@ -31,7 +31,9 @@ class WeeklySummarySpecialCharactersTests(TestCase):
 
         link = WeeklyDigestService.format_markdown_lesson_link(title, slug)
         # Should not have unencoded raw parentheses or spaces breaking markdown [text](url)
-        self.assertIn("https://atelier.dev/lessons/c%2B%2B%20%26%20c%23%20%28beginner%29", link)
+        self.assertIn(
+            "https://atelier.dev/lessons/c%2B%2B%20%26%20c%23%20%28beginner%29", link
+        )
         self.assertNotIn("(beginner)", link.split("](")[1])
 
     def test_generate_markdown_summary_with_special_char_lessons(self):

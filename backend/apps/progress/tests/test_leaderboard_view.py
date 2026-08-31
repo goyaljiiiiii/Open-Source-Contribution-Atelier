@@ -21,9 +21,7 @@ def test_progress_leaderboard_route_returns_ranked_contributors():
     )
     alice = user_model.objects.create_user(username="alice", is_staff=False)
     bob = user_model.objects.create_user(username="bob", is_staff=False)
-    LessonProgress.objects.create(
-        user=alice, lesson=lesson, completed=True, score=100
-    )
+    LessonProgress.objects.create(user=alice, lesson=lesson, completed=True, score=100)
     LessonProgress.objects.create(user=bob, lesson=lesson, completed=True, score=200)
 
     response = APIClient().get("/api/progress/leaderboard/?limit=50&page=1")

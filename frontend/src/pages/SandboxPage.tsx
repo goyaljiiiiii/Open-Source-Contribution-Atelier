@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { ProjectWorkspace } from "../components/ui/ProjectWorkspace";
 import { OnboardingTour } from "../components/ui/OnboardingTour";
 import { TerminalReplay } from "../components/ui/TerminalReplay";
-import { Map, Link2, AlertCircle, X } from "lucide-react";
+import { Map, Link2, AlertCircle, X, Volume2, VolumeX } from "lucide-react";
 import { Step } from "react-joyride";
 import { useTerminalReplayFromHash } from "../hooks/useTerminalReplayFromHash";
 import {
@@ -10,10 +10,23 @@ import {
   buildReplayShareUrl,
   encodeReplayHash,
 } from "../lib/terminalReplayShare";
+import {
+  isSandboxSoundEnabled,
+  setSandboxSoundEnabled,
+} from "../hooks/useSandboxCore";
 
 export function SandboxPage() {
   const [runTour, setRunTour] = useState(false);
   const [demoCopied, setDemoCopied] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(isSandboxSoundEnabled);
+
+  const toggleSound = () => {
+    setSoundEnabled((prev) => {
+      const next = !prev;
+      setSandboxSoundEnabled(next);
+      return next;
+    });
+  };
   const { commands, sessionName, hasReplayHash, error, reloadFromHash } =
     useTerminalReplayFromHash();
 
@@ -101,6 +114,28 @@ export function SandboxPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleSound}
+            aria-pressed={!soundEnabled}
+            aria-label={
+              soundEnabled
+                ? "Mute execution sound effects"
+                : "Unmute execution sound effects"
+            }
+            title={
+              soundEnabled
+                ? "Mute execution sound effects"
+                : "Unmute execution sound effects"
+            }
+            className="flex items-center gap-2 px-4 py-2 font-bold text-sm bg-surface dark:bg-[#1a1a1a] border-2 border-black dark:border-[#2e2924] rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all"
+          >
+            {soundEnabled ? (
+              <Volume2 className="w-4 h-4" />
+            ) : (
+              <VolumeX className="w-4 h-4" />
+            )}
+          </button>
           <button
             type="button"
             onClick={() => void copyDemoLink()}

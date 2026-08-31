@@ -1,4 +1,5 @@
 from datetime import timedelta
+
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework import status
@@ -176,7 +177,9 @@ class TestCommunityFeedView(APITestCase):
             exercise=self.exercise,
             title="Second oldest submission",
         )
-        CodeSubmission.objects.filter(id=cs.id).update(created_at=now - timedelta(hours=3))
+        CodeSubmission.objects.filter(id=cs.id).update(
+            created_at=now - timedelta(hours=3)
+        )
 
         ub = UserBadge.objects.create(
             user=self.user_global,
@@ -190,7 +193,9 @@ class TestCommunityFeedView(APITestCase):
             completed=True,
             score=95,
         )
-        LessonProgress.objects.filter(id=lp.id).update(updated_at=now - timedelta(hours=1))
+        LessonProgress.objects.filter(id=lp.id).update(
+            updated_at=now - timedelta(hours=1)
+        )
 
         response = self.client.get("/api/progress/community-feed/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -254,7 +259,9 @@ class TestCommunityFeedView(APITestCase):
 
         data = response.data
         self.assertEqual(data["count"], 3)
-        self.assertTrue(all(item["type"] == "code_submission" for item in data["results"]))
+        self.assertTrue(
+            all(item["type"] == "code_submission" for item in data["results"])
+        )
 
     def test_organization_scoped_feed(self):
         """Users in an organization see only activity from users in their organization."""

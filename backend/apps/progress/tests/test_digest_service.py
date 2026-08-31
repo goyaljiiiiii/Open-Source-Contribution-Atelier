@@ -118,4 +118,3 @@ class WeeklyDigestServiceTests(TestCase):
         self.assertEqual(context["learning_path_progress"]["completed_count"], 2)
         self.assertEqual(context["learning_path_progress"]["total_count"], 4)
         self.assertEqual(context["learning_path_progress"]["percentage"], 50.0)
-

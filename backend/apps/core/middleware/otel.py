@@ -14,6 +14,7 @@ import random
 import time
 import uuid
 from typing import Any
+
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
@@ -62,13 +63,17 @@ class OpenTelemetryMiddleware:
 
         # Sampling logic: 100% if X-Debug-Trace: 1 or debug header present, else sample_rate (default 10%)
         sample_rate = getattr(settings, "OTEL_SAMPLE_RATE", 0.1)
-        debug_trace = request.headers.get("X-Debug-Trace", "").strip() == "1" or \
-                      request.META.get("HTTP_X_DEBUG_TRACE", "").strip() == "1"
+        debug_trace = (
+            request.headers.get("X-Debug-Trace", "").strip() == "1"
+            or request.META.get("HTTP_X_DEBUG_TRACE", "").strip() == "1"
+        )
 
         is_sampled = debug_trace or (random.random() < sample_rate)
         trace_flags = "01" if is_sampled else "00"
 
-        traceparent = request.headers.get("traceparent") or request.META.get("HTTP_TRACEPARENT")
+        traceparent = request.headers.get("traceparent") or request.META.get(
+            "HTTP_TRACEPARENT"
+        )
         if traceparent:
             parts = traceparent.strip().split("-")
             if len(parts) == 4:
@@ -126,4 +131,6 @@ class OpenTelemetryMiddleware:
                 otel_context.detach(token)
 
             if response is not None:
-                response["traceparent"] = f"00-{trace_id}-{current_span_id}-{trace_flags}"
+                response["traceparent"] = (
+                    f"00-{trace_id}-{current_span_id}-{trace_flags}"
+                )

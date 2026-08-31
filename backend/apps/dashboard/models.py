@@ -30,6 +30,17 @@ class Issue(SoftDeleteModel):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def save(self, *args, **kwargs):
+        if self.status == self.Status.SOLVED and self.bonus_points == 0:
+            from apps.progress.models import XPMultiplierEvent
+
+            multiplier = XPMultiplierEvent.get_active_multiplier()
+            if multiplier > 1.0:
+                self.bonus_points = int(self.points * (multiplier - 1.0))
+        elif self.status != self.Status.SOLVED:
+            self.bonus_points = 0
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.title} ({self.get_status_display()})"
 

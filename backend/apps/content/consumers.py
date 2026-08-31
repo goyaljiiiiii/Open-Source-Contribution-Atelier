@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.core.cache import cache
@@ -36,11 +37,15 @@ class LessonEditorConsumer(AsyncWebsocketConsumer):
 
         # Send current document state to the connecting client
         doc_state = self._get_cached_doc()
-        await self.send(text_data=json.dumps({
-            "type": "doc_init",
-            "content": doc_state,
-            "revision": self._get_revision(),
-        }))
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "doc_init",
+                    "content": doc_state,
+                    "revision": self._get_revision(),
+                }
+            )
+        )
 
         await self._broadcast_presence("join")
 
@@ -71,11 +76,15 @@ class LessonEditorConsumer(AsyncWebsocketConsumer):
 
         if revision != current_rev:
             # Client is behind; send current state for rebase
-            await self.send(text_data=json.dumps({
-                "type": "rebase",
-                "content": self._get_cached_doc(),
-                "revision": current_rev,
-            }))
+            await self.send(
+                text_data=json.dumps(
+                    {
+                        "type": "rebase",
+                        "content": self._get_cached_doc(),
+                        "revision": current_rev,
+                    }
+                )
+            )
             return
 
         # Apply operation to cached document
@@ -97,11 +106,15 @@ class LessonEditorConsumer(AsyncWebsocketConsumer):
 
     async def editor_op(self, event):
         if event["sender_channel"] != self.channel_name:
-            await self.send(text_data=json.dumps({
-                "type": "op",
-                "op": event["op"],
-                "revision": event["revision"],
-            }))
+            await self.send(
+                text_data=json.dumps(
+                    {
+                        "type": "op",
+                        "op": event["op"],
+                        "revision": event["revision"],
+                    }
+                )
+            )
 
     async def _handle_cursor(self, data):
         await self.channel_layer.group_send(
@@ -116,27 +129,39 @@ class LessonEditorConsumer(AsyncWebsocketConsumer):
 
     async def editor_cursor(self, event):
         if event["sender_channel"] != self.channel_name:
-            await self.send(text_data=json.dumps({
-                "type": "cursor",
-                "cursor": event["cursor"],
-                "user": event["user"],
-            }))
+            await self.send(
+                text_data=json.dumps(
+                    {
+                        "type": "cursor",
+                        "cursor": event["cursor"],
+                        "user": event["user"],
+                    }
+                )
+            )
 
     async def editor_presence(self, event):
         if event["sender_channel"] != self.channel_name:
-            await self.send(text_data=json.dumps({
-                "type": "presence",
-                "action": event["action"],
-                "user": event["user"],
-            }))
+            await self.send(
+                text_data=json.dumps(
+                    {
+                        "type": "presence",
+                        "action": event["action"],
+                        "user": event["user"],
+                    }
+                )
+            )
 
     async def _handle_save(self, data):
         doc = self._get_cached_doc()
         await self._persist_lesson_version(doc)
-        await self.send(text_data=json.dumps({
-            "type": "save_ack",
-            "revision": self._get_revision(),
-        }))
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "save_ack",
+                    "revision": self._get_revision(),
+                }
+            )
+        )
 
     async def _broadcast_presence(self, action):
         user = self.scope.get("user")
@@ -179,6 +204,7 @@ class LessonEditorConsumer(AsyncWebsocketConsumer):
 
     async def _get_lesson(self):
         from asgiref.sync import sync_to_async
+
         return await sync_to_async(Lesson.objects.get)(slug=self.lesson_slug)
 
     async def _user_can_edit(self, lesson):
@@ -193,6 +219,7 @@ class LessonEditorConsumer(AsyncWebsocketConsumer):
 
 def _deserialize_op(raw: list) -> Operation:
     from apps.content.ot.models import Delete, Insert, Retain
+
     op = []
     for item in raw:
         if "retain" in item:

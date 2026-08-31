@@ -73,7 +73,8 @@ class TwoFactorAuthenticationTests(APITestCase):
             format="json",
         )
         self.assertTrue(
-            resp.data.get("requires_2fa") or "requires_2fa" in str(resp.data.get("message"))
+            resp.data.get("requires_2fa")
+            or "requires_2fa" in str(resp.data.get("message"))
         )
 
         # Step 2: Login with invalid 2FA code -> fails
@@ -87,7 +88,9 @@ class TwoFactorAuthenticationTests(APITestCase):
             format="json",
         )
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.assertTrue("totp_code" in resp.data or "totp_code" in str(resp.data.get("message")))
+        self.assertTrue(
+            "totp_code" in resp.data or "totp_code" in str(resp.data.get("message"))
+        )
 
         # Step 3: Login with valid TOTP code -> succeeds
         valid_code = generate_totp_code(secret)

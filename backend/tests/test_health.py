@@ -4,8 +4,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from django.test import RequestFactory
 
-from config.health_view import health_view
 from apps.health.views import db_health_view
+from config.health_view import health_view
 
 
 @pytest.fixture

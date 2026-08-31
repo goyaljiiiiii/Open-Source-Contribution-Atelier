@@ -92,7 +92,9 @@ class ParsedCron:
         self.hours = _parse_field(hour_f, 0, 23)
         self.days = _parse_field(day_f, 1, 31)
         self.months = _parse_field(month_f, 1, 12)
-        self.weekdays = _parse_field(weekday_f, 0, 7)  # 0 or 7 = Sunday, cron convention
+        self.weekdays = _parse_field(
+            weekday_f, 0, 7
+        )  # 0 or 7 = Sunday, cron convention
 
         self._day_field_is_wildcard = day_f.strip() == "*"
         self._weekday_field_is_wildcard = weekday_f.strip() == "*"
@@ -111,7 +113,9 @@ class ParsedCron:
         day_matches = dt.day in self.days
         python_weekday = dt.weekday()
         cron_weekday = (python_weekday + 1) % 7
-        weekday_matches = cron_weekday in self.weekdays or (cron_weekday == 0 and 7 in self.weekdays)
+        weekday_matches = cron_weekday in self.weekdays or (
+            cron_weekday == 0 and 7 in self.weekdays
+        )
 
         if self._day_field_is_wildcard and self._weekday_field_is_wildcard:
             return True
@@ -121,7 +125,9 @@ class ParsedCron:
             return day_matches
         return day_matches or weekday_matches
 
-    def next_run_times(self, start: datetime, count: int, max_iterations: int = 200000) -> List[datetime]:
+    def next_run_times(
+        self, start: datetime, count: int, max_iterations: int = 200000
+    ) -> List[datetime]:
         """
         Compute the next `count` run times strictly after `start`,
         checking minute-by-minute (cron granularity is 1 minute).
@@ -168,12 +174,19 @@ class CronExpressionChallengePlugin(LessonPlugin):
 
     @classmethod
     def validate_submission(cls, data: Dict[str, Any]) -> bool:
-        if not isinstance(data.get("submitted_expression"), str) or not data["submitted_expression"].strip():
+        if (
+            not isinstance(data.get("submitted_expression"), str)
+            or not data["submitted_expression"].strip()
+        ):
             return False
         if not isinstance(data.get("start_time"), str):
             return False
         expected = data.get("expected_next_runs")
-        if not isinstance(expected, list) or not expected or not all(isinstance(t, str) for t in expected):
+        if (
+            not isinstance(expected, list)
+            or not expected
+            or not all(isinstance(t, str) for t in expected)
+        ):
             return False
 
         try:

@@ -53,6 +53,7 @@ langdetect>=1.0.9
 hypothesis>=6.0.0
 
 cryptography>=41.0.0
+fido2>=1.1.0
 
 opentelemetry-api>=1.20.0
 opentelemetry-sdk>=1.20.0

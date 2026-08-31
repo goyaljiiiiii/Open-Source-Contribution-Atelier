@@ -1,4 +1,5 @@
 import logging
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -16,10 +17,22 @@ def webhook_on_lesson_completed(sender, instance, created, **kwargs):
         payload = {
             "user_id": instance.user_id,
             "username": instance.user.username,
-            "lesson_slug": instance.lesson.slug if hasattr(instance, "lesson") and instance.lesson else getattr(instance, "lesson_id", None),
-            "lesson_title": instance.lesson.title if hasattr(instance, "lesson") and instance.lesson else str(getattr(instance, "lesson_id", "")),
+            "lesson_slug": (
+                instance.lesson.slug
+                if hasattr(instance, "lesson") and instance.lesson
+                else getattr(instance, "lesson_id", None)
+            ),
+            "lesson_title": (
+                instance.lesson.title
+                if hasattr(instance, "lesson") and instance.lesson
+                else str(getattr(instance, "lesson_id", ""))
+            ),
             "score": getattr(instance, "score", 0),
-            "completed_at": instance.completed_at.isoformat() if getattr(instance, "completed_at", None) else None,
+            "completed_at": (
+                instance.completed_at.isoformat()
+                if getattr(instance, "completed_at", None)
+                else None
+            ),
         }
         dispatch_event("lesson.completed", payload)
     except Exception as exc:
@@ -36,8 +49,16 @@ def webhook_on_badge_awarded(sender, instance, created, **kwargs):
             "user_id": instance.user_id,
             "username": instance.user.username,
             "badge_id": instance.badge_id,
-            "badge_name": instance.badge.name if hasattr(instance, "badge") and instance.badge else str(instance.badge_id),
-            "earned_at": instance.earned_at.isoformat() if getattr(instance, "earned_at", None) else None,
+            "badge_name": (
+                instance.badge.name
+                if hasattr(instance, "badge") and instance.badge
+                else str(instance.badge_id)
+            ),
+            "earned_at": (
+                instance.earned_at.isoformat()
+                if getattr(instance, "earned_at", None)
+                else None
+            ),
         }
         dispatch_event("badge.awarded", payload)
     except Exception as exc:
@@ -56,7 +77,11 @@ def webhook_on_xp_milestone(sender, instance, created, **kwargs):
             "xp_delta": instance.xp_delta,
             "source_type": instance.source_type,
             "description": getattr(instance, "description", ""),
-            "created_at": instance.created_at.isoformat() if getattr(instance, "created_at", None) else None,
+            "created_at": (
+                instance.created_at.isoformat()
+                if getattr(instance, "created_at", None)
+                else None
+            ),
         }
         dispatch_event("xp.milestone", payload)
     except Exception as exc:
@@ -90,9 +115,22 @@ def webhook_on_issue_created(sender, instance, created, **kwargs):
             "issue_id": instance.id,
             "title": instance.title,
             "status": getattr(instance, "status", "open"),
-            "author_id": getattr(instance, "author_id", None) or getattr(instance, "user_id", None),
-            "author_username": instance.author.username if getattr(instance, "author", None) else getattr(instance, "user", None).username if getattr(instance, "user", None) else "anonymous",
-            "created_at": instance.created_at.isoformat() if getattr(instance, "created_at", None) else None,
+            "author_id": getattr(instance, "author_id", None)
+            or getattr(instance, "user_id", None),
+            "author_username": (
+                instance.author.username
+                if getattr(instance, "author", None)
+                else (
+                    getattr(instance, "user", None).username
+                    if getattr(instance, "user", None)
+                    else "anonymous"
+                )
+            ),
+            "created_at": (
+                instance.created_at.isoformat()
+                if getattr(instance, "created_at", None)
+                else None
+            ),
         }
         dispatch_event("issue.created", payload)
     except Exception as exc:

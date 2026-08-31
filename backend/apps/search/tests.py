@@ -480,4 +480,3 @@ class SearchPaginationCacheTests(TestCase):
         resp2 = self.view(req2)
         self.assertEqual(resp2.status_code, 200)
         self.assertEqual(len(resp2.data["results"]), 5)
-

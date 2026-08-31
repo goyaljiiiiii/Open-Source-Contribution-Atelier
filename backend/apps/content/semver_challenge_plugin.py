@@ -119,11 +119,17 @@ class SemanticVersioningChallengePlugin(LessonPlugin):
             return 0.0
 
         try:
-            expected_major, expected_minor, expected_patch = _expected_bump(current, data["change_type"])
+            expected_major, expected_minor, expected_patch = _expected_bump(
+                current, data["change_type"]
+            )
         except ValueError:
             return 0.0
 
-        submitted_tuple = (submitted_next["major"], submitted_next["minor"], submitted_next["patch"])
+        submitted_tuple = (
+            submitted_next["major"],
+            submitted_next["minor"],
+            submitted_next["patch"],
+        )
         expected_tuple = (expected_major, expected_minor, expected_patch)
 
         if submitted_tuple == expected_tuple:

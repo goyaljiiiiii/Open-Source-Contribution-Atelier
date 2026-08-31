@@ -110,9 +110,7 @@ def stripe_webhook(request):
             .get("id")
         )
 
-        sub = CustomerSubscription.objects.filter(
-            stripe_subscription_id=sub_id
-        ).first()
+        sub = CustomerSubscription.objects.filter(stripe_subscription_id=sub_id).first()
         if not sub and customer_id:
             sub = CustomerSubscription.objects.filter(
                 stripe_customer_id=customer_id
@@ -122,9 +120,7 @@ def stripe_webhook(request):
             sub.status = status
             sub.active = status in ["active", "trialing"]
             if price_id:
-                plan = SubscriptionPlan.objects.filter(
-                    stripe_price_id=price_id
-                ).first()
+                plan = SubscriptionPlan.objects.filter(stripe_price_id=price_id).first()
                 if plan:
                     sub.plan = plan
             if current_period_end_timestamp:
@@ -139,9 +135,7 @@ def stripe_webhook(request):
         subscription = event.data.object
         sub_id = subscription.get("id")
 
-        sub = CustomerSubscription.objects.filter(
-            stripe_subscription_id=sub_id
-        ).first()
+        sub = CustomerSubscription.objects.filter(stripe_subscription_id=sub_id).first()
         if sub:
             sub.active = False
             sub.status = "canceled"

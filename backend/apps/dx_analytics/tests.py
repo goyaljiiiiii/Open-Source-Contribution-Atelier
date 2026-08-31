@@ -1,8 +1,9 @@
 import pytest
 from django.apps import apps
+
+from apps.dx_analytics.apps import DxAnalyticsConfig
 from apps.dx_analytics.models import DeveloperExperienceMetric, DXSnapshot
 from apps.dx_analytics.services import DXScoreService
-from apps.dx_analytics.apps import DxAnalyticsConfig
 
 
 @pytest.mark.django_db

@@ -99,7 +99,9 @@ class DynamicSaltAccessToken(AccessToken):
         session_id = self.get("session_id")
         if session_id:
             from datetime import timedelta
+
             from django.utils import timezone
+
             from .models import UserSession
 
             try:
@@ -177,7 +179,9 @@ class DynamicSaltRefreshToken(RefreshToken):
         session_id = self.get("session_id")
         if session_id:
             from datetime import timedelta
+
             from django.utils import timezone
+
             from .models import UserSession
 
             try:

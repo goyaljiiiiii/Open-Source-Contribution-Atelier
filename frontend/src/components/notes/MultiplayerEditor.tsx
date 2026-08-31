@@ -75,53 +75,67 @@ export const MultiplayerEditor: React.FC<MultiplayerEditorProps> = ({
     <div className="relative w-full h-full flex flex-col bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
       {/* Quick Formatting Bar */}
       <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-800/80 border-b border-gray-200 dark:border-slate-800 text-xs">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1" role="toolbar" aria-label="Formatting controls">
           <button
+            type="button"
             onClick={() => insertFormatting("**", "**")}
             className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-gray-700 dark:text-gray-200 transition-colors"
             title="Bold (**text**)"
+            aria-label="Format text as bold"
           >
             <Bold className="w-3.5 h-3.5" />
           </button>
           <button
+            type="button"
             onClick={() => insertFormatting("*", "*")}
             className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-gray-700 dark:text-gray-200 transition-colors"
             title="Italic (*text*)"
+            aria-label="Format text as italic"
           >
             <Italic className="w-3.5 h-3.5" />
           </button>
           <button
+            type="button"
             onClick={() => insertFormatting("# ")}
             className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-gray-700 dark:text-gray-200 transition-colors"
             title="Heading 1 (# Heading)"
+            aria-label="Format text as heading level 1"
           >
             <Heading1 className="w-3.5 h-3.5" />
           </button>
           <button
+            type="button"
             onClick={() => insertFormatting("## ")}
             className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-gray-700 dark:text-gray-200 transition-colors"
             title="Heading 2 (## Heading)"
+            aria-label="Format text as heading level 2"
           >
             <Heading2 className="w-3.5 h-3.5" />
           </button>
           <button
+            type="button"
             onClick={() => insertFormatting("```typescript\n", "\n```")}
             className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-gray-700 dark:text-gray-200 transition-colors"
             title="Code Block (```code```)"
+            aria-label="Format text as code block"
           >
             <Code className="w-3.5 h-3.5" />
           </button>
           <button
+            type="button"
             onClick={() => insertFormatting("- ")}
             className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-gray-700 dark:text-gray-200 transition-colors"
             title="Bullet List (- item)"
+            aria-label="Format text as bullet list"
           >
             <List className="w-3.5 h-3.5" />
           </button>
           <button
+            type="button"
             onClick={() => insertFormatting("- [ ] ")}
             className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-gray-700 dark:text-gray-200 transition-colors"
             title="Checkbox (- [ ] task)"
+            aria-label="Format text as task checkbox"
           >
             <CheckSquare className="w-3.5 h-3.5" />
           </button>

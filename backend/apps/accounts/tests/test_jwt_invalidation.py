@@ -152,7 +152,11 @@ class JWTInvalidationTest(TestCase):
 
         response = self.client.post(
             "/api/auth/change-password/",
-            {"old_password": "WrongPassword!", "current_password": "WrongPassword!", "new_password": "NewPassword456!"},
+            {
+                "old_password": "WrongPassword!",
+                "current_password": "WrongPassword!",
+                "new_password": "NewPassword456!",
+            },
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue("incorrect" in str(response.data).lower())

@@ -37,6 +37,7 @@ const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
 export default function AnalyticsDashboardPage() {
   const { theme } = useTheme();
+  const [activeTab, setActiveTab] = React.useState<"overview" | "engagement" | "quizzes" | "challenges">("overview");
   const { data, isLoading, isError } = useQuery<AnalyticsData>({
     queryKey: ["moderator_analytics"],
     queryFn: () => fetchApi("/dashboard/analytics/"),
@@ -80,6 +81,7 @@ export default function AnalyticsDashboardPage() {
     0,
   );
 
+
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-12">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -109,300 +111,364 @@ export default function AnalyticsDashboardPage() {
         </button>
       </div>
 
+      {/* Navigation Tabs Header with WCAG compliant contrast */}
+      <div className="flex items-center gap-2 border-b-2 border-black dark:border-[#2e2924] pb-2 overflow-x-auto" role="tablist" aria-label="Analytics Views">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "overview"}
+          onClick={() => setActiveTab("overview")}
+          className={`px-4 py-2 text-sm font-black rounded-lg transition-all ${
+            activeTab === "overview"
+              ? "bg-black text-white dark:bg-white dark:text-black shadow-md"
+              : "text-slate-400 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+          }`}
+        >
+          All Metrics
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "engagement"}
+          onClick={() => setActiveTab("engagement")}
+          className={`px-4 py-2 text-sm font-black rounded-lg transition-all ${
+            activeTab === "engagement"
+              ? "bg-black text-white dark:bg-white dark:text-black shadow-md"
+              : "text-slate-400 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+          }`}
+        >
+          Course Engagement
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "quizzes"}
+          onClick={() => setActiveTab("quizzes")}
+          className={`px-4 py-2 text-sm font-black rounded-lg transition-all ${
+            activeTab === "quizzes"
+              ? "bg-black text-white dark:bg-white dark:text-black shadow-md"
+              : "text-slate-400 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+          }`}
+        >
+          Quiz Accuracy
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "challenges"}
+          onClick={() => setActiveTab("challenges")}
+          className={`px-4 py-2 text-sm font-black rounded-lg transition-all ${
+            activeTab === "challenges"
+              ? "bg-black text-white dark:bg-white dark:text-black shadow-md"
+              : "text-slate-400 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+          }`}
+        >
+          Challenge Status
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Registration Trends Widget */}
-        <div className="bg-white p-6 rounded-2xl border-4 border-black shadow-card dark:bg-[#151411] dark:border-[#2e2924] dark:shadow-none">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-black flex items-center gap-2">
-              <Users className="text-accent" /> New Registrations
-            </h2>
-            <button
-              type="button"
-              onClick={() => handleExportCSV("registrations", 30)}
-              aria-label="Export Registrations to CSV"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black uppercase rounded-lg border-2 border-black bg-gray-100 hover:bg-gray-200 dark:bg-black dark:text-white dark:border-white shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] transition-all"
-            >
-              <Download size={14} /> Export CSV
-            </button>
+        {(activeTab === "overview") && (
+          <div className="bg-white p-6 rounded-2xl border-4 border-black shadow-card dark:bg-[#151411] dark:border-[#2e2924] dark:shadow-none">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-black flex items-center gap-2">
+                <Users className="text-accent" /> New Registrations
+              </h2>
+              <button
+                type="button"
+                onClick={() => handleExportCSV("registrations", 30)}
+                aria-label="Export Registrations to CSV"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black uppercase rounded-lg border-2 border-black bg-gray-100 hover:bg-gray-200 dark:bg-black dark:text-white dark:border-white shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] transition-all"
+              >
+                <Download size={14} /> Export CSV
+              </button>
+            </div>
+            <div className="h-80 w-full flex items-center justify-center">
+              {data.registrations && data.registrations.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={data.registrations}
+                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis
+                      dataKey="date"
+                      stroke="#888888"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      stroke="#888888"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: "8px",
+                        border:
+                          theme === "dark"
+                            ? "2px solid #2e2924"
+                            : "2px solid black",
+                        fontWeight: "bold",
+                        backgroundColor: theme === "dark" ? "#1f1c18" : "#fff",
+                        color: theme === "dark" ? "#f0ebe2" : "#000",
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="count"
+                      stroke="#4f46e5"
+                      fillOpacity={1}
+                      fill="url(#colorUsers)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="font-bold text-muted dark:text-[#c4bbae]">
+                  No data for the selected period
+                </p>
+              )}
+            </div>
           </div>
-          <div className="h-80 w-full flex items-center justify-center">
-            {data.registrations && data.registrations.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={data.registrations}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                >
-                  <defs>
-                    <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis
-                    dataKey="date"
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    stroke={theme === "dark" ? "#2e2924" : "#e0e0e0"}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      borderRadius: "8px",
-                      border:
-                        theme === "dark"
-                          ? "2px solid #2e2924"
-                          : "2px solid black",
-                      fontWeight: "bold",
-                      backgroundColor: theme === "dark" ? "#1f1c18" : "#fff",
-                      color: theme === "dark" ? "#f0ebe2" : "#000",
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="count"
-                    stroke="#4f46e5"
-                    fillOpacity={1}
-                    fill="url(#colorUsers)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="font-bold text-muted dark:text-[#c4bbae]">
-                No data for the selected period
-              </p>
-            )}
-          </div>
-        </div>
+        )}
 
         {/* Course Progress Widget */}
-        <div className="bg-white p-6 rounded-2xl border-4 border-black shadow-card dark:bg-[#151411] dark:border-[#2e2924] dark:shadow-none">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-black flex items-center gap-2">
-              <BookOpen className="text-primary" /> Course Engagement
-            </h2>
-            <button
-              type="button"
-              onClick={() => handleExportCSV("progress_stats", 30)}
-              aria-label="Export Course Engagement to CSV"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black uppercase rounded-lg border-2 border-black bg-gray-100 hover:bg-gray-200 dark:bg-black dark:text-white dark:border-white shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] transition-all"
-            >
-              <Download size={14} /> Export CSV
-            </button>
+        {(activeTab === "overview" || activeTab === "engagement") && (
+          <div className="bg-white p-6 rounded-2xl border-4 border-black shadow-card dark:bg-[#151411] dark:border-[#2e2924] dark:shadow-none">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-black flex items-center gap-2">
+                <BookOpen className="text-primary" /> Course Engagement
+              </h2>
+              <button
+                type="button"
+                onClick={() => handleExportCSV("progress_stats", 30)}
+                aria-label="Export Course Engagement to CSV"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black uppercase rounded-lg border-2 border-black bg-gray-100 hover:bg-gray-200 dark:bg-black dark:text-white dark:border-white shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] transition-all"
+              >
+                <Download size={14} /> Export CSV
+              </button>
+            </div>
+            <div className="h-80 w-full flex items-center justify-center">
+              {data.progress_stats && data.progress_stats.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={data.progress_stats}
+                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="#e0e0e0"
+                    />
+                    <XAxis
+                      dataKey="date"
+                      stroke="#888888"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      stroke="#888888"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: "8px",
+                        border:
+                          theme === "dark"
+                            ? "2px solid #2e2924"
+                            : "2px solid black",
+                        fontWeight: "bold",
+                        backgroundColor: theme === "dark" ? "#1f1c18" : "#fff",
+                        color: theme === "dark" ? "#f0ebe2" : "#000",
+                      }}
+                    />
+                    <Legend
+                      iconType="circle"
+                      wrapperStyle={{ fontWeight: "bold" }}
+                    />
+                    <Bar
+                      dataKey="enrolled"
+                      name="Enrolled"
+                      fill="#FFBB28"
+                      radius={[4, 4, 0, 0]}
+                    />
+                    <Bar
+                      dataKey="completed"
+                      name="Completed"
+                      fill="#00C49F"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="font-bold text-muted dark:text-[#c4bbae]">
+                  No data for the selected period
+                </p>
+              )}
+            </div>
           </div>
-          <div className="h-80 w-full flex items-center justify-center">
-            {data.progress_stats && data.progress_stats.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={data.progress_stats}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    stroke="#e0e0e0"
-                  />
-                  <XAxis
-                    dataKey="date"
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      borderRadius: "8px",
-                      border:
-                        theme === "dark"
-                          ? "2px solid #2e2924"
-                          : "2px solid black",
-                      fontWeight: "bold",
-                      backgroundColor: theme === "dark" ? "#1f1c18" : "#fff",
-                      color: theme === "dark" ? "#f0ebe2" : "#000",
-                    }}
-                  />
-                  <Legend
-                    iconType="circle"
-                    wrapperStyle={{ fontWeight: "bold" }}
-                  />
-                  <Bar
-                    dataKey="enrolled"
-                    name="Enrolled"
-                    fill="#FFBB28"
-                    radius={[4, 4, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="completed"
-                    name="Completed"
-                    fill="#00C49F"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="font-bold text-muted dark:text-[#c4bbae]">
-                No data for the selected period
-              </p>
-            )}
-          </div>
-        </div>
+        )}
 
         {/* Quiz Performance Widget */}
-        <div className="bg-white p-6 rounded-2xl border-4 border-black shadow-card dark:bg-[#151411] dark:border-[#2e2924] dark:shadow-none">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-black flex items-center gap-2">
-              <Code className="text-purple-500" /> Quiz Accuracy
-            </h2>
-            <button
-              type="button"
-              onClick={() => handleExportCSV("quiz_stats", 30)}
-              aria-label="Export Quiz Accuracy to CSV"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black uppercase rounded-lg border-2 border-black bg-gray-100 hover:bg-gray-200 dark:bg-black dark:text-white dark:border-white shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] transition-all"
-            >
-              <Download size={14} /> Export CSV
-            </button>
+        {(activeTab === "overview" || activeTab === "quizzes") && (
+          <div className="bg-white p-6 rounded-2xl border-4 border-black shadow-card dark:bg-[#151411] dark:border-[#2e2924] dark:shadow-none">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-black flex items-center gap-2">
+                <Code className="text-purple-500" /> Quiz Accuracy
+              </h2>
+              <button
+                type="button"
+                onClick={() => handleExportCSV("quiz_stats", 30)}
+                aria-label="Export Quiz Accuracy to CSV"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black uppercase rounded-lg border-2 border-black bg-gray-100 hover:bg-gray-200 dark:bg-black dark:text-white dark:border-white shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] transition-all"
+              >
+                <Download size={14} /> Export CSV
+              </button>
+            </div>
+            <div className="h-80 w-full flex items-center justify-center">
+              {quizData.length > 0 && totalQuizCount > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={quizData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={80}
+                      outerRadius={120}
+                      paddingAngle={5}
+                      dataKey="value"
+                      label={({ name, percent }: any) => {
+                        const pct =
+                          percent && !isNaN(percent) ? percent * 100 : 0;
+                        return `${name} ${pct.toFixed(0)}%`;
+                      }}
+                      labelLine={false}
+                    >
+                      {quizData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                          stroke={theme === "dark" ? "#1f1c18" : "black"}
+                          strokeWidth={2}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: "8px",
+                        border:
+                          theme === "dark"
+                            ? "2px solid #2e2924"
+                            : "2px solid black",
+                        fontWeight: "bold",
+                        backgroundColor: theme === "dark" ? "#1f1c18" : "#fff",
+                        color: theme === "dark" ? "#f0ebe2" : "#000",
+                      }}
+                    />
+                    <Legend
+                      iconType="circle"
+                      wrapperStyle={{ fontWeight: "bold" }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="font-bold text-muted dark:text-[#c4bbae]">
+                  No data for the selected period
+                </p>
+              )}
+            </div>
           </div>
-          <div className="h-80 w-full flex items-center justify-center">
-            {quizData.length > 0 && totalQuizCount > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={quizData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={80}
-                    outerRadius={120}
-                    paddingAngle={5}
-                    dataKey="value"
-                    label={({ name, percent }: any) => {
-                      const pct =
-                        percent && !isNaN(percent) ? percent * 100 : 0;
-                      return `${name} ${pct.toFixed(0)}%`;
-                    }}
-                    labelLine={false}
-                  >
-                    {quizData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                        stroke={theme === "dark" ? "#1f1c18" : "black"}
-                        strokeWidth={2}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      borderRadius: "8px",
-                      border:
-                        theme === "dark"
-                          ? "2px solid #2e2924"
-                          : "2px solid black",
-                      fontWeight: "bold",
-                      backgroundColor: theme === "dark" ? "#1f1c18" : "#fff",
-                      color: theme === "dark" ? "#f0ebe2" : "#000",
-                    }}
-                  />
-                  <Legend
-                    iconType="circle"
-                    wrapperStyle={{ fontWeight: "bold" }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="font-bold text-muted dark:text-[#c4bbae]">
-                No data for the selected period
-              </p>
-            )}
-          </div>
-        </div>
+        )}
 
         {/* Coding Challenges Widget */}
-        <div className="bg-white p-6 rounded-2xl border-4 border-black shadow-card dark:bg-[#151411] dark:border-[#2e2924] dark:shadow-none">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-black flex items-center gap-2">
-              <Code className="text-pink-500" /> Challenge Submissions Status
-            </h2>
-            <button
-              type="button"
-              onClick={() => handleExportCSV("challenge_stats", 30)}
-              aria-label="Export Challenge Submissions to CSV"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black uppercase rounded-lg border-2 border-black bg-gray-100 hover:bg-gray-200 dark:bg-black dark:text-white dark:border-white shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] transition-all"
-            >
-              <Download size={14} /> Export CSV
-            </button>
+        {(activeTab === "overview" || activeTab === "challenges") && (
+          <div className="bg-white p-6 rounded-2xl border-4 border-black shadow-card dark:bg-[#151411] dark:border-[#2e2924] dark:shadow-none">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-black flex items-center gap-2">
+                <Code className="text-pink-500" /> Challenge Submissions Status
+              </h2>
+              <button
+                type="button"
+                onClick={() => handleExportCSV("challenge_stats", 30)}
+                aria-label="Export Challenge Submissions to CSV"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black uppercase rounded-lg border-2 border-black bg-gray-100 hover:bg-gray-200 dark:bg-black dark:text-white dark:border-white shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] transition-all"
+              >
+                <Download size={14} /> Export CSV
+              </button>
+            </div>
+            <div className="h-80 w-full flex items-center justify-center">
+              {data.challenge_stats &&
+              data.challenge_stats.length > 0 &&
+              totalChallengeCount > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={data.challenge_stats}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={120}
+                      dataKey="count"
+                      nameKey="status"
+                      label={({ status, percent }: any) => {
+                        const pct =
+                          percent && !isNaN(percent) ? percent * 100 : 0;
+                        return `${status} ${pct.toFixed(0)}%`;
+                      }}
+                    >
+                      {data.challenge_stats.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[(index + 2) % COLORS.length]}
+                          stroke={theme === "dark" ? "#1f1c18" : "black"}
+                          strokeWidth={2}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: "8px",
+                        border:
+                          theme === "dark"
+                            ? "2px solid #2e2924"
+                            : "2px solid black",
+                        fontWeight: "bold",
+                        backgroundColor: theme === "dark" ? "#1f1c18" : "#fff",
+                        color: theme === "dark" ? "#f0ebe2" : "#000",
+                      }}
+                    />
+                    <Legend
+                      iconType="circle"
+                      wrapperStyle={{
+                        fontWeight: "bold",
+                        textTransform: "capitalize",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="font-bold text-muted dark:text-[#c4bbae]">
+                  No data for the selected period
+                </p>
+              )}
+            </div>
           </div>
-          <div className="h-80 w-full flex items-center justify-center">
-            {data.challenge_stats &&
-            data.challenge_stats.length > 0 &&
-            totalChallengeCount > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={data.challenge_stats}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={120}
-                    dataKey="count"
-                    nameKey="status"
-                    label={({ status, percent }: any) => {
-                      const pct =
-                        percent && !isNaN(percent) ? percent * 100 : 0;
-                      return `${status} ${pct.toFixed(0)}%`;
-                    }}
-                  >
-                    {data.challenge_stats.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[(index + 2) % COLORS.length]}
-                        stroke={theme === "dark" ? "#1f1c18" : "black"}
-                        strokeWidth={2}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      borderRadius: "8px",
-                      border:
-                        theme === "dark"
-                          ? "2px solid #2e2924"
-                          : "2px solid black",
-                      fontWeight: "bold",
-                      backgroundColor: theme === "dark" ? "#1f1c18" : "#fff",
-                      color: theme === "dark" ? "#f0ebe2" : "#000",
-                    }}
-                  />
-                  <Legend
-                    iconType="circle"
-                    wrapperStyle={{
-                      fontWeight: "bold",
-                      textTransform: "capitalize",
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="font-bold text-muted dark:text-[#c4bbae]">
-                No data for the selected period
-              </p>
-            )}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

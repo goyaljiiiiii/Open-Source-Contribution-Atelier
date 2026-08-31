@@ -8,6 +8,7 @@ from .views import (
     BulkProgressUpdateView,
     BulkSyncProgressView,
     CertificateVerificationView,
+    ClaimMultiTierRewardView,
     CodeSubmissionView,
     CommunityFeedView,
     CommunityStatsView,
@@ -42,7 +43,6 @@ urlpatterns = [
     ),
     path("weekly-goal/", WeeklyGoalView.as_view(), name="weekly-goal"),
     path("buffer-metrics/", BufferMetricsView.as_view(), name="buffer-metrics"),
-
     path("heatmap/", HeatmapView.as_view(), name="heatmap"),
     path("heatmap/export/", HeatmapCSVExportView.as_view(), name="heatmap-export-csv"),
     path("streak/", StreakStatusView.as_view(), name="streak-status"),
@@ -53,7 +53,11 @@ urlpatterns = [
     path("me/", MyProgressView.as_view(), name="my-progress"),
     path("bulk-sync/", BulkSyncProgressView.as_view(), name="bulk-sync"),
     path("bulk-update/", BulkProgressUpdateView.as_view(), name="bulk-update"),
-    # Recommendations
+    path(
+        "rewards/claim/",
+        ClaimMultiTierRewardView.as_view(),
+        name="claim-multi-tier-reward",
+    ),  # Recommendations
     path("recommendations/", RecommendationsView.as_view(), name="recommendations"),
     path(
         "certificate/verify/<str:hash>/",

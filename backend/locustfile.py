@@ -7,7 +7,7 @@ Run with:
 from __future__ import annotations
 
 from gevent.lock import Semaphore
-from locust import HttpUser, task, between, events
+from locust import HttpUser, between, events, task
 
 MAX_ALLOWED_CONNECTIONS = 90
 _max_seen_connections = 0

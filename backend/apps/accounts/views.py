@@ -301,6 +301,15 @@ class GoogleLoginView(APIView):
                 idinfo = user_info_resp.json()
                 email = idinfo.get("email")
 
+            # Try OAuth2 v2 userinfo endpoint with access_token URL parameter
+            if not email:
+                user_info_v2_resp = http_requests.get(
+                    f"https://www.googleapis.com/oauth2/v2/userinfo?access_token={token}",
+                    timeout=10,
+                )
+                if user_info_v2_resp.ok:
+                    email = user_info_v2_resp.json().get("email")
+
             # If userinfo endpoint failed or had no email, try tokeninfo endpoint
             if not email:
                 token_info_url = (
@@ -312,7 +321,25 @@ class GoogleLoginView(APIView):
                 if token_info_resp.ok:
                     email = token_info_resp.json().get("email")
 
-            if not email and (settings.DEBUG or token.startswith("dev-") or token == "fake"):
+            # Fallback: If token is a 3-part JWT, decode unverified payload to extract email
+            if not email and isinstance(token, str) and token.count(".") == 2:
+                try:
+                    import base64
+                    import json
+
+                    payload_part = token.split(".")[1]
+                    padded = payload_part + "=" * (-len(payload_part) % 4)
+                    decoded_bytes = base64.b64decode(padded)
+                    payload_data = json.loads(decoded_bytes.decode("utf-8"))
+                    email = payload_data.get("email")
+                except Exception as exc:
+                    logger.warning(
+                        f"Failed to decode Google JWT payload fallback: {exc}"
+                    )
+
+            if not email and (
+                settings.DEBUG or token.startswith("dev-") or token == "fake"
+            ):
                 email = request.data.get("email") or "google_dev@example.com"
 
             if not email:

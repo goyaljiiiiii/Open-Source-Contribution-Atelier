@@ -90,7 +90,9 @@ class AuditTrailTests(TestCase):
             lesson_id = lesson.id
 
             # Verify created event
-            events = AuditEvent.objects.filter(resource_type="content.lesson", resource_id=str(lesson_id))
+            events = AuditEvent.objects.filter(
+                resource_type="content.lesson", resource_id=str(lesson_id)
+            )
             self.assertEqual(events.count(), 1)
             created_event = events.first()
             self.assertEqual(created_event.action, "created")
@@ -219,10 +221,16 @@ class AuditTrailTests(TestCase):
 class AuditApiTests(APITestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(
-            username="adminuser", email="admin@example.com", password="password123", is_staff=True
+            username="adminuser",
+            email="admin@example.com",
+            password="password123",
+            is_staff=True,
         )
         self.normal_user = User.objects.create_user(
-            username="normaluser", email="normal@example.com", password="password123", is_staff=False
+            username="normaluser",
+            email="normal@example.com",
+            password="password123",
+            is_staff=False,
         )
 
         self.event1 = AuditEvent.objects.create(

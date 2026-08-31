@@ -40,7 +40,13 @@ class WebhookDeliveryLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = WebhookDeliveryLog
         fields = ["id", "status_code", "response_body", "key_id", "attempted_at"]
-        read_only_fields = ["id", "status_code", "response_body", "key_id", "attempted_at"]
+        read_only_fields = [
+            "id",
+            "status_code",
+            "response_body",
+            "key_id",
+            "attempted_at",
+        ]
 
 
 class WebhookDeliverySerializer(serializers.ModelSerializer):

@@ -24,7 +24,9 @@ User = get_user_model()
 class RateLimitingTierTests(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
-        self.user = User.objects.create_user(username="normal_user", password="password")
+        self.user = User.objects.create_user(
+            username="normal_user", password="password"
+        )
         self.premium_user = User.objects.create_user(
             username="premium_user", password="password", is_staff=True
         )

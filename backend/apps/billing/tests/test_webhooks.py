@@ -59,9 +59,7 @@ class StripeWebhookIdempotencyTests(TestCase):
         self.assertEqual(
             Invoice.objects.filter(stripe_invoice_id="in_retry").count(), 1
         )
-        self.assertEqual(
-            Payment.objects.filter(stripe_charge_id="ch_retry").count(), 1
-        )
+        self.assertEqual(Payment.objects.filter(stripe_charge_id="ch_retry").count(), 1)
         mock_async_task.assert_called_once()
 
     @patch("apps.billing.webhooks.async_task")

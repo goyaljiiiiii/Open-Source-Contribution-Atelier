@@ -75,12 +75,8 @@ class TestExportNotesView(APITestCase):
         self.assertIn(b"This is a test note", response.content)
 
     def test_export_limit_valid(self):
-        UserNote.objects.create(
-            user=self.user, lesson=self.lesson, content="Note 1"
-        )
-        UserNote.objects.create(
-            user=self.user, lesson=self.lesson, content="Note 2"
-        )
+        UserNote.objects.create(user=self.user, lesson=self.lesson, content="Note 1")
+        UserNote.objects.create(user=self.user, lesson=self.lesson, content="Note 2")
 
         url = reverse("notes-export")
         response = self.client.get(url, {"format": "json", "limit": "1"})
@@ -122,4 +118,3 @@ class TestExportNotesView(APITestCase):
         self.assertEqual(
             response.data["error"], "Invalid start_date format. Use YYYY-MM-DD."
         )
-

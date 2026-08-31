@@ -1,6 +1,7 @@
 import pytest
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
+
 from apps.content.models import LearningPath
 from apps.rbac.models import Role, UserRole
 

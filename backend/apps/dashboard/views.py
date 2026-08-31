@@ -486,6 +486,7 @@ class ContributorDashboardView(APIView):
 
         elif field == "weekly_goal":
             from apps.progress.models import WeeklyGoal
+
             goal = WeeklyGoal.get_or_create_current(user)
             return {
                 "target_lessons": goal.target_lessons,
@@ -537,7 +538,6 @@ class ContributorDashboardView(APIView):
             data[field] = field_data
 
         return Response(data)
-
 
 
 class ModeratorAnalyticsView(APIView):
@@ -803,4 +803,3 @@ class AnalyticsExportCSVView(APIView):
         response = StreamingHttpResponse(csv_stream(), content_type="text/csv")
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
-

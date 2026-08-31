@@ -6,6 +6,7 @@ from django.db import migrations, models
 
 import apps.core.fields
 
+
 class Migration(migrations.Migration):
 
     dependencies = [

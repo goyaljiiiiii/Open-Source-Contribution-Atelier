@@ -154,7 +154,11 @@ class TestCrossTenantOrganizationAccess:
 
     def test_list_excludes_other_tenant(self, authed_client_a, org_b):
         response = authed_client_a.get("/api/organizations/")
-        raw_list = response.data.get("results") if isinstance(response.data, dict) else response.data
+        raw_list = (
+            response.data.get("results")
+            if isinstance(response.data, dict)
+            else response.data
+        )
         ids = [o["id"] for o in raw_list]
         assert response.status_code == 200
         assert org_b.id not in ids
@@ -222,25 +226,39 @@ class TestIsTenantMemberPermission:
 class TestUserSearchTenantIsolation:
     def test_user_search_isolated_by_tenant(self, api_client, org_a, org_b):
         from django.contrib.auth.models import Group
+
         admin_group = Group.objects.create(name="Admin")
 
-        admin_a = User.objects.create_user(username="admin_a", email="admin_a@example.com", password="password", is_staff=True)
+        admin_a = User.objects.create_user(
+            username="admin_a",
+            email="admin_a@example.com",
+            password="password",
+            is_staff=True,
+        )
         admin_a.groups.add(admin_group)
         admin_a.user_profile.organization = org_a
         admin_a.user_profile.save()
 
-        user_in_a = User.objects.create_user(username="john_tenant_a", email="john_a@example.com", password="password")
+        user_in_a = User.objects.create_user(
+            username="john_tenant_a", email="john_a@example.com", password="password"
+        )
         user_in_a.user_profile.organization = org_a
         user_in_a.user_profile.save()
 
-        user_in_b = User.objects.create_user(username="john_tenant_b", email="john_b@example.com", password="password")
+        user_in_b = User.objects.create_user(
+            username="john_tenant_b", email="john_b@example.com", password="password"
+        )
         user_in_b.user_profile.organization = org_b
         user_in_b.user_profile.save()
 
         api_client.force_authenticate(user=admin_a)
         response = api_client.get("/api/auth/users/?search=john")
         assert response.status_code == 200
-        raw_results = response.data.get("results") if isinstance(response.data, dict) else response.data
+        raw_results = (
+            response.data.get("results")
+            if isinstance(response.data, dict)
+            else response.data
+        )
         usernames = [u["username"] for u in raw_results]
         assert "john_tenant_a" in usernames
         assert "john_tenant_b" not in usernames

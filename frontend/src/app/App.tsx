@@ -141,37 +141,38 @@ export function App({ children }: { children?: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <NotificationProvider>
-        <ErrorBoundary>
-          <div className="min-h-screen bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
-            <SkipLink />
-            <OfflineBanner />
-            <InstallAppBanner />
-            <UpdateAvailableBanner />
-            <ConflictResolutionModal />
-            {/* Global Toast Configuration */}
-            <Toaster
-              position="top-right"
-              toastOptions={{
-                className:
-                  "bg-gray-900 text-white border border-gray-800 shadow-xl font-sans text-sm",
-                duration: 4000,
-                success: {
-                  iconTheme: { primary: "#10B981", secondary: "#ffffff" },
-                },
-                error: {
-                  iconTheme: { primary: "#EF4444", secondary: "#ffffff" },
-                },
-              }}
-            />
+        <div className="min-h-screen bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+          <SkipLink />
+          <OfflineBanner />
+          <InstallAppBanner />
+          <UpdateAvailableBanner />
+          <ConflictResolutionModal />
+          {/* Global Toast Configuration */}
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              className:
+                "bg-gray-900 text-white border border-gray-800 shadow-xl font-sans text-sm",
+              duration: 4000,
+              success: {
+                iconTheme: { primary: "#10B981", secondary: "#ffffff" },
+              },
+              error: {
+                iconTheme: { primary: "#EF4444", secondary: "#ffffff" },
+              },
+            }}
+          />
+          <ErrorBoundary>
             {children || <AppRouter />}
-            <CommandPalette />
-            <DocSearchModal />
-            <KeyboardShortcutsModal />
-            <CustomCursor />
-            <WebSocketStatusIndicator url="" />
+          </ErrorBoundary>
+          <CommandPalette />
+          <DocSearchModal />
+          <KeyboardShortcutsModal />
+          <CustomCursor />
+          <WebSocketStatusIndicator url="" />
 
-            {/* Pure React Onboarding Modals Highlight Tour Overlay Portal */}
-            {currentStep >= 0 && coords && (
+          {/* Pure React Onboarding Modals Highlight Tour Overlay Portal */}
+          {currentStep >= 0 && currentStep < TOUR_STEPS.length && coords && (
               <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-50 overflow-hidden">
                 {/* Backdrop highlight layout wrapper */}
                 <div
@@ -231,7 +232,6 @@ export function App({ children }: { children?: React.ReactNode }) {
               </div>
             )}
           </div>
-        </ErrorBoundary>
       </NotificationProvider>
     </QueryClientProvider>
   );

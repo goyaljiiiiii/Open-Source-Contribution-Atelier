@@ -34,15 +34,13 @@ _ASSIGNMENT_RE = re.compile(
 
 # Matches: WHERE password LIKE 'value'
 _LIKE_RE = re.compile(
-    rf'(["\']?(?:{_NAME_PATTERN})["\']?\s+LIKE\s+)'
-    rf"(['\"])(?:\\.|(?!\2).)*\2",
+    rf'(["\']?(?:{_NAME_PATTERN})["\']?\s+LIKE\s+)' rf"(['\"])(?:\\.|(?!\2).)*\2",
     re.IGNORECASE,
 )
 
 # Matches: IN ('secret1', 'secret2') when column name appears earlier in clause.
 _IN_LIST_RE = re.compile(
-    rf'(["\']?(?:{_NAME_PATTERN})["\']?\s+IN\s*\()'
-    rf"([^)]*)\)",
+    rf'(["\']?(?:{_NAME_PATTERN})["\']?\s+IN\s*\()' rf"([^)]*)\)",
     re.IGNORECASE,
 )
 

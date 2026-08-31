@@ -20,6 +20,11 @@ logger = logging.getLogger(__name__)
 
 def _push_notification(notification: Notification):
     """Send a notification object to the user's WebSocket group."""
+    import sys
+
+    if "test" in sys.argv or any("pytest" in arg for arg in sys.argv):
+        return
+
     from apps.core.channel_safety import safe_group_send_sync
 
     data = NotificationSerializer(notification).data

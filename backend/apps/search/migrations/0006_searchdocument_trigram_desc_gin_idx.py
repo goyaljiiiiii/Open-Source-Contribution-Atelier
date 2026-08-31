@@ -7,13 +7,17 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('contenttypes', '0002_remove_content_type_name'),
-        ('search', '0005_rename_search_sear_query_0aa48f_idx_idx_querycreated_at'),
+        ("contenttypes", "0002_remove_content_type_name"),
+        ("search", "0005_rename_search_sear_query_0aa48f_idx_idx_querycreated_at"),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name='searchdocument',
-            index=django.contrib.postgres.indexes.GinIndex(fields=['description'], name='trigram_desc_gin_idx', opclasses=['gin_trgm_ops']),
+            model_name="searchdocument",
+            index=django.contrib.postgres.indexes.GinIndex(
+                fields=["description"],
+                name="trigram_desc_gin_idx",
+                opclasses=["gin_trgm_ops"],
+            ),
         ),
     ]

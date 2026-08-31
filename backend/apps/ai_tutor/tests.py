@@ -91,16 +91,13 @@ class AiTutorTests(TestCase):
         }
     )
     def test_ask_view_is_rate_limited_per_user(self):
+        from django.core.cache import cache
+
+        cache.clear()
         with patch.object(AiTutorService, "get_response", return_value="answer"):
-            first = self.client.post(
-                "/api/ai/tutor/ask/", {"question": "First?"}
-            )
-            second = self.client.post(
-                "/api/ai/tutor/ask/", {"question": "Second?"}
-            )
-            third = self.client.post(
-                "/api/ai/tutor/ask/", {"question": "Third?"}
-            )
+            first = self.client.post("/api/ai/tutor/ask/", {"question": "First?"})
+            second = self.client.post("/api/ai/tutor/ask/", {"question": "Second?"})
+            third = self.client.post("/api/ai/tutor/ask/", {"question": "Third?"})
 
         self.assertEqual(first.status_code, status.HTTP_200_OK)
         self.assertEqual(second.status_code, status.HTTP_200_OK)

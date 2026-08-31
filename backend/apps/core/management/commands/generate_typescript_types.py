@@ -7,6 +7,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 class Command(BaseCommand):
     help = "Generate TypeScript types from the OpenAPI schema."
+
     def handle(self, *args, **options):
         backend_dir = Path(__file__).resolve().parents[4]
         repo_root = backend_dir.parent
@@ -49,15 +50,11 @@ class Command(BaseCommand):
             )
 
             self.stdout.write(
-                self.style.SUCCESS(
-                    f"TypeScript definitions generated at {output_file}"
-                )
+                self.style.SUCCESS(f"TypeScript definitions generated at {output_file}")
             )
 
         except subprocess.CalledProcessError as exc:
-            raise CommandError(
-                f"Type generation failed: {exc}"
-            ) from exc
+            raise CommandError(f"Type generation failed: {exc}") from exc
 
         finally:
             if schema_path.exists():
