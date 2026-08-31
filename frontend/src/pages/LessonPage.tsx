@@ -166,6 +166,19 @@ export function LessonPage() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     return localStorage.getItem("lesson-sidebar-collapsed") === "true";
   });
+  const [isZenMode, setIsZenMode] = useState<boolean>(false);
+
+  // 1. Intercept Escape key to cleanly exit Zen reading mode
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' || event.key === 'Esc') {
+        setIsZenMode(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(
@@ -949,7 +962,13 @@ export function LessonPage() {
   return (
     <div className="w-full h-screen flex flex-col overflow-hidden bg-white dark:bg-[#0a0a0f]">
       {/* Immersive Lesson Top Header Bar */}
-      <header className="h-[72px] border-b-4 border-black dark:border-[#2e2924] bg-white dark:bg-[#0f0e0c] flex items-center justify-between px-4 sm:px-6 flex-shrink-0 z-40">
+      <header
+        className={`h-[72px] border-b-4 border-black dark:border-[#2e2924] bg-white dark:bg-[#0f0e0c] flex items-center justify-between px-4 sm:px-6 flex-shrink-0 z-40 transition-all duration-300 transform ${
+          isZenMode
+            ? "-translate-y-full h-0 p-0 overflow-hidden opacity-0"
+            : "translate-y-0"
+        }`}
+      >
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsSidebarOpen((prev) => !prev)}
@@ -980,88 +999,100 @@ export function LessonPage() {
 
       {/* Main split-screen panel (Sidebar + Content Workspace) */}
       <div className="flex-1 flex flex-row overflow-hidden relative">
-        <ResponsiveSidebar
-          isOpen={isSidebarOpen}
-          onClose={closeSidebar}
-          isSidebarCollapsed={isSidebarCollapsed}
-          setIsSidebarCollapsed={setIsSidebarCollapsed}
-          title={
-            <>
-              <BookOpen size={18} className="text-primary" />
-              Curriculum
-            </>
-          }
+        <aside
+          className={`transition-all duration-300 ${
+            isZenMode
+              ? "-translate-x-full w-0 p-0 mr-0 opacity-0 hidden"
+              : "translate-x-0"
+          }`}
         >
-          <div className="space-y-6">
-            {!isSidebarCollapsed && (
-              <div className="pt-2">
-                <RecentlyViewedLessonsWidget />
-              </div>
-            )}
-
-            {modules.map((mod, modIdx) => (
-              <div key={mod.id} className="space-y-2">
-                <h3
-                  className={`font-mono text-[10px] uppercase tracking-wider font-bold px-2 py-1.5 rounded-lg border-2 transition-all
-                           ${
-                             mod.id === activeModuleId
-                               ? "bg-yellow-300 text-black border-black shadow-[2px_2px_0px_#000]"
-                               : "text-muted dark:text-[#c4bbae] border-transparent"
-                           }`}
-                >
-                  {isSidebarCollapsed
-                    ? `M${modIdx + 1}`
-                    : `Module {modIdx + 1}: {mod.title}`}
-                </h3>
-                <div className="space-y-1">
-                  {mod.lessons.map(
-                    (les: {
-                      slug: string;
-                      title: string;
-                      difficulty?: string;
-                    }) => {
-                      const active = les.slug === lesson.slug;
-                      const completed = isLessonCompleted(les.slug);
-                      return (
-                        <Link
-                          key={les.slug}
-                          to={`/lessons/${les.slug}`}
-                          onClick={closeSidebar}
-                          className={`w-full flex items-center justify-between p-2.5 rounded-lg border-2 transition-all text-xs font-bold ${
-                            active
-                              ? "bg-surface-low border-black shadow-card-sm text-text"
-                              : "border-transparent hover:bg-surface-lowest hover:border-black/10 dark:text-[#c4bbae]"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 truncate">
-                            {completed ? (
-                              <CheckCircle2
-                                size={14}
-                                className="text-green-600 flex-shrink-0"
-                              />
-                            ) : (
-                              <div className="w-3.5 h-3.5 rounded-full border-2 border-black/35 flex-shrink-0" />
-                            )}
-                            {!isSidebarCollapsed && (
-                              <span className="truncate">{les.title}</span>
-                            )}
-                          </div>
-                          {les.difficulty === "advanced" && (
-                            <span className="text-[8px] bg-red-100 text-red-700 px-1 py-0.5 rounded border border-red-700">
-                              ADV
-                            </span>
-                          )}
-                        </Link>
-                      );
-                    },
-                  )}
+          <ResponsiveSidebar
+            isOpen={isSidebarOpen}
+            onClose={closeSidebar}
+            isSidebarCollapsed={isSidebarCollapsed}
+            setIsSidebarCollapsed={setIsSidebarCollapsed}
+            title={
+              <>
+                <BookOpen size={18} className="text-primary" />
+                Curriculum
+              </>
+            }
+          >
+            <div className="space-y-6">
+              {!isSidebarCollapsed && (
+                <div className="pt-2">
+                  <RecentlyViewedLessonsWidget />
                 </div>
-              </div>
-            ))}
-          </div>
-        </ResponsiveSidebar>
+              )}
 
-        <div className="flex-1 flex flex-col h-full overflow-hidden">
+              {modules.map((mod, modIdx) => (
+                <div key={mod.id} className="space-y-2">
+                  <h3
+                    className={`font-mono text-[10px] uppercase tracking-wider font-bold px-2 py-1.5 rounded-lg border-2 transition-all
+                             ${
+                               mod.id === activeModuleId
+                                 ? "bg-yellow-300 text-black border-black shadow-[2px_2px_0px_#000]"
+                                 : "text-muted dark:text-[#c4bbae] border-transparent"
+                             }`}
+                  >
+                    {isSidebarCollapsed
+                      ? `M${modIdx + 1}`
+                      : `Module ${modIdx + 1}: ${mod.title}`}
+                  </h3>
+                  <div className="space-y-1">
+                    {mod.lessons.map(
+                      (les: {
+                        slug: string;
+                        title: string;
+                        difficulty?: string;
+                      }) => {
+                        const active = les.slug === lesson.slug;
+                        const completed = isLessonCompleted(les.slug);
+                        return (
+                          <Link
+                            key={les.slug}
+                            to={`/lessons/${les.slug}`}
+                            onClick={closeSidebar}
+                            className={`w-full flex items-center justify-between p-2.5 rounded-lg border-2 transition-all text-xs font-bold ${
+                              active
+                                ? "bg-surface-low border-black shadow-card-sm text-text"
+                                : "border-transparent hover:bg-surface-lowest hover:border-black/10 dark:text-[#c4bbae]"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 truncate">
+                              {completed ? (
+                                <CheckCircle2
+                                  size={14}
+                                  className="text-green-600 flex-shrink-0"
+                                />
+                              ) : (
+                                <div className="w-3.5 h-3.5 rounded-full border-2 border-black/35 flex-shrink-0" />
+                              )}
+                              {!isSidebarCollapsed && (
+                                <span className="truncate">{les.title}</span>
+                              )}
+                            </div>
+                            {les.difficulty === "advanced" && (
+                              <span className="text-[8px] bg-red-100 text-red-700 px-1 py-0.5 rounded border border-red-700">
+                                ADV
+                              </span>
+                            )}
+                          </Link>
+                        );
+                      },
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ResponsiveSidebar>
+        </aside>
+
+        <div
+          className={`flex-1 flex flex-col h-full overflow-hidden transition-all duration-300 ${
+            isZenMode ? "w-full" : ""
+          }`}
+        >
           <div className="h-2 w-full bg-surface-low border-b-2 border-black dark:bg-[#151411] dark:border-[#2e2924] relative flex-shrink-0">
             <div
               className="h-full bg-primary transition-all duration-150"
@@ -1077,7 +1108,11 @@ export function LessonPage() {
             ref={mainContentRef}
             className="flex-1 overflow-y-auto p-6 sm:p-10 space-y-8"
           >
-            <div className="max-w-3xl mx-auto space-y-6">
+            <div
+              className={`mx-auto space-y-6 transition-all duration-300 ${
+                isZenMode ? "max-w-4xl" : "max-w-3xl"
+              }`}
+            >
               <Breadcrumb items={breadcrumbItems} className="mb-2" />
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
@@ -1115,7 +1150,22 @@ export function LessonPage() {
                     COMPLETED ✅
                   </div>
                 )}
-                <div className="self-start sm:self-center ml-auto flex gap-2">
+                <div className="self-start sm:self-center ml-auto flex items-center gap-2">
+                  <button
+                    onClick={() => setIsZenMode(!isZenMode)}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${
+                      isZenMode
+                        ? "bg-blue-600/10 border-blue-500/30 text-blue-400 hover:bg-blue-600/20"
+                        : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+                    }`}
+                    title={
+                      isZenMode
+                        ? "Exit Zen Mode (Esc)"
+                        : "Enter distraction-free Zen reading mode"
+                    }
+                  >
+                    {isZenMode ? "🧘 Exit Zen Mode" : "🧘 Zen Mode"}
+                  </button>
                   <button
                     onClick={() => setShowHistory(true)}
                     className="flex items-center justify-center p-2 rounded-xl border-4 border-black bg-surface-low hover:-translate-y-1 hover:shadow-card-sm transition-all"

@@ -40,3 +40,24 @@
   background: #6c63ff;
   color: white;
 }
+
+/* -----------------------------------------------------------------------------
+ * ZEN MODE ACCELERATION LAYOUT TRANSITIONS
+ * ----------------------------------------------------------------------------- */
+
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+}
+
+/* Custom visibility fade animations for structural text layers */
+@keyframes fadeInBody {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeInBody 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
