@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchApi } from "../../../lib/api";
 import { CheckCircle2, XCircle } from "lucide-react";
@@ -17,6 +17,31 @@ export function InteractiveQuiz({ id }: InteractiveQuizProps) {
   });
   const [submitted, setSubmitted] = useState(false);
   const { syncProgress } = useUserProgress();
+  const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (submitted || !quiz?.options || quiz.options.length === 0) return;
+
+    const totalOptions = quiz.options.length;
+    let nextIndex: number | null = null;
+
+    if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+      e.preventDefault();
+      nextIndex =
+        selectedOption === null ? 0 : (selectedOption + 1) % totalOptions;
+    } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+      e.preventDefault();
+      nextIndex =
+        selectedOption === null
+          ? totalOptions - 1
+          : (selectedOption - 1 + totalOptions) % totalOptions;
+    }
+
+    if (nextIndex !== null) {
+      setSelectedOption(nextIndex);
+      buttonRefs.current[nextIndex]?.focus();
+    }
+  };
 
   const {
     data: quiz,
@@ -119,7 +144,12 @@ export function InteractiveQuiz({ id }: InteractiveQuizProps) {
         {quiz.question}
       </h3>
 
-      <div className="space-y-3">
+      <div
+        className="space-y-3"
+        role="radiogroup"
+        aria-label={quiz.question || "Quiz answer options"}
+        onKeyDown={handleKeyDown}
+      >
         {quiz.options.map((option: string, i: number) => {
           let buttonClass =
             "border-black bg-white text-text hover:bg-surface-lowest dark:bg-[#151411] dark:border-[#2e2924] dark:text-[#f0ebe2]";
@@ -147,9 +177,19 @@ export function InteractiveQuiz({ id }: InteractiveQuizProps) {
               "border-primary bg-primary/10 text-primary dark:border-primary dark:bg-primary/20 dark:text-primary";
           }
 
+          const isOptionSelected = selectedOption === i;
+          const isTabTarget =
+            selectedOption === i || (selectedOption === null && i === 0);
+
           return (
             <button
               key={i}
+              ref={(el) => {
+                buttonRefs.current[i] = el;
+              }}
+              role="radio"
+              aria-checked={isOptionSelected}
+              tabIndex={isTabTarget ? 0 : -1}
               onClick={() => !submitted && setSelectedOption(i)}
               disabled={submitted}
               className={`w-full flex items-center justify-between p-4 rounded-xl border-4 font-bold text-left transition-all duration-200 ${buttonClass}`}
