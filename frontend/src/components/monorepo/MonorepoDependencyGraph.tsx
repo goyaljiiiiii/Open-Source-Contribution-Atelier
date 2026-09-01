@@ -18,6 +18,8 @@ import {
   ShieldAlert,
   Sliders,
   Check,
+  X,
+  RotateCcw,
 } from "lucide-react";
 
 export interface PackageNode {
@@ -245,16 +247,32 @@ export function MonorepoDependencyGraph() {
     return cycles;
   }, [parsedPackages]);
 
-  // Filter nodes by search query
-  const filteredNodes = useMemo(() => {
-    if (!searchQuery.trim()) return parsedPackages;
-    const q = searchQuery.toLowerCase();
-    return parsedPackages.filter(
-      (node) =>
-        node.name.toLowerCase().includes(q) ||
-        node.type.toLowerCase().includes(q),
+  // Compute set of highlighted package IDs (target + direct upstream/downstream)
+  const highlightedNodeIds = useMemo(() => {
+    if (!searchQuery.trim()) return null;
+
+    const queryLower = searchQuery.trim().toLowerCase();
+    const matching = parsedPackages.filter((p) =>
+      p.name.toLowerCase().includes(queryLower),
     );
-  }, [parsedPackages, searchQuery]);
+
+    if (matching.length === 0) return new Set<string>();
+
+    const highlighted = new Set<string>();
+    matching.forEach((target) => {
+      highlighted.add(target.id);
+      // Direct Upstream Dependencies
+      target.dependencies.forEach((depId) => highlighted.add(depId));
+      // Direct Downstream Dependents
+      parsedPackages.forEach((p) => {
+        if (p.dependencies.includes(target.id)) {
+          highlighted.add(p.id);
+        }
+      });
+    });
+
+    return highlighted;
+  }, [searchQuery, parsedPackages]);
 
   // Handle Preset Change
   const handlePresetSelect = (preset: ManifestPreset) => {
@@ -450,17 +468,60 @@ export function MonorepoDependencyGraph() {
             {/* TAB 1: 2D Graph Interactive SVG Canvas */}
             {activeTab === "graph" && (
               <div className="relative flex-1 bg-surface-low dark:bg-[#12110e] border-2 border-black/20 dark:border-[#2e2924] rounded-xl overflow-hidden p-4 flex flex-col justify-center items-center">
-                {/* Search & Zoom Floating Overlay Bar */}
-                <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between gap-2 pointer-events-none">
-                  <div className="relative pointer-events-auto max-w-xs">
-                    <Search className="w-4 h-4 absolute left-3 top-2.5 text-muted" />
-                    <input
-                      type="text"
+                {/* Search, Dropdown & Reset Filter Floating Overlay Bar */}
+                <div className="absolute top-3 left-3 right-3 z-10 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+                  <div className="flex items-center gap-2 pointer-events-auto max-w-md w-full">
+                    {/* Search Input */}
+                    <div className="relative flex-1">
+                      <Search className="w-4 h-4 absolute left-3 top-2.5 text-muted" />
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Filter packages by workspace name..."
+                        className="pl-9 pr-7 py-1.5 bg-white dark:bg-[#1f1c18] border-2 border-black dark:border-[#2e2924] rounded-xl text-xs font-bold shadow-card-sm text-text dark:text-[#f0ebe2] focus:outline-none w-full"
+                      />
+                      {searchQuery && (
+                        <button
+                          onClick={() => setSearchQuery("")}
+                          className="absolute right-2.5 top-2 text-slate-400 hover:text-black dark:hover:text-white"
+                          title="Clear input"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Interactive Search Dropdown Menu */}
+                    <select
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Filter packages..."
-                      className="pl-9 pr-3 py-1.5 bg-white dark:bg-[#1f1c18] border-2 border-black dark:border-[#2e2924] rounded-xl text-xs font-bold shadow-card-sm text-text dark:text-[#f0ebe2] focus:outline-none w-full"
-                    />
+                      aria-label="Filter packages by workspace name"
+                      className="bg-white dark:bg-[#1f1c18] border-2 border-black dark:border-[#2e2924] rounded-xl px-2.5 py-1.5 text-xs font-bold text-text dark:text-[#f0ebe2] focus:outline-none shadow-card-sm cursor-pointer max-w-[170px] truncate"
+                    >
+                      <option value="">-- Select Package --</option>
+                      {parsedPackages.map((p) => (
+                        <option key={p.id} value={p.name}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+
+                    {/* Reset Filter Button */}
+                    {searchQuery && (
+                      <button
+                        onClick={() => {
+                          setSearchQuery("");
+                          setSelectedNodeId(null);
+                        }}
+                        aria-label="Reset Filter"
+                        className="px-2.5 py-1.5 bg-rose-500 hover:bg-rose-600 text-white font-black text-xs rounded-xl border-2 border-black shadow-card-sm transition-all shrink-0 flex items-center gap-1"
+                        title="Reset graph filter"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Reset</span>
+                      </button>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-1 bg-white dark:bg-[#1f1c18] border-2 border-black dark:border-[#2e2924] rounded-xl p-1 shadow-card-sm pointer-events-auto">
@@ -526,7 +587,7 @@ export function MonorepoDependencyGraph() {
                       </defs>
 
                       {/* Render Dependency Edges */}
-                      {filteredNodes.map((sourceNode) =>
+                      {parsedPackages.map((sourceNode) =>
                         sourceNode.dependencies.map((depName) => {
                           const targetNode = parsedPackages.find(
                             (n) => n.id === depName,
@@ -538,6 +599,11 @@ export function MonorepoDependencyGraph() {
                             targetNode.id,
                           );
 
+                          const isEdgeHighlighted =
+                            !highlightedNodeIds ||
+                            (highlightedNodeIds.has(sourceNode.id) &&
+                              highlightedNodeIds.has(targetNode.id));
+
                           return (
                             <line
                               key={`${sourceNode.id}->${targetNode.id}`}
@@ -546,8 +612,9 @@ export function MonorepoDependencyGraph() {
                               x2={targetNode.x}
                               y2={targetNode.y}
                               stroke={isLoop ? "#ef4444" : "#9ca3af"}
-                              strokeWidth={isLoop ? 3.5 : 1.8}
+                              strokeWidth={isLoop ? 3.5 : isEdgeHighlighted ? 2.2 : 1.2}
                               strokeDasharray={isLoop ? "6,4" : "none"}
+                              opacity={isEdgeHighlighted ? 1 : 0.15}
                               markerEnd={
                                 isLoop ? "url(#arrow-circular)" : "url(#arrow)"
                               }
@@ -557,17 +624,25 @@ export function MonorepoDependencyGraph() {
                       )}
 
                       {/* Render Package Nodes */}
-                      {filteredNodes.map((node) => {
+                      {parsedPackages.map((node) => {
                         const isSelected = selectedNodeId === node.id;
                         const isInLoop = circularCycles.some((c) =>
                           c.includes(node.id),
                         );
+                        const isNodeHighlighted =
+                          !highlightedNodeIds || highlightedNodeIds.has(node.id);
+                        const isTargetMatch =
+                          searchQuery.trim() &&
+                          node.name
+                            .toLowerCase()
+                            .includes(searchQuery.trim().toLowerCase());
 
                         return (
                           <g
                             key={node.id}
                             transform={`translate(${node.x}, ${node.y})`}
                             className="cursor-pointer transition-transform hover:scale-110"
+                            opacity={isNodeHighlighted ? 1 : 0.2}
                             onClick={() => setSelectedNodeId(node.id)}
                           >
                             <rect
@@ -588,12 +663,20 @@ export function MonorepoDependencyGraph() {
                               stroke={
                                 isInLoop
                                   ? "#ef4444"
-                                  : isSelected
+                                  : isTargetMatch
                                     ? "#3b82f6"
-                                    : "#000"
+                                    : isSelected
+                                      ? "#3b82f6"
+                                      : "#000"
                               }
                               strokeWidth={
-                                isSelected ? 3.5 : isInLoop ? 2.5 : 2
+                                isTargetMatch
+                                  ? 4
+                                  : isSelected
+                                    ? 3.5
+                                    : isInLoop
+                                      ? 2.5
+                                      : 2
                               }
                             />
                             <text
