@@ -669,17 +669,20 @@ export function LessonPage() {
         const next = lessonsList[currentIdx + 1];
         if (next?.filePath) {
           const cachePath = `/content/${next.filePath}`;
-          caches.open("content-runtime-cache").then((cache) => {
-            cache.match(cachePath).then((cached) => {
-              if (!cached) {
-                fetch(cachePath)
-                  .then((res) => {
-                    if (res.ok) cache.put(cachePath, res);
-                  })
-                  .catch(() => {});
-              }
-            });
-          }).catch(() => {});
+          caches
+            .open("content-runtime-cache")
+            .then((cache) => {
+              cache.match(cachePath).then((cached) => {
+                if (!cached) {
+                  fetch(cachePath)
+                    .then((res) => {
+                      if (res.ok) cache.put(cachePath, res);
+                    })
+                    .catch(() => {});
+                }
+              });
+            })
+            .catch(() => {});
         }
       }
     };
@@ -948,6 +951,7 @@ export function LessonPage() {
 
   return (
     <div className="w-full h-screen flex flex-col overflow-hidden bg-white dark:bg-[#0a0a0f]">
+      <OfflineBanner />
       {/* Immersive Lesson Top Header Bar */}
       <header className="h-[72px] border-b-4 border-black dark:border-[#2e2924] bg-white dark:bg-[#0f0e0c] flex items-center justify-between px-4 sm:px-6 flex-shrink-0 z-40">
         <div className="flex items-center gap-3">
