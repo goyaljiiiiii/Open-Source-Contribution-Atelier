@@ -158,3 +158,52 @@ class SendBulkEmailTests(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         sent = mail.outbox[0]
         self.assertIn("Daily Notification Digest", sent.subject)
+
+    def test_send_notification_digests_uses_celery_group_batch(self):
+        """Digests should be dispatched through Celery `group` in batches of 50."""
+        from django.utils import timezone
+
+        # 75 eligible subscribers + unread notifications => 2 batches (50 + 25)
+        for i in range(75):
+            user = User.objects.create_user(
+                username=f"digest_user_{i}",
+                email=f"digest_{i}@example.com",
+                password="password123",
+            )
+            pref, _ = NotificationPreference.objects.get_or_create(user=user)
+            pref.digest_frequency = "daily"
+            pref.digest_time = timezone.now().time()
+            pref.save()
+            Notification.objects.create(
+                recipient=user,
+                notif_type="badge",
+                title="Badge Awarded",
+                message="Unlocked something",
+                is_read=False,
+            )
+
+        dispatched_args = []
+
+        class FakeGroup:
+            def __init__(self, tasks):
+                self.tasks = list(tasks)
+
+            def apply(self, args=None, **kwargs):
+                dispatched_args.append(self.tasks)
+                # Execute each subtask synchronously so mail.outbox is populated.
+                for task in self.tasks:
+                    task.apply().get()
+                return self
+
+            def apply_async(self, *a, **kw):
+                dispatched_args.append(self.tasks)
+                return self
+
+        with patch("celery.group", new=FakeGroup):
+            send_notification_digests()
+
+        # Two chunks of 50 and 25 recipients respectively
+        self.assertEqual(len(dispatched_args), 2)
+        self.assertEqual(len(dispatched_args[0]), 50)
+        self.assertEqual(len(dispatched_args[1]), 25)
+        self.assertEqual(len(mail.outbox), 75)
