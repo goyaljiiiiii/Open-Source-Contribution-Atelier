@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { FAQAccordion } from "../../components/docs/FAQAccordion";
+import CopyButton from "../../components/ui/CopyButton";
 import { CARD_FOCUS_RING } from "../../lib/a11yFocus";
 import { useMarkdownWorker } from "../../hooks/useMarkdownWorker";
 
@@ -576,7 +577,14 @@ export function FullStackDocsPage() {
                       </span>
                     </td>
                     <td className="py-3.5 px-4 font-black text-gray-900 dark:text-[#f0ebe2] text-xs">
-                      {api.path}
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono">{api.path}</span>
+                        <CopyButton
+                          text={`${api.method} ${api.path}`}
+                          label="Copy"
+                          copiedLabel="Copied!"
+                        />
+                      </div>
                     </td>
                     <td className="py-3.5 px-4 font-sans font-bold text-gray-600 dark:text-[#c4bbae]">
                       {api.desc}
