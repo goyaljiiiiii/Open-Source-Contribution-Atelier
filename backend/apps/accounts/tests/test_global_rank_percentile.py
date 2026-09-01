@@ -4,6 +4,7 @@ from rest_framework.test import APIClient
 
 from apps.accounts.serializers import UserListSerializer
 from apps.progress.models import XPEvent
+from apps.progress.services.ranking_service import RankingService
 
 User = get_user_model()
 
@@ -128,3 +129,11 @@ class TestGlobalRankPercentileStanding:
         assert "percentile_standing" in res.data
         assert res.data["global_rank"] == 1
         assert res.data["percentile_standing"] <= 25
+
+    def test_ranking_service_matches_serializer_output(self):
+        for user in (self.user1, self.user2, self.user3, self.user4):
+            serialized = UserListSerializer(user).data
+            assert serialized["global_rank"] == RankingService.get_global_rank(user)
+            assert serialized[
+                "percentile_standing"
+            ] == RankingService.get_percentile_standing(user)

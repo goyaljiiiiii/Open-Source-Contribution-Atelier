@@ -120,14 +120,30 @@ export function UserProfilePage() {
     "overview",
   );
 
-  const getPercentileLabel = (standing?: number, score: number = 0) => {
-    if (standing !== undefined && standing !== null) {
-      return `Top ${standing}% Contributor`;
-    }
-    if (score >= 1000) return "Top 5% Contributor";
-    if (score >= 500) return "Top 10% Contributor";
-    if (score >= 100) return "Top 25% Contributor";
-    return "Top 50% Contributor";
+  const getPercentileStanding = (score: number) => {
+    if (score >= 1000) return 5;
+    if (score >= 500) return 10;
+    if (score >= 100) return 25;
+    return 50;
+  };
+
+  const getPercentileBadge = (standing?: number, score: number = 0) => {
+    const value =
+      standing !== undefined && standing !== null ? standing : getPercentileStanding(score);
+    return {
+      standing: value,
+      label: `Top ${value}% Contributor`,
+      tier: value <= 5 ? "elite" : value <= 10 ? "gold" : value <= 25 ? "silver" : "bronze",
+    };
+  };
+
+  const rankBadge = getPercentileBadge(profile?.percentile_standing, profile?.total_score ?? 0);
+
+  const RANK_BADGE_TIERS: Record<string, string> = {
+    elite: "bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 shadow-amber-400/40",
+    gold: "bg-gradient-to-r from-yellow-300 to-amber-500 text-slate-950 shadow-yellow-300/40",
+    silver: "bg-gradient-to-r from-slate-200 to-slate-400 text-slate-900 shadow-slate-300/40",
+    bronze: "bg-gradient-to-r from-orange-400 to-amber-700 text-white shadow-orange-400/40",
   };
 
   const handleCopyLink = (e?: React.MouseEvent) => {
@@ -312,10 +328,10 @@ export function UserProfilePage() {
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-3">
                   <span
                     data-testid="rank-percentile-badge"
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 shadow-sm"
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black shadow-sm ${RANK_BADGE_TIERS[rankBadge.tier]}`}
                   >
                     <Trophy size={13} className="stroke-[2.5]" />
-                    {getPercentileLabel(profile.percentile_standing, total_score)}
+                    {rankBadge.label}
                   </span>
                 </div>
 
@@ -481,7 +497,7 @@ export function UserProfilePage() {
               </div>
               <div>
                 <div className="text-xl font-black text-amber-700 dark:text-amber-400 leading-tight">
-                  Top {profile.percentile_standing ?? 5}%
+                  Top {rankBadge.standing}%
                 </div>
                 <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
                   Global Rank Standing
@@ -613,16 +629,7 @@ export function UserProfilePage() {
                 <div className="space-y-4">
                   <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 dark:border-amber-900/40 dark:bg-amber-950/20 text-center">
                     <div className="text-xs font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wide">
-                      Global Standing: Top{" "}
-                      {profile.percentile_standing ??
-                        (total_score >= 1000
-                          ? 5
-                          : total_score >= 500
-                          ? 10
-                          : total_score >= 100
-                          ? 25
-                          : 50)}
-                      %
+                      Global Standing: Top {rankBadge.standing}%
                     </div>
                     <p className="text-[11px] font-medium text-slate-600 dark:text-slate-400 mt-1">
                       Calculated against all active open source contributors

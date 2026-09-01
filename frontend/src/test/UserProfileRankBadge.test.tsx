@@ -64,6 +64,14 @@ describe("UserProfilePage Global Rank Percentile Badge Suite (#2817)", () => {
     expect(badge).toHaveTextContent("Top 5% Contributor");
   });
 
+  it("applies the elite tier styling for a top-5% standing", async () => {
+    render(<UserProfilePage />);
+
+    const badge = await screen.findByTestId("rank-percentile-badge");
+    expect(badge).toHaveTextContent("Top 5% Contributor");
+    expect(badge.className).toContain("from-amber-400");
+  });
+
   it("displays global standing summary in statistics widget", async () => {
     render(<UserProfilePage />);
 
