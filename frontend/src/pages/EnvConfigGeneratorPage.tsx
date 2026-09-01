@@ -121,6 +121,24 @@ const DEFAULT_CONFIG: ConfigState = {
   vapidAdminEmail: "mailto:admin@localhost.com",
 };
 
+// A raw quote character in a value breaks bash `source` / Docker `--env-file`
+// parsing (unterminated string). Flag it so the user can quote/escape properly.
+const containsQuote = (val: string) => /["']/.test(val ?? "");
+
+function QuoteHint({ show }: { show: boolean }) {
+  if (!show) return null;
+  return (
+    <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 flex items-start gap-1 mt-1">
+      <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
+      <span>
+        Contains a quote character. In your <code>.env</code> wrap the whole value
+        in single quotes, e.g. <code>KEY='your value'</code>, so bash / Docker
+        don&apos;t misread it.
+      </span>
+    </p>
+  );
+}
+
 export function EnvConfigGeneratorPage() {
   const [config, setConfig] = useState<ConfigState>(DEFAULT_CONFIG);
   const [activeTab, setActiveTab] = useState<"backend" | "frontend">("backend");
@@ -346,6 +364,83 @@ export function EnvConfigGeneratorPage() {
     return w;
   }, [config]);
 
+  // Values with a raw " or ' that would break the generated .env when loaded
+  // by bash / Docker. Only checks fields that are actually written out.
+  const quoteIssues = useMemo(() => {
+    const fields: { label: string; value: string; active: boolean }[] = [
+      { label: "SECRET_KEY", value: config.secretKey, active: true },
+      { label: "ALLOWED_HOSTS", value: config.allowedHosts, active: true },
+      {
+        label: "DATABASE_URL",
+        value: config.databaseUrl,
+        active: config.dbEngine === "neon",
+      },
+      {
+        label: "DB_USER",
+        value: config.dbUser,
+        active: config.dbEngine === "postgres",
+      },
+      {
+        label: "DB_PASSWORD",
+        value: config.dbPassword,
+        active: config.dbEngine === "postgres",
+      },
+      {
+        label: "REDIS_URL",
+        value: config.redisUrl,
+        active: config.redisMode !== "disabled",
+      },
+      {
+        label: "GITHUB_CLIENT_ID",
+        value: config.githubClientId,
+        active: config.enableGithubAuth,
+      },
+      {
+        label: "GITHUB_CLIENT_SECRET",
+        value: config.githubClientSecret,
+        active: config.enableGithubAuth,
+      },
+      {
+        label: "GOOGLE_CLIENT_ID",
+        value: config.googleClientId,
+        active: config.enableGoogleAuth,
+      },
+      {
+        label: "GOOGLE_CLIENT_SECRET",
+        value: config.googleClientSecret,
+        active: config.enableGoogleAuth,
+      },
+      {
+        label: "OPENAI_API_KEY",
+        value: config.openaiApiKey,
+        active: config.enableOpenAi,
+      },
+      {
+        label: "HUGGINGFACE_API_KEY",
+        value: config.huggingFaceKey,
+        active: config.enableHuggingFace,
+      },
+      {
+        label: "AWS_SECRET_ACCESS_KEY",
+        value: config.awsSecretAccessKey,
+        active: config.enableAwsS3,
+      },
+      {
+        label: "SENTRY_DSN",
+        value: config.sentryDsn,
+        active: config.enableSentry,
+      },
+      {
+        label: "VAPID_PRIVATE_KEY",
+        value: config.vapidPrivateKey,
+        active: config.enableVapid,
+      },
+    ];
+    return fields
+      .filter((f) => f.active && containsQuote(f.value))
+      .map((f) => f.label);
+  }, [config]);
+
   const handleCopy = (type: "backend" | "frontend") => {
     const text = type === "backend" ? backendEnv : frontendEnv;
     navigator.clipboard.writeText(text);
@@ -478,6 +573,7 @@ export function EnvConfigGeneratorPage() {
                   onChange={(e) => updateConfig("secretKey", e.target.value)}
                   className="px-3 py-2 bg-surface-low dark:bg-[#1a1714] border border-black/20 dark:border-[#2e2924] rounded-lg font-mono text-xs text-text dark:text-[#f0ebe2]"
                 />
+                <QuoteHint show={containsQuote(config.secretKey)} />
               </div>
             </div>
           </div>
@@ -530,6 +626,7 @@ export function EnvConfigGeneratorPage() {
                     onChange={(e) => updateConfig("dbUser", e.target.value)}
                     className="px-3 py-2 bg-surface-low dark:bg-[#1a1714] border border-black/20 dark:border-[#2e2924] rounded-lg font-mono"
                   />
+                  <QuoteHint show={containsQuote(config.dbUser)} />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="font-bold text-muted uppercase">
@@ -541,6 +638,7 @@ export function EnvConfigGeneratorPage() {
                     onChange={(e) => updateConfig("dbPassword", e.target.value)}
                     className="px-3 py-2 bg-surface-low dark:bg-[#1a1714] border border-black/20 dark:border-[#2e2924] rounded-lg font-mono"
                   />
+                  <QuoteHint show={containsQuote(config.dbPassword)} />
                 </div>
               </div>
             )}
@@ -556,6 +654,7 @@ export function EnvConfigGeneratorPage() {
                   onChange={(e) => updateConfig("databaseUrl", e.target.value)}
                   className="px-3 py-2 bg-surface-low dark:bg-[#1a1714] border border-black/20 dark:border-[#2e2924] rounded-lg font-mono"
                 />
+                <QuoteHint show={containsQuote(config.databaseUrl)} />
               </div>
             )}
           </div>
@@ -611,6 +710,7 @@ export function EnvConfigGeneratorPage() {
                   onChange={(e) => updateConfig("redisUrl", e.target.value)}
                   className="px-3 py-2 bg-surface-low dark:bg-[#1a1714] border border-black/20 dark:border-[#2e2924] rounded-lg font-mono text-xs"
                 />
+                <QuoteHint show={containsQuote(config.redisUrl)} />
               </div>
             )}
           </div>
@@ -653,6 +753,7 @@ export function EnvConfigGeneratorPage() {
                       }
                       className="px-3 py-2 bg-surface dark:bg-[#12100e] border border-black/20 dark:border-[#2e2924] rounded-lg font-mono"
                     />
+                    <QuoteHint show={containsQuote(config.githubClientId)} />
                   </div>
                   <div className="flex flex-col gap-1">
                     <label className="font-bold text-muted uppercase">
@@ -666,6 +767,7 @@ export function EnvConfigGeneratorPage() {
                       }
                       className="px-3 py-2 bg-surface dark:bg-[#12100e] border border-black/20 dark:border-[#2e2924] rounded-lg font-mono"
                     />
+                    <QuoteHint show={containsQuote(config.githubClientSecret)} />
                   </div>
                 </div>
               )}
@@ -702,6 +804,7 @@ export function EnvConfigGeneratorPage() {
                       }
                       className="px-3 py-2 bg-surface dark:bg-[#12100e] border border-black/20 dark:border-[#2e2924] rounded-lg font-mono"
                     />
+                    <QuoteHint show={containsQuote(config.googleClientId)} />
                   </div>
                   <div className="flex flex-col gap-1">
                     <label className="font-bold text-muted uppercase">
@@ -715,6 +818,7 @@ export function EnvConfigGeneratorPage() {
                       }
                       className="px-3 py-2 bg-surface dark:bg-[#12100e] border border-black/20 dark:border-[#2e2924] rounded-lg font-mono"
                     />
+                    <QuoteHint show={containsQuote(config.googleClientSecret)} />
                   </div>
                 </div>
               )}
@@ -758,6 +862,7 @@ export function EnvConfigGeneratorPage() {
                       }
                       className="px-3 py-2 bg-surface dark:bg-[#12100e] border border-black/20 dark:border-[#2e2924] rounded-lg font-mono"
                     />
+                    <QuoteHint show={containsQuote(config.openaiApiKey)} />
                   </div>
                   <div className="flex flex-col gap-1">
                     <label className="font-bold text-muted uppercase">
@@ -795,6 +900,25 @@ export function EnvConfigGeneratorPage() {
                   <li key={idx}>{w}</li>
                 ))}
               </ul>
+            </div>
+          )}
+
+          {/* Quote-escaping warnings: raw quotes break bash / Docker env parsing */}
+          {quoteIssues.length > 0 && (
+            <div className="p-4 bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl flex flex-col gap-2 text-amber-600 dark:text-amber-400">
+              <div className="flex items-center gap-2 font-bold text-xs">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <span>
+                  {quoteIssues.length} value(s) contain an unescaped quote
+                </span>
+              </div>
+              <p className="text-[11px] opacity-90 font-medium">
+                {quoteIssues.join(", ")} include a <code>&quot;</code> or{" "}
+                <code>&apos;</code>. Wrap the value in single quotes in the{" "}
+                <code>.env</code> file (e.g. <code>KEY='value'</code>); if it also
+                contains a single quote, use double quotes and escape it as{" "}
+                <code>\&quot;</code>.
+              </p>
             </div>
           )}
 
