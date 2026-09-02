@@ -206,18 +206,29 @@ def send_bulk_email(payload):
 def send_notification_digests():
     """
     Periodic task to send digest emails to users based on their timezone and preference.
+
+    Builds a per-recipient payload (rendering/serialization-friendly dict context)
+    for each eligible subscriber, chunks the list into batches of 50, and fans the
+    emails out in parallel across worker threads using a Celery ``group``. Each
+    member of the group is a ``send_bulk_email`` subtask.
     """
     import zoneinfo
 
-    from django.template.loader import render_to_string
     from django.utils import timezone
-    from django.utils.html import strip_tags
+
+    from celery import group
 
     from .models import Notification, NotificationPreference
 
     prefs = NotificationPreference.objects.exclude(
         digest_frequency="none"
     ).select_related("user", "user__user_profile")
+
+    # Build one serializable payload per eligible subscriber, chunked into batches
+    # of BATCH_SIZE so we can fan out a bounded number of parallel subtasks.
+    BATCH_SIZE = 50
+    chunks: list[list] = []
+    current_batch: list = []
 
     for pref in prefs:
         if not pref.digest_time:
@@ -247,29 +258,64 @@ def send_notification_digests():
         if not unread_notifs.exists():
             continue
 
-        # Group notifications
+        # Group notifications by type (serializable snapshot for async transport)
         grouped = {}
         for notif in unread_notifs:
-            if notif.notif_type not in grouped:
-                grouped[notif.notif_type] = []
-            grouped[notif.notif_type].append(notif)
+            key = notif.notif_type
+            if key not in grouped:
+                grouped[key] = []
+            grouped[key].append(
+                {
+                    "title": notif.title,
+                    "message": notif.message,
+                    "created_at": notif.created_at,
+                }
+            )
 
-        # Send Email via send_bulk_email task
-        context = {
-            "user": user,
-            "digest_frequency": pref.digest_frequency,
-            "grouped_notifications": grouped,
-            "total_count": unread_notifs.count(),
-        }
+        # Send Email via send_bulk_email subtask dispatched through a Celery group
         payload = {
             "template_id": "notification_digest",
             "recipients": [user.email],
-            "data": context,
+            "data": {
+                "user": {
+                    "username": user.username,
+                    "email": user.email,
+                    "id": user.id,
+                },
+                "digest_frequency": pref.digest_frequency,
+                "grouped_notifications": grouped,
+                "total_count": unread_notifs.count(),
+            },
         }
+        current_batch.append(send_bulk_email.s(payload))
+
+        # Flush a full batch into the chunks list
+        if len(current_batch) >= BATCH_SIZE:
+            chunks.append(current_batch)
+            current_batch = []
+
+    # Flush any remaining subtasks (including the empty case, which is a no-op)
+    if current_batch:
+        chunks.append(current_batch)
+
+    # Fan out each batch as a Celery group, running subtasks in parallel.
+    # In eager mode (development/tests) run the group locally via `apply`
+    # so no broker is required; otherwise dispatch via `apply_async`.
+    eager = getattr(settings, "CELERY_TASK_ALWAYS_EAGER", False)
+    for batch in chunks:
+        if not batch:
+            continue
         try:
-            send_bulk_email(payload)
+            if eager:
+                group(batch).apply()
+            else:
+                group(batch).apply_async()
         except Exception as exc:
-            logger.error("Failed to send digest email for %s: %s", user.email, exc)
+            logger.error(
+                "Failed to dispatch digest email group of %s recipients: %s",
+                len(batch),
+                exc,
+            )
 
 
 from datetime import timedelta
