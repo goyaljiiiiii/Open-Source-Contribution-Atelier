@@ -16,6 +16,8 @@ Welcome to the official **ECSoC 2026** Contributor Leaderboard for **Open-Source
 
 | 1 | @Shalinihr1402 | 🥉 Bronze Contributor  | 1 | 25 | 2026-09-01 |
 
+| 1 | @nayanraj864-cmyk | 💎 Diamond Contributor ⚡ | 12 | 300 | 2026-09-02 |
+
 ---
 
 ## 🎖️ Contributor Tiers & Badging System
