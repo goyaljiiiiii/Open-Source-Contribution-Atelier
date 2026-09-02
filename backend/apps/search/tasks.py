@@ -5,7 +5,7 @@ from django.contrib.postgres.search import SearchVector
 
 from .meili_client import get_meili_index
 from .models import SearchDocument
-from .utils import bump_search_cache_version
+from .utils import bump_search_cache_version, sanitize_index_text
 
 logger = logging.getLogger(__name__)
 
@@ -33,15 +33,20 @@ def index_model_for_search(
     except ContentType.DoesNotExist:
         return
 
+    sanitized_title = sanitize_index_text(title) or title
+    sanitized_description = sanitize_index_text(description)
+    sanitized_tags = sanitize_index_text(tags)
+    sanitized_body = sanitize_index_text(body_text)
+
     # Update or create the search document
     doc, created = SearchDocument.objects.update_or_create(
         content_type=content_type,
         object_id=object_id,
         defaults={
-            "title": title,
-            "description": description,
-            "tags": tags,
-            "body_text": body_text,
+            "title": sanitized_title,
+            "description": sanitized_description,
+            "tags": sanitized_tags,
+            "body_text": sanitized_body,
             # Denormalize the content type name for fast API-level filtering
             "content_type_name": model_name,
         },

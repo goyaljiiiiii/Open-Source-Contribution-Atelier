@@ -19,3 +19,27 @@ def bump_search_cache_version():
         cache.incr("search_api_version")
     except ValueError:
         cache.set("search_api_version", 1)
+
+import re
+
+STOP_WORDS = {
+    "a", "an", "the", "and", "or", "in", "on", "at", "to", "for",
+    "of", "with", "by", "is", "it", "this", "that", "are", "be", "as",
+    "from", "into", "over", "after", "about", "your", "my", "our", "all",
+    "how", "what", "where", "when", "why", "who", "which"
+}
+
+
+def sanitize_index_text(text: str) -> str:
+    """
+    Sanitizes search index text by stripping non-alphanumeric code symbols,
+    filtering out common stop words, and normalizing whitespace.
+    """
+    if not text:
+        return ""
+    # Strip non-alphanumeric code symbols (replace with space to prevent concatenating words)
+    cleaned = re.sub(r"[^\w\s]", " ", str(text))
+    # Split into words and filter out stop words (case-insensitive)
+    words = [word for word in cleaned.split() if word.lower() not in STOP_WORDS]
+    # Normalize whitespace
+    return " ".join(words)
