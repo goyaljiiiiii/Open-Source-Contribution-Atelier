@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useOnlineStatus } from "../../hooks/useOnlineStatus";
+import { useOnlineStatus } from "../hooks/useOnlineStatus";
 import { WifiOff, CheckCircle2, X } from "lucide-react";
 
 export function OfflineBanner() {
