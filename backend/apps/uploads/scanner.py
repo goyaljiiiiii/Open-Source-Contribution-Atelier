@@ -54,7 +54,9 @@ def scan_file(file_path: str) -> ScanResult:
     source = Path(file_path)
     temp_path = _tmp_upload_path(source.name)
     timeout = int(getattr(settings, "UPLOAD_SCAN_TIMEOUT", 15))
-    command = tuple(getattr(settings, "CLAMAV_SCAN_COMMAND", ("clamscan", "--no-summary")))
+    command = tuple(
+        getattr(settings, "CLAMAV_SCAN_COMMAND", ("clamscan", "--no-summary"))
+    )
 
     try:
         shutil.copy2(source, temp_path)

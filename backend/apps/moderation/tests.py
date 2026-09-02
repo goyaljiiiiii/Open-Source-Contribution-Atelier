@@ -238,4 +238,3 @@ class ModerationWorkflowTests(TestCase):
                 target_user=None,
                 status_after="APPROVED",
             )
-

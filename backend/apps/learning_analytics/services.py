@@ -65,7 +65,8 @@ def _award_step_xp(step):
     # Attach skill tag if present
     if step.skill_tag:
         session.skill_tags.create(
-            skill_tag=step.skill_tag, confidence=1.0,
+            skill_tag=step.skill_tag,
+            confidence=1.0,
         )
 
     compute_daily_metrics(user, today)

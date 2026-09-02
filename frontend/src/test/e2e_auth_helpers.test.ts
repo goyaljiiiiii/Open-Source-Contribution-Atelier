@@ -21,9 +21,9 @@ describe("Playwright E2E auth parallel isolation helpers", () => {
   });
 
   it("mockLogin returns unique user and token and routes routes properly", async () => {
-    const routes: Record<string, Function> = {};
+    const routes: Record<string, (...args: any[]) => any> = {};
     const mockPage: any = {
-      route: vi.fn(async (pattern: string, handler: Function) => {
+      route: vi.fn(async (pattern: string, handler: (...args: any[]) => any) => {
         routes[pattern] = handler;
       }),
     };

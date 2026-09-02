@@ -88,9 +88,17 @@ api_v1_patterns = [
     path("api/project-health/", include("apps.project_health.urls")),
     path("api/security/", include("apps.security.urls")),
     path("api/flashcards/", include("apps.flashcards.urls", namespace="flashcards")),
-    path("api/learning-analytics/", include("apps.learning_analytics.urls", namespace="learning_analytics")),
-    path("api/learning-journal/", include("apps.learning_journal.urls", namespace="learning_journal")),
-    path("api/study-groups/", include("apps.study_groups.urls", namespace="study_groups")),
+    path(
+        "api/learning-analytics/",
+        include("apps.learning_analytics.urls", namespace="learning_analytics"),
+    ),
+    path(
+        "api/learning-journal/",
+        include("apps.learning_journal.urls", namespace="learning_journal"),
+    ),
+    path(
+        "api/study-groups/", include("apps.study_groups.urls", namespace="study_groups")
+    ),
     path("api/mentorship/", include("apps.mentorship.urls", namespace="mentorship")),
     # ── Plugins ────────────────────────────────────────────────────────────────
     path("api/plugins/", include("apps.plugins.urls")),

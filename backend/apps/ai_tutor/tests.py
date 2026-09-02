@@ -116,8 +116,12 @@ class AiTutorTests(TestCase):
         from django.core.cache import cache
 
         cache.clear()
-        dummy_stream = (x for x in ["data: {\"text\": \"answer\"}\n\n"])
-        with patch.object(AiTutorService, "get_streaming_response", side_effect=lambda *a, **k: (x for x in ["data: {\"text\": \"answer\"}\n\n"])):
+        dummy_stream = (x for x in ['data: {"text": "answer"}\n\n'])
+        with patch.object(
+            AiTutorService,
+            "get_streaming_response",
+            side_effect=lambda *a, **k: (x for x in ['data: {"text": "answer"}\n\n']),
+        ):
             first = self.client.post("/api/ai/tutor/ask/", {"question": "First?"})
             second = self.client.post("/api/ai/tutor/ask/", {"question": "Second?"})
             third = self.client.post("/api/ai/tutor/ask/", {"question": "Third?"})
@@ -125,4 +129,3 @@ class AiTutorTests(TestCase):
         self.assertEqual(first.status_code, status.HTTP_200_OK)
         self.assertEqual(second.status_code, status.HTTP_200_OK)
         self.assertEqual(third.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
-

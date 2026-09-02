@@ -24,13 +24,12 @@ from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.core.permissions import IsMentor
-from apps.core.utils import parse_iso_datetime
 from apps.accounts.models import UserProfile
 from apps.content.models import Lesson
 from apps.content.serializers import LessonSerializer
 from apps.core.permissions import IsMentor
 from apps.core.throttling import SlidingWindowAnonThrottle, SlidingWindowScopedThrottle
+from apps.core.utils import parse_iso_datetime
 from apps.deduplication.idempotency import idempotent
 from apps.progress.constants import XP_PER_LEVEL
 from apps.progress.models import XPEvent

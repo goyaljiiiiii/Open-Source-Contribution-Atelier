@@ -214,9 +214,8 @@ def send_notification_digests():
     """
     import zoneinfo
 
-    from django.utils import timezone
-
     from celery import group
+    from django.utils import timezone
 
     from .models import Notification, NotificationPreference
 
@@ -533,4 +532,3 @@ def deliver_webhook_event(self, url: str, payload: dict, secret: str):
         )
         # Re-raise error to propagate structural Celery autoretry handlers cleanly
         raise exc
-

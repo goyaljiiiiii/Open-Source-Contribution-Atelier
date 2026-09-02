@@ -363,9 +363,13 @@ class LearningPathListView(generics.ListAPIView):
 
     def get_queryset(self):
         status_filter = self.request.query_params.get("status")
-        qs = LearningPath.objects.filter(
-            user=self.request.user,
-        ).select_related().order_by("-priority_score")
+        qs = (
+            LearningPath.objects.filter(
+                user=self.request.user,
+            )
+            .select_related()
+            .order_by("-priority_score")
+        )
         if status_filter:
             qs = qs.filter(status=status_filter)
         return qs
@@ -416,9 +420,7 @@ class LearningPathStepCompleteView(views.APIView):
         step_id = serializer.validated_data["step_id"]
 
         try:
-            step = LearningPathStep.objects.select_related(
-                "path"
-            ).get(
+            step = LearningPathStep.objects.select_related("path").get(
                 id=step_id,
                 path__user=request.user,
             )
@@ -459,9 +461,7 @@ class LearningPathStepStartView(views.APIView):
         step_id = serializer.validated_data["step_id"]
 
         try:
-            step = LearningPathStep.objects.select_related(
-                "path"
-            ).get(
+            step = LearningPathStep.objects.select_related("path").get(
                 id=step_id,
                 path__user=request.user,
             )
@@ -486,9 +486,7 @@ class LearningPathStepSkipView(views.APIView):
         step_id = serializer.validated_data["step_id"]
 
         try:
-            step = LearningPathStep.objects.select_related(
-                "path"
-            ).get(
+            step = LearningPathStep.objects.select_related("path").get(
                 id=step_id,
                 path__user=request.user,
             )
@@ -510,7 +508,8 @@ class LearningPathDeleteView(views.APIView):
     def delete(self, request, path_id):
         try:
             path = LearningPath.objects.get(
-                id=path_id, user=request.user,
+                id=path_id,
+                user=request.user,
             )
         except LearningPath.DoesNotExist:
             return Response(

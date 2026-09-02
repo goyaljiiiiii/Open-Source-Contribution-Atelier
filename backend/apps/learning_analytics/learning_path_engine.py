@@ -90,13 +90,15 @@ def generate_learning_paths(user, force: bool = False) -> list[dict[str, Any]]:
 
     for plan in planned:
         path = _persist_path(user, plan, now)
-        created.append({
-            "path_id": path.id,
-            "title": path.title,
-            "priority_score": path.priority_score,
-            "total_steps": path.total_steps,
-            "difficulty": path.difficulty,
-        })
+        created.append(
+            {
+                "path_id": path.id,
+                "title": path.title,
+                "priority_score": path.priority_score,
+                "total_steps": path.total_steps,
+                "difficulty": path.difficulty,
+            }
+        )
 
     # Phase 4 — Update progress snapshot
     _update_progress_snapshot(user, now)
@@ -116,30 +118,32 @@ def get_path_recommendations(user) -> list[dict[str, Any]]:
     results = []
     for path in paths:
         next_step = (
-            path.steps.filter(status="not_started")
-            .order_by("step_number")
-            .first()
+            path.steps.filter(status="not_started").order_by("step_number").first()
         )
-        results.append({
-            "path_id": path.id,
-            "title": path.title,
-            "description": path.description,
-            "difficulty": path.difficulty,
-            "priority_score": path.priority_score,
-            "progress_pct": path.progress_pct,
-            "total_steps": path.total_steps,
-            "completed_steps": path.completed_steps,
-            "estimated_minutes": path.estimated_minutes,
-            "xp_reward": path.xp_reward,
-            "next_step": {
-                "step_id": next_step.id,
-                "title": next_step.title,
-                "step_type": next_step.step_type,
-                "estimated_minutes": next_step.estimated_minutes,
+        results.append(
+            {
+                "path_id": path.id,
+                "title": path.title,
+                "description": path.description,
+                "difficulty": path.difficulty,
+                "priority_score": path.priority_score,
+                "progress_pct": path.progress_pct,
+                "total_steps": path.total_steps,
+                "completed_steps": path.completed_steps,
+                "estimated_minutes": path.estimated_minutes,
+                "xp_reward": path.xp_reward,
+                "next_step": (
+                    {
+                        "step_id": next_step.id,
+                        "title": next_step.title,
+                        "step_type": next_step.step_type,
+                        "estimated_minutes": next_step.estimated_minutes,
+                    }
+                    if next_step
+                    else None
+                ),
             }
-            if next_step
-            else None,
-        })
+        )
 
     return results
 
@@ -197,8 +201,7 @@ def _analyse_user(user, now: timezone.datetime) -> dict[str, Any]:
 
     # Skill levels
     skill_profiles = list(
-        UserSkillProfile.objects.filter(user=user)
-        .select_related("skill_tag")
+        UserSkillProfile.objects.filter(user=user).select_related("skill_tag")
     )
 
     skill_levels = {}
@@ -210,22 +213,28 @@ def _analyse_user(user, now: timezone.datetime) -> dict[str, Any]:
         tag_name = sp.skill_tag.name
         skill_levels[tag_name] = sp.level
         if sp.level < 30:
-            weak_skills.append({
-                "tag": sp.skill_tag,
-                "level": sp.level,
-                "trend": sp.trend,
-            })
+            weak_skills.append(
+                {
+                    "tag": sp.skill_tag,
+                    "level": sp.level,
+                    "trend": sp.trend,
+                }
+            )
         elif sp.level >= 60:
-            strong_skills.append({
-                "tag": sp.skill_tag,
-                "level": sp.level,
-                "trend": sp.trend,
-            })
+            strong_skills.append(
+                {
+                    "tag": sp.skill_tag,
+                    "level": sp.level,
+                    "trend": sp.trend,
+                }
+            )
         if sp.trend == "declining":
-            declining_skills.append({
-                "tag": sp.skill_tag,
-                "level": sp.level,
-            })
+            declining_skills.append(
+                {
+                    "tag": sp.skill_tag,
+                    "level": sp.level,
+                }
+            )
 
     # Recent sessions (last 14 days)
     two_weeks_ago = now - timedelta(days=14)
@@ -240,11 +249,9 @@ def _analyse_user(user, now: timezone.datetime) -> dict[str, Any]:
         activity_counts[s.activity_type] += 1
         total_minutes += s.duration_seconds // 60
 
-    avg_quiz_score = (
-        recent_sessions.filter(
-            activity_type="quiz", score__isnull=False
-        ).aggregate(avg=Sum("score"))
-    )
+    avg_quiz_score = recent_sessions.filter(
+        activity_type="quiz", score__isnull=False
+    ).aggregate(avg=Sum("score"))
 
     # Active goals
     from .models import LearningGoal
@@ -329,24 +336,26 @@ def _plan_skill_gap_path(
     steps = []
     for i, skill in enumerate(weak):
         estimated_mins = max(10, 30 - skill["level"] // 3)
-        steps.append({
-            "step_number": i + 1,
-            "title": f"Build {skill['tag'].name} fundamentals",
-            "description": (
-                f"Your {skill['tag'].name} level is {skill['level']}/100. "
-                f"Regular practice will close this gap."
-            ),
-            "step_type": "exercise",
-            "activity_type": "exercise",
-            "skill_tag": skill["tag"],
-            "estimated_minutes": estimated_mins,
-            "xp_reward": 20 + skill["level"],
-            "is_milestone": i == len(weak) - 1,
-            "reasoning": (
-                f"Skill gap detected: {skill['tag'].name} at level "
-                f"{skill['level']}/100"
-            ),
-        })
+        steps.append(
+            {
+                "step_number": i + 1,
+                "title": f"Build {skill['tag'].name} fundamentals",
+                "description": (
+                    f"Your {skill['tag'].name} level is {skill['level']}/100. "
+                    f"Regular practice will close this gap."
+                ),
+                "step_type": "exercise",
+                "activity_type": "exercise",
+                "skill_tag": skill["tag"],
+                "estimated_minutes": estimated_mins,
+                "xp_reward": 20 + skill["level"],
+                "is_milestone": i == len(weak) - 1,
+                "reasoning": (
+                    f"Skill gap detected: {skill['tag'].name} at level "
+                    f"{skill['level']}/100"
+                ),
+            }
+        )
 
     total_minutes = sum(s["estimated_minutes"] for s in steps)
     priority = _compute_priority(profile, "gap", weak)
@@ -378,32 +387,32 @@ def _plan_recovery_path(
     declining = profile["declining_skills"][:2]
     steps = []
     for i, skill in enumerate(declining):
-        steps.append({
-            "step_number": i + 1,
-            "title": f"Revisit {skill['tag'].name} review",
-            "description": (
-                f"Your {skill['tag'].name} skill is declining. "
-                f"Consistent review will reverse the trend."
-            ),
-            "step_type": "review",
-            "activity_type": "lesson",
-            "skill_tag": skill["tag"],
-            "estimated_minutes": 20,
-            "xp_reward": 25,
-            "is_milestone": i == len(declining) - 1,
-            "reasoning": (
-                f"Declining skill detected: {skill['tag'].name} "
-                f"(level {skill['level']}/100, trend: declining)"
-            ),
-        })
+        steps.append(
+            {
+                "step_number": i + 1,
+                "title": f"Revisit {skill['tag'].name} review",
+                "description": (
+                    f"Your {skill['tag'].name} skill is declining. "
+                    f"Consistent review will reverse the trend."
+                ),
+                "step_type": "review",
+                "activity_type": "lesson",
+                "skill_tag": skill["tag"],
+                "estimated_minutes": 20,
+                "xp_reward": 25,
+                "is_milestone": i == len(declining) - 1,
+                "reasoning": (
+                    f"Declining skill detected: {skill['tag'].name} "
+                    f"(level {skill['level']}/100, trend: declining)"
+                ),
+            }
+        )
 
     priority = _compute_priority(profile, "recovery", declining)
 
     return {
         "title": "Skill Maintenance & Recovery",
-        "description": (
-            "Reverse declining skills with targeted review sessions."
-        ),
+        "description": ("Reverse declining skills with targeted review sessions."),
         "difficulty": "intermediate",
         "target_skills": [s["tag"] for s in declining],
         "estimated_minutes": sum(s["estimated_minutes"] for s in steps),
@@ -428,37 +437,34 @@ def _plan_goal_path(
     for i, goal in enumerate(goals[:3]):
         tag = goal.skill_tag
         step_type = "challenge" if goal.goal_type == "xp_target" else "lesson"
-        steps.append({
-            "step_number": i + 1,
-            "title": f"Push towards: {goal.title}",
-            "description": (
-                f"Goal progress: {goal.current_value}/{goal.target_value} "
-                f"({goal.progress_pct}%). Keep going!"
-            ),
-            "step_type": step_type,
-            "activity_type": "challenge" if step_type == "challenge" else "lesson",
-            "skill_tag": tag,
-            "estimated_minutes": 25,
-            "xp_reward": 30,
-            "is_milestone": i == len(goals) - 1,
-            "reasoning": (
-                f"Active goal: {goal.title} — "
-                f"{goal.progress_pct}% complete"
-            ),
-        })
+        steps.append(
+            {
+                "step_number": i + 1,
+                "title": f"Push towards: {goal.title}",
+                "description": (
+                    f"Goal progress: {goal.current_value}/{goal.target_value} "
+                    f"({goal.progress_pct}%). Keep going!"
+                ),
+                "step_type": step_type,
+                "activity_type": "challenge" if step_type == "challenge" else "lesson",
+                "skill_tag": tag,
+                "estimated_minutes": 25,
+                "xp_reward": 30,
+                "is_milestone": i == len(goals) - 1,
+                "reasoning": (
+                    f"Active goal: {goal.title} — " f"{goal.progress_pct}% complete"
+                ),
+            }
+        )
 
     total_minutes = sum(s["estimated_minutes"] for s in steps)
     priority = 50 + max(g.progress_pct for g in goals) / 2
 
     return {
         "title": "Goal Sprint",
-        "description": (
-            "A focused sprint to make progress on your active goals."
-        ),
+        "description": ("A focused sprint to make progress on your active goals."),
         "difficulty": "intermediate",
-        "target_skills": [
-            g.skill_tag for g in goals if g.skill_tag
-        ],
+        "target_skills": [g.skill_tag for g in goals if g.skill_tag],
         "estimated_minutes": total_minutes,
         "priority_score": min(priority, 95),
         "steps": steps,
@@ -495,29 +501,27 @@ def _plan_diversity_path(
         "peer_review": "👀 Do a peer review",
     }
     for i, atype in enumerate(missing_types[:3]):
-        steps.append({
-            "step_number": i + 1,
-            "title": type_labels.get(atype, f"Try {atype}"),
-            "description": (
-                f"You haven't tried {atype} yet. "
-                f"Diversifying your learning improves retention."
-            ),
-            "step_type": "exercise",
-            "activity_type": atype,
-            "skill_tag": None,
-            "estimated_minutes": 15,
-            "xp_reward": 15,
-            "is_milestone": i == len(missing_types) - 1,
-            "reasoning": (
-                f"No {atype} activity detected in recent sessions"
-            ),
-        })
+        steps.append(
+            {
+                "step_number": i + 1,
+                "title": type_labels.get(atype, f"Try {atype}"),
+                "description": (
+                    f"You haven't tried {atype} yet. "
+                    f"Diversifying your learning improves retention."
+                ),
+                "step_type": "exercise",
+                "activity_type": atype,
+                "skill_tag": None,
+                "estimated_minutes": 15,
+                "xp_reward": 15,
+                "is_milestone": i == len(missing_types) - 1,
+                "reasoning": (f"No {atype} activity detected in recent sessions"),
+            }
+        )
 
     return {
         "title": "Activity Diversification",
-        "description": (
-            "Explore new types of activities to broaden your learning."
-        ),
+        "description": ("Explore new types of activities to broaden your learning."),
         "difficulty": "beginner",
         "target_skills": [],
         "estimated_minutes": sum(s["estimated_minutes"] for s in steps),
@@ -545,23 +549,25 @@ def _plan_challenge_path(
 
     steps = []
     for i, skill in enumerate(strong):
-        steps.append({
-            "step_number": i + 1,
-            "title": f"Advanced challenge: {skill['tag'].name}",
-            "description": (
-                f"You're at level {skill['level']} in {skill['tag'].name}. "
-                f"Time for a harder challenge!"
-            ),
-            "step_type": "challenge",
-            "activity_type": "challenge",
-            "skill_tag": skill["tag"],
-            "estimated_minutes": 30,
-            "xp_reward": 40,
-            "is_milestone": i == len(strong) - 1,
-            "reasoning": (
-                f"Strong skill — challenge at level {skill['level']}/100"
-            ),
-        })
+        steps.append(
+            {
+                "step_number": i + 1,
+                "title": f"Advanced challenge: {skill['tag'].name}",
+                "description": (
+                    f"You're at level {skill['level']} in {skill['tag'].name}. "
+                    f"Time for a harder challenge!"
+                ),
+                "step_type": "challenge",
+                "activity_type": "challenge",
+                "skill_tag": skill["tag"],
+                "estimated_minutes": 30,
+                "xp_reward": 40,
+                "is_milestone": i == len(strong) - 1,
+                "reasoning": (
+                    f"Strong skill — challenge at level {skill['level']}/100"
+                ),
+            }
+        )
 
     priority = 25 + strong[0]["level"] / 4
 
@@ -635,9 +641,7 @@ def _persist_path(user, plan: dict, now: timezone.datetime):
 # ---------------------------------------------------------------------------
 
 
-def _compute_priority(
-    profile: dict, strategy: str, target_skills: list[dict]
-) -> float:
+def _compute_priority(profile: dict, strategy: str, target_skills: list[dict]) -> float:
     """Compute a 0-100 priority score for a path plan."""
     base_score = 50.0
 
@@ -650,9 +654,7 @@ def _compute_priority(
     gap_score = max(0, 100 - avg_level) * _SKILL_GAP_WEIGHT
 
     # Trend bonus
-    declining_count = sum(
-        1 for s in target_skills if s.get("trend") == "declining"
-    )
+    declining_count = sum(1 for s in target_skills if s.get("trend") == "declining")
     trend_score = declining_count * 15 * _TREND_WEIGHT
 
     # Velocity factor
@@ -675,9 +677,7 @@ def _get_daily_velocity(user) -> float:
     from .models import UserPathProgress
 
     two_weeks = timezone.now().date() - timedelta(days=14)
-    snapshots = UserPathProgress.objects.filter(
-        user=user, date__gte=two_weeks
-    )
+    snapshots = UserPathProgress.objects.filter(user=user, date__gte=two_weeks)
     total_steps = sum(s.steps_completed_today for s in snapshots)
     return total_steps / 14.0
 
@@ -705,17 +705,23 @@ def _update_progress_snapshot(user, now: timezone.datetime):
         completed_at__gte=today_start,
     ).count()
 
-    xp_today = LearningPathStep.objects.filter(
-        path__user=user,
-        status=LearningPathStep.StepStatus.COMPLETED,
-        completed_at__gte=today_start,
-    ).aggregate(total=Sum("xp_reward"))["total"] or 0
+    xp_today = (
+        LearningPathStep.objects.filter(
+            path__user=user,
+            status=LearningPathStep.StepStatus.COMPLETED,
+            completed_at__gte=today_start,
+        ).aggregate(total=Sum("xp_reward"))["total"]
+        or 0
+    )
 
-    minutes_today = LearningPathStep.objects.filter(
-        path__user=user,
-        status=LearningPathStep.StepStatus.COMPLETED,
-        completed_at__gte=today_start,
-    ).aggregate(total=Sum("estimated_minutes"))["total"] or 0
+    minutes_today = (
+        LearningPathStep.objects.filter(
+            path__user=user,
+            status=LearningPathStep.StepStatus.COMPLETED,
+            completed_at__gte=today_start,
+        ).aggregate(total=Sum("estimated_minutes"))["total"]
+        or 0
+    )
 
     UserPathProgress.objects.update_or_create(
         user=user,

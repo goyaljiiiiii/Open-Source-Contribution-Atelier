@@ -5,8 +5,8 @@ from apps.challenges.models import Challenge, ChallengeCompletion, ChallengeOfTh
 from apps.challenges.services import (
     BASE_MULTIPLIER,
     STREAK_MULTIPLIER_THRESHOLD_DAYS,
-    calculate_daily_challenge_xp,
     _streak_multiplier_for_days,
+    calculate_daily_challenge_xp,
 )
 from apps.progress.models import StreakProfile
 
@@ -16,7 +16,10 @@ User = get_user_model()
 @pytest.mark.django_db
 class TestStreakMultiplierLookup:
     def test_streak_at_or_below_threshold_uses_base_multiplier(self):
-        assert _streak_multiplier_for_days(STREAK_MULTIPLIER_THRESHOLD_DAYS) == BASE_MULTIPLIER
+        assert (
+            _streak_multiplier_for_days(STREAK_MULTIPLIER_THRESHOLD_DAYS)
+            == BASE_MULTIPLIER
+        )
         assert _streak_multiplier_for_days(1) == BASE_MULTIPLIER
         assert _streak_multiplier_for_days(0) == BASE_MULTIPLIER
 
@@ -106,5 +109,7 @@ class TestCompleteChallengeOfTheDayMultiplier:
 
         assert response.status_code == 201
         assert response.data["bonus_earned"] == 60
-        completion = ChallengeCompletion.objects.get(user=self.user, challenge=challenge)
+        completion = ChallengeCompletion.objects.get(
+            user=self.user, challenge=challenge
+        )
         assert completion.bonus_earned == 60

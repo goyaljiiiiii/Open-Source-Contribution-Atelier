@@ -458,7 +458,8 @@ class LearningPath(models.Model):
     def advance_step(self):
         """Increment completed steps and refresh the progress."""
         self.completed_steps = min(
-            self.completed_steps + 1, self.total_steps,
+            self.completed_steps + 1,
+            self.total_steps,
         )
         if self.is_fully_completed:
             self.status = self.PathStatus.COMPLETED
@@ -540,8 +541,7 @@ class LearningPathStep(models.Model):
         default=10,
         help_text="XP awarded on step completion.",
     )
-    is_milestone = models.BooleanField(
-        default=False)
+    is_milestone = models.BooleanField(default=False)
     reasoning = models.TextField(
         blank=True,
         help_text="Why the engine chose this step.",
@@ -565,10 +565,7 @@ class LearningPathStep(models.Model):
         ]
 
     def __str__(self):
-        return (
-            f"Step {self.step_number}: {self.title} "
-            f"[{self.status}]"
-        )
+        return f"Step {self.step_number}: {self.title} " f"[{self.status}]"
 
     def mark_started(self):
         self.status = self.StepStatus.IN_PROGRESS
@@ -583,6 +580,7 @@ class LearningPathStep(models.Model):
         self.path.advance_step()
         # Award XP to the user
         from .services import _award_step_xp
+
         _award_step_xp(self)
 
     def mark_skipped(self):

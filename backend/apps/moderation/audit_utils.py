@@ -63,4 +63,3 @@ def log_moderation_action(
         reason=reason,
         event_type=event_type,
     )
-

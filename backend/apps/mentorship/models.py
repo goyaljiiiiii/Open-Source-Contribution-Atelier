@@ -425,7 +425,9 @@ class MentorshipSession(models.Model):
         match.save(update_fields=["total_sessions", "total_hours"])
 
         # Update mentor profile
-        profile = getattr(match.mentor, "mentorship_mentor_profile", None) or getattr(match.mentor, "mentor_profile", None)
+        profile = getattr(match.mentor, "mentorship_mentor_profile", None) or getattr(
+            match.mentor, "mentor_profile", None
+        )
         if profile and hasattr(profile, "recalculate_stats"):
             profile.recalculate_stats()
 

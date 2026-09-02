@@ -52,4 +52,3 @@ class TutorAskView(APIView):
             stream_generator,
             content_type="text/event-stream",
         )
-

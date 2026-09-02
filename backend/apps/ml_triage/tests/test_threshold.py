@@ -33,7 +33,9 @@ def test_threshold_rejects_out_of_range_values(value):
     )
 
     assert response.status_code == 400
-    assert "threshold" in response.data or "threshold" in response.data.get("errors", {})
+    assert "threshold" in response.data or "threshold" in response.data.get(
+        "errors", {}
+    )
 
 
 @pytest.mark.django_db

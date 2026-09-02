@@ -107,7 +107,6 @@ class ModerationAuditEvent(models.Model):
         related_name="targeted_moderation_audit_events",
     )
 
-
     status_before = models.CharField(max_length=20, null=True, blank=True)
     status_after = models.CharField(max_length=20)
 

@@ -20,13 +20,46 @@ def bump_search_cache_version():
     except ValueError:
         cache.set("search_api_version", 1)
 
+
 import re
 
 STOP_WORDS = {
-    "a", "an", "the", "and", "or", "in", "on", "at", "to", "for",
-    "of", "with", "by", "is", "it", "this", "that", "are", "be", "as",
-    "from", "into", "over", "after", "about", "your", "my", "our", "all",
-    "how", "what", "where", "when", "why", "who", "which"
+    "a",
+    "an",
+    "the",
+    "and",
+    "or",
+    "in",
+    "on",
+    "at",
+    "to",
+    "for",
+    "of",
+    "with",
+    "by",
+    "is",
+    "it",
+    "this",
+    "that",
+    "are",
+    "be",
+    "as",
+    "from",
+    "into",
+    "over",
+    "after",
+    "about",
+    "your",
+    "my",
+    "our",
+    "all",
+    "how",
+    "what",
+    "where",
+    "when",
+    "why",
+    "who",
+    "which",
 }
 
 

@@ -144,6 +144,7 @@ def test_personal_stats_endpoint_query_budget_is_bounded(
       1. leaderboard rank (correlated subqueries)
     """
     from django.core.cache import cache
+
     from apps.predictions.ml_engine import PRReviewDelayPredictor
 
     cache.clear()

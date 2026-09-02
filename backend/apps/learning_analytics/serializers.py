@@ -346,6 +346,7 @@ class LearningPathSerializer(serializers.ModelSerializer):
 
 class LearningPathListSerializer(serializers.ModelSerializer):
     """Lightweight list serializer (no steps embedded)."""
+
     progress_pct = serializers.IntegerField(read_only=True)
     next_step = serializers.SerializerMethodField()
 
@@ -367,11 +368,7 @@ class LearningPathListSerializer(serializers.ModelSerializer):
         ]
 
     def get_next_step(self, obj):
-        ns = (
-            obj.steps.filter(status="not_started")
-            .order_by("step_number")
-            .first()
-        )
+        ns = obj.steps.filter(status="not_started").order_by("step_number").first()
         if ns is None:
             return None
         return {
@@ -384,11 +381,13 @@ class LearningPathListSerializer(serializers.ModelSerializer):
 
 class PathGenerateSerializer(serializers.Serializer):
     """Validates the path generation request body."""
+
     force = serializers.BooleanField(default=False)
 
 
 class StepCompleteSerializer(serializers.Serializer):
     """Validates the step-completion request body."""
+
     step_id = serializers.IntegerField()
 
 

@@ -49,7 +49,11 @@ class OrganizationViewSetTests(APITestCase):
         self.client.force_authenticate(user=self.member)
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        results = response.data.get("results", response.data) if isinstance(response.data, dict) else response.data
+        results = (
+            response.data.get("results", response.data)
+            if isinstance(response.data, dict)
+            else response.data
+        )
         returned_ids = {org["id"] for org in results}
         self.assertIn(self.org.id, returned_ids)
         self.assertNotIn(other_org.id, returned_ids)
@@ -57,7 +61,11 @@ class OrganizationViewSetTests(APITestCase):
     def test_outsider_cannot_see_org_in_list(self):
         self.client.force_authenticate(user=self.outsider)
         response = self.client.get(self.list_url)
-        results = response.data.get("results", response.data) if isinstance(response.data, dict) else response.data
+        results = (
+            response.data.get("results", response.data)
+            if isinstance(response.data, dict)
+            else response.data
+        )
         self.assertEqual(len(results), 0)
 
     # -------------------------------------------------------------- create

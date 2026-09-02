@@ -89,4 +89,3 @@ class ContentReportActionView(APIView):
             return Response(ContentReportSerializer(report).data)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-

@@ -14,7 +14,10 @@ def test_editing_peer_review_does_not_duplicate_xp():
     reviewer = User.objects.create_user(username="reviewer_user", password="password")
 
     submission = CodeSubmission.objects.create(
-        user=author, title="Test Submission", code_snippet="print('hello')", status="pending_review"
+        user=author,
+        title="Test Submission",
+        code_snippet="print('hello')",
+        status="pending_review",
     )
     submission.assigned_reviewers.add(reviewer)
 

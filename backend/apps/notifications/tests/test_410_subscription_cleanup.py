@@ -893,7 +893,9 @@ def test_410_cleanup_does_not_call_delete_for_success(vapid_settings):
         return real_delete(self, *args, **kwargs)
 
     with patch("apps.notifications.tasks.webpush", return_value=None):
-        with patch.object(PushSubscription, "delete", side_effect=mock_delete, autospec=True):
+        with patch.object(
+            PushSubscription, "delete", side_effect=mock_delete, autospec=True
+        ):
             run_push(user.id)
 
     assert len(deleted) == 0
@@ -916,7 +918,9 @@ def test_410_cleanup_calls_delete_for_terminal_response(vapid_settings):
         "apps.notifications.tasks.webpush",
         side_effect=web_push_exception(410),
     ):
-        with patch.object(PushSubscription, "delete", side_effect=mock_delete, autospec=True):
+        with patch.object(
+            PushSubscription, "delete", side_effect=mock_delete, autospec=True
+        ):
             run_push(user.id)
 
     assert len(deleted) == 1

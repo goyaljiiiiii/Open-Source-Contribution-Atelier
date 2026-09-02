@@ -119,7 +119,9 @@ class AiTutorService:
                 ]
 
                 for entry in (history or [])[-6:]:
-                    messages.append({"role": "user", "content": entry.get("question", "")})
+                    messages.append(
+                        {"role": "user", "content": entry.get("question", "")}
+                    )
                     messages.append(
                         {"role": "assistant", "content": entry.get("answer", "")}
                     )

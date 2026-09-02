@@ -24,7 +24,6 @@ from apps.learning_analytics.models import (
     UserSkillProfile,
 )
 
-
 # ---------------------------------------------------------------------------
 # Model Tests
 # ---------------------------------------------------------------------------
@@ -37,9 +36,7 @@ class LearningPathModelTest(TestCase):
         self.user = User.objects.create_user(
             username="testuser", password="testpass123"
         )
-        self.tag = SkillTag.objects.create(
-            name="Python", slug="python"
-        )
+        self.tag = SkillTag.objects.create(name="Python", slug="python")
 
     def test_create_path(self):
         path = LearningPath.objects.create(
@@ -147,9 +144,7 @@ class LearningPathStepModelTest(TestCase):
         self.user = User.objects.create_user(
             username="testuser", password="testpass123"
         )
-        self.tag = SkillTag.objects.create(
-            name="React", slug="react"
-        )
+        self.tag = SkillTag.objects.create(name="React", slug="react")
         self.path = LearningPath.objects.create(
             user=self.user,
             title="React Learning",
@@ -284,12 +279,8 @@ class LearningPathEngineTest(TestCase):
         self.user = User.objects.create_user(
             username="testuser", password="testpass123"
         )
-        self.tag_weak = SkillTag.objects.create(
-            name="Docker", slug="docker"
-        )
-        self.tag_strong = SkillTag.objects.create(
-            name="Python", slug="python"
-        )
+        self.tag_weak = SkillTag.objects.create(name="Docker", slug="docker")
+        self.tag_strong = SkillTag.objects.create(name="Python", slug="python")
 
     def test_generate_paths_empty_user(self):
         """New user with no data should still produce paths."""
@@ -494,9 +485,7 @@ class LearningPathListViewTest(BasePathViewTest):
         self.client.force_authenticate(user=None)
         url = reverse("learning_analytics:path-list")
         response = self.client.get(url)
-        self.assertEqual(
-            response.status_code, status.HTTP_401_UNAUTHORIZED
-        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_does_not_show_other_users(self):
         LearningPath.objects.create(
@@ -513,9 +502,7 @@ class LearningPathDetailViewTest(BasePathViewTest):
     """Tests for LearningPathDetailView."""
 
     def test_retrieve_path(self):
-        url = reverse(
-            "learning_analytics:path-detail", args=[self.path.id]
-        )
+        url = reverse("learning_analytics:path-detail", args=[self.path.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["title"], "My Path")
@@ -524,9 +511,7 @@ class LearningPathDetailViewTest(BasePathViewTest):
     def test_not_found(self):
         url = reverse("learning_analytics:path-detail", args=[9999])
         response = self.client.get(url)
-        self.assertEqual(
-            response.status_code, status.HTTP_404_NOT_FOUND
-        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
 class LearningPathGenerateViewTest(BasePathViewTest):
@@ -535,20 +520,14 @@ class LearningPathGenerateViewTest(BasePathViewTest):
     def test_generate_paths(self):
         url = reverse("learning_analytics:path-generate")
         response = self.client.post(url, {}, format="json")
-        self.assertEqual(
-            response.status_code, status.HTTP_201_CREATED
-        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn("generated", response.data)
         self.assertIn("paths", response.data)
 
     def test_generate_with_force(self):
         url = reverse("learning_analytics:path-generate")
-        response = self.client.post(
-            url, {"force": True}, format="json"
-        )
-        self.assertEqual(
-            response.status_code, status.HTTP_201_CREATED
-        )
+        response = self.client.post(url, {"force": True}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
 
 class LearningPathStepCompleteViewTest(BasePathViewTest):
@@ -556,9 +535,7 @@ class LearningPathStepCompleteViewTest(BasePathViewTest):
 
     def test_complete_step(self):
         url = reverse("learning_analytics:path-step-complete")
-        response = self.client.post(
-            url, {"step_id": self.step1.id}, format="json"
-        )
+        response = self.client.post(url, {"step_id": self.step1.id}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["status"], "completed")
         self.assertEqual(response.data["xp_earned"], 15)
@@ -567,21 +544,13 @@ class LearningPathStepCompleteViewTest(BasePathViewTest):
         self.step1.status = "completed"
         self.step1.save()
         url = reverse("learning_analytics:path-step-complete")
-        response = self.client.post(
-            url, {"step_id": self.step1.id}, format="json"
-        )
-        self.assertEqual(
-            response.status_code, status.HTTP_400_BAD_REQUEST
-        )
+        response = self.client.post(url, {"step_id": self.step1.id}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_complete_nonexistent_step(self):
         url = reverse("learning_analytics:path-step-complete")
-        response = self.client.post(
-            url, {"step_id": 9999}, format="json"
-        )
-        self.assertEqual(
-            response.status_code, status.HTTP_404_NOT_FOUND
-        )
+        response = self.client.post(url, {"step_id": 9999}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
 class LearningPathStepStartViewTest(BasePathViewTest):
@@ -589,9 +558,7 @@ class LearningPathStepStartViewTest(BasePathViewTest):
 
     def test_start_step(self):
         url = reverse("learning_analytics:path-step-start")
-        response = self.client.post(
-            url, {"step_id": self.step1.id}, format="json"
-        )
+        response = self.client.post(url, {"step_id": self.step1.id}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["status"], "in_progress")
 
@@ -601,9 +568,7 @@ class LearningPathStepSkipViewTest(BasePathViewTest):
 
     def test_skip_step(self):
         url = reverse("learning_analytics:path-step-skip")
-        response = self.client.post(
-            url, {"step_id": self.step1.id}, format="json"
-        )
+        response = self.client.post(url, {"step_id": self.step1.id}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["status"], "skipped")
 
@@ -612,22 +577,16 @@ class LearningPathDeleteViewTest(BasePathViewTest):
     """Tests for LearningPathDeleteView."""
 
     def test_archive_path(self):
-        url = reverse(
-            "learning_analytics:path-archive", args=[self.path.id]
-        )
+        url = reverse("learning_analytics:path-archive", args=[self.path.id])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.path.refresh_from_db()
         self.assertEqual(self.path.status, "archived")
 
     def test_archive_nonexistent(self):
-        url = reverse(
-            "learning_analytics:path-archive", args=[9999]
-        )
+        url = reverse("learning_analytics:path-archive", args=[9999])
         response = self.client.delete(url)
-        self.assertEqual(
-            response.status_code, status.HTTP_404_NOT_FOUND
-        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
 class PathCompletionEstimateViewTest(BasePathViewTest):

@@ -1,6 +1,7 @@
 import pytest
-from apps.search.utils import sanitize_index_text
+
 from apps.search.indexer import sanitize_index_payload
+from apps.search.utils import sanitize_index_text
 
 
 def test_sanitize_index_text_strips_code_symbols():

@@ -43,7 +43,6 @@ class ModerationAuditTrailListView(generics.ListAPIView):
                 | Q(moderator__username__icontains=q)
             )
 
-
         from_str = self.request.query_params.get("from")
         to_str = self.request.query_params.get("to")
 
