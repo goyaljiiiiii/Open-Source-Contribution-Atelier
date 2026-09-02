@@ -92,4 +92,34 @@ describe("RichTextEditor Component", () => {
     expect(optionsJSON.toolbar).toContain("heading");
     expect(optionsJSON.toolbar).toContain("preview");
   });
+
+  it("renders a maximize button in the editor header bar", () => {
+    render(<RichTextEditor value="" onChange={() => {}} />);
+    const toggle = screen.getByRole("button", { name: "Maximize editor" });
+    expect(toggle).toBeInTheDocument();
+  });
+
+  it("toggles fullscreen overlay on maximize button click", () => {
+    render(<RichTextEditor value="" onChange={() => {}} />);
+    const wrapper = screen.getByTestId("rich-text-editor");
+
+    // Initially not fullscreen
+    expect(wrapper).not.toHaveClass("fixed");
+
+    const toggle = screen.getByRole("button", { name: "Maximize editor" });
+    fireEvent.click(toggle);
+
+    // After toggling, the wrapper becomes a full-viewport overlay
+    expect(wrapper).toHaveClass("fixed");
+    expect(wrapper).toHaveClass("inset-0");
+
+    // The button label flips to the exit variant
+    expect(
+      screen.getByRole("button", { name: "Exit fullscreen" }),
+    ).toBeInTheDocument();
+
+    // Toggle back
+    fireEvent.click(toggle);
+    expect(wrapper).not.toHaveClass("fixed");
+  });
 });
