@@ -10,6 +10,7 @@ import {
   XCircle,
   Users,
   Activity,
+  AlignLeft,
 } from "lucide-react";
 import { usePythonSandbox } from "../../hooks/usePythonSandbox";
 import { PythonExercise } from "../../lib/lessons";
@@ -21,6 +22,33 @@ interface PythonSandboxProps {
   onSuccess: () => void;
 }
 
+const OUTPUT_FONT_SIZES = [12, 14, 16] as const;
+type OutputFontSize = (typeof OUTPUT_FONT_SIZES)[number];
+
+const FONT_SIZE_STORAGE_KEY = "pythonSandbox.output.fontSize";
+const WORD_WRAP_STORAGE_KEY = "pythonSandbox.output.wordWrap";
+const DEFAULT_OUTPUT_FONT_SIZE: OutputFontSize = 14;
+
+function readStoredFontSize(): OutputFontSize {
+  try {
+    const stored = Number(localStorage.getItem(FONT_SIZE_STORAGE_KEY));
+    return OUTPUT_FONT_SIZES.includes(stored as OutputFontSize)
+      ? (stored as OutputFontSize)
+      : DEFAULT_OUTPUT_FONT_SIZE;
+  } catch {
+    return DEFAULT_OUTPUT_FONT_SIZE;
+  }
+}
+
+function readStoredWordWrap(): boolean {
+  try {
+    // Default to wrapped (the previous behaviour) unless explicitly disabled.
+    return localStorage.getItem(WORD_WRAP_STORAGE_KEY) !== "false";
+  } catch {
+    return true;
+  }
+}
+
 export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
   const [code, setCode] = useState(exercise.starterCode);
   const [output, setOutput] = useState("");
@@ -30,6 +58,32 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
 
   const [isTracing, setIsTracing] = useState(false);
   const timelineEngine = useTimelineEngine();
+
+  // Output panel display preferences, restored from localStorage on mount.
+  const [outputFontSize, setOutputFontSize] =
+    useState<OutputFontSize>(readStoredFontSize);
+  const [isWordWrapped, setIsWordWrapped] =
+    useState<boolean>(readStoredWordWrap);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(FONT_SIZE_STORAGE_KEY, String(outputFontSize));
+    } catch {
+      /* localStorage unavailable — the preference just won't persist */
+    }
+  }, [outputFontSize]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(WORD_WRAP_STORAGE_KEY, String(isWordWrapped));
+    } catch {
+      /* localStorage unavailable — the preference just won't persist */
+    }
+  }, [isWordWrapped]);
+
+  const outputWrapClass = isWordWrapped
+    ? "whitespace-pre-wrap break-words"
+    : "whitespace-pre overflow-x-auto";
 
   // Reset if exercise changes
   useEffect(() => {
@@ -230,15 +284,59 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
           aria-label="Console Output"
           aria-live="polite"
           aria-atomic="false"
-          className="p-4 border-t-4 border-black dark:border-[#2e2924] bg-[#1e1e1e] text-white min-h-[120px] max-h-[300px] overflow-y-auto font-mono text-sm"
+          className="p-4 border-t-4 border-black dark:border-[#2e2924] bg-[#1e1e1e] text-white min-h-[120px] max-h-[300px] overflow-y-auto font-mono"
         >
-          <div className="text-gray-400 mb-2 text-xs uppercase font-bold tracking-wider">
-            Console Output
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <span className="text-gray-400 text-xs uppercase font-bold tracking-wider">
+              Console Output
+            </span>
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="python-sandbox-output-font-size"
+                className="text-gray-400 text-xs font-bold"
+              >
+                Font
+              </label>
+              <select
+                id="python-sandbox-output-font-size"
+                value={outputFontSize}
+                onChange={(e) =>
+                  setOutputFontSize(Number(e.target.value) as OutputFontSize)
+                }
+                className="bg-[#2a2a2a] text-white text-xs border border-gray-600 rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-accent"
+              >
+                {OUTPUT_FONT_SIZES.map((size) => (
+                  <option key={size} value={size}>
+                    {size}px
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => setIsWordWrapped((wrapped) => !wrapped)}
+                aria-pressed={isWordWrapped}
+                title="Toggle word wrap for the console output"
+                className="flex items-center gap-1 text-xs font-bold border border-gray-600 rounded px-2 py-1 text-white hover:bg-[#2a2a2a] transition-colors"
+              >
+                <AlignLeft className="w-3.5 h-3.5" />
+                {isWordWrapped ? "Wrap: On" : "Wrap: Off"}
+              </button>
+            </div>
           </div>
           {output ? (
-            <pre className="whitespace-pre-wrap">{output}</pre>
+            <pre
+              className={outputWrapClass}
+              style={{ fontSize: `${outputFontSize}px` }}
+            >
+              {output}
+            </pre>
           ) : (
-            <div className="text-gray-500 italic">No output...</div>
+            <div
+              className="text-gray-500 italic"
+              style={{ fontSize: `${outputFontSize}px` }}
+            >
+              No output...
+            </div>
           )}
 
           {error && (
@@ -250,7 +348,12 @@ export function PythonSandbox({ exercise, onSuccess }: PythonSandboxProps) {
               <div className="flex items-center gap-2 text-red-400 font-bold mb-2">
                 <XCircle className="w-4 h-4" /> Runtime Error
               </div>
-              <pre className="text-red-300 whitespace-pre-wrap">{error}</pre>
+              <pre
+                className={`text-red-300 ${outputWrapClass}`}
+                style={{ fontSize: `${outputFontSize}px` }}
+              >
+                {error}
+              </pre>
               {exercise.hint && (
                 <div className="mt-2 text-yellow-300 text-xs flex gap-2 p-2 bg-yellow-900/20 rounded">
                   <span className="font-bold">Hint:</span> {exercise.hint}
