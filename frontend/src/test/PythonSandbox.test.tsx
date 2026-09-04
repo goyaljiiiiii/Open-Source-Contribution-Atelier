@@ -99,3 +99,87 @@ describe("PythonSandbox UI", () => {
     });
   });
 });
+
+describe("PythonSandbox output display controls (#2714)", () => {
+  const mockOnSuccess = vi.fn();
+  const exercise = {
+    prompt: "Print hello",
+    starterCode: "print('hi')",
+    testCode: "assert True",
+    hint: "Use print",
+  };
+  const mockRunPythonCode = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    (usePythonSandbox as any).mockReturnValue({
+      isReady: true,
+      isExecuting: false,
+      runPythonCode: mockRunPythonCode,
+    });
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  function renderSandbox() {
+    return render(
+      <PythonSandbox exercise={exercise} onSuccess={mockOnSuccess} />,
+    );
+  }
+
+  it("renders a font-size selector and a word-wrap toggle", () => {
+    renderSandbox();
+    expect(screen.getByLabelText("Font")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Wrap:/ })).toBeInTheDocument();
+  });
+
+  it("defaults to 14px with wrap enabled", () => {
+    renderSandbox();
+    expect(screen.getByLabelText("Font")).toHaveValue("14");
+    const toggle = screen.getByRole("button", { name: /Wrap:/ });
+    expect(toggle).toHaveTextContent("Wrap: On");
+    expect(toggle).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("persists the chosen font size to localStorage and applies it", () => {
+    renderSandbox();
+    fireEvent.change(screen.getByLabelText("Font"), { target: { value: "16" } });
+
+    expect(localStorage.getItem("pythonSandbox.output.fontSize")).toBe("16");
+    expect(screen.getByText("No output...")).toHaveStyle({ fontSize: "16px" });
+  });
+
+  it("toggles word wrap, updates the label, persists the choice and swaps the class", async () => {
+    mockRunPythonCode.mockResolvedValueOnce({
+      output: "a very long line",
+      error: null,
+    });
+    renderSandbox();
+    fireEvent.click(screen.getByText("Run"));
+    const outputEl = await screen.findByText("a very long line");
+    expect(outputEl).toHaveClass("whitespace-pre-wrap");
+
+    fireEvent.click(screen.getByRole("button", { name: /Wrap:/ }));
+
+    expect(screen.getByRole("button", { name: /Wrap:/ })).toHaveTextContent(
+      "Wrap: Off",
+    );
+    expect(localStorage.getItem("pythonSandbox.output.wordWrap")).toBe("false");
+    expect(screen.getByText("a very long line")).toHaveClass("whitespace-pre");
+  });
+
+  it("restores a previously stored font size on mount", () => {
+    localStorage.setItem("pythonSandbox.output.fontSize", "12");
+    renderSandbox();
+    expect(screen.getByLabelText("Font")).toHaveValue("12");
+  });
+
+  it("ignores an invalid stored font size and falls back to 14px", () => {
+    localStorage.setItem("pythonSandbox.output.fontSize", "999");
+    renderSandbox();
+    expect(screen.getByLabelText("Font")).toHaveValue("14");
+  });
+});
