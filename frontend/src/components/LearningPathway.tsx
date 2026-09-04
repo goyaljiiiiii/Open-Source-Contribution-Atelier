@@ -138,6 +138,10 @@ export const LearningPathway: React.FC<LearningPathwayProps> = ({
         id: lesson.slug,
         type: "custom",
         position: { x: 0, y: 0 },
+        // Seed dimensions so onlyRenderVisibleElements can cull nodes
+        // correctly before React Flow measures them in the DOM.
+        initialWidth: nodeWidth,
+        initialHeight: nodeHeight,
         data: {
           title: lesson.title,
           completed: lesson.completed,
@@ -189,6 +193,9 @@ export const LearningPathway: React.FC<LearningPathwayProps> = ({
         onNodeClick={onNodeClick}
         nodeTypes={nodeTypes}
         fitView
+        // Only mount nodes/edges intersecting the viewport, so a large
+        // pathway keeps the DOM node count low and scrolling smooth.
+        onlyRenderVisibleElements
         className="bg-gray-50 dark:bg-gray-900"
       >
         <Controls />
