@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import generics, pagination, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -32,30 +33,44 @@ class NotificationPrefsView(APIView):
         )
 
     def put(self, request):
-        prefs, _ = NotificationPreference.objects.get_or_create(user=request.user)
-        if "email" in request.data or "email_enabled" in request.data:
-            prefs.email_enabled = request.data.get(
-                "email", request.data.get("email_enabled")
+        with transaction.atomic():
+            prefs = (
+                NotificationPreference.objects.select_for_update()
+                .filter(user=request.user)
+                .first()
             )
-        if "in_app" in request.data or "in_app_enabled" in request.data:
-            prefs.in_app_enabled = request.data.get(
-                "in_app", request.data.get("in_app_enabled")
+            if prefs is None:
+                prefs = NotificationPreference.objects.create(user=request.user)
+            if "email" in request.data or "email_enabled" in request.data:
+                prefs.email_enabled = request.data.get(
+                    "email", request.data.get("email_enabled")
+                )
+            if "in_app" in request.data or "in_app_enabled" in request.data:
+                prefs.in_app_enabled = request.data.get(
+                    "in_app", request.data.get("in_app_enabled")
+                )
+            if "websocket" in request.data or "websocket_enabled" in request.data:
+                prefs.websocket_enabled = request.data.get(
+                    "websocket", request.data.get("websocket_enabled")
+                )
+            prefs.save(
+                update_fields=["email_enabled", "in_app_enabled", "websocket_enabled"]
             )
-        if "websocket" in request.data or "websocket_enabled" in request.data:
-            prefs.websocket_enabled = request.data.get(
-                "websocket", request.data.get("websocket_enabled")
-            )
-        prefs.save()
 
-        if "receive_weekly_digest" in request.data or "weekly_digest" in request.data:
-            val = request.data.get(
-                "receive_weekly_digest", request.data.get("weekly_digest")
-            )
-            from apps.accounts.models import UserProfile
+            if (
+                "receive_weekly_digest" in request.data
+                or "weekly_digest" in request.data
+            ):
+                val = request.data.get(
+                    "receive_weekly_digest", request.data.get("weekly_digest")
+                )
+                from apps.accounts.models import UserProfile
 
-            profile, _ = UserProfile.objects.get_or_create(user=request.user)
-            profile.receive_weekly_digest = bool(val)
-            profile.save(update_fields=["receive_weekly_digest"])
+                profile, _ = UserProfile.objects.select_for_update().get_or_create(
+                    user=request.user
+                )
+                profile.receive_weekly_digest = bool(val)
+                profile.save(update_fields=["receive_weekly_digest"])
 
         user_profile = getattr(request.user, "user_profile", None)
         receive_weekly_digest = (
