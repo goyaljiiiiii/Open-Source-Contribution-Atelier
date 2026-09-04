@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchApi } from "../lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { CodeDiffViewer } from "../components/ui/CodeDiffViewer";
@@ -50,6 +50,26 @@ export function PeerReviewPage() {
     modified: string;
   } | null>(null);
   const [xpClaimed, setXpClaimed] = useState(false);
+
+  // Ids of the setTimeout calls that drive the fake "AI is analysing..."
+  // animation. We track them so they can be cancelled if the user leaves
+  // the page (or starts a new review) before the ~3s animation finishes.
+  // Otherwise those timers keep running and call setState on an unmounted
+  // component — a memory leak / React anti-pattern.
+  const aiTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const clearAiTimers = useCallback(() => {
+    aiTimersRef.current.forEach(clearTimeout);
+    aiTimersRef.current = [];
+  }, []);
+
+  const scheduleAiTimer = useCallback((callback: () => void, delay: number) => {
+    const id = setTimeout(callback, delay);
+    aiTimersRef.current.push(id);
+  }, []);
+
+  // Cancel any pending animation timers when the page unmounts.
+  useEffect(() => clearAiTimers, [clearAiTimers]);
 
   // Review Tab State
   const [selectedSubmission, setSelectedSubmission] =
@@ -111,15 +131,17 @@ export function PeerReviewPage() {
 
     setIsSubmitting(false);
 
-    // Trigger AI Code Review simulator
+    // Trigger AI Code Review simulator.
+    // Cancel any timers still pending from a previous submission first.
+    clearAiTimers();
     setAiLoading(true);
     setAiStep(1);
 
-    setTimeout(() => {
+    scheduleAiTimer(() => {
       setAiStep(2);
-      setTimeout(() => {
+      scheduleAiTimer(() => {
         setAiStep(3);
-        setTimeout(() => {
+        scheduleAiTimer(() => {
           const hasTodo = codeSnippet.toLowerCase().includes("todo");
           const score = hasTodo ? 3.8 : codeSnippet.length < 50 ? 4.2 : 4.9;
           setAiReview({
